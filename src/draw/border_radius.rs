@@ -1,48 +1,58 @@
 use image::RgbaImage;
 
-pub fn apply_border_radius_optimized(img: &mut RgbaImage, radius: u32) {
+pub fn apply_border_radius_antialiased(img: &mut RgbaImage, radius: f32) {
   let (width, height) = img.dimensions();
+  let transition_width = 1.0;
+  let outer_radius = radius + transition_width;
+  let outer_radius_sq = outer_radius * outer_radius;
   let radius_sq = radius * radius;
 
-  // Process only corner regions - skip the center entirely
-  process_corner_region(
+  // Process only corner regions with antialiasing band
+  let band_size =
+    (outer_radius.ceil() as u32).max(radius as u32 + (transition_width * 2.0).ceil() as u32);
+
+  process_corner_aa(
     img,
     0,
     0,
-    radius,
-    radius,
+    band_size,
+    band_size,
     radius,
     radius_sq,
+    outer_radius_sq,
     Corner::TopLeft,
   );
-  process_corner_region(
+  process_corner_aa(
     img,
-    width - radius,
+    width.saturating_sub(band_size),
     0,
     width,
-    radius,
+    band_size,
     radius,
     radius_sq,
+    outer_radius_sq,
     Corner::TopRight,
   );
-  process_corner_region(
+  process_corner_aa(
     img,
     0,
-    height - radius,
-    radius,
+    height.saturating_sub(band_size),
+    band_size,
     height,
     radius,
     radius_sq,
+    outer_radius_sq,
     Corner::BottomLeft,
   );
-  process_corner_region(
+  process_corner_aa(
     img,
-    width - radius,
-    height - radius,
+    width.saturating_sub(band_size),
+    height.saturating_sub(band_size),
     width,
     height,
     radius,
     radius_sq,
+    outer_radius_sq,
     Corner::BottomRight,
   );
 }
@@ -56,55 +66,80 @@ enum Corner {
 }
 
 #[inline]
-fn process_corner_region(
+fn process_corner_aa(
   img: &mut RgbaImage,
   start_x: u32,
   start_y: u32,
   end_x: u32,
   end_y: u32,
-  radius: u32,
-  radius_sq: u32,
+  radius: f32,
+  radius_sq: f32,
+  outer_radius_sq: f32,
   corner: Corner,
 ) {
   let (corner_x, corner_y) = match corner {
-    Corner::TopLeft => (radius - 1, radius - 1),
-    Corner::TopRight => (start_x, radius - 1),
-    Corner::BottomLeft => (radius - 1, start_y),
-    Corner::BottomRight => (start_x, start_y),
+    Corner::TopLeft => (radius, radius),
+    Corner::TopRight => (start_x as f32, radius),
+    Corner::BottomLeft => (radius, start_y as f32),
+    Corner::BottomRight => (start_x as f32, start_y as f32),
   };
 
-  // Process in chunks for better cache locality
   for y in start_y..end_y {
-    let dy = if y > corner_y {
-      y - corner_y
-    } else {
-      corner_y - y
-    };
+    let fy = y as f32;
+    let dy = (fy - corner_y).abs();
     let dy_sq = dy * dy;
 
-    // Early exit if entire row is outside radius
-    if dy_sq > radius_sq {
-      // Set entire row to transparent
-      let row_start = ((y * img.width() + start_x) * 4 + 3) as usize;
-      let pixels = img.as_mut();
-      for i in 0..(end_x - start_x) {
-        pixels[row_start + (i * 4) as usize] = 0;
-      }
+    // Early exit optimization - if entire row is outside outer radius
+    if dy_sq > outer_radius_sq {
+      set_row_alpha(img, start_x, end_x, y, 0);
       continue;
     }
 
-    for x in start_x..end_x {
-      let dx = if x > corner_x {
-        x - corner_x
-      } else {
-        corner_x - x
-      };
-      let dist_sq = dx * dx + dy_sq; // Reuse dy_sq
+    // Early exit - if entire row is inside radius
+    if dy_sq < radius_sq
+      && (start_x as f32 - corner_x).abs() < radius
+      && (end_x as f32 - corner_x).abs() < radius
+    {
+      continue; // Keep original alpha
+    }
 
-      if dist_sq > radius_sq {
+    for x in start_x..end_x {
+      let fx = x as f32;
+      let dx = (fx - corner_x).abs();
+      let dist_sq = dx * dx + dy_sq;
+
+      let alpha = if dist_sq <= radius_sq {
+        255 // Inside radius - keep original
+      } else if dist_sq >= outer_radius_sq {
+        0 // Outside antialiasing band - transparent
+      } else {
+        // Antialiasing zone - smooth transition
+        let dist = dist_sq.sqrt();
+        let factor = (outer_radius_sq.sqrt() - dist) / (outer_radius_sq.sqrt() - radius_sq.sqrt());
+        (factor * 255.0).clamp(0.0, 255.0) as u8
+      };
+
+      if alpha < 255 {
         let idx = ((y * img.width() + x) * 4 + 3) as usize;
-        img.as_mut()[idx] = 0;
+        let pixels = img.as_mut();
+        if alpha == 0 {
+          pixels[idx] = 0;
+        } else {
+          // Blend with existing alpha
+          let existing = pixels[idx] as u32;
+          pixels[idx] = ((existing * alpha as u32) / 255) as u8;
+        }
       }
     }
+  }
+}
+
+#[inline]
+fn set_row_alpha(img: &mut RgbaImage, start_x: u32, end_x: u32, y: u32, alpha: u8) {
+  let width = img.width();
+  let pixels = img.as_mut();
+  for x in start_x..end_x {
+    let idx = ((y * width + x) * 4 + 3) as usize;
+    pixels[idx] = alpha;
   }
 }

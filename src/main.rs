@@ -15,7 +15,7 @@ use image::ImageBuffer;
 use mimalloc::MiMalloc;
 
 use crate::draw::{
-  border_radius::apply_border_radius_optimized,
+  border_radius::apply_border_radius_antialiased,
   draw::{Canvas, draw_path},
   rgb::parse_rgb,
 };
@@ -55,7 +55,7 @@ async fn generate_image(body: Json<Canvas>) -> Result<Response, StatusCode> {
   }
 
   if let Some(radius) = radius {
-    apply_border_radius_optimized(&mut image, radius);
+    apply_border_radius_antialiased(&mut image, radius as f32);
   }
 
   let mut buffer = Vec::new();

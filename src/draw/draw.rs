@@ -14,7 +14,7 @@ use serde::{Deserialize, Serialize};
 use tokio::sync::Mutex;
 
 use crate::{
-  draw::{border_radius::apply_border_radius_optimized, rgb::parse_rgb},
+  draw::{border_radius::apply_border_radius_antialiased, rgb::parse_rgb},
   font::FONT,
 };
 
@@ -119,7 +119,7 @@ pub async fn draw_path(image: &mut RgbaImage, path: Path) {
       if let Some(border_radius) = border_radius {
         let trimmed_radius = border_radius.min(width.max(height) / 2);
 
-        apply_border_radius_optimized(&mut downloaded, trimmed_radius);
+        apply_border_radius_antialiased(&mut downloaded, trimmed_radius as f32);
       }
 
       overlay(image, &downloaded, x.into(), y.into());
