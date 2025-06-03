@@ -35,8 +35,8 @@ pub fn draw_circle(props: &CircleProperties, canvas: &mut RgbaImage, layout: Lay
   draw_filled_circle_mut(
     canvas,
     (
-      layout.location.x as i32 + size,
-      layout.location.y as i32 + size,
+      (layout.location.x + layout.padding.left) as i32 + size,
+      (layout.location.y + layout.padding.top) as i32 + size,
     ),
     size,
     color.into(),

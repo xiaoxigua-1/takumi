@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-axum = { version = "0.8", features = ["macros"] }
+axum = "0.8"
 imageproc = "0.25"
 bytes = "1.0"
 ab_glyph = "0.2"
@@ -12,6 +12,10 @@ woff2-patched = "0.4"
 mimalloc = "0.1"
 serde_json = "1.0"
 lru = "0.14"
+
+[dependencies.clap]
+version = "4.5"
+features = ["derive"]
 
 # https://github.com/DioxusLabs/taffy/issues/823 has to be resolved first
 [dependencies.taffy]

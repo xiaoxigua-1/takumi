@@ -1,5 +1,5 @@
 use image::{ImageBuffer, RgbaImage};
-use taffy::{AvailableSpace, NodeId, Style, TaffyTree, geometry::Size};
+use taffy::{AvailableSpace, FlexDirection, NodeId, Style, TaffyTree, geometry::Size};
 
 use crate::{
   color::Color,
@@ -31,11 +31,11 @@ impl ImageRenderer {
     }
   }
 
-  pub fn create_taffy_tree(&self, nodes: Vec<Node>) -> (TaffyTree<Node>, NodeId) {
+  pub fn create_taffy_tree(&self, children: Vec<Node>) -> (TaffyTree<Node>, NodeId) {
     let mut taffy = TaffyTree::new();
 
     let root_node = Node {
-      properties: NodeProperties::Container(ContainerProperties { children: nodes }),
+      properties: NodeProperties::Container(ContainerProperties { children }),
       background_color: None,
       border_color: None,
       style: Some(Style {
@@ -43,6 +43,7 @@ impl ImageRenderer {
           width: taffy::Dimension::Percent(1.0),
           height: taffy::Dimension::Percent(1.0),
         },
+        flex_direction: FlexDirection::Column,
         ..Default::default()
       }),
     };
@@ -70,6 +71,10 @@ impl ImageRenderer {
     };
 
     taffy.compute_layout(root_node_id, available_space).unwrap();
+
+    if context.print_debug_tree {
+      taffy.print_tree(root_node_id);
+    }
 
     draw_children(context, &mut canvas, taffy, root_node_id);
 

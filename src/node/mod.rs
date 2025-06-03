@@ -27,19 +27,13 @@ pub struct Node {
 }
 
 #[derive(Debug, Clone, Deserialize)]
-#[serde(tag = "type")]
+#[serde(tag = "type", rename_all = "camelCase")]
 pub enum NodeProperties {
-  #[serde(rename = "rect")]
   Rect(RectProperties),
-  #[serde(rename = "circle")]
   Circle(CircleProperties),
-  #[serde(rename = "text")]
   Text(TextProperties),
-  #[serde(rename = "image")]
   Image(ImageProperties),
-  #[serde(rename = "container")]
   Container(ContainerProperties),
-  #[serde(rename = "space")]
   Space,
 }
 

@@ -5,6 +5,7 @@ use axum::{
   response::{IntoResponse, Response},
   routing::post,
 };
+use clap::Parser;
 use image::ImageFormat;
 use imagen::{
   color::Color,
@@ -27,6 +28,16 @@ struct ImageRequest {
   pub height: u32,
   pub background_color: Option<Color>,
   pub nodes: Vec<Node>,
+}
+
+#[derive(Parser, Debug)]
+#[command(author, version, about, long_about = None)]
+struct Args {
+  #[arg(short, long, default_value_t = false)]
+  print_debug_tree: bool,
+
+  #[arg(short, long, value_parser)]
+  fonts: Vec<String>,
 }
 
 async fn generate_image_handler(
@@ -56,7 +67,12 @@ async fn generate_image_handler(
 
 #[tokio::main]
 async fn main() {
-  let context = Context::default();
+  let args = Args::parse();
+
+  let context = Context {
+    print_debug_tree: args.print_debug_tree,
+    ..Default::default()
+  };
 
   context
     .font_store
