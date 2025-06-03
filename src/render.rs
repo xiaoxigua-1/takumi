@@ -71,8 +71,6 @@ impl ImageRenderer {
 
     taffy.compute_layout(root_node_id, available_space).unwrap();
 
-    taffy.print_tree(root_node_id);
-
     draw_children(context, &mut canvas, taffy, root_node_id);
 
     canvas
