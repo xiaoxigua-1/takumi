@@ -1,68 +1,76 @@
-pub mod draw;
-pub mod font;
-
-use std::io::Cursor;
-
 use axum::{
-  Json, Router,
-  http::{StatusCode, header},
-  response::{IntoResponse, Response},
-  routing::{get, post},
+    extract::Json,
+    http::StatusCode,
+    response::{IntoResponse, Response},
+    routing::post,
+    Router,
 };
-use bytes::Bytes;
+use std::net::SocketAddr;
+use tokio::net::TcpListener;
 
-use image::ImageBuffer;
-use mimalloc::MiMalloc;
+use image_gen_rs::{ImageGenerator, ImageRequest};
 
-use crate::draw::{
-  border_radius::apply_border_radius_antialiased,
-  draw::{Canvas, draw_path},
-  rgb::parse_rgb,
-};
+async fn generate_image_handler(Json(request): Json<ImageRequest>) -> Result<Response, StatusCode> {
+    let generator = ImageGenerator::new();
 
-#[global_allocator]
-static GLOBAL: MiMalloc = MiMalloc;
+    match generator.generate_image(request).await {
+        Ok(image_bytes) => Ok(([("content-type", "image/png")], image_bytes).into_response()),
+        Err(e) => {
+            eprintln!("Error generating image: {}", e);
+            Err(StatusCode::INTERNAL_SERVER_ERROR)
+        }
+    }
+}
 
 #[tokio::main]
 async fn main() {
-  let app = Router::new()
-    .route("/", get(health_check))
-    .route("/image", post(generate_image));
+    // Initialize the router with our image generation endpoint
+    let app = Router::new().route("/image", post(generate_image_handler));
 
-  let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
-  println!("Server running on http://localhost:3000");
-
-  println!("✓ Noto Sans TC font loaded successfully");
-  println!("Try: http://localhost:3000/image?text=你好世界Hello%20World");
-  println!("Or: http://localhost:3000/overlay?text=繁體中文Traditional");
-
-  axum::serve(listener, app).await.unwrap();
+    // Bind to all interfaces on port 3000
+    let addr = SocketAddr::from(([0, 0, 0, 0], 3000));
+    let listener = TcpListener::bind(addr).await.unwrap();
+    
+    println!("Image generator server running on http://{}", addr);
+    
+    // Start the server
+    axum::serve(listener, app).await.unwrap();
 }
 
-async fn health_check() -> &'static str {
-  "Image generation server is running with Noto Sans TC!"
-}
+#[cfg(test)]
+mod tests {
+  use super::*;
 
-async fn generate_image(body: Json<Canvas>) -> Result<Response, StatusCode> {
-  let mut image = ImageBuffer::from_pixel(body.width, body.height, parse_rgb(body.bg_color));
+  #[tokio::test]
+  async fn test_basic_generation() {
+    let request = ImageRequest {
+      nodes: vec![Node {
+        node_type: NodeType::Rect(RectNode {
+          width: 100.0,
+          height: 50.0,
+          color: Some(Color {
+            r: 255,
+            g: 0,
+            b: 0,
+            a: 255,
+          }),
+        }),
+        position: None,
+        flex_style: None,
+        children: None,
+      }],
+      width: 800,
+      height: 600,
+      background_color: Some(Color {
+        r: 255,
+        g: 255,
+        b: 255,
+        a: 255,
+      }),
+    };
 
-  let radius = body.border_radius;
-
-  let paths = body.0.paths;
-
-  for path in paths {
-    draw_path(&mut image, path).await;
+    let generator = ImageGenerator::new();
+    let result = generator.generate_image(request).await;
+    assert!(result.is_ok());
   }
-
-  if let Some(radius) = radius {
-    apply_border_radius_antialiased(&mut image, radius as f32);
-  }
-
-  let mut buffer = Vec::new();
-  let mut cursor = Cursor::new(&mut buffer);
-  image
-    .write_to(&mut cursor, image::ImageFormat::WebP)
-    .unwrap();
-
-  Ok(([(header::CONTENT_TYPE, "image/webp")], Bytes::from(buffer)).into_response())
 }
