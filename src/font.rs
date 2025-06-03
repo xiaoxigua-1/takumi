@@ -1,4 +1,7 @@
-use std::sync::LazyLock;
+use std::{
+  collections::HashMap,
+  sync::{LazyLock, RwLock},
+};
 
 use ab_glyph::FontVec;
 use bytes::Bytes;
@@ -10,3 +13,5 @@ pub static FONT: LazyLock<FontVec> = LazyLock::new(|| {
   let ttf = woff2_patched::convert_woff2_to_ttf(&mut font).unwrap();
   FontVec::try_from_vec(ttf).unwrap()
 });
+
+pub type FontStore = RwLock<HashMap<String, FontVec>>;

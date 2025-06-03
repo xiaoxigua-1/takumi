@@ -1,5 +1,5 @@
 [package]
-name = "image-gen-rs"
+name = "imagen"
 version = "0.1.0"
 edition = "2024"
 
@@ -14,8 +14,10 @@ woff2-patched = "0.4"
 mimalloc = "0.1"
 serde_json = "1.0"
 lru = "0.14"
-taffy = "0.8.2"
-async-trait = "0.1"
+
+[dependencies.taffy]
+version = "0.8"
+features = ["serde"]
 
 [dependencies.image]
 default-features = false
