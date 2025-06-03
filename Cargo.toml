@@ -4,10 +4,8 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-axum = "0.8"
-tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
+axum = { version = "0.8", features = ["macros"] }
 imageproc = "0.25"
-serde = { version = "1.0", features = ["derive"] }
 bytes = "1.0"
 ab_glyph = "0.2"
 woff2-patched = "0.4"
@@ -15,9 +13,18 @@ mimalloc = "0.1"
 serde_json = "1.0"
 lru = "0.14"
 
+# https://github.com/DioxusLabs/taffy/issues/823 has to be resolved first
 [dependencies.taffy]
-version = "0.8"
+version = "0.7"
 features = ["serde"]
+
+[dependencies.tokio]
+features = ["rt-multi-thread", "macros"]
+version = "1"
+
+[dependencies.serde]
+version = "1"
+features = ["derive"]
 
 [dependencies.image]
 default-features = false

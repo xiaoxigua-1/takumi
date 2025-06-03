@@ -1,37 +1,83 @@
 use axum::{
   Router,
-  extract::Json,
+  extract::{Json, State},
   http::StatusCode,
   response::{IntoResponse, Response},
   routing::post,
 };
-use imagen::{color::Color, node::NodeKind};
+use image::ImageFormat;
+use imagen::{
+  color::Color,
+  context::Context,
+  node::Node,
+  render::{DrawProps, ImageRenderer, LayoutProps},
+};
 use serde::Deserialize;
-use std::net::SocketAddr;
+use std::{io::Cursor, net::SocketAddr, path::Path, sync::Arc};
 use tokio::net::TcpListener;
+
+use mimalloc::MiMalloc;
+
+#[global_allocator]
+static GLOBAL: MiMalloc = MiMalloc;
 
 #[derive(Deserialize)]
 struct ImageRequest {
   pub width: u32,
   pub height: u32,
   pub background_color: Option<Color>,
-  pub nodes: Vec<NodeKind>,
+  pub nodes: Vec<Node>,
 }
 
-async fn generate_image_handler(Json(request): Json<ImageRequest>) -> Result<Response, StatusCode> {
-  match generator.generate_image(request).await {
-    Ok(image_bytes) => Ok(([("content-type", "image/png")], image_bytes).into_response()),
-    Err(e) => {
-      eprintln!("Error generating image: {}", e);
-      Err(StatusCode::INTERNAL_SERVER_ERROR)
-    }
-  }
+async fn generate_image_handler(
+  State(context): State<Arc<Context>>,
+  Json(request): Json<ImageRequest>,
+) -> Result<Response, StatusCode> {
+  let renderer = ImageRenderer::new(
+    DrawProps {
+      background_color: request.background_color,
+    },
+    LayoutProps {
+      width: request.width,
+      height: request.height,
+    },
+  );
+
+  let (mut taffy, node_ids) = renderer.create_taffy_tree(request.nodes);
+  let image = renderer.draw(context.as_ref(), &mut taffy, node_ids);
+
+  let mut buffer = Vec::new();
+  let mut cursor = Cursor::new(&mut buffer);
+
+  image.write_to(&mut cursor, ImageFormat::WebP).unwrap();
+
+  Ok(([("content-type", "image/webp")], buffer).into_response())
 }
 
 #[tokio::main]
 async fn main() {
+  let context = Context::default();
+
+  context
+    .font_store
+    .load_woff2_font(
+      Path::new("assets/noto-sans-tc-v36-chinese-traditional_latin-regular.woff2"),
+      "Noto Sans TC",
+    )
+    .unwrap();
+
+  context
+    .font_store
+    .load_woff2_font(
+      Path::new("assets/noto-sans-tc-v36-chinese-traditional_latin-700.woff2"),
+      "Noto Sans TC 700",
+    )
+    .unwrap();
+
   // Initialize the router with our image generation endpoint
-  let app = Router::new().route("/image", post(generate_image_handler));
+  let app = Router::new()
+    .route("/image", post(generate_image_handler))
+    .with_state(Arc::new(context));
 
   // Bind to all interfaces on port 3000
   let addr = SocketAddr::from(([0, 0, 0, 0], 3000));
@@ -41,42 +87,4 @@ async fn main() {
 
   // Start the server
   axum::serve(listener, app).await.unwrap();
-}
-
-#[cfg(test)]
-mod tests {
-  use super::*;
-
-  #[tokio::test]
-  async fn test_basic_generation() {
-    let request = ImageRequest {
-      nodes: vec![Node {
-        node_type: NodeType::Rect(RectNode {
-          width: 100.0,
-          height: 50.0,
-          color: Some(Color {
-            r: 255,
-            g: 0,
-            b: 0,
-            a: 255,
-          }),
-        }),
-        position: None,
-        flex_style: None,
-        children: None,
-      }],
-      width: 800,
-      height: 600,
-      background_color: Some(Color {
-        r: 255,
-        g: 255,
-        b: 255,
-        a: 255,
-      }),
-    };
-
-    let generator = ImageGenerator::new();
-    let result = generator.generate_image(request).await;
-    assert!(result.is_ok());
-  }
 }
