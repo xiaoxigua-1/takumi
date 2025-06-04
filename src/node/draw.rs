@@ -23,22 +23,27 @@ pub enum ImageState {
 }
 
 pub fn draw_rect(props: &RectProperties, canvas: &mut RgbaImage, layout: Layout) {
+  let content_box = layout.content_box_size();
+  let x = layout.content_box_x();
+  let y = layout.content_box_y();
+
   let color = props.color.unwrap_or_default();
-  let rect = Rect::at(layout.location.x as i32, layout.location.y as i32)
-    .of_size(layout.size.width as u32, layout.size.height as u32);
+  let rect =
+    Rect::at(x as i32, y as i32).of_size(content_box.width as u32, content_box.height as u32);
   draw_filled_rect_mut(canvas, rect, color.into());
 }
 
 pub fn draw_circle(props: &CircleProperties, canvas: &mut RgbaImage, layout: Layout) {
+  let content_box = layout.content_box_size();
+  let x = layout.content_box_x();
+  let y = layout.content_box_y();
+
   let color = props.color.unwrap_or_default();
-  let size = (layout.size.width.min(layout.size.height) / 2.0) as i32;
+  let size = content_box.width.min(content_box.height) / 2.0;
   draw_filled_circle_mut(
     canvas,
-    (
-      (layout.location.x + layout.padding.left) as i32 + size,
-      (layout.location.y + layout.padding.top) as i32 + size,
-    ),
-    size,
+    ((x + size) as i32, (y + size) as i32),
+    size as i32,
     color.into(),
   );
 }

@@ -1,4 +1,5 @@
 pub mod draw;
+pub mod measure;
 pub mod properties;
 
 use image::RgbaImage;
@@ -79,6 +80,7 @@ impl Node {
     if let Some(background_color) = self.background_color {
       let rect = Rect::at(layout.location.x as i32, layout.location.y as i32)
         .of_size(layout.size.width as u32, layout.size.height as u32);
+
       draw_filled_rect_mut(canvas, rect, background_color.into());
     }
 

@@ -70,7 +70,7 @@ impl ImageRenderer {
       height: AvailableSpace::Definite(self.layout_props.height as f32),
     };
 
-    taffy.compute_layout(root_node_id, available_space).unwrap();
+    taffy.compute_layout_with_measure(root_node_id, available_space, |_, _, _, _, _| Size::ZERO).unwrap();
 
     if context.print_debug_tree {
       taffy.print_tree(root_node_id);
