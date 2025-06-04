@@ -1,11 +1,7 @@
 use image::{ImageBuffer, RgbaImage};
-use taffy::{AvailableSpace, FlexDirection, NodeId, Style, TaffyTree, geometry::Size};
+use taffy::{AvailableSpace, NodeId, TaffyTree, geometry::Size};
 
-use crate::{
-  color::Color,
-  context::Context,
-  node::{Node, NodeProperties, properties::ContainerProperties},
-};
+use crate::{color::Color, context::Context, node::Node};
 
 #[derive(Debug, Clone)]
 pub struct DrawProps {
@@ -31,22 +27,8 @@ impl ImageRenderer {
     }
   }
 
-  pub fn create_taffy_tree(&self, children: Vec<Node>) -> (TaffyTree<Node>, NodeId) {
+  pub fn create_taffy_tree(&self, root_node: Node) -> (TaffyTree<Node>, NodeId) {
     let mut taffy = TaffyTree::new();
-
-    let root_node = Node {
-      properties: NodeProperties::Container(ContainerProperties { children }),
-      background_color: None,
-      border_color: None,
-      style: Some(Style {
-        size: Size {
-          width: taffy::Dimension::Percent(1.0),
-          height: taffy::Dimension::Percent(1.0),
-        },
-        flex_direction: FlexDirection::Column,
-        ..Default::default()
-      }),
-    };
 
     let root_node_id = root_node.create_taffy_leaf(&mut taffy).unwrap();
 
@@ -70,7 +52,27 @@ impl ImageRenderer {
       height: AvailableSpace::Definite(self.layout_props.height as f32),
     };
 
-    taffy.compute_layout_with_measure(root_node_id, available_space, |_, _, _, _, _| Size::ZERO).unwrap();
+    taffy
+      .compute_layout_with_measure(
+        root_node_id,
+        available_space,
+        |known_dimensions, available_space, _node_id, node_context, _style| {
+          let Some(node) = node_context else {
+            return Size::ZERO;
+          };
+
+          if let Size {
+            width: Some(width),
+            height: Some(height),
+          } = known_dimensions
+          {
+            return Size { width, height };
+          }
+
+          node.measure(context, available_space, known_dimensions)
+        },
+      )
+      .unwrap();
 
     if context.print_debug_tree {
       taffy.print_tree(root_node_id);

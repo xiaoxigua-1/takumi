@@ -11,7 +11,7 @@ use std::sync::Mutex;
 use taffy::Layout;
 
 use super::properties::{CircleProperties, ImageProperties, RectProperties, TextProperties};
-use crate::context::Context;
+use crate::{border_radius::apply_border_radius_antialiased, context::Context};
 
 pub type ImageFetchCache = Mutex<LruCache<String, ImageState>>;
 
@@ -30,6 +30,7 @@ pub fn draw_rect(props: &RectProperties, canvas: &mut RgbaImage, layout: Layout)
   let color = props.color.unwrap_or_default();
   let rect =
     Rect::at(x as i32, y as i32).of_size(content_box.width as u32, content_box.height as u32);
+
   draw_filled_rect_mut(canvas, rect, color.into());
 }
 
@@ -40,6 +41,7 @@ pub fn draw_circle(props: &CircleProperties, canvas: &mut RgbaImage, layout: Lay
 
   let color = props.color.unwrap_or_default();
   let size = content_box.width.min(content_box.height) / 2.0;
+
   draw_filled_circle_mut(
     canvas,
     ((x + size) as i32, (y + size) as i32),
@@ -55,20 +57,18 @@ pub fn draw_text(
   layout: Layout,
 ) {
   let color = props.color.unwrap_or_default();
-  let font_size = props.font_size.unwrap_or(16.0);
-  let scale = PxScale::from(font_size);
+  let scale = PxScale::from(props.font_size);
 
-  let font = if let Some(font_family) = props.font_family.as_ref() {
-    context.font_store.get_font_or_default(font_family)
-  } else {
-    context.font_store.default_font()
-  };
+  let x = layout.content_box_x();
+  let y = layout.content_box_y();
+
+  let font = props.font(context);
 
   draw_text_mut(
     canvas,
     color.into(),
-    layout.location.x as i32,
-    layout.location.y as i32,
+    x as i32,
+    y as i32,
     scale,
     &font,
     &props.content,
@@ -86,31 +86,29 @@ pub fn draw_image(
     return;
   };
 
-  let should_resize = layout.content_size.width as u32 != image.width()
-    || layout.content_size.height as u32 != image.height();
+  let content_box = layout.content_box_size();
+  let x = layout.content_box_x();
+  let y = layout.content_box_y();
 
-  if !should_resize {
-    return overlay(
-      canvas,
-      image,
-      (layout.location.x + layout.padding.left) as i64,
-      (layout.location.y + layout.padding.top) as i64,
-    );
+  let should_resize =
+    content_box.width as u32 != image.width() || content_box.height as u32 != image.height();
+
+  if !should_resize && props.border_radius.is_none() {
+    return overlay(canvas, image, x as i64, y as i64);
   }
 
-  let resized = resize(
+  let mut resized = resize(
     image,
-    layout.content_size.width as u32,
-    layout.content_size.height as u32,
+    content_box.width as u32,
+    content_box.height as u32,
     FilterType::Lanczos3,
   );
 
-  overlay(
-    canvas,
-    &resized,
-    (layout.location.x + layout.padding.left) as i64,
-    (layout.location.y + layout.padding.top) as i64,
-  );
+  if let Some(border_radius) = props.border_radius {
+    apply_border_radius_antialiased(&mut resized, border_radius);
+  }
+
+  overlay(canvas, &resized, x as i64, y as i64);
 }
 
 impl ImageProperties {

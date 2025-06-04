@@ -10,11 +10,12 @@ use image::ImageFormat;
 use imagen::{
   color::Color,
   context::Context,
-  node::Node,
+  node::{Node, NodeProperties, properties::ContainerProperties},
   render::{DrawProps, ImageRenderer, LayoutProps},
 };
 use serde::Deserialize;
 use std::{io::Cursor, net::SocketAddr, path::Path, sync::Arc};
+use taffy::{FlexDirection, Size, Style, TaffyTree};
 use tokio::net::TcpListener;
 
 use mimalloc::MiMalloc;
@@ -54,15 +55,37 @@ async fn generate_image_handler(
     },
   );
 
-  let (mut taffy, node_ids) = renderer.create_taffy_tree(request.nodes);
-  let image = renderer.draw(context.as_ref(), &mut taffy, node_ids);
+  let mut taffy = TaffyTree::new();
+  let root_node = create_root_node(request.nodes);
+
+  root_node.hydrate(&context).await;
+
+  let root_node_id = root_node.create_taffy_leaf(&mut taffy).unwrap();
 
   let mut buffer = Vec::new();
   let mut cursor = Cursor::new(&mut buffer);
 
+  let image = renderer.draw(context.as_ref(), &mut taffy, root_node_id);
+
   image.write_to(&mut cursor, ImageFormat::WebP).unwrap();
 
   Ok(([("content-type", "image/webp")], buffer).into_response())
+}
+
+fn create_root_node(children: Vec<Node>) -> Node {
+  Node {
+    properties: NodeProperties::Container(ContainerProperties { children }),
+    background_color: None,
+    border_color: None,
+    style: Some(Style {
+      size: Size {
+        width: taffy::Dimension::Percent(1.0),
+        height: taffy::Dimension::Percent(1.0),
+      },
+      flex_direction: FlexDirection::Column,
+      ..Default::default()
+    }),
+  }
 }
 
 #[tokio::main]
