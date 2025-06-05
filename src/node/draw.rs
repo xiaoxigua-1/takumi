@@ -1,4 +1,3 @@
-use ab_glyph::PxScale;
 use image::{
   ImageError, RgbaImage,
   imageops::{FilterType, overlay, resize},
@@ -57,10 +56,9 @@ pub fn draw_text(
   layout: Layout,
 ) {
   let color = props.color.unwrap_or_default();
-  let scale = PxScale::from(props.font_size);
 
   let x = layout.content_box_x();
-  let y = layout.content_box_y();
+  let y = layout.content_box_y() + props.font_size * ((props.line_height - 1.0) / 2.0);
 
   let font = props.font(context);
 
@@ -69,7 +67,7 @@ pub fn draw_text(
     color.into(),
     x as i32,
     y as i32,
-    scale,
+    props.font_size,
     &font,
     &props.content,
   );

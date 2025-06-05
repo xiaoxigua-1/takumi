@@ -7,33 +7,14 @@ use axum::{
 };
 use clap::Parser;
 use image::ImageFormat;
-use imagen::{
-  color::Color,
-  context::Context,
-  node::{
-    Node, NodeProperties,
-    properties::ContainerProperties,
-    style::{Style, ValueOrAutoFull},
-  },
-  render::{DrawProps, ImageRenderer, LayoutProps},
-};
-use serde::Deserialize;
+use imagen::{context::Context, node::Node, render::ImageRenderer};
 use std::{io::Cursor, net::SocketAddr, path::Path, sync::Arc};
-use taffy::TaffyTree;
 use tokio::net::TcpListener;
 
 use mimalloc::MiMalloc;
 
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;
-
-#[derive(Deserialize)]
-struct ImageRequest {
-  pub width: u32,
-  pub height: u32,
-  pub background_color: Option<Color>,
-  pub nodes: Vec<Node>,
-}
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -47,24 +28,13 @@ struct Args {
 
 async fn generate_image_handler(
   State(context): State<Arc<Context>>,
-  Json(request): Json<ImageRequest>,
+  Json(root_node): Json<Node>,
 ) -> Result<Response, StatusCode> {
-  let renderer = ImageRenderer::new(
-    DrawProps {
-      background_color: request.background_color,
-    },
-    LayoutProps {
-      width: request.width,
-      height: request.height,
-    },
-  );
+  let renderer = ImageRenderer::try_from(root_node).map_err(|_| StatusCode::BAD_REQUEST)?;
 
-  let mut taffy = TaffyTree::new();
-  let root_node = create_root_node(request.nodes);
+  renderer.root_node.hydrate(context.as_ref()).await;
 
-  root_node.hydrate(&context).await;
-
-  let root_node_id = root_node.create_taffy_leaf(&mut taffy).unwrap();
+  let (mut taffy, root_node_id) = renderer.create_taffy_tree();
 
   let mut buffer = Vec::new();
   let mut cursor = Cursor::new(&mut buffer);
@@ -74,17 +44,6 @@ async fn generate_image_handler(
   image.write_to(&mut cursor, ImageFormat::WebP).unwrap();
 
   Ok(([("content-type", "image/webp")], buffer).into_response())
-}
-
-fn create_root_node(children: Vec<Node>) -> Node {
-  Node {
-    properties: NodeProperties::Container(ContainerProperties { children }),
-    style: Style {
-      width: Some(ValueOrAutoFull::Full),
-      height: Some(ValueOrAutoFull::Full),
-      ..Default::default()
-    },
-  }
 }
 
 #[tokio::main]

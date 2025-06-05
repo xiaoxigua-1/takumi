@@ -5,7 +5,7 @@ use serde::Deserialize;
 #[serde(untagged)]
 pub enum Color {
   Rgb(u8, u8, u8),
-  Rgba(u8, u8, u8, u8),
+  Rgba(u8, u8, u8, f32),
   RgbInt(u32),
 }
 
@@ -25,7 +25,7 @@ impl From<Color> for Rgba<u8> {
   fn from(color: Color) -> Self {
     match color {
       Color::Rgb(r, g, b) => Rgba([r, g, b, Color::default_alpha()]),
-      Color::Rgba(r, g, b, a) => Rgba([r, g, b, a]),
+      Color::Rgba(r, g, b, a) => Rgba([r, g, b, (a * 255.0) as u8]),
       Color::RgbInt(rgb) => {
         let r = ((rgb >> 16) & 0xFF) as u8;
         let g = ((rgb >> 8) & 0xFF) as u8;

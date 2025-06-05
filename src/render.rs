@@ -1,36 +1,54 @@
 use image::{ImageBuffer, RgbaImage};
-use taffy::{AvailableSpace, NodeId, TaffyTree, geometry::Size};
+use taffy::{AvailableSpace, NodeId, Point, TaffyTree, geometry::Size};
 
-use crate::{color::Color, context::Context, node::Node};
-
-#[derive(Debug, Clone)]
-pub struct DrawProps {
-  pub background_color: Option<Color>,
-}
-
-#[derive(Debug, Clone)]
-pub struct LayoutProps {
-  pub width: u32,
-  pub height: u32,
-}
+use crate::{
+  context::Context,
+  node::{
+    Node,
+    style::{Length, ValueOrAutoFull},
+  },
+};
 
 pub struct ImageRenderer {
-  pub draw_props: DrawProps,
-  pub layout_props: LayoutProps,
+  pub root_node: Node,
+  content_width: u32,
+  content_height: u32,
+}
+
+#[derive(Debug)]
+pub enum ImageRendererError {
+  InvalidContentSize,
+}
+
+impl TryFrom<Node> for ImageRenderer {
+  type Error = ImageRendererError;
+
+  fn try_from(value: Node) -> Result<Self, Self::Error> {
+    let Some(ValueOrAutoFull::SpecificValue(Length(width))) = value.style.width else {
+      return Err(ImageRendererError::InvalidContentSize);
+    };
+
+    let Some(ValueOrAutoFull::SpecificValue(Length(height))) = value.style.height else {
+      return Err(ImageRendererError::InvalidContentSize);
+    };
+
+    Ok(Self {
+      root_node: value,
+      content_width: width as u32,
+      content_height: height as u32,
+    })
+  }
 }
 
 impl ImageRenderer {
-  pub fn new(draw_props: DrawProps, layout_props: LayoutProps) -> Self {
-    Self {
-      draw_props,
-      layout_props,
-    }
-  }
-
-  pub fn create_taffy_tree(&self, root_node: Node) -> (TaffyTree<Node>, NodeId) {
+  pub fn create_taffy_tree(&self) -> (TaffyTree<Node>, NodeId) {
     let mut taffy = TaffyTree::new();
 
-    let root_node_id = root_node.create_taffy_leaf(&mut taffy).unwrap();
+    let root_node_id = self
+      .root_node
+      .clone()
+      .create_taffy_leaf(&mut taffy)
+      .unwrap();
 
     (taffy, root_node_id)
   }
@@ -41,15 +59,11 @@ impl ImageRenderer {
     taffy: &mut TaffyTree<Node>,
     root_node_id: NodeId,
   ) -> RgbaImage {
-    let mut canvas = ImageBuffer::from_pixel(
-      self.layout_props.width,
-      self.layout_props.height,
-      self.draw_props.background_color.unwrap_or_default().into(),
-    );
+    let mut canvas = ImageBuffer::new(self.content_width, self.content_height);
 
     let available_space = Size {
-      width: AvailableSpace::Definite(self.layout_props.width as f32),
-      height: AvailableSpace::Definite(self.layout_props.height as f32),
+      width: AvailableSpace::Definite(self.content_width as f32),
+      height: AvailableSpace::Definite(self.content_height as f32),
     };
 
     taffy
@@ -78,25 +92,35 @@ impl ImageRenderer {
       taffy.print_tree(root_node_id);
     }
 
-    draw_children(context, &mut canvas, taffy, root_node_id);
+    draw_from_node_id_with_layout(context, &mut canvas, taffy, root_node_id, Point::zero());
 
     canvas
   }
 }
 
-fn draw_children(
+fn draw_from_node_id_with_layout(
   context: &Context,
   canvas: &mut RgbaImage,
   taffy: &mut TaffyTree<Node>,
   node_id: NodeId,
+  relative_offset: Point<f32>,
 ) {
+  let mut node_layout = *taffy.layout(node_id).unwrap();
+
+  node_layout.location.x += relative_offset.x;
+  node_layout.location.y += relative_offset.y;
+
+  let node_kind = taffy.get_node_context(node_id).unwrap();
+
+  node_kind.render(context, canvas, node_layout);
+
   for child_id in taffy.children(node_id).unwrap() {
-    let child_layout = taffy.layout(child_id).unwrap();
-
-    let node_kind = taffy.get_node_context(child_id).unwrap();
-
-    node_kind.render(context, canvas, *child_layout);
-
-    draw_children(context, canvas, taffy, child_id);
+    draw_from_node_id_with_layout(
+      context,
+      canvas,
+      taffy,
+      child_id,
+      node_layout.location,
+    );
   }
 }

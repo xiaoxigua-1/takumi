@@ -65,10 +65,10 @@ pub fn measure_text(
 ) -> Size<f32> {
   let font = props.font(context);
 
-  let (width, height) = text_size(props.font_size, &font, &props.content);
+  let (width, _) = text_size(props.font_size, &font, &props.content);
 
   Size {
     width: width as f32,
-    height: height as f32 * props.line_height,
+    height: props.font_size * props.line_height,
   }
 }

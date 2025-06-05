@@ -63,13 +63,7 @@ impl Node {
 
       Ok(container)
     } else {
-      taffy.new_leaf_with_context(
-        style,
-        Node {
-          style: Default::default(),
-          properties: self.properties,
-        },
-      )
+      taffy.new_leaf_with_context(style, self)
     }
   }
 }
@@ -102,8 +96,11 @@ impl Node {
 
   pub fn render(&self, context: &Context, canvas: &mut RgbaImage, layout: Layout) {
     if let Some(background_color) = self.style.background_color {
-      let rect = Rect::at(layout.location.x as i32, layout.location.y as i32)
-        .of_size(layout.size.width as u32, layout.size.height as u32);
+      let x = layout.content_box_x();
+      let y = layout.content_box_y();
+      let size = layout.content_box_size();
+
+      let rect = Rect::at(x as i32, y as i32).of_size(size.width as u32, size.height as u32);
 
       draw_filled_rect_mut(canvas, rect, background_color.into());
     }

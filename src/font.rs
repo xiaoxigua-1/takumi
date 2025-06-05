@@ -1,7 +1,8 @@
-use std::{collections::HashMap, fs::read, path::Path, sync::RwLock};
+use std::{fs::read, path::Path, sync::RwLock};
 
 use ab_glyph::FontArc;
 use bytes::Bytes;
+use indexmap::IndexMap;
 
 #[derive(Debug)]
 pub enum FontError {
@@ -20,7 +21,7 @@ pub fn load_woff2_font(font_file: &Path) -> Result<FontArc, FontError> {
 
 #[derive(Default)]
 pub struct FontStore {
-  fonts: RwLock<HashMap<String, FontArc>>,
+  fonts: RwLock<IndexMap<String, FontArc>>,
 }
 
 impl FontStore {

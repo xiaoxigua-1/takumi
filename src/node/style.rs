@@ -8,7 +8,7 @@ use crate::color::Color;
 
 #[derive(Debug, Clone, Deserialize, Default, Copy)]
 #[serde(transparent)]
-pub struct Length(f32);
+pub struct Length(pub f32);
 
 impl TaffyZero for Length {
   const ZERO: Self = Length(0.0);
@@ -112,9 +112,9 @@ pub struct Border {
 #[derive(Debug, Clone, Deserialize)]
 #[serde(untagged)]
 pub enum SidesValue<T: Default> {
-  AllSides(IndividualSides<T>),
-  AxisSides(AxisSides<T>),
   SingleValue(T),
+  AxisSidesArray(T, T),
+  AllSides(T, T, T, T),
 }
 
 impl<T: Default> Default for SidesValue<T> {
@@ -126,17 +126,17 @@ impl<T: Default> Default for SidesValue<T> {
 impl<T: FromLength + Copy + TaffyZero> From<SidesValue<Length>> for Rect<T> {
   fn from(value: SidesValue<Length>) -> Self {
     match value {
-      SidesValue::AllSides(sides) => Rect {
-        left: T::from_length(sides.left),
-        right: T::from_length(sides.right),
-        top: T::from_length(sides.top),
-        bottom: T::from_length(sides.bottom),
+      SidesValue::AllSides(top, right, bottom, left) => Rect {
+        left: T::from_length(left),
+        right: T::from_length(right),
+        top: T::from_length(top),
+        bottom: T::from_length(bottom),
       },
-      SidesValue::AxisSides(sides) => Rect {
-        left: T::from_length(sides.horizontal),
-        right: T::from_length(sides.horizontal),
-        top: T::from_length(sides.vertical),
-        bottom: T::from_length(sides.vertical),
+      SidesValue::AxisSidesArray(horizontal, vertical) => Rect {
+        left: T::from_length(horizontal),
+        right: T::from_length(horizontal),
+        top: T::from_length(vertical),
+        bottom: T::from_length(vertical),
       },
       SidesValue::SingleValue(value) => Rect {
         left: T::from_length(value),
