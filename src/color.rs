@@ -2,12 +2,11 @@ use image::Rgba;
 use serde::Deserialize;
 
 #[derive(Debug, Clone, Deserialize, Copy)]
-pub struct Color {
-  pub r: u8,
-  pub g: u8,
-  pub b: u8,
-  #[serde(default = "Color::default_alpha")]
-  pub a: u8,
+#[serde(untagged)]
+pub enum Color {
+  Rgb(u8, u8, u8),
+  Rgba(u8, u8, u8, u8),
+  RgbInt(u32),
 }
 
 impl Color {
@@ -18,17 +17,22 @@ impl Color {
 
 impl Default for Color {
   fn default() -> Self {
-    Color {
-      r: 0,
-      g: 0,
-      b: 0,
-      a: Self::default_alpha(),
-    }
+    Color::Rgb(0, 0, 0)
   }
 }
 
 impl From<Color> for Rgba<u8> {
   fn from(color: Color) -> Self {
-    Rgba([color.r, color.g, color.b, color.a])
+    match color {
+      Color::Rgb(r, g, b) => Rgba([r, g, b, Color::default_alpha()]),
+      Color::Rgba(r, g, b, a) => Rgba([r, g, b, a]),
+      Color::RgbInt(rgb) => {
+        let r = ((rgb >> 16) & 0xFF) as u8;
+        let g = ((rgb >> 8) & 0xFF) as u8;
+        let b = (rgb & 0xFF) as u8;
+
+        Rgba([r, g, b, Color::default_alpha()])
+      }
+    }
   }
 }

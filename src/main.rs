@@ -10,12 +10,16 @@ use image::ImageFormat;
 use imagen::{
   color::Color,
   context::Context,
-  node::{Node, NodeProperties, properties::ContainerProperties},
+  node::{
+    Node, NodeProperties,
+    properties::ContainerProperties,
+    style::{Style, ValueOrAutoFull},
+  },
   render::{DrawProps, ImageRenderer, LayoutProps},
 };
 use serde::Deserialize;
 use std::{io::Cursor, net::SocketAddr, path::Path, sync::Arc};
-use taffy::{FlexDirection, Size, Style, TaffyTree};
+use taffy::TaffyTree;
 use tokio::net::TcpListener;
 
 use mimalloc::MiMalloc;
@@ -75,16 +79,11 @@ async fn generate_image_handler(
 fn create_root_node(children: Vec<Node>) -> Node {
   Node {
     properties: NodeProperties::Container(ContainerProperties { children }),
-    background_color: None,
-    border_color: None,
-    style: Some(Style {
-      size: Size {
-        width: taffy::Dimension::Percent(1.0),
-        height: taffy::Dimension::Percent(1.0),
-      },
-      flex_direction: FlexDirection::Column,
+    style: Style {
+      width: Some(ValueOrAutoFull::Full),
+      height: Some(ValueOrAutoFull::Full),
       ..Default::default()
-    }),
+    },
   }
 }
 

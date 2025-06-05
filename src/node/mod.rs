@@ -1,15 +1,15 @@
 pub mod draw;
 pub mod measure;
 pub mod properties;
+pub mod style;
 
 use futures_util::future::join_all;
 use image::RgbaImage;
 use imageproc::{drawing::draw_filled_rect_mut, rect::Rect};
 use serde::Deserialize;
-use taffy::{AvailableSpace, Layout, NodeId, Size, TaffyError, TaffyTree, style::Style};
+use taffy::{AvailableSpace, Layout, NodeId, Size, TaffyError, TaffyTree};
 
 use crate::{
-  color::Color,
   context::Context,
   node::{
     draw::{draw_circle, draw_image, draw_rect, draw_text},
@@ -17,14 +17,14 @@ use crate::{
     properties::{
       CircleProperties, ContainerProperties, ImageProperties, RectProperties, TextProperties,
     },
+    style::Style,
   },
 };
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct Node {
-  pub background_color: Option<Color>,
-  pub border_color: Option<Color>,
-  pub style: Option<Style>,
+  #[serde(default)]
+  pub style: Style,
   #[serde(flatten)]
   pub properties: NodeProperties,
 }
@@ -42,6 +42,8 @@ pub enum NodeProperties {
 
 impl Node {
   pub fn create_taffy_leaf(self, taffy: &mut TaffyTree<Node>) -> Result<NodeId, TaffyError> {
+    let style = self.style.clone().into();
+
     if let NodeProperties::Container(props) = self.properties {
       let children = props
         .children
@@ -49,15 +51,12 @@ impl Node {
         .map(|child| child.create_taffy_leaf(taffy))
         .collect::<Result<Vec<NodeId>, TaffyError>>()?;
 
-      let container =
-        taffy.new_with_children(self.style.unwrap_or_default(), children.as_slice())?;
+      let container = taffy.new_with_children(style, children.as_slice())?;
 
       taffy.set_node_context(
         container,
         Some(Node {
-          background_color: self.background_color,
-          border_color: self.border_color,
-          style: None,
+          style: self.style,
           properties: NodeProperties::Space,
         }),
       )?;
@@ -65,11 +64,9 @@ impl Node {
       Ok(container)
     } else {
       taffy.new_leaf_with_context(
-        self.style.unwrap_or_default(),
+        style,
         Node {
-          background_color: self.background_color,
-          border_color: self.border_color,
-          style: None,
+          style: Default::default(),
           properties: self.properties,
         },
       )
@@ -85,7 +82,9 @@ impl Node {
     known_dimensions: Size<Option<f32>>,
   ) -> Size<f32> {
     match &self.properties {
-      NodeProperties::Image(props) => measure_image(context, props, known_dimensions, available_space),
+      NodeProperties::Image(props) => {
+        measure_image(context, props, known_dimensions, available_space)
+      }
       NodeProperties::Text(props) => measure_text(context, props, available_space),
       _ => Size::ZERO,
     }
@@ -102,7 +101,7 @@ impl Node {
   }
 
   pub fn render(&self, context: &Context, canvas: &mut RgbaImage, layout: Layout) {
-    if let Some(background_color) = self.background_color {
+    if let Some(background_color) = self.style.background_color {
       let rect = Rect::at(layout.location.x as i32, layout.location.y as i32)
         .of_size(layout.size.width as u32, layout.size.height as u32);
 
