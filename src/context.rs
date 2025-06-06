@@ -5,7 +5,7 @@ use lru::LruCache;
 
 use crate::{
   font::{FontError, load_woff2_font},
-  node::{draw::ImageFetchCache, measure::TextMeasureCache},
+  node::draw::ImageFetchCache,
 };
 
 pub struct Context {
@@ -13,7 +13,6 @@ pub struct Context {
   pub print_debug_tree: bool,
   pub font_system: Mutex<FontSystem>,
   pub font_cache: Mutex<SwashCache>,
-  pub text_measure_cache: TextMeasureCache,
 }
 
 impl Default for Context {
@@ -23,7 +22,6 @@ impl Default for Context {
       print_debug_tree: false,
       font_system: Mutex::new(FontSystem::new()),
       font_cache: Mutex::new(SwashCache::new()),
-      text_measure_cache: Mutex::new(LruCache::new(NonZeroUsize::new(100).unwrap())),
     }
   }
 }

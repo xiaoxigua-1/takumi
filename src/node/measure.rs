@@ -1,8 +1,4 @@
-use std::sync::Mutex;
-
 use cosmic_text::{Attrs, Buffer, Metrics, Shaping};
-use float_ord::FloatOrd;
-use lru::LruCache;
 use taffy::{AvailableSpace, geometry::Size};
 
 use crate::{
@@ -12,17 +8,6 @@ use crate::{
     properties::{ImageProperties, TextProperties},
   },
 };
-
-#[derive(Debug, Clone, Hash, Eq, PartialEq)]
-pub struct TextMeasureCacheKey {
-  pub font_size: FloatOrd<f32>,
-  pub line_height: FloatOrd<f32>,
-  pub width_constraint: Option<FloatOrd<f32>>,
-  pub height_constraint: Option<FloatOrd<f32>>,
-  pub content: String,
-}
-
-pub type TextMeasureCache = Mutex<LruCache<TextMeasureCacheKey, Size<f32>>>;
 
 pub fn measure_image(
   context: &Context,
@@ -91,21 +76,6 @@ pub fn measure_text(
     AvailableSpace::Definite(height) => Some(height),
   });
 
-  let cache_key = TextMeasureCacheKey {
-    font_size: FloatOrd(props.font_size),
-    line_height: FloatOrd(props.line_height),
-    width_constraint: width_constraint.map(FloatOrd),
-    height_constraint: height_constraint.map(FloatOrd),
-    content: props.content.clone(),
-  };
-
-  let mut lock = context.text_measure_cache.lock().unwrap();
-  if let Some(size) = lock.get(&cache_key) {
-    return *size;
-  }
-
-  drop(lock);
-
   let mut font_system = context.font_system.lock().unwrap();
 
   let metrics = Metrics::relative(props.font_size, props.line_height);
@@ -126,10 +96,5 @@ pub fn measure_text(
     });
   let height = total_lines as f32 * buffer.metrics().line_height;
 
-  let size = taffy::Size { width, height };
-
-  let mut lock = context.text_measure_cache.lock().unwrap();
-  lock.put(cache_key, size);
-
-  size
+  taffy::Size { width, height }
 }
