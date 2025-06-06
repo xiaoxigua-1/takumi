@@ -5,7 +5,7 @@ pub mod style;
 
 use futures_util::future::join_all;
 use image::RgbaImage;
-use imageproc::{drawing::draw_filled_rect_mut, rect::Rect};
+use imageproc::{drawing::{draw_filled_rect_mut, Blend}, rect::Rect};
 use serde::Deserialize;
 use taffy::{AvailableSpace, Layout, NodeId, Size, TaffyError, TaffyTree};
 
@@ -79,7 +79,9 @@ impl Node {
       NodeProperties::Image(props) => {
         measure_image(context, props, known_dimensions, available_space)
       }
-      NodeProperties::Text(props) => measure_text(context, props, available_space),
+      NodeProperties::Text(props) => {
+        measure_text(context, props, known_dimensions, available_space)
+      }
       _ => Size::ZERO,
     }
   }
@@ -94,7 +96,7 @@ impl Node {
     }
   }
 
-  pub fn render(&self, context: &Context, canvas: &mut RgbaImage, layout: Layout) {
+  pub fn render(&self, context: &Context, canvas: &mut Blend<RgbaImage>, layout: Layout) {
     if let Some(background_color) = self.style.background_color {
       let x = layout.content_box_x();
       let y = layout.content_box_y();

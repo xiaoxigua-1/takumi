@@ -56,19 +56,15 @@ async fn main() {
   };
 
   context
-    .font_store
-    .load_woff2_font(
-      Path::new("assets/noto-sans-tc-v36-chinese-traditional_latin-regular.woff2"),
-      "Noto Sans TC",
-    )
+    .load_woff2_font(Path::new(
+      "assets/noto-sans-tc-v36-chinese-traditional_latin-regular.woff2",
+    ))
     .unwrap();
 
   context
-    .font_store
-    .load_woff2_font(
-      Path::new("assets/noto-sans-tc-v36-chinese-traditional_latin-700.woff2"),
-      "Noto Sans TC 700",
-    )
+    .load_woff2_font(Path::new(
+      "assets/noto-sans-tc-v36-chinese-traditional_latin-700.woff2",
+    ))
     .unwrap();
 
   // Initialize the router with our image generation endpoint

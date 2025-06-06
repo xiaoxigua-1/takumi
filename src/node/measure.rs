@@ -1,4 +1,4 @@
-use imageproc::drawing::text_size;
+use cosmic_text::{Attrs, Buffer, Metrics, Shaping};
 use taffy::{AvailableSpace, geometry::Size};
 
 use crate::{
@@ -61,14 +61,34 @@ pub fn measure_image(
 pub fn measure_text(
   context: &Context,
   props: &TextProperties,
-  _available_space: Size<AvailableSpace>,
+  known_dimensions: Size<Option<f32>>,
+  available_space: Size<AvailableSpace>,
 ) -> Size<f32> {
-  let font = props.font(context);
+  let mut font_system = context.font_system.lock().unwrap();
 
-  let (width, _) = text_size(props.font_size, &font, &props.content);
+  let metrics = Metrics::relative(props.font_size, props.line_height);
+  let mut buffer = Buffer::new(&mut font_system, metrics);
 
-  Size {
-    width: width as f32,
-    height: props.font_size * props.line_height,
-  }
+  let width_constraint = known_dimensions.width.or(match available_space.width {
+    AvailableSpace::MinContent => Some(0.0),
+    AvailableSpace::MaxContent => None,
+    AvailableSpace::Definite(width) => Some(width),
+  });
+
+  buffer.set_size(&mut font_system, width_constraint, None);
+
+  let attrs = Attrs::new().weight(props.font_weight.into());
+
+  buffer.set_text(&mut font_system, &props.content, &attrs, Shaping::Advanced);
+
+  buffer.shape_until_scroll(&mut font_system, false);
+
+  let (width, total_lines) = buffer
+    .layout_runs()
+    .fold((0.0, 0usize), |(width, total_lines), run| {
+      (run.line_w.max(width), total_lines + 1)
+    });
+  let height = total_lines as f32 * buffer.metrics().line_height;
+
+  taffy::Size { width, height }
 }

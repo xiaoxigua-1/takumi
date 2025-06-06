@@ -1,4 +1,5 @@
 use image::{ImageBuffer, RgbaImage};
+use imageproc::drawing::Blend;
 use taffy::{AvailableSpace, NodeId, Point, TaffyTree, geometry::Size};
 
 use crate::{
@@ -59,7 +60,7 @@ impl ImageRenderer {
     taffy: &mut TaffyTree<Node>,
     root_node_id: NodeId,
   ) -> RgbaImage {
-    let mut canvas = ImageBuffer::new(self.content_width, self.content_height);
+    let mut canvas = Blend(ImageBuffer::new(self.content_width, self.content_height));
 
     let available_space = Size {
       width: AvailableSpace::Definite(self.content_width as f32),
@@ -94,13 +95,13 @@ impl ImageRenderer {
 
     draw_from_node_id_with_layout(context, &mut canvas, taffy, root_node_id, Point::zero());
 
-    canvas
+    canvas.0
   }
 }
 
 fn draw_from_node_id_with_layout(
   context: &Context,
-  canvas: &mut RgbaImage,
+  canvas: &mut Blend<RgbaImage>,
   taffy: &mut TaffyTree<Node>,
   node_id: NodeId,
   relative_offset: Point<f32>,
@@ -115,12 +116,6 @@ fn draw_from_node_id_with_layout(
   node_kind.render(context, canvas, node_layout);
 
   for child_id in taffy.children(node_id).unwrap() {
-    draw_from_node_id_with_layout(
-      context,
-      canvas,
-      taffy,
-      child_id,
-      node_layout.location,
-    );
+    draw_from_node_id_with_layout(context, canvas, taffy, child_id, node_layout.location);
   }
 }
