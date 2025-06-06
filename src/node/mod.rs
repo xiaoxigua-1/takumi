@@ -4,8 +4,11 @@ pub mod properties;
 pub mod style;
 
 use futures_util::future::join_all;
-use image::RgbaImage;
-use imageproc::{drawing::{draw_filled_rect_mut, Blend}, rect::Rect};
+use image::{Rgba, RgbaImage};
+use imageproc::{
+  drawing::{Blend, draw_filled_rect_mut, draw_hollow_rect_mut},
+  rect::Rect,
+};
 use serde::Deserialize;
 use taffy::{AvailableSpace, Layout, NodeId, Size, TaffyError, TaffyTree};
 
@@ -96,7 +99,7 @@ impl Node {
     }
   }
 
-  pub fn render(&self, context: &Context, canvas: &mut Blend<RgbaImage>, layout: Layout) {
+  pub fn draw_on_canvas(&self, context: &Context, canvas: &mut Blend<RgbaImage>, layout: Layout) {
     if let Some(background_color) = self.style.background_color {
       let x = layout.content_box_x();
       let y = layout.content_box_y();
@@ -114,5 +117,26 @@ impl Node {
       NodeProperties::Image(props) => draw_image(props, context, canvas, layout),
       _ => {}
     }
+
+    draw_debug_border(canvas, layout);
   }
+}
+
+pub fn draw_debug_border(canvas: &mut Blend<RgbaImage>, layout: Layout) {
+  let x = layout.content_box_x();
+  let y = layout.content_box_y();
+  let size = layout.content_box_size();
+
+  draw_hollow_rect_mut(
+    canvas,
+    Rect::at(x as i32, y as i32).of_size(size.width as u32, size.height as u32),
+    Rgba([255, 0, 0, 100]),
+  );
+
+  draw_hollow_rect_mut(
+    canvas,
+    Rect::at(layout.location.x as i32, layout.location.y as i32)
+      .of_size(layout.size.width as u32, layout.size.height as u32),
+    Rgba([0, 255, 0, 100]),
+  );
 }

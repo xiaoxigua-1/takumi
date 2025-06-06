@@ -113,7 +113,7 @@ fn draw_from_node_id_with_layout(
 
   let node_kind = taffy.get_node_context(node_id).unwrap();
 
-  node_kind.render(context, canvas, node_layout);
+  node_kind.draw_on_canvas(context, canvas, node_layout);
 
   for child_id in taffy.children(node_id).unwrap() {
     draw_from_node_id_with_layout(context, canvas, taffy, child_id, node_layout.location);

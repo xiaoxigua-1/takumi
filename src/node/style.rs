@@ -1,7 +1,8 @@
 use serde::Deserialize;
 use taffy::{
   AlignItems, Dimension, Display, FlexDirection, JustifyContent, LengthPercentage,
-  LengthPercentageAuto, Position, Rect, Size, style::Style as TaffyStyle, style_helpers::TaffyZero,
+  LengthPercentageAuto, Position, Rect, Size, prelude::FromLength, style::Style as TaffyStyle,
+  style_helpers::TaffyZero,
 };
 
 use crate::color::Color;
@@ -28,30 +29,13 @@ impl From<f32> for Length {
 
 impl From<Length> for LengthPercentage {
   fn from(value: Length) -> Self {
-    LengthPercentage::Length(value.0)
+    LengthPercentage::length(value.0)
   }
 }
 
 impl From<Length> for LengthPercentageAuto {
   fn from(value: Length) -> Self {
-    LengthPercentageAuto::Length(value.0)
-  }
-}
-
-// Helper trait to mark types that can be converted from Length
-pub trait FromLength {
-  fn from_length(value: Length) -> Self;
-}
-
-impl FromLength for LengthPercentage {
-  fn from_length(value: Length) -> Self {
-    value.into()
-  }
-}
-
-impl FromLength for LengthPercentageAuto {
-  fn from_length(value: Length) -> Self {
-    value.into()
+    LengthPercentageAuto::from_length(value.0)
   }
 }
 
@@ -73,6 +57,7 @@ pub struct Style {
   pub align_items: Option<AlignItems>,
   pub position: Position,
   pub gap: Gap,
+  pub flex_grow: f32,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -92,12 +77,12 @@ impl From<Gap> for Size<LengthPercentage> {
   fn from(gap: Gap) -> Self {
     match gap {
       Gap::SingleValue(value) => Size {
-        width: LengthPercentage::Length(value.into()),
-        height: LengthPercentage::Length(value.into()),
+        width: LengthPercentage::length(value.into()),
+        height: LengthPercentage::length(value.into()),
       },
       Gap::Array(horizontal, vertical) => Size {
-        width: LengthPercentage::Length(horizontal.into()),
-        height: LengthPercentage::Length(vertical.into()),
+        width: LengthPercentage::length(horizontal.into()),
+        height: LengthPercentage::length(vertical.into()),
       },
     }
   }
@@ -160,9 +145,9 @@ pub enum ValueOrAutoFull<T> {
 impl From<ValueOrAutoFull<Length>> for Dimension {
   fn from(value: ValueOrAutoFull<Length>) -> Self {
     match value {
-      ValueOrAutoFull::SpecificValue(value) => Dimension::Length(value.into()),
-      ValueOrAutoFull::Auto => Dimension::Auto,
-      ValueOrAutoFull::Full => Dimension::Percent(1.0),
+      ValueOrAutoFull::SpecificValue(value) => Dimension::length(value.into()),
+      ValueOrAutoFull::Auto => Dimension::auto(),
+      ValueOrAutoFull::Full => Dimension::percent(1.0),
     }
   }
 }
@@ -170,9 +155,9 @@ impl From<ValueOrAutoFull<Length>> for Dimension {
 impl From<ValueOrAutoFull<Length>> for LengthPercentageAuto {
   fn from(value: ValueOrAutoFull<Length>) -> Self {
     match value {
-      ValueOrAutoFull::SpecificValue(value) => LengthPercentageAuto::Length(value.into()),
-      ValueOrAutoFull::Auto => LengthPercentageAuto::Auto,
-      ValueOrAutoFull::Full => LengthPercentageAuto::Percent(1.0),
+      ValueOrAutoFull::SpecificValue(value) => LengthPercentageAuto::length(value.into()),
+      ValueOrAutoFull::Auto => LengthPercentageAuto::auto(),
+      ValueOrAutoFull::Full => LengthPercentageAuto::percent(1.0),
     }
   }
 }
@@ -238,6 +223,7 @@ impl From<Style> for TaffyStyle {
       flex_direction: style.flex_direction,
       position: style.position,
       justify_content: style.justify_content,
+      flex_grow: style.flex_grow,
       align_items: style.align_items,
       gap: style.gap.into(),
       ..Default::default()
