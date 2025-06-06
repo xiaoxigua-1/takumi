@@ -11,6 +11,7 @@ use crate::{
 pub struct Context {
   pub image_fetch_cache: ImageFetchCache,
   pub print_debug_tree: bool,
+  pub draw_debug_border: bool,
   pub font_system: Mutex<FontSystem>,
   pub font_cache: Mutex<SwashCache>,
 }
@@ -20,6 +21,7 @@ impl Default for Context {
     Self {
       image_fetch_cache: Mutex::new(LruCache::new(NonZeroUsize::new(100).unwrap())),
       print_debug_tree: false,
+      draw_debug_border: false,
       font_system: Mutex::new(FontSystem::new()),
       font_cache: Mutex::new(SwashCache::new()),
     }

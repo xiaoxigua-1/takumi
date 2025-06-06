@@ -78,6 +78,8 @@ pub fn draw_text(
 
   let mut font_cache = context.font_cache.lock().unwrap();
 
+  let alpha = props.color.alpha();
+
   buffer.draw(
     &mut font_system,
     &mut font_cache,
@@ -95,10 +97,12 @@ pub fn draw_text(
         return;
       }
 
+      let color = Rgba([color.r(), color.g(), color.b(), (color.a() as f32 * alpha) as u8]);
+
       draw_filled_rect_mut(
         canvas,
         Rect::at(start_x as i32 + x, start_y as i32 + y).of_size(w, h),
-        Rgba(color.as_rgba()),
+        color,
       );
     },
   );

@@ -9,6 +9,19 @@ pub enum Color {
   RgbInt(u32),
 }
 
+impl Color {
+  pub fn alpha(&self) -> f32 {
+    match self {
+      Color::Rgba(_, _, _, a) => *a,
+      _ => 1.0,
+    }
+  }
+
+  pub fn alpha_u8(&self) -> u8 {
+    (self.alpha() * 255.0) as u8
+  }
+}
+
 impl From<Color> for cosmic_text::Color {
   fn from(color: Color) -> Self {
     match color {

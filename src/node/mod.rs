@@ -118,7 +118,9 @@ impl Node {
       _ => {}
     }
 
-    draw_debug_border(canvas, layout);
+    if context.draw_debug_border {
+      draw_debug_border(canvas, layout);
+    }
   }
 }
 

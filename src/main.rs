@@ -22,6 +22,9 @@ struct Args {
   #[arg(short, long, default_value_t = false)]
   print_debug_tree: bool,
 
+  #[arg(short, long, default_value_t = false)]
+  draw_debug_border: bool,
+
   #[arg(short, long, value_parser)]
   fonts: Vec<String>,
 }
@@ -52,6 +55,7 @@ async fn main() {
 
   let context = Context {
     print_debug_tree: args.print_debug_tree,
+    draw_debug_border: args.draw_debug_border,
     ..Default::default()
   };
 
