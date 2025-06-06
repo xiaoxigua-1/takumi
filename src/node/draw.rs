@@ -55,6 +55,12 @@ pub fn draw_text(
   canvas: &mut Blend<RgbaImage>,
   layout: Layout,
 ) {
+  let alpha = props.color.alpha();
+
+  if alpha == 0.0 {
+    return;
+  }
+
   let content_box = layout.content_box_size();
 
   let start_x = layout.content_box_x();
@@ -78,26 +84,21 @@ pub fn draw_text(
 
   let mut font_cache = context.font_cache.lock().unwrap();
 
-  let alpha = props.color.alpha();
-
   buffer.draw(
     &mut font_system,
     &mut font_cache,
     props.color.into(),
     |x, y, w, h, color| {
-      if color.a() == 0
-        || x < 0
-        || x >= content_box.width as i32
-        || y < 0
-        || y >= content_box.height as i32
-        || w != 1
-        || h != 1
-      {
-        // Ignore alphas of 0, or invalid x, y coordinates, or unimplemented sizes
+      if color.a() == 0 {
         return;
       }
 
-      let color = Rgba([color.r(), color.g(), color.b(), (color.a() as f32 * alpha) as u8]);
+      let color = Rgba([
+        color.r(),
+        color.g(),
+        color.b(),
+        (color.a() as f32 * alpha) as u8,
+      ]);
 
       draw_filled_rect_mut(
         canvas,
