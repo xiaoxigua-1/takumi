@@ -20,7 +20,7 @@ use crate::{
     properties::{
       CircleProperties, ContainerProperties, ImageProperties, RectProperties, TextProperties,
     },
-    style::Style,
+    style::{InheritableStyle, Style},
   },
 };
 
@@ -44,17 +44,30 @@ pub enum NodeProperties {
 }
 
 impl Node {
-  pub fn create_taffy_leaf(self, taffy: &mut TaffyTree<Node>) -> Result<NodeId, TaffyError> {
-    let style = self.style.clone().into();
+  pub fn create_taffy_leaf(
+    mut self,
+    taffy: &mut TaffyTree<Node>,
+    parent_inheritable_style: Option<&InheritableStyle>,
+  ) -> Result<NodeId, TaffyError> {
+    if let Some(parent_inheritable_style) = parent_inheritable_style {
+      self.style.inheritable_style = self
+        .style
+        .inheritable_style
+        .inherit_from(parent_inheritable_style);
+    }
+
+    let next_inheritable_style = self.style.inheritable_style.clone();
+
+    let taffy_style = self.style.clone().into();
 
     if let NodeProperties::Container(props) = self.properties {
       let children = props
         .children
         .into_iter()
-        .map(|child| child.create_taffy_leaf(taffy))
+        .map(|child| child.create_taffy_leaf(taffy, Some(&next_inheritable_style)))
         .collect::<Result<Vec<NodeId>, TaffyError>>()?;
 
-      let container = taffy.new_with_children(style, children.as_slice())?;
+      let container = taffy.new_with_children(taffy_style, children.as_slice())?;
 
       taffy.set_node_context(
         container,
@@ -66,7 +79,7 @@ impl Node {
 
       Ok(container)
     } else {
-      taffy.new_leaf_with_context(style, self)
+      taffy.new_leaf_with_context(taffy_style, self)
     }
   }
 }
@@ -82,9 +95,13 @@ impl Node {
       NodeProperties::Image(props) => {
         measure_image(context, props, known_dimensions, available_space)
       }
-      NodeProperties::Text(props) => {
-        measure_text(context, props, known_dimensions, available_space)
-      }
+      NodeProperties::Text(props) => measure_text(
+        context,
+        props,
+        &self.style,
+        known_dimensions,
+        available_space,
+      ),
       _ => Size::ZERO,
     }
   }
@@ -113,8 +130,8 @@ impl Node {
     match &self.properties {
       NodeProperties::Rect(props) => draw_rect(props, canvas, layout),
       NodeProperties::Circle(props) => draw_circle(props, canvas, layout),
-      NodeProperties::Text(props) => draw_text(props, context, canvas, layout),
-      NodeProperties::Image(props) => draw_image(props, context, canvas, layout),
+      NodeProperties::Text(props) => draw_text(props, &self.style, context, canvas, layout),
+      NodeProperties::Image(props) => draw_image(props, &self.style, context, canvas, layout),
       _ => {}
     }
 

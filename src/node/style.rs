@@ -1,3 +1,4 @@
+use cosmic_text::Weight;
 use serde::Deserialize;
 use taffy::{
   AlignItems, Dimension, Display, FlexDirection, JustifyContent, LengthPercentage,
@@ -10,6 +11,21 @@ use crate::color::Color;
 #[derive(Debug, Clone, Deserialize, Default, Copy)]
 #[serde(transparent)]
 pub struct Length(pub f32);
+
+#[derive(Debug, Copy, Clone, Deserialize)]
+pub struct FontWeight(u16);
+
+impl Default for FontWeight {
+  fn default() -> Self {
+    FontWeight(Weight::NORMAL.0)
+  }
+}
+
+impl From<FontWeight> for Weight {
+  fn from(weight: FontWeight) -> Self {
+    Weight(weight.0)
+  }
+}
 
 impl TaffyZero for Length {
   const ZERO: Self = Length(0.0);
@@ -42,22 +58,84 @@ impl From<Length> for LengthPercentageAuto {
 #[derive(Debug, Clone, Deserialize, Default)]
 #[serde(default)]
 pub struct Style {
-  pub width: Option<ValueOrAutoFull<Length>>,
-  pub height: Option<ValueOrAutoFull<Length>>,
+  pub width: ValueOrAutoFull<Length>,
+  pub height: ValueOrAutoFull<Length>,
   pub background_color: Option<Color>,
-  pub border: Option<Border>,
-  pub padding: Option<SidesValue<Length>>,
-  pub margin: Option<SidesValue<Length>>,
-  pub top: ValueOrAutoFull<Length>,
-  pub left: ValueOrAutoFull<Length>,
-  pub right: ValueOrAutoFull<Length>,
-  pub bottom: ValueOrAutoFull<Length>,
+  pub padding: SidesValue<Length>,
+  pub margin: SidesValue<Length>,
+  pub inset: SidesValue<Length>,
   pub flex_direction: FlexDirection,
   pub justify_content: Option<JustifyContent>,
   pub align_items: Option<AlignItems>,
   pub position: Position,
   pub gap: Gap,
   pub flex_grow: f32,
+  pub border_size: SidesValue<Length>,
+  #[serde(flatten)]
+  pub inheritable_style: InheritableStyle,
+}
+
+#[derive(Debug, Clone, Deserialize, Default)]
+pub struct InheritableStyle {
+  pub border_color: Option<Color>,
+  pub color: Option<Color>,
+  pub font_size: Option<f32>,
+  pub font_family: Option<String>,
+  pub line_height: Option<f32>,
+  pub font_weight: Option<FontWeight>,
+  pub max_lines: Option<u32>,
+  pub border_radius: Option<f32>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct FontStyle {
+  pub font_size: f32,
+  pub font_family: Option<String>,
+  pub line_height: f32,
+  pub font_weight: FontWeight,
+  pub max_lines: Option<u32>,
+  pub color: Color,
+}
+
+impl Default for FontStyle {
+  fn default() -> Self {
+    Self {
+      font_size: 16.0,
+      font_family: None,
+      line_height: 1.0,
+      font_weight: FontWeight::default(),
+      max_lines: None,
+      color: Color::default(),
+    }
+  }
+}
+
+impl From<&Style> for FontStyle {
+  fn from(style: &Style) -> Self {
+    Self {
+      font_size: style.inheritable_style.font_size.unwrap_or(16.0),
+      font_family: style.inheritable_style.font_family.clone(),
+      line_height: style.inheritable_style.line_height.unwrap_or(1.0),
+      font_weight: style.inheritable_style.font_weight.unwrap_or_default(),
+      max_lines: style.inheritable_style.max_lines,
+      color: style.inheritable_style.color.unwrap_or_default(),
+    }
+  }
+}
+
+impl InheritableStyle {
+  pub fn inherit_from(self, parent: &InheritableStyle) -> Self {
+    Self {
+      border_color: self.border_color.or(parent.border_color),
+      color: self.color.or(parent.color),
+      font_size: self.font_size.or(parent.font_size),
+      font_family: self.font_family.or_else(|| parent.font_family.clone()),
+      line_height: self.line_height.or(parent.line_height),
+      font_weight: self.font_weight.or(parent.font_weight),
+      max_lines: self.max_lines.or(parent.max_lines),
+      border_radius: self.border_radius.or(parent.border_radius),
+    }
+  }
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -204,21 +282,12 @@ impl From<Style> for TaffyStyle {
   fn from(style: Style) -> Self {
     Self {
       size: Size {
-        width: style.width.unwrap_or_default().into(),
-        height: style.height.unwrap_or_default().into(),
+        width: style.width.into(),
+        height: style.height.into(),
       },
-      border: style
-        .border
-        .map(|border| border.size)
-        .unwrap_or_default()
-        .into(),
-      padding: style.padding.unwrap_or_default().into(),
-      inset: Rect {
-        top: style.top.into(),
-        right: style.right.into(),
-        bottom: style.bottom.into(),
-        left: style.left.into(),
-      },
+      border: style.border_size.into(),
+      padding: style.padding.into(),
+      inset: style.inset.into(),
       display: Display::Flex,
       flex_direction: style.flex_direction,
       position: style.position,

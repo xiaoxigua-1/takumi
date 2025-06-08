@@ -1,4 +1,4 @@
-use cosmic_text::{Attrs, Buffer, Metrics, Shaping};
+use cosmic_text::{Attrs, Buffer, Family, Metrics, Shaping};
 use taffy::{AvailableSpace, geometry::Size};
 
 use crate::{
@@ -6,6 +6,7 @@ use crate::{
   node::{
     draw::ImageState,
     properties::{ImageProperties, TextProperties},
+    style::{FontStyle, Style},
   },
 };
 
@@ -61,6 +62,7 @@ pub fn measure_image(
 pub fn measure_text(
   context: &Context,
   props: &TextProperties,
+  style: &Style,
   known_dimensions: Size<Option<f32>>,
   available_space: Size<AvailableSpace>,
 ) -> Size<f32> {
@@ -76,18 +78,22 @@ pub fn measure_text(
     AvailableSpace::Definite(height) => Some(height),
   });
 
-  let height_constraint_with_max_lines = match (props.max_lines, height_constraint) {
+  let font_style: FontStyle = style.into();
+
+  let height_constraint_with_max_lines = match (font_style.max_lines, height_constraint) {
     (Some(max_lines), Some(height)) => {
-      Some((max_lines as f32 * props.line_height * props.font_size).min(height))
+      Some((max_lines as f32 * font_style.line_height * font_style.font_size).min(height))
     }
-    (Some(max_lines), None) => Some(max_lines as f32 * props.line_height * props.font_size),
+    (Some(max_lines), None) => {
+      Some(max_lines as f32 * font_style.line_height * font_style.font_size)
+    }
     (None, Some(height)) => Some(height),
     (None, None) => None,
   };
 
   let mut font_system = context.font_system.lock().unwrap();
 
-  let metrics = Metrics::relative(props.font_size, props.line_height);
+  let metrics = Metrics::relative(font_style.font_size, font_style.line_height);
   let mut buffer = Buffer::new(&mut font_system, metrics);
 
   buffer.set_size(
@@ -96,7 +102,11 @@ pub fn measure_text(
     height_constraint_with_max_lines,
   );
 
-  let attrs = Attrs::new().weight(props.font_weight.into());
+  let mut attrs = Attrs::new().weight(font_style.font_weight.into());
+
+  if let Some(font_family) = font_style.font_family.as_ref() {
+    attrs = attrs.family(Family::Name(font_family));
+  }
 
   buffer.set_text(&mut font_system, &props.content, &attrs, Shaping::Advanced);
 

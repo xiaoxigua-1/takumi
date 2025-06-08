@@ -25,11 +25,11 @@ impl TryFrom<Node> for ImageRenderer {
   type Error = ImageRendererError;
 
   fn try_from(value: Node) -> Result<Self, Self::Error> {
-    let Some(ValueOrAutoFull::SpecificValue(Length(width))) = value.style.width else {
+    let ValueOrAutoFull::SpecificValue(Length(width)) = value.style.width else {
       return Err(ImageRendererError::InvalidContentSize);
     };
 
-    let Some(ValueOrAutoFull::SpecificValue(Length(height))) = value.style.height else {
+    let ValueOrAutoFull::SpecificValue(Length(height)) = value.style.height else {
       return Err(ImageRendererError::InvalidContentSize);
     };
 
@@ -48,7 +48,7 @@ impl ImageRenderer {
     let root_node_id = self
       .root_node
       .clone()
-      .create_taffy_leaf(&mut taffy)
+      .create_taffy_leaf(&mut taffy, None)
       .unwrap();
 
     (taffy, root_node_id)

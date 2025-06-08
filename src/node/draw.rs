@@ -1,4 +1,4 @@
-use cosmic_text::{Attrs, Buffer, Metrics, Shaping};
+use cosmic_text::{Attrs, Buffer, Family, Metrics, Shaping};
 use image::{
   ImageError, Rgba, RgbaImage,
   imageops::{FilterType, overlay, resize},
@@ -10,7 +10,11 @@ use std::sync::Mutex;
 use taffy::Layout;
 
 use super::properties::{CircleProperties, ImageProperties, RectProperties, TextProperties};
-use crate::{border_radius::apply_border_radius_antialiased, context::Context};
+use crate::{
+  border_radius::apply_border_radius_antialiased,
+  context::Context,
+  node::style::{FontStyle, Style},
+};
 
 pub type ImageFetchCache = Mutex<LruCache<String, ImageState>>;
 
@@ -51,11 +55,14 @@ pub fn draw_circle(props: &CircleProperties, canvas: &mut Blend<RgbaImage>, layo
 
 pub fn draw_text(
   props: &TextProperties,
+  style: &Style,
   context: &Context,
   canvas: &mut Blend<RgbaImage>,
   layout: Layout,
 ) {
-  let alpha = props.color.alpha();
+  let font_style: FontStyle = style.into();
+
+  let alpha = font_style.color.alpha();
 
   if alpha == 0.0 {
     return;
@@ -64,14 +71,18 @@ pub fn draw_text(
   let content_box = layout.content_box_size();
 
   let start_x = layout.content_box_x();
-  let start_y = layout.content_box_y() + props.font_size * ((props.line_height - 1.0) / 2.0);
+  let start_y =
+    layout.content_box_y() + font_style.font_size * ((font_style.line_height - 1.0) / 2.0);
 
   let mut font_system = context.font_system.lock().unwrap();
 
-  let metrics = Metrics::relative(props.font_size, props.line_height);
+  let metrics = Metrics::relative(font_style.font_size, font_style.line_height);
   let mut buffer = Buffer::new(&mut font_system, metrics);
 
-  let attrs = Attrs::new().weight(props.font_weight.into());
+  let mut attrs = Attrs::new().weight(font_style.font_weight.into());
+  if let Some(font_family) = font_style.font_family.as_ref() {
+    attrs = attrs.family(Family::Name(font_family));
+  }
 
   buffer.set_text(&mut font_system, &props.content, &attrs, Shaping::Advanced);
   buffer.set_size(
@@ -80,14 +91,14 @@ pub fn draw_text(
     Some(content_box.height),
   );
 
-  buffer.shape_until_scroll(&mut font_system, true);
+  buffer.shape_until_scroll(&mut font_system, false);
 
   let mut font_cache = context.font_cache.lock().unwrap();
 
   buffer.draw(
     &mut font_system,
     &mut font_cache,
-    props.color.into(),
+    font_style.color.into(),
     |x, y, w, h, color| {
       if color.a() == 0 {
         return;
@@ -111,6 +122,7 @@ pub fn draw_text(
 
 pub fn draw_image(
   props: &ImageProperties,
+  style: &Style,
   context: &Context,
   canvas: &mut Blend<RgbaImage>,
   layout: Layout,
@@ -127,7 +139,7 @@ pub fn draw_image(
   let should_resize =
     content_box.width as u32 != image.width() || content_box.height as u32 != image.height();
 
-  if !should_resize && props.border_radius.is_none() {
+  if !should_resize && style.inheritable_style.border_radius.is_none() {
     return overlay(&mut canvas.0, image, x as i64, y as i64);
   }
 
@@ -138,7 +150,7 @@ pub fn draw_image(
     FilterType::Lanczos3,
   );
 
-  if let Some(border_radius) = props.border_radius {
+  if let Some(border_radius) = style.inheritable_style.border_radius {
     apply_border_radius_antialiased(&mut resized, border_radius);
   }
 
