@@ -1,47 +1,6 @@
-[package]
-name = "imagen"
-version = "0.1.0"
-edition = "2024"
-
-[dependencies]
-axum = "0.8"
-imageproc = "0.25"
-bytes = "1.0"
-woff2-patched = "0.4"
-mimalloc = "0.1"
-serde_json = "1.0"
-lru = "0.14"
-futures-util = "0.3"
-
-[dependencies.cosmic-text]
-version = "0.14"
-features = ["shape-run-cache", "hashbrown"]
-
-[dependencies.clap]
-version = "4.5"
-features = ["derive"]
-
-[dependencies.taffy]
-version = "0.8"
-features = ["serde"]
-
-[dependencies.tokio]
-features = ["rt-multi-thread", "macros"]
-version = "1"
-
-[dependencies.serde]
-version = "1"
-features = ["derive"]
-
-[dependencies.image]
-default-features = false
-version = "0.25"
-features = ["jpeg", "png", "webp"]
-
-[dependencies.reqwest]
-version = "0.12"
-default-features = false
-features = ["rustls-tls", "http2"]
+[workspace]
+resolver = "3"
+members = ["imagen", "imagen-server"]
 
 [profile.release]
 strip = true

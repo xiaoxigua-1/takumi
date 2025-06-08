@@ -6,8 +6,7 @@ use axum::{
   routing::post,
 };
 use clap::Parser;
-use image::ImageFormat;
-use imagen::{context::Context, node::Node, render::ImageRenderer};
+use imagen::{context::Context, image::ImageFormat, node::Node, render::ImageRenderer};
 use std::{io::Cursor, net::SocketAddr, path::Path, sync::Arc};
 use tokio::net::TcpListener;
 
@@ -59,17 +58,11 @@ async fn main() {
     ..Default::default()
   };
 
-  context
-    .load_woff2_font(Path::new(
-      "assets/noto-sans-tc-v36-chinese-traditional_latin-regular.woff2",
-    ))
-    .unwrap();
-
-  context
-    .load_woff2_font(Path::new(
-      "assets/noto-sans-tc-v36-chinese-traditional_latin-700.woff2",
-    ))
-    .unwrap();
+  for font in args.fonts {
+    context
+      .load_woff2_font(Path::new(&font))
+      .unwrap();
+  }
 
   // Initialize the router with our image generation endpoint
   let app = Router::new()

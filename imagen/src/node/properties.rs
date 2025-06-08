@@ -41,14 +41,14 @@ impl ImageProperties {
       return;
     }
 
-    let state = self.fetch_state().await;
+    let state = self.fetch_state(context).await;
 
     let mut cache = context.image_fetch_cache.lock().unwrap();
     cache.put(self.src.clone(), state);
   }
 
-  async fn fetch_state(&self) -> ImageState {
-    let response = reqwest::get(&self.src).await;
+  async fn fetch_state(&self, context: &Context) -> ImageState {
+    let response = context.http.get(&self.src).send().await;
 
     if let Err(e) = response {
       return ImageState::NetworkError(e);

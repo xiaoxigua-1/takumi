@@ -1,0 +1,32 @@
+[package]
+name = "imagen"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+imageproc = "0.25"
+woff2-patched = "0.4"
+lru = "0.14"
+futures-util = "0.3"
+bytes = "1.0"
+
+[dependencies.cosmic-text]
+version = "0.14"
+features = ["shape-run-cache", "hashbrown"]
+
+[dependencies.taffy]
+version = "0.8"
+features = ["serde"]
+
+[dependencies.serde]
+version = "1"
+features = ["derive"]
+
+[dependencies.image]
+default-features = false
+version = "0.25"
+features = ["jpeg", "png", "webp"]
+
+[dependencies.reqwest]
+version = "0.12"
+default-features = false

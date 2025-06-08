@@ -2,6 +2,7 @@ use std::{num::NonZeroUsize, path::Path, sync::Mutex};
 
 use cosmic_text::{FontSystem, SwashCache};
 use lru::LruCache;
+use reqwest::Client;
 
 use crate::{
   font::{FontError, load_woff2_font},
@@ -14,6 +15,7 @@ pub struct Context {
   pub draw_debug_border: bool,
   pub font_system: Mutex<FontSystem>,
   pub font_cache: Mutex<SwashCache>,
+  pub http: Client,
 }
 
 impl Default for Context {
@@ -24,6 +26,7 @@ impl Default for Context {
       draw_debug_border: false,
       font_system: Mutex::new(FontSystem::new()),
       font_cache: Mutex::new(SwashCache::new()),
+      http: Client::new(),
     }
   }
 }
