@@ -26,7 +26,7 @@ use crate::{
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct Node {
-  #[serde(default)]
+  #[serde(default, flatten)]
   pub style: Style,
   #[serde(flatten)]
   pub properties: NodeProperties,

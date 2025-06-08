@@ -33,6 +33,7 @@ pub struct TextProperties {
   pub font_weight: FontWeight,
   #[serde(default)]
   pub color: Color,
+  pub max_lines: Option<u32>,
 }
 
 impl Default for FontWeight {

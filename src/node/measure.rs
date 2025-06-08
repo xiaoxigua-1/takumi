@@ -76,12 +76,25 @@ pub fn measure_text(
     AvailableSpace::Definite(height) => Some(height),
   });
 
+  let height_constraint_with_max_lines = match (props.max_lines, height_constraint) {
+    (Some(max_lines), Some(height)) => {
+      Some((max_lines as f32 * props.line_height * props.font_size).min(height))
+    }
+    (Some(max_lines), None) => Some(max_lines as f32 * props.line_height * props.font_size),
+    (None, Some(height)) => Some(height),
+    (None, None) => None,
+  };
+
   let mut font_system = context.font_system.lock().unwrap();
 
   let metrics = Metrics::relative(props.font_size, props.line_height);
   let mut buffer = Buffer::new(&mut font_system, metrics);
 
-  buffer.set_size(&mut font_system, width_constraint, height_constraint);
+  buffer.set_size(
+    &mut font_system,
+    width_constraint,
+    height_constraint_with_max_lines,
+  );
 
   let attrs = Attrs::new().weight(props.font_weight.into());
 
