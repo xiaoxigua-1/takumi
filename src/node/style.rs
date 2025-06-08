@@ -117,7 +117,7 @@ impl<T: FromLength + Copy + TaffyZero> From<SidesValue<Length>> for Rect<T> {
         top: T::from_length(top),
         bottom: T::from_length(bottom),
       },
-      SidesValue::AxisSidesArray(horizontal, vertical) => Rect {
+      SidesValue::AxisSidesArray(vertical, horizontal) => Rect {
         left: T::from_length(horizontal),
         right: T::from_length(horizontal),
         top: T::from_length(vertical),
