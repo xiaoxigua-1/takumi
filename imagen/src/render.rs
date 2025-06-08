@@ -5,13 +5,15 @@ use taffy::{AvailableSpace, NodeId, Point, TaffyTree, geometry::Size};
 use crate::{
   context::Context,
   node::{
-    Node,
+    ContainerNode, Node, draw_debug_border,
     style::{Length, ValueOrAutoFull},
   },
 };
 
+pub type TaffyTreeWithNodes = TaffyTree<Box<dyn Node>>;
+
 pub struct ImageRenderer {
-  pub root_node: Node,
+  pub root_node: ContainerNode,
   content_width: u32,
   content_height: u32,
 }
@@ -21,15 +23,17 @@ pub enum ImageRendererError {
   InvalidContentSize,
 }
 
-impl TryFrom<Node> for ImageRenderer {
+impl TryFrom<ContainerNode> for ImageRenderer {
   type Error = ImageRendererError;
 
-  fn try_from(value: Node) -> Result<Self, Self::Error> {
-    let ValueOrAutoFull::SpecificValue(Length(width)) = value.style.width else {
+  fn try_from(value: ContainerNode) -> Result<Self, Self::Error> {
+    let style = value.get_style();
+
+    let ValueOrAutoFull::SpecificValue(Length(width)) = style.width else {
       return Err(ImageRendererError::InvalidContentSize);
     };
 
-    let ValueOrAutoFull::SpecificValue(Length(height)) = value.style.height else {
+    let ValueOrAutoFull::SpecificValue(Length(height)) = style.height else {
       return Err(ImageRendererError::InvalidContentSize);
     };
 
@@ -42,13 +46,13 @@ impl TryFrom<Node> for ImageRenderer {
 }
 
 impl ImageRenderer {
-  pub fn create_taffy_tree(&self) -> (TaffyTree<Node>, NodeId) {
+  pub fn create_taffy_tree(&self) -> (TaffyTreeWithNodes, NodeId) {
     let mut taffy = TaffyTree::new();
 
     let root_node_id = self
       .root_node
       .clone()
-      .create_taffy_leaf(&mut taffy, None)
+      .create_taffy_leaf(&mut taffy)
       .unwrap();
 
     (taffy, root_node_id)
@@ -57,7 +61,7 @@ impl ImageRenderer {
   pub fn draw(
     &self,
     context: &Context,
-    taffy: &mut TaffyTree<Node>,
+    taffy: &mut TaffyTreeWithNodes,
     root_node_id: NodeId,
   ) -> RgbaImage {
     let mut canvas = Blend(ImageBuffer::new(self.content_width, self.content_height));
@@ -102,7 +106,7 @@ impl ImageRenderer {
 fn draw_from_node_id_with_layout(
   context: &Context,
   canvas: &mut Blend<RgbaImage>,
-  taffy: &mut TaffyTree<Node>,
+  taffy: &mut TaffyTreeWithNodes,
   node_id: NodeId,
   relative_offset: Point<f32>,
 ) {
@@ -114,6 +118,10 @@ fn draw_from_node_id_with_layout(
   let node_kind = taffy.get_node_context(node_id).unwrap();
 
   node_kind.draw_on_canvas(context, canvas, node_layout);
+
+  if context.draw_debug_border {
+    draw_debug_border(canvas, node_layout);
+  }
 
   for child_id in taffy.children(node_id).unwrap() {
     draw_from_node_id_with_layout(context, canvas, taffy, child_id, node_layout.location);

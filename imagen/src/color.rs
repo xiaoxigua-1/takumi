@@ -1,7 +1,7 @@
 use image::Rgba;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Deserialize, Copy)]
+#[derive(Debug, Clone, Deserialize, Copy, Serialize)]
 #[serde(untagged)]
 pub enum Color {
   Rgb(u8, u8, u8),

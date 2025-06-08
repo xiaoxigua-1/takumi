@@ -1,3 +1,5 @@
+mod image_store;
+
 use axum::{
   Router,
   extract::{Json, State},
@@ -6,11 +8,19 @@ use axum::{
   routing::post,
 };
 use clap::Parser;
-use imagen::{context::Context, image::ImageFormat, node::Node, render::ImageRenderer};
+use imagen::{
+  context::{Context, load_woff2_font_to_context},
+  image::ImageFormat,
+  node::{ContainerNode, Node},
+  render::ImageRenderer,
+};
+use reqwest::Client;
 use std::{io::Cursor, net::SocketAddr, path::Path, sync::Arc};
 use tokio::net::TcpListener;
 
 use mimalloc::MiMalloc;
+
+use crate::image_store::ImageStore;
 
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;
@@ -30,11 +40,11 @@ struct Args {
 
 async fn generate_image_handler(
   State(context): State<Arc<Context>>,
-  Json(root_node): Json<Node>,
+  Json(root_node): Json<ContainerNode>,
 ) -> Result<Response, StatusCode> {
   let renderer = ImageRenderer::try_from(root_node).map_err(|_| StatusCode::BAD_REQUEST)?;
 
-  renderer.root_node.hydrate(context.as_ref()).await;
+  renderer.root_node.hydrate_async(context.as_ref()).await;
 
   let (mut taffy, root_node_id) = renderer.create_taffy_tree();
 
@@ -55,13 +65,12 @@ async fn main() {
   let context = Context {
     print_debug_tree: args.print_debug_tree,
     draw_debug_border: args.draw_debug_border,
+    image_store: Box::new(ImageStore::new(Client::new())),
     ..Default::default()
   };
 
   for font in args.fonts {
-    context
-      .load_woff2_font(Path::new(&font))
-      .unwrap();
+    load_woff2_font_to_context(&context.font_context, Path::new(&font)).unwrap();
   }
 
   // Initialize the router with our image generation endpoint

@@ -3,65 +3,30 @@ use image::{
   ImageError, Rgba, RgbaImage,
   imageops::{FilterType, overlay, resize},
 };
-use imageproc::drawing::{Blend, draw_filled_circle_mut};
+use imageproc::drawing::Blend;
 use imageproc::{drawing::draw_filled_rect_mut, rect::Rect};
-use lru::LruCache;
-use std::sync::Mutex;
 use taffy::Layout;
 
-use super::properties::{CircleProperties, ImageProperties, RectProperties, TextProperties};
 use crate::{
   border_radius::apply_border_radius_antialiased,
-  context::Context,
+  context::FontContext,
   node::style::{FontStyle, Style},
 };
-
-pub type ImageFetchCache = Mutex<LruCache<String, ImageState>>;
 
 #[derive(Debug)]
 pub enum ImageState {
   Fetched(RgbaImage),
-  NetworkError(reqwest::Error),
+  NetworkError,
   DecodeError(ImageError),
 }
 
-pub fn draw_rect(props: &RectProperties, canvas: &mut Blend<RgbaImage>, layout: Layout) {
-  let content_box = layout.content_box_size();
-  let x = layout.content_box_x();
-  let y = layout.content_box_y();
-
-  let color = props.color.unwrap_or_default();
-  let rect =
-    Rect::at(x as i32, y as i32).of_size(content_box.width as u32, content_box.height as u32);
-
-  draw_filled_rect_mut(canvas, rect, color.into());
-}
-
-pub fn draw_circle(props: &CircleProperties, canvas: &mut Blend<RgbaImage>, layout: Layout) {
-  let content_box = layout.content_box_size();
-  let x = layout.content_box_x();
-  let y = layout.content_box_y();
-
-  let color = props.color.unwrap_or_default();
-  let size = content_box.width.min(content_box.height) / 2.0;
-
-  draw_filled_circle_mut(
-    canvas,
-    ((x + size) as i32, (y + size) as i32),
-    size as i32,
-    color.into(),
-  );
-}
-
 pub fn draw_text(
-  props: &TextProperties,
-  style: &Style,
-  context: &Context,
+  text: &str,
+  font_style: &FontStyle,
+  context: &FontContext,
   canvas: &mut Blend<RgbaImage>,
   layout: Layout,
 ) {
-  let font_style: FontStyle = style.into();
-
   let alpha = font_style.color.alpha();
 
   if alpha == 0.0 {
@@ -84,7 +49,7 @@ pub fn draw_text(
     attrs = attrs.family(Family::Name(font_family));
   }
 
-  buffer.set_text(&mut font_system, &props.content, &attrs, Shaping::Advanced);
+  buffer.set_text(&mut font_system, text, &attrs, Shaping::Advanced);
   buffer.set_size(
     &mut font_system,
     Some(content_box.width),
@@ -120,18 +85,7 @@ pub fn draw_text(
   );
 }
 
-pub fn draw_image(
-  props: &ImageProperties,
-  style: &Style,
-  context: &Context,
-  canvas: &mut Blend<RgbaImage>,
-  layout: Layout,
-) {
-  let mut lock = context.image_fetch_cache.lock().unwrap();
-  let Some(ImageState::Fetched(image)) = lock.get(&props.src) else {
-    return;
-  };
-
+pub fn draw_image(image: &RgbaImage, style: &Style, canvas: &mut Blend<RgbaImage>, layout: Layout) {
   let content_box = layout.content_box_size();
   let x = layout.content_box_x();
   let y = layout.content_box_y();

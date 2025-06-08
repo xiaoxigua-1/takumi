@@ -1,30 +1,14 @@
 use cosmic_text::{Attrs, Buffer, Family, Metrics, Shaping};
 use taffy::{AvailableSpace, geometry::Size};
 
-use crate::{
-  context::Context,
-  node::{
-    draw::ImageState,
-    properties::{ImageProperties, TextProperties},
-    style::{FontStyle, Style},
-  },
-};
+use crate::{context::FontContext, node::style::FontStyle};
 
 pub fn measure_image(
-  context: &Context,
-  props: &ImageProperties,
+  image_size: Size<f32>,
   known_dimensions: Size<Option<f32>>,
   available_space: Size<AvailableSpace>,
 ) -> Size<f32> {
-  let mut lock = context.image_fetch_cache.lock().unwrap();
-  let Some(ImageState::Fetched(image)) = lock.get(&props.src) else {
-    return Size::ZERO;
-  };
-
-  let source_width = image.width() as f32;
-  let source_height = image.height() as f32;
-
-  let source_aspect_ratio = source_width / source_height;
+  let source_aspect_ratio = image_size.width / image_size.height;
 
   let hint_width = known_dimensions.width.or({
     if let AvailableSpace::Definite(available_width) = available_space.width {
@@ -52,17 +36,14 @@ pub fn measure_image(
       width: height * source_aspect_ratio,
       height,
     },
-    (None, None) => Size {
-      width: source_width,
-      height: source_height,
-    },
+    (None, None) => image_size,
   }
 }
 
 pub fn measure_text(
-  context: &Context,
-  props: &TextProperties,
-  style: &Style,
+  font_context: &FontContext,
+  text: &str,
+  font_style: &FontStyle,
   known_dimensions: Size<Option<f32>>,
   available_space: Size<AvailableSpace>,
 ) -> Size<f32> {
@@ -78,8 +59,6 @@ pub fn measure_text(
     AvailableSpace::Definite(height) => Some(height),
   });
 
-  let font_style: FontStyle = style.into();
-
   let height_constraint_with_max_lines = match (font_style.max_lines, height_constraint) {
     (Some(max_lines), Some(height)) => {
       Some((max_lines as f32 * font_style.line_height * font_style.font_size).min(height))
@@ -91,7 +70,7 @@ pub fn measure_text(
     (None, None) => None,
   };
 
-  let mut font_system = context.font_system.lock().unwrap();
+  let mut font_system = font_context.font_system.lock().unwrap();
 
   let metrics = Metrics::relative(font_style.font_size, font_style.line_height);
   let mut buffer = Buffer::new(&mut font_system, metrics);
@@ -108,7 +87,7 @@ pub fn measure_text(
     attrs = attrs.family(Family::Name(font_family));
   }
 
-  buffer.set_text(&mut font_system, &props.content, &attrs, Shaping::Advanced);
+  buffer.set_text(&mut font_system, text, &attrs, Shaping::Advanced);
 
   buffer.shape_until_scroll(&mut font_system, false);
 

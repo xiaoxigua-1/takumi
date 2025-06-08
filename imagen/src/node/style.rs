@@ -1,5 +1,5 @@
 use cosmic_text::Weight;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use taffy::{
   AlignItems, Dimension, Display, FlexDirection, JustifyContent, LengthPercentage,
   LengthPercentageAuto, Position, Rect, Size, prelude::FromLength, style::Style as TaffyStyle,
@@ -8,11 +8,11 @@ use taffy::{
 
 use crate::color::Color;
 
-#[derive(Debug, Clone, Deserialize, Default, Copy)]
+#[derive(Debug, Clone, Deserialize, Default, Copy, Serialize)]
 #[serde(transparent)]
 pub struct Length(pub f32);
 
-#[derive(Debug, Copy, Clone, Deserialize)]
+#[derive(Debug, Copy, Clone, Deserialize, Serialize)]
 pub struct FontWeight(u16);
 
 impl Default for FontWeight {
@@ -55,12 +55,31 @@ impl From<Length> for LengthPercentageAuto {
   }
 }
 
-#[derive(Debug, Clone, Deserialize, Default)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub enum ObjectFit {
+  Contain,
+  Cover,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(untagged)]
+pub enum Background {
+  Image(String),
+  Color(Color),
+}
+
+impl Default for ObjectFit {
+  fn default() -> Self {
+    Self::Contain
+  }
+}
+
+#[derive(Debug, Clone, Deserialize, Default, Serialize)]
 #[serde(default)]
 pub struct Style {
   pub width: ValueOrAutoFull<Length>,
   pub height: ValueOrAutoFull<Length>,
-  pub background_color: Option<Color>,
   pub padding: SidesValue<Length>,
   pub margin: SidesValue<Length>,
   pub inset: SidesValue<Length>,
@@ -71,11 +90,14 @@ pub struct Style {
   pub gap: Gap,
   pub flex_grow: f32,
   pub border_size: SidesValue<Length>,
+  pub object_fit: Option<ObjectFit>,
+  pub background: Option<Background>,
+
   #[serde(flatten)]
   pub inheritable_style: InheritableStyle,
 }
 
-#[derive(Debug, Clone, Deserialize, Default)]
+#[derive(Debug, Clone, Deserialize, Default, Serialize)]
 pub struct InheritableStyle {
   pub border_color: Option<Color>,
   pub color: Option<Color>,
@@ -87,7 +109,7 @@ pub struct InheritableStyle {
   pub border_radius: Option<f32>,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct FontStyle {
   pub font_size: f32,
   pub font_family: Option<String>,
@@ -138,7 +160,7 @@ impl InheritableStyle {
   }
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(untagged)]
 pub enum Gap {
   SingleValue(Length),
@@ -166,13 +188,13 @@ impl From<Gap> for Size<LengthPercentage> {
   }
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Border {
   pub color: Option<Color>,
   pub size: SidesValue<Length>,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(untagged)]
 pub enum SidesValue<T: Default> {
   SingleValue(T),
@@ -211,7 +233,7 @@ impl<T: FromLength + Copy + TaffyZero> From<SidesValue<Length>> for Rect<T> {
   }
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub enum ValueOrAutoFull<T> {
   Full,
@@ -246,7 +268,7 @@ impl<T> Default for ValueOrAutoFull<T> {
   }
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct AxisSides<T> {
   #[serde(default)]
   pub horizontal: T,
@@ -254,7 +276,7 @@ pub struct AxisSides<T> {
   pub vertical: T,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct IndividualSides<T> {
   #[serde(default)]
   pub top: T,
