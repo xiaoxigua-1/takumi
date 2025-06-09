@@ -13,6 +13,7 @@ use imageproc::{
   drawing::{Blend, draw_filled_rect_mut, draw_hollow_rect_mut},
   rect::Rect,
 };
+use merge::Merge;
 use serde::{Deserialize, Serialize};
 use taffy::{AvailableSpace, Layout, NodeId, Size, TaffyError};
 
@@ -31,6 +32,20 @@ use crate::{
 #[async_trait]
 pub trait Node: Send + Sync + Debug + DynClone {
   fn get_style(&self) -> &Style;
+
+  fn get_style_mut(&mut self) -> &mut Style;
+
+  fn inherit_style(&mut self, parent: &Style) {
+    let style = self.get_style_mut();
+
+    style
+      .inheritable_style
+      .merge(parent.inheritable_style.clone());
+
+    self.inherit_style_for_children();
+  }
+
+  fn inherit_style_for_children(&mut self) {}
 
   fn should_hydrate_async(&self) -> bool {
     false
@@ -72,6 +87,10 @@ impl Node for ContainerNode {
     &self.style
   }
 
+  fn get_style_mut(&mut self) -> &mut Style {
+    &mut self.style
+  }
+
   fn should_hydrate_async(&self) -> bool {
     self
       .children
@@ -89,6 +108,14 @@ impl Node for ContainerNode {
     });
 
     join_all(futures).await;
+  }
+
+  fn inherit_style_for_children(&mut self) {
+    let style = self.get_style().clone();
+
+    for child in self.children.iter_mut() {
+      child.inherit_style(&style);
+    }
   }
 
   fn create_taffy_leaf(&self, taffy: &mut TaffyTreeWithNodes) -> Result<NodeId, TaffyError> {
@@ -125,6 +152,10 @@ pub struct TextNode {
 impl Node for TextNode {
   fn get_style(&self) -> &Style {
     &self.style
+  }
+
+  fn get_style_mut(&mut self) -> &mut Style {
+    &mut self.style
   }
 
   fn create_taffy_leaf(&self, taffy: &mut TaffyTreeWithNodes) -> Result<NodeId, TaffyError> {
@@ -177,6 +208,10 @@ impl Node for ImageNode {
     &self.style
   }
 
+  fn get_style_mut(&mut self) -> &mut Style {
+    &mut self.style
+  }
+
   fn create_taffy_leaf(&self, taffy: &mut TaffyTreeWithNodes) -> Result<NodeId, TaffyError> {
     taffy.new_leaf_with_context(self.style.clone().into(), Box::new(self.clone()))
   }
@@ -186,18 +221,17 @@ impl Node for ImageNode {
   }
 
   async fn hydrate_async(&self, context: &Context) {
-    let image = self.image.clone();
     let image_store = &context.image_store;
 
     if let Some(img) = image_store.get(&self.src) {
-      image.set(img).unwrap();
+      self.image.set(img).unwrap();
       return;
     }
 
     let img = image_store.fetch_async(&self.src).await;
 
     image_store.insert(self.src.clone(), img.clone());
-    image.set(img).unwrap();
+    self.image.set(img).unwrap();
   }
 
   fn measure(

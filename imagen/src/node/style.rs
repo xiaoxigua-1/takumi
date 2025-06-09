@@ -1,4 +1,5 @@
 use cosmic_text::Weight;
+use merge::{option::overwrite_none, Merge};
 use serde::{Deserialize, Serialize};
 use taffy::{
   AlignItems, Dimension, Display, FlexDirection, JustifyContent, LengthPercentage,
@@ -97,7 +98,8 @@ pub struct Style {
   pub inheritable_style: InheritableStyle,
 }
 
-#[derive(Debug, Clone, Deserialize, Default, Serialize)]
+#[derive(Debug, Clone, Deserialize, Default, Serialize, Merge)]
+#[merge(strategy = overwrite_none)]
 pub struct InheritableStyle {
   pub border_color: Option<Color>,
   pub color: Option<Color>,
@@ -146,12 +148,12 @@ impl From<&Style> for FontStyle {
 }
 
 impl InheritableStyle {
-  pub fn inherit_from(self, parent: &InheritableStyle) -> Self {
+  pub fn inherit_from(&self, parent: &InheritableStyle) -> Self {
     Self {
       border_color: self.border_color.or(parent.border_color),
       color: self.color.or(parent.color),
       font_size: self.font_size.or(parent.font_size),
-      font_family: self.font_family.or_else(|| parent.font_family.clone()),
+      font_family: self.font_family.clone().or_else(|| parent.font_family.clone()),
       line_height: self.line_height.or(parent.line_height),
       font_weight: self.font_weight.or(parent.font_weight),
       max_lines: self.max_lines.or(parent.max_lines),

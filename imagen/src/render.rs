@@ -49,11 +49,7 @@ impl ImageRenderer {
   pub fn create_taffy_tree(&self) -> (TaffyTreeWithNodes, NodeId) {
     let mut taffy = TaffyTree::new();
 
-    let root_node_id = self
-      .root_node
-      .clone()
-      .create_taffy_leaf(&mut taffy)
-      .unwrap();
+    let root_node_id = self.root_node.create_taffy_leaf(&mut taffy).unwrap();
 
     (taffy, root_node_id)
   }

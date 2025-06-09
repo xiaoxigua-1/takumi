@@ -42,16 +42,17 @@ async fn generate_image_handler(
   State(context): State<Arc<Context>>,
   Json(root_node): Json<ContainerNode>,
 ) -> Result<Response, StatusCode> {
-  let renderer = ImageRenderer::try_from(root_node).map_err(|_| StatusCode::BAD_REQUEST)?;
+  let mut renderer = ImageRenderer::try_from(root_node).map_err(|_| StatusCode::BAD_REQUEST)?;
 
-  renderer.root_node.hydrate_async(context.as_ref()).await;
+  renderer.root_node.inherit_style_for_children();
+  renderer.root_node.hydrate_async(&context).await;
 
   let (mut taffy, root_node_id) = renderer.create_taffy_tree();
 
   let mut buffer = Vec::new();
   let mut cursor = Cursor::new(&mut buffer);
 
-  let image = renderer.draw(context.as_ref(), &mut taffy, root_node_id);
+  let image = renderer.draw(&context, &mut taffy, root_node_id);
 
   image.write_to(&mut cursor, ImageFormat::WebP).unwrap();
 
