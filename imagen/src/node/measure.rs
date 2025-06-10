@@ -70,16 +70,8 @@ pub fn measure_text(
     (None, None) => None,
   };
 
-  let mut font_system = font_context.font_system.lock().unwrap();
-
   let metrics = Metrics::relative(font_style.font_size, font_style.line_height);
-  let mut buffer = Buffer::new(&mut font_system, metrics);
-
-  buffer.set_size(
-    &mut font_system,
-    width_constraint,
-    height_constraint_with_max_lines,
-  );
+  let mut buffer = Buffer::new_empty(metrics);
 
   let mut attrs = Attrs::new().weight(font_style.font_weight.into());
 
@@ -87,9 +79,20 @@ pub fn measure_text(
     attrs = attrs.family(Family::Name(font_family));
   }
 
-  buffer.set_text(&mut font_system, text, &attrs, Shaping::Advanced);
+  let mut font_system = font_context.font_system.lock().unwrap();
 
-  buffer.shape_until_scroll(&mut font_system, false);
+  buffer.set_size(
+    &mut font_system,
+    width_constraint,
+    height_constraint_with_max_lines,
+  );
+  buffer.set_rich_text(
+    &mut font_system,
+    [(text, attrs.clone())],
+    &attrs,
+    Shaping::Advanced,
+    None,
+  );
 
   let (width, total_lines) = buffer
     .layout_runs()

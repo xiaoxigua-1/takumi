@@ -1,5 +1,5 @@
-use cosmic_text::Weight;
-use merge::{option::overwrite_none, Merge};
+use cosmic_text::{Align, Weight};
+use merge::{Merge, option::overwrite_none};
 use serde::{Deserialize, Serialize};
 use taffy::{
   AlignItems, Dimension, Display, FlexDirection, JustifyContent, LengthPercentage,
@@ -76,6 +76,34 @@ impl Default for ObjectFit {
   }
 }
 
+#[derive(Debug, Clone, Deserialize, Serialize, Copy)]
+#[serde(rename_all = "camelCase")]
+pub enum TextAlign {
+  Left,
+  Right,
+  Center,
+  Justified,
+  End,
+}
+
+impl From<TextAlign> for Align {
+  fn from(value: TextAlign) -> Self {
+    match value {
+      TextAlign::Left => Align::Left,
+      TextAlign::Right => Align::Right,
+      TextAlign::Center => Align::Center,
+      TextAlign::Justified => Align::Justified,
+      TextAlign::End => Align::End,
+    }
+  }
+}
+
+impl Default for TextAlign {
+  fn default() -> Self {
+    Self::Left
+  }
+}
+
 #[derive(Debug, Clone, Deserialize, Default, Serialize)]
 #[serde(default)]
 pub struct Style {
@@ -109,12 +137,14 @@ pub struct InheritableStyle {
   pub font_weight: Option<FontWeight>,
   pub max_lines: Option<u32>,
   pub border_radius: Option<f32>,
+  pub text_align: Option<TextAlign>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct FontStyle {
   pub font_size: f32,
   pub font_family: Option<String>,
+  pub text_align: TextAlign,
   pub line_height: f32,
   pub font_weight: FontWeight,
   pub max_lines: Option<u32>,
@@ -130,6 +160,7 @@ impl Default for FontStyle {
       font_weight: FontWeight::default(),
       max_lines: None,
       color: Color::default(),
+      text_align: TextAlign::default(),
     }
   }
 }
@@ -143,21 +174,7 @@ impl From<&Style> for FontStyle {
       font_weight: style.inheritable_style.font_weight.unwrap_or_default(),
       max_lines: style.inheritable_style.max_lines,
       color: style.inheritable_style.color.unwrap_or_default(),
-    }
-  }
-}
-
-impl InheritableStyle {
-  pub fn inherit_from(&self, parent: &InheritableStyle) -> Self {
-    Self {
-      border_color: self.border_color.or(parent.border_color),
-      color: self.color.or(parent.color),
-      font_size: self.font_size.or(parent.font_size),
-      font_family: self.font_family.clone().or_else(|| parent.font_family.clone()),
-      line_height: self.line_height.or(parent.line_height),
-      font_weight: self.font_weight.or(parent.font_weight),
-      max_lines: self.max_lines.or(parent.max_lines),
-      border_radius: self.border_radius.or(parent.border_radius),
+      text_align: style.inheritable_style.text_align.unwrap_or_default(),
     }
   }
 }

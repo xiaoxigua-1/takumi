@@ -39,24 +39,28 @@ pub fn draw_text(
   let start_y =
     layout.content_box_y() + font_style.font_size * ((font_style.line_height - 1.0) / 2.0);
 
-  let mut font_system = context.font_system.lock().unwrap();
-
   let metrics = Metrics::relative(font_style.font_size, font_style.line_height);
-  let mut buffer = Buffer::new(&mut font_system, metrics);
+  let mut buffer = Buffer::new_empty(metrics);
 
   let mut attrs = Attrs::new().weight(font_style.font_weight.into());
   if let Some(font_family) = font_style.font_family.as_ref() {
     attrs = attrs.family(Family::Name(font_family));
   }
 
-  buffer.set_text(&mut font_system, text, &attrs, Shaping::Advanced);
+  let mut font_system = context.font_system.lock().unwrap();
+
   buffer.set_size(
     &mut font_system,
     Some(content_box.width),
     Some(content_box.height),
   );
-
-  buffer.shape_until_scroll(&mut font_system, false);
+  buffer.set_rich_text(
+    &mut font_system,
+    [(text, attrs.clone())],
+    &attrs,
+    Shaping::Advanced,
+    Some(font_style.text_align.into()),
+  );
 
   let mut font_cache = context.font_cache.lock().unwrap();
 
