@@ -3,15 +3,10 @@ use merge::{Merge, option::overwrite_none};
 use serde::{Deserialize, Serialize};
 use taffy::{
   AlignItems, Dimension, Display, FlexDirection, JustifyContent, LengthPercentage,
-  LengthPercentageAuto, Position, Rect, Size, prelude::FromLength, style::Style as TaffyStyle,
-  style_helpers::TaffyZero,
+  LengthPercentageAuto, Position, Rect, Size, style::Style as TaffyStyle,
 };
 
 use crate::color::Color;
-
-#[derive(Debug, Clone, Deserialize, Default, Copy, Serialize)]
-#[serde(transparent)]
-pub struct Length(pub f32);
 
 #[derive(Debug, Copy, Clone, Deserialize, Serialize)]
 pub struct FontWeight(pub u16);
@@ -25,34 +20,6 @@ impl Default for FontWeight {
 impl From<FontWeight> for Weight {
   fn from(weight: FontWeight) -> Self {
     Weight(weight.0)
-  }
-}
-
-impl TaffyZero for Length {
-  const ZERO: Self = Length(0.0);
-}
-
-impl From<Length> for f32 {
-  fn from(value: Length) -> Self {
-    value.0
-  }
-}
-
-impl From<f32> for Length {
-  fn from(value: f32) -> Self {
-    Length(value)
-  }
-}
-
-impl From<Length> for LengthPercentage {
-  fn from(value: Length) -> Self {
-    LengthPercentage::length(value.0)
-  }
-}
-
-impl From<Length> for LengthPercentageAuto {
-  fn from(value: Length) -> Self {
-    LengthPercentageAuto::from_length(value.0)
   }
 }
 
@@ -110,26 +77,48 @@ impl Default for TextAlign {
   }
 }
 
-#[derive(Debug, Clone, Deserialize, Default, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(default)]
 pub struct Style {
-  pub width: ValueOrAutoFull<Length>,
-  pub height: ValueOrAutoFull<Length>,
-  pub padding: SidesValue<Length>,
-  pub margin: SidesValue<Length>,
-  pub inset: SidesValue<Length>,
+  pub width: ValuePercentageAuto,
+  pub height: ValuePercentageAuto,
+  pub padding: SidesValue<ValuePercentageAuto>,
+  pub margin: SidesValue<ValuePercentageAuto>,
+  pub inset: SidesValue<ValuePercentageAuto>,
   pub flex_direction: FlexDirection,
   pub justify_content: Option<JustifyContent>,
   pub align_items: Option<AlignItems>,
   pub position: Position,
   pub gap: Gap,
   pub flex_grow: f32,
-  pub border_size: SidesValue<Length>,
+  pub border_size: SidesValue<ValuePercentageAuto>,
   pub object_fit: Option<ObjectFit>,
   pub background: Option<Background>,
 
   #[serde(flatten)]
   pub inheritable_style: InheritableStyle,
+}
+
+impl Default for Style {
+  fn default() -> Self {
+    Self {
+      margin: SidesValue::SingleValue(ValuePercentageAuto::SpecificValue(0.0)),
+      width: Default::default(),
+      height: Default::default(),
+      padding: Default::default(),
+      inset: Default::default(),
+      flex_direction: Default::default(),
+      justify_content: Default::default(),
+      align_items: Default::default(),
+      position: Default::default(),
+      gap: Default::default(),
+      flex_grow: Default::default(),
+      border_size: Default::default(),
+      object_fit: Default::default(),
+      background: Default::default(),
+      inheritable_style: Default::default(),
+    }
+  }
 }
 
 #[derive(Debug, Clone, Deserialize, Default, Serialize, Merge)]
@@ -188,13 +177,13 @@ impl From<&Style> for FontStyle {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(untagged)]
 pub enum Gap {
-  SingleValue(Length),
-  Array(Length, Length),
+  SingleValue(f32),
+  Array(f32, f32),
 }
 
 impl Default for Gap {
   fn default() -> Self {
-    Self::SingleValue(Length(0.0))
+    Self::SingleValue(0.0)
   }
 }
 
@@ -202,12 +191,12 @@ impl From<Gap> for Size<LengthPercentage> {
   fn from(gap: Gap) -> Self {
     match gap {
       Gap::SingleValue(value) => Size {
-        width: LengthPercentage::length(value.into()),
-        height: LengthPercentage::length(value.into()),
+        width: LengthPercentage::length(value),
+        height: LengthPercentage::length(value),
       },
       Gap::Array(horizontal, vertical) => Size {
-        width: LengthPercentage::length(horizontal.into()),
-        height: LengthPercentage::length(vertical.into()),
+        width: LengthPercentage::length(horizontal),
+        height: LengthPercentage::length(vertical),
       },
     }
   }
@@ -216,7 +205,7 @@ impl From<Gap> for Size<LengthPercentage> {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Border {
   pub color: Option<Color>,
-  pub size: SidesValue<Length>,
+  pub size: SidesValue<f32>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -233,63 +222,73 @@ impl<T: Default> Default for SidesValue<T> {
   }
 }
 
-impl<T: FromLength + Copy + TaffyZero> From<SidesValue<Length>> for Rect<T> {
-  fn from(value: SidesValue<Length>) -> Self {
+impl<T: Copy, F: Copy + Default + Into<T>> From<SidesValue<F>> for Rect<T> {
+  fn from(value: SidesValue<F>) -> Self {
     match value {
       SidesValue::AllSides(top, right, bottom, left) => Rect {
-        left: T::from_length(left),
-        right: T::from_length(right),
-        top: T::from_length(top),
-        bottom: T::from_length(bottom),
+        left: left.into(),
+        right: right.into(),
+        top: top.into(),
+        bottom: bottom.into(),
       },
       SidesValue::AxisSidesArray(vertical, horizontal) => Rect {
-        left: T::from_length(horizontal),
-        right: T::from_length(horizontal),
-        top: T::from_length(vertical),
-        bottom: T::from_length(vertical),
+        left: horizontal.into(),
+        right: horizontal.into(),
+        top: vertical.into(),
+        bottom: vertical.into(),
       },
       SidesValue::SingleValue(value) => Rect {
-        left: T::from_length(value),
-        right: T::from_length(value),
-        top: T::from_length(value),
-        bottom: T::from_length(value),
+        left: value.into(),
+        right: value.into(),
+        top: value.into(),
+        bottom: value.into(),
       },
     }
   }
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, Copy)]
 #[serde(rename_all = "camelCase")]
-pub enum ValueOrAutoFull<T> {
-  Full,
+pub enum ValuePercentageAuto {
   Auto,
+  Percentage(f32),
   #[serde(untagged)]
-  SpecificValue(T),
+  SpecificValue(f32),
 }
 
-impl From<ValueOrAutoFull<Length>> for Dimension {
-  fn from(value: ValueOrAutoFull<Length>) -> Self {
-    match value {
-      ValueOrAutoFull::SpecificValue(value) => Dimension::length(value.into()),
-      ValueOrAutoFull::Auto => Dimension::auto(),
-      ValueOrAutoFull::Full => Dimension::percent(1.0),
-    }
-  }
-}
-
-impl From<ValueOrAutoFull<Length>> for LengthPercentageAuto {
-  fn from(value: ValueOrAutoFull<Length>) -> Self {
-    match value {
-      ValueOrAutoFull::SpecificValue(value) => LengthPercentageAuto::length(value.into()),
-      ValueOrAutoFull::Auto => LengthPercentageAuto::auto(),
-      ValueOrAutoFull::Full => LengthPercentageAuto::percent(1.0),
-    }
-  }
-}
-
-impl<T> Default for ValueOrAutoFull<T> {
+impl Default for ValuePercentageAuto {
   fn default() -> Self {
     Self::Auto
+  }
+}
+
+impl From<ValuePercentageAuto> for Dimension {
+  fn from(value: ValuePercentageAuto) -> Self {
+    match value {
+      ValuePercentageAuto::Auto => Dimension::auto(),
+      ValuePercentageAuto::SpecificValue(value) => Dimension::length(value),
+      ValuePercentageAuto::Percentage(value) => Dimension::percent(value),
+    }
+  }
+}
+
+impl From<ValuePercentageAuto> for LengthPercentageAuto {
+  fn from(value: ValuePercentageAuto) -> Self {
+    match value {
+      ValuePercentageAuto::Auto => LengthPercentageAuto::auto(),
+      ValuePercentageAuto::SpecificValue(value) => LengthPercentageAuto::length(value),
+      ValuePercentageAuto::Percentage(value) => LengthPercentageAuto::percent(value),
+    }
+  }
+}
+
+impl From<ValuePercentageAuto> for LengthPercentage {
+  fn from(value: ValuePercentageAuto) -> Self {
+    match value {
+      ValuePercentageAuto::Auto => LengthPercentage::length(0.0),
+      ValuePercentageAuto::SpecificValue(value) => LengthPercentage::length(value),
+      ValuePercentageAuto::Percentage(value) => LengthPercentage::percent(value),
+    }
   }
 }
 
@@ -335,6 +334,7 @@ impl From<Style> for TaffyStyle {
       border: style.border_size.into(),
       padding: style.padding.into(),
       inset: style.inset.into(),
+      margin: style.margin.into(),
       display: Display::Flex,
       flex_direction: style.flex_direction,
       position: style.position,

@@ -69,16 +69,16 @@ pub fn draw_text(
     &mut font_cache,
     font_style.color.into(),
     |x, y, w, h, color| {
-      if color.a() == 0 {
-        return;
-      }
-
       let color = Rgba([
         color.r(),
         color.g(),
         color.b(),
         (color.a() as f32 * alpha) as u8,
       ]);
+
+      if color.0[3] == 0 {
+        return;
+      }
 
       draw_filled_rect_mut(
         canvas,

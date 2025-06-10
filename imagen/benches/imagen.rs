@@ -7,7 +7,7 @@ use imagen::{
   context::Context,
   node::{
     ContainerNode, Node, TextNode,
-    style::{FontWeight, InheritableStyle, Length, Style, TextAlign, ValueOrAutoFull},
+    style::{FontWeight, InheritableStyle, Style, TextAlign, ValuePercentageAuto},
   },
   render::ImageRenderer,
 };
@@ -23,8 +23,8 @@ fn render_scenarios(c: &mut Criterion) {
       let context = Context::default();
       let renderer = ImageRenderer::try_from(ContainerNode {
         style: Style {
-          width: ValueOrAutoFull::SpecificValue(Length(1200.0)),
-          height: ValueOrAutoFull::SpecificValue(Length(630.0)),
+          width: ValuePercentageAuto::SpecificValue(1200.0),
+          height: ValuePercentageAuto::SpecificValue(630.0),
           ..Default::default()
         },
         children: vec![],
@@ -87,22 +87,22 @@ fn render_scenarios(c: &mut Criterion) {
       let context = Context::default();
       let renderer = ImageRenderer::try_from(ContainerNode {
         style: Style {
-          width: ValueOrAutoFull::SpecificValue(Length(1200.0)),
-          height: ValueOrAutoFull::SpecificValue(Length(630.0)),
+          width: ValuePercentageAuto::SpecificValue(1200.0),
+          height: ValuePercentageAuto::SpecificValue(630.0),
           background: Some(Color::Rgb(240, 240, 240).into()),
           ..Default::default()
         },
         children: vec![Box::new(ContainerNode {
           style: Style {
-            width: ValueOrAutoFull::SpecificValue(Length(400.0)),
-            height: ValueOrAutoFull::SpecificValue(Length(400.0)),
+            width: ValuePercentageAuto::SpecificValue(400.0),
+            height: ValuePercentageAuto::SpecificValue(400.0),
             background: Some(Color::Rgb(200, 200, 200).into()),
             ..Default::default()
           },
           children: vec![Box::new(ContainerNode {
             style: Style {
-              width: ValueOrAutoFull::SpecificValue(Length(200.0)),
-              height: ValueOrAutoFull::SpecificValue(Length(200.0)),
+              width: ValuePercentageAuto::SpecificValue(200.0),
+              height: ValuePercentageAuto::SpecificValue(200.0),
               background: Some(Color::Rgb(160, 160, 160).into()),
               ..Default::default()
             },
@@ -122,22 +122,84 @@ fn render_scenarios(c: &mut Criterion) {
   group.finish();
 }
 
+fn render_parallel_optimization(c: &mut Criterion) {
+  let mut group = c.benchmark_group("parallel_optimization");
+
+  // Benchmark with many sibling nodes to test parallel benefits
+  group.bench_function("many_siblings_parallel", |b| {
+    b.iter(|| {
+      let context = Context::default();
+
+      // Create a layout with many sibling containers to benefit from parallel processing
+      let children: Vec<Box<dyn Node>> = (0..8)
+        .map(|i| {
+          Box::new(ContainerNode {
+            style: Style {
+              width: ValuePercentageAuto::SpecificValue(100.0),
+              height: ValuePercentageAuto::SpecificValue(100.0),
+              background: Some(Color::Rgb(100 + i * 20, 100, 100).into()),
+              ..Default::default()
+            },
+            children: (0..4)
+              .map(|j| {
+                Box::new(TextNode {
+                  style: Style {
+                    width: ValuePercentageAuto::SpecificValue(80.0),
+                    height: ValuePercentageAuto::SpecificValue(20.0),
+                    inheritable_style: InheritableStyle {
+                      font_size: Some(12.0),
+                      color: Some(Color::Rgb(0, 0, 0)),
+                      text_align: Some(TextAlign::Left),
+                      ..Default::default()
+                    },
+                    ..Default::default()
+                  },
+                  text: format!("Child {} Text {}", i, j),
+                }) as Box<dyn Node>
+              })
+              .collect(),
+          }) as Box<dyn Node>
+        })
+        .collect();
+
+      let renderer = ImageRenderer::try_from(ContainerNode {
+        style: Style {
+          width: ValuePercentageAuto::SpecificValue(1200.0),
+          height: ValuePercentageAuto::SpecificValue(630.0),
+          background: Some(Color::Rgb(240, 240, 240).into()),
+          ..Default::default()
+        },
+        children,
+      })
+      .unwrap();
+
+      let (mut taffy, root_node_id) = renderer.create_taffy_tree();
+      let mut buffer = Vec::new();
+      let mut cursor = Cursor::new(&mut buffer);
+      let image = renderer.draw(&context, &mut taffy, root_node_id);
+      image.write_to(&mut cursor, ImageFormat::WebP).unwrap();
+    })
+  });
+
+  group.finish();
+}
+
 fn render_performance_analysis(c: &mut Criterion) {
   let mut group = c.benchmark_group("performance_analysis");
 
   // Complex layout for detailed analysis
   let complex_layout = || ContainerNode {
     style: Style {
-      width: ValueOrAutoFull::SpecificValue(Length(1200.0)),
-      height: ValueOrAutoFull::SpecificValue(Length(630.0)),
+      width: ValuePercentageAuto::SpecificValue(1200.0),
+      height: ValuePercentageAuto::SpecificValue(630.0),
       background: Some(Color::Rgb(240, 240, 240).into()),
       ..Default::default()
     },
     children: vec![
       Box::new(TextNode {
         style: Style {
-          width: ValueOrAutoFull::SpecificValue(Length(800.0)),
-          height: ValueOrAutoFull::SpecificValue(Length(100.0)),
+          width: ValuePercentageAuto::SpecificValue(800.0),
+          height: ValuePercentageAuto::SpecificValue(100.0),
           inheritable_style: InheritableStyle {
             font_size: Some(48.0),
             color: Some(Color::Rgb(0, 0, 0)),
@@ -151,16 +213,16 @@ fn render_performance_analysis(c: &mut Criterion) {
       }),
       Box::new(ContainerNode {
         style: Style {
-          width: ValueOrAutoFull::SpecificValue(Length(1000.0)),
-          height: ValueOrAutoFull::SpecificValue(Length(400.0)),
+          width: ValuePercentageAuto::SpecificValue(1000.0),
+          height: ValuePercentageAuto::SpecificValue(400.0),
           background: Some(Color::Rgb(200, 200, 200).into()),
           ..Default::default()
         },
         children: vec![
           Box::new(TextNode {
             style: Style {
-              width: ValueOrAutoFull::SpecificValue(Length(400.0)),
-              height: ValueOrAutoFull::SpecificValue(Length(100.0)),
+              width: ValuePercentageAuto::SpecificValue(400.0),
+              height: ValuePercentageAuto::SpecificValue(100.0),
               inheritable_style: InheritableStyle {
                 font_size: Some(24.0),
                 color: Some(Color::Rgb(50, 50, 50)),
@@ -174,8 +236,8 @@ fn render_performance_analysis(c: &mut Criterion) {
           }),
           Box::new(ContainerNode {
             style: Style {
-              width: ValueOrAutoFull::SpecificValue(Length(200.0)),
-              height: ValueOrAutoFull::SpecificValue(Length(200.0)),
+              width: ValuePercentageAuto::SpecificValue(200.0),
+              height: ValuePercentageAuto::SpecificValue(200.0),
               background: Some(Color::Rgb(160, 160, 160).into()),
               ..Default::default()
             },
@@ -233,5 +295,10 @@ fn render_performance_analysis(c: &mut Criterion) {
   group.finish();
 }
 
-criterion_group!(benches, render_scenarios, render_performance_analysis);
+criterion_group!(
+  benches,
+  render_scenarios,
+  render_parallel_optimization,
+  render_performance_analysis
+);
 criterion_main!(benches);

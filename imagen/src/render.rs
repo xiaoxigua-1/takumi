@@ -4,10 +4,7 @@ use taffy::{AvailableSpace, NodeId, Point, TaffyTree, geometry::Size};
 
 use crate::{
   context::Context,
-  node::{
-    ContainerNode, Node, draw_debug_border,
-    style::{Length, ValueOrAutoFull},
-  },
+  node::{ContainerNode, Node, draw_debug_border, style::ValuePercentageAuto},
 };
 
 pub type TaffyTreeWithNodes = TaffyTree<Box<dyn Node>>;
@@ -29,11 +26,11 @@ impl TryFrom<ContainerNode> for ImageRenderer {
   fn try_from(value: ContainerNode) -> Result<Self, Self::Error> {
     let style = value.get_style();
 
-    let ValueOrAutoFull::SpecificValue(Length(width)) = style.width else {
+    let ValuePercentageAuto::SpecificValue(width) = style.width else {
       return Err(ImageRendererError::InvalidContentSize);
     };
 
-    let ValueOrAutoFull::SpecificValue(Length(height)) = style.height else {
+    let ValuePercentageAuto::SpecificValue(height) = style.height else {
       return Err(ImageRendererError::InvalidContentSize);
     };
 

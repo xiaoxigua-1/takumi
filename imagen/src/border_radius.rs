@@ -15,63 +15,53 @@ pub fn apply_border_radius_antialiased(img: &mut RgbaImage, mut radius: f32) {
   let band_size =
     (outer_radius.ceil() as u32).max(radius as u32 + (transition_width * 2.0).ceil() as u32);
 
-  process_corner_aa(
-    img,
-    Point { x: 0, y: 0 },
-    Point {
-      x: band_size,
-      y: band_size,
-    },
-    radius,
-    radius_sq,
-    outer_radius_sq,
-    Corner::TopLeft,
-  );
-  process_corner_aa(
-    img,
-    Point {
-      x: width.saturating_sub(band_size),
-      y: 0,
-    },
-    Point {
-      x: width,
-      y: band_size,
-    },
-    radius,
-    radius_sq,
-    outer_radius_sq,
-    Corner::TopRight,
-  );
-  process_corner_aa(
-    img,
-    Point {
-      x: 0,
-      y: height.saturating_sub(band_size),
-    },
-    Point {
-      x: band_size,
-      y: height,
-    },
-    radius,
-    radius_sq,
-    outer_radius_sq,
-    Corner::BottomLeft,
-  );
-  process_corner_aa(
-    img,
-    Point {
-      x: width.saturating_sub(band_size),
-      y: height.saturating_sub(band_size),
-    },
-    Point {
-      x: width,
-      y: height,
-    },
-    radius,
-    radius_sq,
-    outer_radius_sq,
-    Corner::BottomRight,
-  );
+  let corners = [
+    (
+      Point { x: 0, y: 0 },
+      Point {
+        x: band_size,
+        y: band_size,
+      },
+      Corner::TopLeft,
+    ),
+    (
+      Point {
+        x: width.saturating_sub(band_size),
+        y: 0,
+      },
+      Point {
+        x: width,
+        y: band_size,
+      },
+      Corner::TopRight,
+    ),
+    (
+      Point {
+        x: 0,
+        y: height.saturating_sub(band_size),
+      },
+      Point {
+        x: band_size,
+        y: height,
+      },
+      Corner::BottomLeft,
+    ),
+    (
+      Point {
+        x: width.saturating_sub(band_size),
+        y: height.saturating_sub(band_size),
+      },
+      Point {
+        x: width,
+        y: height,
+      },
+      Corner::BottomRight,
+    ),
+  ];
+
+  for (start, end, corner) in corners {
+    process_corner_aa(img, start, end, radius, radius_sq, outer_radius_sq, corner);
+  }
 }
 
 #[derive(Copy, Clone)]
