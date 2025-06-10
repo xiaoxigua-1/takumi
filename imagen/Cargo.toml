@@ -29,3 +29,11 @@ features = ["derive"]
 default-features = false
 version = "0.25"
 features = ["jpeg", "png", "webp"]
+
+[dev-dependencies.criterion]
+version = "0.6"
+features = ["html_reports"]
+
+[[bench]]
+name = "imagen"
+harness = false

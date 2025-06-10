@@ -14,7 +14,7 @@ use crate::color::Color;
 pub struct Length(pub f32);
 
 #[derive(Debug, Copy, Clone, Deserialize, Serialize)]
-pub struct FontWeight(u16);
+pub struct FontWeight(pub u16);
 
 impl Default for FontWeight {
   fn default() -> Self {
@@ -68,6 +68,12 @@ pub enum ObjectFit {
 pub enum Background {
   Image(String),
   Color(Color),
+}
+
+impl From<Color> for Background {
+  fn from(color: Color) -> Self {
+    Background::Color(color)
+  }
 }
 
 impl Default for ObjectFit {
