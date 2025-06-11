@@ -1,7 +1,7 @@
 use cosmic_text::{Attrs, Buffer, Family, Metrics, Shaping};
 use image::{
   GenericImageView, ImageError, Rgba, RgbaImage,
-  imageops::{FilterType, resize},
+  imageops::{FilterType, crop_imm, resize},
 };
 use imageproc::drawing::{Blend, Canvas};
 use imageproc::{drawing::draw_filled_rect_mut, rect::Rect};
@@ -166,8 +166,7 @@ pub fn draw_image(image: &RgbaImage, style: &Style, canvas: &mut Blend<RgbaImage
       let crop_y = (new_height.saturating_sub(container_height)) / 2;
 
       let cropped =
-        image::imageops::crop_imm(&resized, crop_x, crop_y, container_width, container_height)
-          .to_image();
+        crop_imm(&resized, crop_x, crop_y, container_width, container_height).to_image();
       (cropped, 0, 0)
     }
     ObjectFit::ScaleDown => {
@@ -191,11 +190,43 @@ pub fn draw_image(image: &RgbaImage, style: &Style, canvas: &mut Blend<RgbaImage
       (resized, offset_x, offset_y)
     }
     ObjectFit::None => {
-      // None: display the image at its natural size, centered
-      let offset_x = (container_width.saturating_sub(image_width)) / 2;
-      let offset_y = (container_height.saturating_sub(image_height)) / 2;
+      // None: display the image at its natural size, centered, but crop if too large
+      if image_width <= container_width && image_height <= container_height {
+        // Image fits within container, center it
+        let offset_x = (container_width - image_width) / 2;
+        let offset_y = (container_height - image_height) / 2;
+        (image.clone(), offset_x, offset_y)
+      } else {
+        // Image is larger than container, crop from center
+        let crop_x = if image_width > container_width {
+          (image_width - container_width) / 2
+        } else {
+          0
+        };
+        let crop_y = if image_height > container_height {
+          (image_height - container_height) / 2
+        } else {
+          0
+        };
 
-      (image.clone(), offset_x, offset_y)
+        let crop_width = container_width.min(image_width);
+        let crop_height = container_height.min(image_height);
+
+        let cropped = crop_imm(image, crop_x, crop_y, crop_width, crop_height).to_image();
+
+        let offset_x = if crop_width < container_width {
+          (container_width - crop_width) / 2
+        } else {
+          0
+        };
+        let offset_y = if crop_height < container_height {
+          (container_height - crop_height) / 2
+        } else {
+          0
+        };
+
+        (cropped, offset_x, offset_y)
+      }
     }
   };
 

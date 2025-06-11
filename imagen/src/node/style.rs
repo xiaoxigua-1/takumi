@@ -47,7 +47,7 @@ pub enum ObjectFit {
 
 impl Default for ObjectFit {
   fn default() -> Self {
-    Self::Contain
+    Self::Fill
   }
 }
 
