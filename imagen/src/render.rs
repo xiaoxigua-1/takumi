@@ -4,7 +4,7 @@ use taffy::{AvailableSpace, NodeId, Point, TaffyTree, geometry::Size};
 
 use crate::{
   context::Context,
-  node::{ContainerNode, Node, draw_debug_border, style::ValuePercentageAuto},
+  node::{ContainerNode, Node, draw::draw_debug_border, style::ValuePercentageAuto},
 };
 
 /// Type alias for a TaffyTree that uses `Box<dyn Node>` as its node type

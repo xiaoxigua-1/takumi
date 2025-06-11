@@ -1,11 +1,11 @@
+/// Module for border drawing operations
+pub mod border;
 /// Module for drawing operations on canvas
 pub mod draw;
 /// Module for measuring text and image dimensions
 pub mod measure;
 /// Module for styling and layout properties
 pub mod style;
-/// Module for border drawing operations
-pub mod border;
 
 use std::fmt::Debug;
 use std::sync::{Arc, OnceLock};
@@ -13,17 +13,14 @@ use std::sync::{Arc, OnceLock};
 use async_trait::async_trait;
 use dyn_clone::{DynClone, clone_trait_object};
 use futures_util::future::join_all;
-use image::{Rgba, RgbaImage};
-use imageproc::{
-  drawing::{Blend, draw_filled_rect_mut, draw_hollow_rect_mut},
-  rect::Rect,
-};
+use image::RgbaImage;
+use imageproc::drawing::Blend;
 use merge::Merge;
 use serde::{Deserialize, Serialize};
 use taffy::{AvailableSpace, Layout, NodeId, Size, TaffyError};
 
+use crate::node::draw::draw_background_color;
 use crate::{
-  color::Color,
   context::Context,
   node::{
     border::draw_border,
@@ -368,44 +365,4 @@ impl Node for ImageNode {
 
     draw_image(image, &self.style, canvas, layout);
   }
-}
-
-/// Draws a solid color background on the canvas.
-///
-/// # Arguments
-/// * `color` - The color to fill with
-/// * `canvas` - The canvas to draw on
-/// * `layout` - The layout information for positioning and size
-pub fn draw_background_color(color: Color, canvas: &mut Blend<RgbaImage>, layout: Layout) {
-  let rect = Rect::at(layout.location.x as i32, layout.location.y as i32)
-    .of_size(layout.size.width as u32, layout.size.height as u32);
-
-  draw_filled_rect_mut(canvas, rect, color.into());
-}
-
-/// Draws debug borders around the node's layout areas.
-///
-/// This function draws colored rectangles to visualize the content box
-/// (red) and the full layout box (green) for debugging purposes.
-///
-/// # Arguments
-/// * `canvas` - The canvas to draw on
-/// * `layout` - The layout information for the node
-pub fn draw_debug_border(canvas: &mut Blend<RgbaImage>, layout: Layout) {
-  let x = layout.content_box_x();
-  let y = layout.content_box_y();
-  let size = layout.content_box_size();
-
-  draw_hollow_rect_mut(
-    canvas,
-    Rect::at(x as i32, y as i32).of_size(size.width as u32, size.height as u32),
-    Rgba([255, 0, 0, 100]),
-  );
-
-  draw_hollow_rect_mut(
-    canvas,
-    Rect::at(layout.location.x as i32, layout.location.y as i32)
-      .of_size(layout.size.width as u32, layout.size.height as u32),
-    Rgba([0, 255, 0, 100]),
-  );
 }
