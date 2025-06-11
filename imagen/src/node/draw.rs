@@ -13,13 +13,28 @@ use crate::{
   node::style::{FontStyle, Style},
 };
 
+/// Represents the state of an image in the rendering system.
+///
+/// This enum tracks whether an image has been successfully loaded and decoded,
+/// or if there was an error during the process.
 #[derive(Debug)]
 pub enum ImageState {
+  /// The image has been successfully loaded and decoded
   Fetched(RgbaImage),
+  /// An error occurred while fetching the image from the network
   NetworkError,
+  /// An error occurred while decoding the image data
   DecodeError(ImageError),
 }
 
+/// Draws text on the canvas with the specified font style and layout.
+///
+/// # Arguments
+/// * `text` - The text to draw
+/// * `font_style` - The font styling to apply
+/// * `context` - The font context containing font system and cache
+/// * `canvas` - The canvas to draw on
+/// * `layout` - The layout information for positioning
 pub fn draw_text(
   text: &str,
   font_style: &FontStyle,
@@ -89,6 +104,16 @@ pub fn draw_text(
   );
 }
 
+/// Draws an image on the canvas with the specified style and layout.
+///
+/// The image will be resized if necessary to fit the content box, and border radius
+/// will be applied if specified in the style.
+///
+/// # Arguments
+/// * `image` - The image to draw
+/// * `style` - The style to apply to the image
+/// * `canvas` - The canvas to draw on
+/// * `layout` - The layout information for positioning
 pub fn draw_image(image: &RgbaImage, style: &Style, canvas: &mut Blend<RgbaImage>, layout: Layout) {
   let content_box = layout.content_box_size();
   let x = layout.content_box_x();

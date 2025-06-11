@@ -8,6 +8,10 @@ use taffy::{
 
 use crate::color::Color;
 
+/// Represents font weight as a numeric value.
+///
+/// This wraps a u16 value that corresponds to CSS font-weight values
+/// (e.g., 100 for thin, 400 for normal, 700 for bold, 900 for black).
 #[derive(Debug, Copy, Clone, Deserialize, Serialize)]
 pub struct FontWeight(pub u16);
 
@@ -23,17 +27,25 @@ impl From<FontWeight> for Weight {
   }
 }
 
+/// Defines how an image should be resized to fit its container.
+///
+/// Similar to CSS object-fit property.
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub enum ObjectFit {
+  /// Scale the image to fit within the container while preserving aspect ratio
   Contain,
+  /// Scale the image to cover the entire container while preserving aspect ratio
   Cover,
 }
 
+/// Represents a background that can be either an image or a solid color.
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(untagged)]
 pub enum Background {
+  /// Background image specified by a URL or path
   Image(String),
+  /// Solid color background
   Color(Color),
 }
 
@@ -49,13 +61,21 @@ impl Default for ObjectFit {
   }
 }
 
+/// Text alignment options for text rendering.
+///
+/// Corresponds to CSS text-align property values.
 #[derive(Debug, Clone, Deserialize, Serialize, Copy)]
 #[serde(rename_all = "camelCase")]
 pub enum TextAlign {
+  /// Align text to the left edge
   Left,
+  /// Align text to the right edge
   Right,
+  /// Center align text
   Center,
+  /// Justify text to both edges
   Justified,
+  /// Align text to the end (language-dependent)
   End,
 }
 
@@ -77,24 +97,44 @@ impl Default for TextAlign {
   }
 }
 
+/// Main styling structure that contains all layout and visual properties.
+///
+/// This structure combines both layout properties (like width, height, padding)
+/// and inheritable properties (like font settings, colors) that can be passed
+/// down to child elements.
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(default)]
 pub struct Style {
+  /// Width of the element
   pub width: ValuePercentageAuto,
+  /// Height of the element
   pub height: ValuePercentageAuto,
+  /// Internal spacing around the element's content
   pub padding: SidesValue<ValuePercentageAuto>,
+  /// External spacing around the element
   pub margin: SidesValue<ValuePercentageAuto>,
+  /// Positioning offset from the element's normal position
   pub inset: SidesValue<ValuePercentageAuto>,
+  /// Direction of flex layout (row or column)
   pub flex_direction: FlexDirection,
+  /// How flex items are aligned along the main axis
   pub justify_content: Option<JustifyContent>,
+  /// How flex items are aligned along the cross axis
   pub align_items: Option<AlignItems>,
+  /// Positioning method (relative, absolute, etc.)
   pub position: Position,
+  /// Spacing between flex items
   pub gap: Gap,
+  /// How much the element should grow relative to other flex items
   pub flex_grow: f32,
+  /// Size of the element's border
   pub border_size: SidesValue<ValuePercentageAuto>,
+  /// How images should be fitted within their container
   pub object_fit: Option<ObjectFit>,
+  /// Element's background (color or image)
   pub background: Option<Background>,
 
+  /// Inheritable style properties
   #[serde(flatten)]
   pub inheritable_style: InheritableStyle,
 }
@@ -121,28 +161,52 @@ impl Default for Style {
   }
 }
 
+/// Style properties that can be inherited by child elements.
+///
+/// These properties are typically passed down from parent to child elements
+/// in the layout hierarchy, such as font settings and colors.
 #[derive(Debug, Clone, Deserialize, Default, Serialize, Merge)]
 #[merge(strategy = overwrite_none)]
 pub struct InheritableStyle {
+  /// Color of the element's border
   pub border_color: Option<Color>,
+  /// Text color for child text elements
   pub color: Option<Color>,
+  /// Font size in pixels for text rendering
   pub font_size: Option<f32>,
+  /// Font family name for text rendering
   pub font_family: Option<String>,
+  /// Line height multiplier for text spacing
   pub line_height: Option<f32>,
+  /// Font weight for text rendering
   pub font_weight: Option<FontWeight>,
+  /// Maximum number of lines for text before truncation
   pub max_lines: Option<u32>,
+  /// Corner radius for rounded borders in pixels
   pub border_radius: Option<f32>,
+  /// Text alignment within the element
   pub text_align: Option<TextAlign>,
 }
 
+/// Font styling properties for text rendering.
+///
+/// This structure contains all the necessary information for rendering text,
+/// including font size, family, weight, alignment, and color.
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct FontStyle {
+  /// Font size in pixels
   pub font_size: f32,
+  /// Font family name
   pub font_family: Option<String>,
+  /// Text alignment
   pub text_align: TextAlign,
+  /// Line height multiplier
   pub line_height: f32,
+  /// Font weight
   pub font_weight: FontWeight,
+  /// Maximum number of lines before truncation
   pub max_lines: Option<u32>,
+  /// Text color
   pub color: Color,
 }
 
@@ -174,10 +238,16 @@ impl From<&Style> for FontStyle {
   }
 }
 
+/// Represents spacing between flex items.
+///
+/// Can be either a single value applied to both axes, or separate values
+/// for horizontal and vertical spacing.
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(untagged)]
 pub enum Gap {
+  /// Same gap value for both horizontal and vertical spacing
   SingleValue(f32),
+  /// Separate values for horizontal and vertical spacing (horizontal, vertical)
   Array(f32, f32),
 }
 
@@ -202,17 +272,30 @@ impl From<Gap> for Size<LengthPercentage> {
   }
 }
 
+/// Border styling properties.
+///
+/// Defines the visual appearance of element borders, including color and size.
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Border {
+  /// Border color
   pub color: Option<Color>,
+  /// Border size for each side
   pub size: SidesValue<f32>,
 }
 
+/// Represents values that can be applied to all sides of an element.
+///
+/// This enum allows for flexible specification of values like padding, margin,
+/// or border sizes using either a single value for all sides, separate values
+/// for vertical/horizontal axes, or individual values for each side.
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(untagged)]
 pub enum SidesValue<T: Default> {
+  /// Same value for all four sides
   SingleValue(T),
+  /// Separate values for vertical and horizontal sides (vertical, horizontal)
   AxisSidesArray(T, T),
+  /// Individual values for each side (top, right, bottom, left)
   AllSides(T, T, T, T),
 }
 
@@ -247,11 +330,18 @@ impl<T: Copy, F: Copy + Default + Into<T>> From<SidesValue<F>> for Rect<T> {
   }
 }
 
+/// Represents a value that can be a specific length, percentage, or automatic.
+///
+/// This corresponds to CSS values that can be specified as pixels, percentages,
+/// or the 'auto' keyword for automatic sizing.
 #[derive(Debug, Clone, Deserialize, Serialize, Copy)]
 #[serde(rename_all = "camelCase")]
 pub enum ValuePercentageAuto {
+  /// Automatic sizing based on content
   Auto,
+  /// Percentage value relative to parent container
   Percentage(f32),
+  /// Specific pixel value
   #[serde(untagged)]
   SpecificValue(f32),
 }
@@ -292,34 +382,35 @@ impl From<ValuePercentageAuto> for LengthPercentage {
   }
 }
 
+/// Represents values for horizontal and vertical axes.
+///
+/// Used for properties that can have different values for horizontal
+/// and vertical directions, such as padding or margin.
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct AxisSides<T> {
+  /// Horizontal axis value
   #[serde(default)]
   pub horizontal: T,
+  /// Vertical axis value
   #[serde(default)]
   pub vertical: T,
 }
 
+/// Represents individual values for each side of an element.
+///
+/// Allows specification of different values for top, right, bottom, and left sides.
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct IndividualSides<T> {
+  /// Top side value
   #[serde(default)]
   pub top: T,
+  /// Right side value
   #[serde(default)]
   pub right: T,
+  /// Bottom side value
   #[serde(default)]
   pub bottom: T,
-  #[serde(default)]
-  pub left: T,
-}
-
-#[derive(Debug, Clone, Deserialize)]
-pub struct Values<T> {
-  #[serde(default)]
-  pub top: T,
-  #[serde(default)]
-  pub right: T,
-  #[serde(default)]
-  pub bottom: T,
+  /// Left side value
   #[serde(default)]
   pub left: T,
 }

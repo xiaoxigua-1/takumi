@@ -68,15 +68,28 @@ pub trait ImageStore: Send + Sync {
   async fn fetch_async(&self, key: &str) -> Arc<ImageState>;
 }
 
+/// A context for managing fonts in the rendering system.
+///
+/// This struct holds the font system and cache used for text rendering.
 pub struct FontContext {
+  /// The font system used for text layout and rendering
   pub font_system: Mutex<FontSystem>,
+  /// The cache for font glyphs and metrics
   pub font_cache: Mutex<SwashCache>,
 }
 
+/// The main context for image rendering.
+///
+/// This struct holds all the necessary state for rendering images, including
+/// font management, image storage, and debug options.
 pub struct Context {
+  /// Whether to print the debug tree during layout
   pub print_debug_tree: bool,
+  /// Whether to draw debug borders around nodes
   pub draw_debug_border: bool,
+  /// The font context for text rendering
   pub font_context: FontContext,
+  /// The image store for caching and retrieving images
   pub image_store: Box<dyn ImageStore>,
 }
 
@@ -95,25 +108,38 @@ impl Default for Context {
 }
 
 /// A no-op implementation of ImageStore that does nothing.
+///
 /// This is used as the default implementation when no custom ImageStore is provided.
+/// It always returns None for get operations and does nothing for insert operations.
 #[derive(Default)]
 pub struct NoopImageStore;
 
 #[async_trait]
 impl ImageStore for NoopImageStore {
+  /// Always returns None as this is a no-op implementation.
   fn get(&self, _key: &str) -> Option<Arc<ImageState>> {
     None
   }
 
+  /// Does nothing as this is a no-op implementation.
   fn insert(&self, _key: String, _value: Arc<ImageState>) {
     // No-op
   }
 
+  /// Always panics as this is a no-op implementation.
   async fn fetch_async(&self, _key: &str) -> Arc<ImageState> {
     unimplemented!("NoopImageStore does not support fetching images")
   }
 }
 
+/// Loads a WOFF2 font file and adds it to the font context.
+///
+/// # Arguments
+/// * `font_context` - The font context to add the font to
+/// * `font_file` - Path to the WOFF2 font file
+///
+/// # Returns
+/// * `Result<(), FontError>` - Ok if the font was loaded successfully, or an error if loading failed
 pub fn load_woff2_font_to_context(
   font_context: &FontContext,
   font_file: &Path,

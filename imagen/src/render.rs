@@ -7,22 +7,39 @@ use crate::{
   node::{ContainerNode, Node, draw_debug_border, style::ValuePercentageAuto},
 };
 
+/// Type alias for a TaffyTree that uses `Box<dyn Node>` as its node type
 pub type TaffyTreeWithNodes = TaffyTree<Box<dyn Node>>;
 
+/// A renderer for creating images from a container node with specified dimensions.
+///
+/// The renderer takes a root container node and uses Taffy for layout calculations
+/// to render the final image with the specified content dimensions.
 pub struct ImageRenderer {
+  /// The root container node that defines the layout structure
   pub root_node: ContainerNode,
+  /// The width of the output image in pixels
   content_width: u32,
+  /// The height of the output image in pixels
   content_height: u32,
 }
 
+/// Errors that can occur during image rendering.
 #[derive(Debug)]
 pub enum ImageRendererError {
+  /// The content size is invalid or not specified
   InvalidContentSize,
 }
 
 impl TryFrom<ContainerNode> for ImageRenderer {
   type Error = ImageRendererError;
 
+  /// Attempts to create an ImageRenderer from a ContainerNode.
+  ///
+  /// # Arguments
+  /// * `value` - The container node to use as the root
+  ///
+  /// # Returns
+  /// * `Result<Self, ImageRendererError>` - The created renderer or an error if the content size is invalid
   fn try_from(value: ContainerNode) -> Result<Self, Self::Error> {
     let style = value.get_style();
 
@@ -43,6 +60,10 @@ impl TryFrom<ContainerNode> for ImageRenderer {
 }
 
 impl ImageRenderer {
+  /// Creates a new TaffyTree with the root node and returns both the tree and root node ID.
+  ///
+  /// # Returns
+  /// * `(TaffyTreeWithNodes, NodeId)` - The created TaffyTree and the ID of the root node
   pub fn create_taffy_tree(&self) -> (TaffyTreeWithNodes, NodeId) {
     let mut taffy = TaffyTree::new();
 
@@ -51,6 +72,15 @@ impl ImageRenderer {
     (taffy, root_node_id)
   }
 
+  /// Renders the image using the provided context and TaffyTree.
+  ///
+  /// # Arguments
+  /// * `context` - The rendering context containing font and image information
+  /// * `taffy` - The TaffyTree containing the layout information
+  /// * `root_node_id` - The ID of the root node in the TaffyTree
+  ///
+  /// # Returns
+  /// * `RgbaImage` - The rendered image
   pub fn draw(
     &self,
     context: &Context,
@@ -96,6 +126,14 @@ impl ImageRenderer {
   }
 }
 
+/// Recursively draws nodes from the TaffyTree onto the canvas.
+///
+/// # Arguments
+/// * `context` - The rendering context
+/// * `canvas` - The canvas to draw on
+/// * `taffy` - The TaffyTree containing layout information
+/// * `node_id` - The ID of the current node to draw
+/// * `relative_offset` - The offset from the parent node's position
 fn draw_from_node_id_with_layout(
   context: &Context,
   canvas: &mut Blend<RgbaImage>,

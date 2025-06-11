@@ -3,6 +3,18 @@ use taffy::{AvailableSpace, geometry::Size};
 
 use crate::{context::FontContext, node::style::FontStyle};
 
+/// Measures the size of an image based on available space and known dimensions.
+///
+/// This function handles aspect ratio preservation and respects both explicit
+/// dimensions and available space constraints.
+///
+/// # Arguments
+/// * `image_size` - The original size of the image
+/// * `known_dimensions` - Any known dimensions that should be respected
+/// * `available_space` - The space available for the image
+///
+/// # Returns
+/// * `Size<f32>` - The measured size that should be used for the image
 pub fn measure_image(
   image_size: Size<f32>,
   known_dimensions: Size<Option<f32>>,
@@ -40,6 +52,20 @@ pub fn measure_image(
   }
 }
 
+/// Measures the size of text based on font style and available space.
+///
+/// This function handles text wrapping, line height, and respects both explicit
+/// dimensions and available space constraints.
+///
+/// # Arguments
+/// * `font_context` - The font context containing font system and cache
+/// * `text` - The text to measure
+/// * `font_style` - The font styling to apply
+/// * `known_dimensions` - Any known dimensions that should be respected
+/// * `available_space` - The space available for the text
+///
+/// # Returns
+/// * `Size<f32>` - The measured size that should be used for the text
 pub fn measure_text(
   font_context: &FontContext,
   text: &str,

@@ -1,6 +1,14 @@
 use image::RgbaImage;
 use taffy::Point;
 
+/// Applies antialiased border radius to an image.
+///
+/// This function processes the corners of the image to create smooth, antialiased rounded corners.
+/// The border radius is automatically clamped to half the minimum dimension of the image.
+///
+/// # Arguments
+/// * `img` - The image to apply border radius to
+/// * `radius` - The radius of the corners in pixels
 pub fn apply_border_radius_antialiased(img: &mut RgbaImage, mut radius: f32) {
   let (width, height) = img.dimensions();
 
@@ -64,14 +72,32 @@ pub fn apply_border_radius_antialiased(img: &mut RgbaImage, mut radius: f32) {
   }
 }
 
+/// Represents the four corners of an image for border radius processing.
 #[derive(Copy, Clone)]
 enum Corner {
+  /// Top-left corner
   TopLeft,
+  /// Top-right corner
   TopRight,
+  /// Bottom-left corner
   BottomLeft,
+  /// Bottom-right corner
   BottomRight,
 }
 
+/// Processes a single corner of the image for antialiased border radius.
+///
+/// This function handles the antialiasing calculations for a specific corner,
+/// creating a smooth transition between the rounded corner and the rest of the image.
+///
+/// # Arguments
+/// * `img` - The image being processed
+/// * `start` - Starting point of the corner region
+/// * `end` - Ending point of the corner region
+/// * `radius` - The radius of the corner
+/// * `radius_sq` - The squared radius (for optimization)
+/// * `outer_radius_sq` - The squared outer radius of the antialiasing band
+/// * `corner` - Which corner is being processed
 #[inline]
 fn process_corner_aa(
   img: &mut RgbaImage,
@@ -139,6 +165,14 @@ fn process_corner_aa(
   }
 }
 
+/// Sets the alpha value for an entire row of pixels in the image.
+///
+/// # Arguments
+/// * `img` - The image to modify
+/// * `start_x` - Starting x coordinate
+/// * `end_x` - Ending x coordinate
+/// * `y` - The y coordinate of the row
+/// * `alpha` - The alpha value to set (0-255)
 #[inline]
 fn set_row_alpha(img: &mut RgbaImage, start_x: u32, end_x: u32, y: u32, alpha: u8) {
   let width = img.width();

@@ -1,5 +1,8 @@
+/// Module for drawing operations on canvas
 pub mod draw;
+/// Module for measuring text and image dimensions
 pub mod measure;
+/// Module for styling and layout properties
 pub mod style;
 
 use std::fmt::Debug;
@@ -28,13 +31,23 @@ use crate::{
   render::TaffyTreeWithNodes,
 };
 
+/// A trait representing a node in the layout tree.
+///
+/// This trait defines the common interface for all elements that can be
+/// rendered in the layout system, including containers, text, and images.
 #[typetag::serde(tag = "type")]
 #[async_trait]
 pub trait Node: Send + Sync + Debug + DynClone {
+  /// Returns a reference to the node's style properties.
   fn get_style(&self) -> &Style;
 
+  /// Returns a mutable reference to the node's style properties.
   fn get_style_mut(&mut self) -> &mut Style;
 
+  /// Inherits style properties from a parent node.
+  ///
+  /// This method merges inheritable style properties from the parent
+  /// into this node's style, then propagates the inheritance to children.
   fn inherit_style(&mut self, parent: &Style) {
     let style = self.get_style_mut();
 
@@ -45,14 +58,36 @@ pub trait Node: Send + Sync + Debug + DynClone {
     self.inherit_style_for_children();
   }
 
+  /// Propagates style inheritance to child nodes.
+  ///
+  /// Override this method in container nodes to pass styles to children.
   fn inherit_style_for_children(&mut self) {}
 
+  /// Returns true if this node requires async hydration before rendering.
+  ///
+  /// Used for nodes that need to load external resources like images.
   fn should_hydrate_async(&self) -> bool {
     false
   }
 
+  /// Performs async hydration of the node.
+  ///
+  /// This method is called for nodes that return true from `should_hydrate_async()`
+  /// to load external resources before rendering.
   async fn hydrate_async(&self, _context: &Context) {}
 
+  /// Measures the intrinsic size of the node.
+  ///
+  /// This method calculates the size the node would prefer given
+  /// the available space and any known dimensions.
+  ///
+  /// # Arguments
+  /// * `_context` - The rendering context
+  /// * `_available_space` - The space available for this node
+  /// * `_known_dimensions` - Any explicitly set dimensions
+  ///
+  /// # Returns
+  /// The preferred size of the node
   fn measure(
     &self,
     _context: &Context,
@@ -62,21 +97,43 @@ pub trait Node: Send + Sync + Debug + DynClone {
     Size::ZERO
   }
 
+  /// Draws the node onto the canvas using the computed layout.
+  ///
+  /// # Arguments
+  /// * `_context` - The rendering context
+  /// * `canvas` - The canvas to draw on
+  /// * `layout` - The computed layout information for this node
   fn draw_on_canvas(&self, _context: &Context, canvas: &mut Blend<RgbaImage>, layout: Layout) {
     if let Some(background) = &self.get_style().background {
       draw_background(background, canvas, layout);
     }
   }
 
+  /// Creates a Taffy layout node for this element.
+  ///
+  /// This method integrates the node into the Taffy layout system,
+  /// converting the node's style properties to Taffy's format.
+  ///
+  /// # Arguments
+  /// * `taffy` - The Taffy tree to add this node to
+  ///
+  /// # Returns
+  /// The ID of the created node in the Taffy tree
   fn create_taffy_leaf(&self, taffy: &mut TaffyTreeWithNodes) -> Result<NodeId, TaffyError>;
 }
 
 clone_trait_object!(Node);
 
+/// A container node that can hold child nodes.
+///
+/// Container nodes are used to group other nodes and apply layout
+/// properties like flexbox layout to arrange their children.
 #[derive(Debug, Deserialize, Clone, Serialize)]
 pub struct ContainerNode {
+  /// The styling properties for this container
   #[serde(default, flatten)]
   pub style: Style,
+  /// The child nodes contained within this container
   pub children: Vec<Box<dyn Node>>,
 }
 
@@ -141,10 +198,16 @@ impl Node for ContainerNode {
   }
 }
 
+/// A node that renders text content.
+///
+/// Text nodes display text with configurable font properties,
+/// alignment, and styling options.
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct TextNode {
+  /// The styling properties for this text node
   #[serde(default, flatten)]
   pub style: Style,
+  /// The text content to be rendered
   pub text: String,
 }
 
@@ -192,11 +255,18 @@ impl Node for TextNode {
   }
 }
 
+/// A node that renders image content.
+///
+/// Image nodes display images loaded from URLs or file paths,
+/// with support for async loading and caching.
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct ImageNode {
+  /// The styling properties for this image node
   #[serde(default, flatten)]
   pub style: Style,
+  /// The source URL or path to the image
   pub src: String,
+  /// The cached image state (not serialized)
   #[serde(skip)]
   pub image: Arc<OnceLock<Arc<ImageState>>>,
 }
@@ -269,6 +339,12 @@ impl Node for ImageNode {
   }
 }
 
+/// Draws a background on the canvas according to the layout.
+///
+/// # Arguments
+/// * `background` - The background to draw (color or image)
+/// * `canvas` - The canvas to draw on
+/// * `layout` - The layout information for positioning
 pub fn draw_background(background: &Background, canvas: &mut Blend<RgbaImage>, layout: Layout) {
   match background {
     Background::Color(color) => draw_background_color(*color, canvas, layout),
@@ -276,6 +352,12 @@ pub fn draw_background(background: &Background, canvas: &mut Blend<RgbaImage>, l
   }
 }
 
+/// Draws a solid color background on the canvas.
+///
+/// # Arguments
+/// * `color` - The color to fill with
+/// * `canvas` - The canvas to draw on
+/// * `layout` - The layout information for positioning and size
 pub fn draw_background_color(color: Color, canvas: &mut Blend<RgbaImage>, layout: Layout) {
   let rect = Rect::at(layout.location.x as i32, layout.location.y as i32)
     .of_size(layout.size.width as u32, layout.size.height as u32);
@@ -283,6 +365,14 @@ pub fn draw_background_color(color: Color, canvas: &mut Blend<RgbaImage>, layout
   draw_filled_rect_mut(canvas, rect, color.into());
 }
 
+/// Draws debug borders around the node's layout areas.
+///
+/// This function draws colored rectangles to visualize the content box
+/// (red) and the full layout box (green) for debugging purposes.
+///
+/// # Arguments
+/// * `canvas` - The canvas to draw on
+/// * `layout` - The layout information for the node
 pub fn draw_debug_border(canvas: &mut Blend<RgbaImage>, layout: Layout) {
   let x = layout.content_box_x();
   let y = layout.content_box_y();
