@@ -89,21 +89,21 @@ fn render_scenarios(c: &mut Criterion) {
         style: Style {
           width: ValuePercentageAuto::SpecificValue(1200.0),
           height: ValuePercentageAuto::SpecificValue(630.0),
-          background: Some(Color::Rgb(240, 240, 240).into()),
+          background_color: Some(Color::Rgb(240, 240, 240)),
           ..Default::default()
         },
         children: vec![Box::new(ContainerNode {
           style: Style {
             width: ValuePercentageAuto::SpecificValue(400.0),
             height: ValuePercentageAuto::SpecificValue(400.0),
-            background: Some(Color::Rgb(200, 200, 200).into()),
+            background_color: Some(Color::Rgb(200, 200, 200)),
             ..Default::default()
           },
           children: vec![Box::new(ContainerNode {
             style: Style {
               width: ValuePercentageAuto::SpecificValue(200.0),
               height: ValuePercentageAuto::SpecificValue(200.0),
-              background: Some(Color::Rgb(160, 160, 160).into()),
+              background_color: Some(Color::Rgb(160, 160, 160)),
               ..Default::default()
             },
             children: vec![],
@@ -137,7 +137,7 @@ fn render_parallel_optimization(c: &mut Criterion) {
             style: Style {
               width: ValuePercentageAuto::SpecificValue(100.0),
               height: ValuePercentageAuto::SpecificValue(100.0),
-              background: Some(Color::Rgb(100 + i * 20, 100, 100).into()),
+              background_color: Some(Color::Rgb(100 + i * 20, 100, 100)),
               ..Default::default()
             },
             children: (0..4)
@@ -166,7 +166,7 @@ fn render_parallel_optimization(c: &mut Criterion) {
         style: Style {
           width: ValuePercentageAuto::SpecificValue(1200.0),
           height: ValuePercentageAuto::SpecificValue(630.0),
-          background: Some(Color::Rgb(240, 240, 240).into()),
+          background_color: Some(Color::Rgb(240, 240, 240)),
           ..Default::default()
         },
         children,
@@ -192,7 +192,7 @@ fn render_performance_analysis(c: &mut Criterion) {
     style: Style {
       width: ValuePercentageAuto::SpecificValue(1200.0),
       height: ValuePercentageAuto::SpecificValue(630.0),
-      background: Some(Color::Rgb(240, 240, 240).into()),
+      background_color: Some(Color::Rgb(240, 240, 240)),
       ..Default::default()
     },
     children: vec![
@@ -215,7 +215,7 @@ fn render_performance_analysis(c: &mut Criterion) {
         style: Style {
           width: ValuePercentageAuto::SpecificValue(1000.0),
           height: ValuePercentageAuto::SpecificValue(400.0),
-          background: Some(Color::Rgb(200, 200, 200).into()),
+          background_color: Some(Color::Rgb(200, 200, 200)),
           ..Default::default()
         },
         children: vec![
@@ -238,7 +238,7 @@ fn render_performance_analysis(c: &mut Criterion) {
             style: Style {
               width: ValuePercentageAuto::SpecificValue(200.0),
               height: ValuePercentageAuto::SpecificValue(200.0),
-              background: Some(Color::Rgb(160, 160, 160).into()),
+              background_color: Some(Color::Rgb(160, 160, 160)),
               ..Default::default()
             },
             children: vec![],

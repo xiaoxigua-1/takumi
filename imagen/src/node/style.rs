@@ -30,29 +30,19 @@ impl From<FontWeight> for Weight {
 /// Defines how an image should be resized to fit its container.
 ///
 /// Similar to CSS object-fit property.
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, Copy)]
 #[serde(rename_all = "camelCase")]
 pub enum ObjectFit {
   /// Scale the image to fit within the container while preserving aspect ratio
   Contain,
   /// Scale the image to cover the entire container while preserving aspect ratio
   Cover,
-}
-
-/// Represents a background that can be either an image or a solid color.
-#[derive(Debug, Clone, Deserialize, Serialize)]
-#[serde(untagged)]
-pub enum Background {
-  /// Background image specified by a URL or path
-  Image(String),
-  /// Solid color background
-  Color(Color),
-}
-
-impl From<Color> for Background {
-  fn from(color: Color) -> Self {
-    Background::Color(color)
-  }
+  /// Fill the container with the image, potentially distorting it
+  Fill,
+  /// Scale the image down to fit within the container while preserving aspect ratio, but never scale up
+  ScaleDown,
+  /// Don't resize the image, display it at its natural size
+  None,
 }
 
 impl Default for ObjectFit {
@@ -127,13 +117,12 @@ pub struct Style {
   pub gap: Gap,
   /// How much the element should grow relative to other flex items
   pub flex_grow: f32,
-  /// Size of the element's border
-  pub border_size: SidesValue<ValuePercentageAuto>,
+  /// Width of the element's border
+  pub border_width: SidesValue<ValuePercentageAuto>,
   /// How images should be fitted within their container
-  pub object_fit: Option<ObjectFit>,
-  /// Element's background (color or image)
-  pub background: Option<Background>,
-
+  pub object_fit: ObjectFit,
+  /// Element's background color
+  pub background_color: Option<Color>,
   /// Inheritable style properties
   #[serde(flatten)]
   pub inheritable_style: InheritableStyle,
@@ -153,9 +142,9 @@ impl Default for Style {
       position: Default::default(),
       gap: Default::default(),
       flex_grow: Default::default(),
-      border_size: Default::default(),
+      border_width: Default::default(),
       object_fit: Default::default(),
-      background: Default::default(),
+      background_color: Default::default(),
       inheritable_style: Default::default(),
     }
   }
@@ -334,7 +323,7 @@ impl<T: Copy, F: Copy + Default + Into<T>> From<SidesValue<F>> for Rect<T> {
 ///
 /// This corresponds to CSS values that can be specified as pixels, percentages,
 /// or the 'auto' keyword for automatic sizing.
-#[derive(Debug, Clone, Deserialize, Serialize, Copy)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Copy)]
 #[serde(rename_all = "camelCase")]
 pub enum ValuePercentageAuto {
   /// Automatic sizing based on content
@@ -422,7 +411,7 @@ impl From<Style> for TaffyStyle {
         width: style.width.into(),
         height: style.height.into(),
       },
-      border: style.border_size.into(),
+      border: style.border_width.into(),
       padding: style.padding.into(),
       inset: style.inset.into(),
       margin: style.margin.into(),

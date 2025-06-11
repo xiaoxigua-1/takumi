@@ -4,6 +4,8 @@ pub mod draw;
 pub mod measure;
 /// Module for styling and layout properties
 pub mod style;
+/// Module for border drawing operations
+pub mod border;
 
 use std::fmt::Debug;
 use std::sync::{Arc, OnceLock};
@@ -24,9 +26,10 @@ use crate::{
   color::Color,
   context::Context,
   node::{
+    border::draw_border,
     draw::{ImageState, draw_image, draw_text},
     measure::{measure_image, measure_text},
-    style::{Background, Style},
+    style::Style,
   },
   render::TaffyTreeWithNodes,
 };
@@ -99,14 +102,50 @@ pub trait Node: Send + Sync + Debug + DynClone {
 
   /// Draws the node onto the canvas using the computed layout.
   ///
+  /// This method orchestrates the drawing of background, content, and borders.
+  ///
+  /// # Arguments
+  /// * `context` - The rendering context
+  /// * `canvas` - The canvas to draw on
+  /// * `layout` - The computed layout information for this node
+  fn draw_on_canvas(&self, context: &Context, canvas: &mut Blend<RgbaImage>, layout: Layout) {
+    self.draw_background(context, canvas, layout);
+    self.draw_content(context, canvas, layout);
+    self.draw_border(context, canvas, layout);
+  }
+
+  /// Draws the background of the node.
+  ///
   /// # Arguments
   /// * `_context` - The rendering context
   /// * `canvas` - The canvas to draw on
   /// * `layout` - The computed layout information for this node
-  fn draw_on_canvas(&self, _context: &Context, canvas: &mut Blend<RgbaImage>, layout: Layout) {
-    if let Some(background) = &self.get_style().background {
-      draw_background(background, canvas, layout);
+  fn draw_background(&self, _context: &Context, canvas: &mut Blend<RgbaImage>, layout: Layout) {
+    if let Some(background_color) = self.get_style().background_color {
+      draw_background_color(background_color, canvas, layout);
     }
+  }
+
+  /// Draws the main content of the node.
+  ///
+  /// This method should be overridden by specific node types to draw their content.
+  ///
+  /// # Arguments
+  /// * `_context` - The rendering context
+  /// * `_canvas` - The canvas to draw on
+  /// * `_layout` - The computed layout information for this node
+  fn draw_content(&self, _context: &Context, _canvas: &mut Blend<RgbaImage>, _layout: Layout) {
+    // Default implementation does nothing
+  }
+
+  /// Draws the border of the node.
+  ///
+  /// # Arguments
+  /// * `_context` - The rendering context
+  /// * `canvas` - The canvas to draw on
+  /// * `layout` - The computed layout information for this node
+  fn draw_border(&self, _context: &Context, canvas: &mut Blend<RgbaImage>, layout: Layout) {
+    draw_border(self.get_style(), canvas, layout);
   }
 
   /// Creates a Taffy layout node for this element.
@@ -225,11 +264,7 @@ impl Node for TextNode {
     taffy.new_leaf_with_context(self.style.clone().into(), Box::new(self.clone()))
   }
 
-  fn draw_on_canvas(&self, context: &Context, canvas: &mut Blend<RgbaImage>, layout: Layout) {
-    if let Some(background) = &self.style.background {
-      draw_background(background, canvas, layout);
-    }
-
+  fn draw_content(&self, context: &Context, canvas: &mut Blend<RgbaImage>, layout: Layout) {
     draw_text(
       &self.text,
       &(&self.style).into(),
@@ -326,29 +361,12 @@ impl Node for ImageNode {
     )
   }
 
-  fn draw_on_canvas(&self, _context: &Context, canvas: &mut Blend<RgbaImage>, layout: Layout) {
-    if let Some(background) = &self.style.background {
-      draw_background(background, canvas, layout);
-    }
-
+  fn draw_content(&self, _context: &Context, canvas: &mut Blend<RgbaImage>, layout: Layout) {
     let ImageState::Fetched(image) = self.image.get().unwrap().as_ref() else {
       return;
     };
 
     draw_image(image, &self.style, canvas, layout);
-  }
-}
-
-/// Draws a background on the canvas according to the layout.
-///
-/// # Arguments
-/// * `background` - The background to draw (color or image)
-/// * `canvas` - The canvas to draw on
-/// * `layout` - The layout information for positioning
-pub fn draw_background(background: &Background, canvas: &mut Blend<RgbaImage>, layout: Layout) {
-  match background {
-    Background::Color(color) => draw_background_color(*color, canvas, layout),
-    Background::Image(_src) => unimplemented!(),
   }
 }
 
