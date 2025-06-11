@@ -145,7 +145,7 @@ pub trait Node: Send + Sync + Debug + DynClone {
   /// * `canvas` - The canvas to draw on
   /// * `layout` - The computed layout information for this node
   fn draw_border(&self, _context: &Context, canvas: &mut Blend<RgbaImage>, layout: Layout) {
-    draw_border(self.get_style(), canvas, layout);
+    draw_border(self.get_style(), canvas, &layout);
   }
 
   /// Creates a Taffy layout node for this element.
