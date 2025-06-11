@@ -136,17 +136,29 @@ fn draw_rounded_border(
       RgbaImage::from_pixel(inner_width, inner_height, Rgba([255, 255, 255, 255]));
     apply_border_radius_antialiased(&mut inner_image, inner_radius);
 
-    // Cut out the inner area by setting alpha to 0 where inner image has alpha
+    // Cut out the inner area while preserving antialiasing from inner border
     for py in 0..inner_height {
       for px in 0..inner_width {
         let inner_pixel = unsafe { inner_image.unsafe_get_pixel(px, py) };
-        if inner_pixel[3] > 0 {
+        // Use inverted alpha for cutting out - where inner has alpha, we remove border
+        let cutout_alpha = 255 - inner_pixel[3];
+        if cutout_alpha < 255 {
           let border_x = px + inner_left;
           let border_y = py + inner_top;
-          if border_x < layout.size.width as u32 && border_y < layout.size.height as u32 {
-            unsafe {
-              border_image.unsafe_put_pixel(border_x, border_y, Rgba([0, 0, 0, 0]));
-            }
+          let current_pixel = unsafe { border_image.unsafe_get_pixel(border_x, border_y) };
+          // Blend the cutout with existing border color, preserving border's antialiasing
+          let new_alpha = ((current_pixel[3] as u32 * cutout_alpha as u32) / 255) as u8;
+          unsafe {
+            border_image.unsafe_put_pixel(
+              border_x,
+              border_y,
+              Rgba([
+                current_pixel[0],
+                current_pixel[1],
+                current_pixel[2],
+                new_alpha,
+              ]),
+            );
           }
         }
       }
