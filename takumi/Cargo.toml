@@ -5,7 +5,7 @@ edition = "2024"
 license = "MIT"
 description = "High-performance Rust library for generating images with CSS Flexbox-like layouts."
 keywords = ["image", "css", "flexbox", "layout", "rendering"]
-repository = "https://github.com/takumi-rs/takumi"
+repository = "https://github.com/kane50613/takumi"
 readme = "README.md"
 
 [dependencies]
