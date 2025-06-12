@@ -12,6 +12,21 @@ pub enum ColorInput {
   Gradient(Gradient),
 }
 
+impl ColorAt for ColorInput {
+  fn at(&self, width: f32, height: f32, x: u32, y: u32) -> Color {
+    match self {
+      ColorInput::Color(color) => color.at(width, height, x, y),
+      ColorInput::Gradient(gradient) => gradient.at(width, height, x, y),
+    }
+  }
+}
+
+impl Default for ColorInput {
+  fn default() -> Self {
+    ColorInput::Color(Color::default())
+  }
+}
+
 /// Represents a gradient with color steps and an angle for directional gradients.
 #[derive(Debug, Clone, Deserialize, Serialize, TS)]
 pub struct Gradient {
@@ -27,17 +42,17 @@ impl From<Color> for ColorInput {
   }
 }
 
-impl Gradient {
+/// A trait for calculating the color at a specific position within a color input.
+pub trait ColorAt {
   /// Calculates the color at a specific position within the gradient.
   ///
-  /// # Arguments
-  /// * `width` - The width of the area the gradient is applied to
-  /// * `height` - The height of the area the gradient is applied to
-  /// * `position` - The position within the area to sample the color from
-  ///
   /// # Returns
-  /// The interpolated color at the given position
-  pub fn at(&self, width: f32, height: f32, x: u32, y: u32) -> Color {
+  /// The interpolated color at the given position.
+  fn at(&self, width: f32, height: f32, x: u32, y: u32) -> Color;
+}
+
+impl ColorAt for Gradient {
+  fn at(&self, width: f32, height: f32, x: u32, y: u32) -> Color {
     if self.stops.is_empty() {
       return Color::default();
     }
@@ -72,7 +87,9 @@ impl Gradient {
 
     self.interpolate_colors(color1, color2, local_t)
   }
+}
 
+impl Gradient {
   fn interpolate_colors(&self, color1: Color, color2: Color, t: f32) -> Color {
     let (r1, g1, b1, a1) = color1.into();
     let (r2, g2, b2, a2) = color2.into();
@@ -124,6 +141,12 @@ impl Color {
   /// Converts the float alpha value to an 8-bit integer representation.
   pub fn alpha_u8(&self) -> u8 {
     (self.alpha() * 255.0) as u8
+  }
+}
+
+impl ColorAt for Color {
+  fn at(&self, _width: f32, _height: f32, _x: u32, _y: u32) -> Color {
+    *self
   }
 }
 

@@ -44,7 +44,7 @@ fn render_scenarios(c: &mut Criterion) {
       style: Style {
         inheritable_style: InheritableStyle {
           font_size: Some(48.0),
-          color: Some(Color::Rgb(0, 0, 0)),
+          color: Some(Color::Rgb(0, 0, 0).into()),
           text_align: Some(TextAlign::Center),
           font_weight: Some(FontWeight(700)),
           ..Default::default()
@@ -148,7 +148,7 @@ fn render_parallel_optimization(c: &mut Criterion) {
                     height: 20.0.into(),
                     inheritable_style: InheritableStyle {
                       font_size: Some(12.0),
-                      color: Some(Color::Rgb(0, 0, 0)),
+                      color: Some(Color::Rgb(0, 0, 0).into()),
                       text_align: Some(TextAlign::Left),
                       ..Default::default()
                     },
@@ -202,7 +202,7 @@ fn render_performance_analysis(c: &mut Criterion) {
           height: 100.0.into(),
           inheritable_style: InheritableStyle {
             font_size: Some(48.0),
-            color: Some(Color::Rgb(0, 0, 0)),
+            color: Some(Color::Rgb(0, 0, 0).into()),
             text_align: Some(TextAlign::Center),
             font_weight: Some(FontWeight(700)),
             ..Default::default()
@@ -225,7 +225,7 @@ fn render_performance_analysis(c: &mut Criterion) {
               height: 100.0.into(),
               inheritable_style: InheritableStyle {
                 font_size: Some(24.0),
-                color: Some(Color::Rgb(50, 50, 50)),
+                color: Some(Color::Rgb(50, 50, 50).into()),
                 text_align: Some(TextAlign::Left),
                 ..Default::default()
               },

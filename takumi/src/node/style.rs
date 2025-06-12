@@ -7,7 +7,7 @@ use taffy::{
 };
 use ts_rs::TS;
 
-use crate::color::{Color, ColorInput};
+use crate::color::ColorInput;
 
 /// Represents font weight as a numeric value.
 ///
@@ -288,9 +288,9 @@ impl Default for Style {
 #[merge(strategy = overwrite_none)]
 pub struct InheritableStyle {
   /// Color of the element's border
-  pub border_color: Option<Color>,
+  pub border_color: Option<ColorInput>,
   /// Text color for child text elements
-  pub color: Option<Color>,
+  pub color: Option<ColorInput>,
   /// Font size in pixels for text rendering
   pub font_size: Option<f32>,
   /// Font family name for text rendering
@@ -326,7 +326,7 @@ pub struct FontStyle {
   /// Maximum number of lines before truncation
   pub max_lines: Option<u32>,
   /// Text color
-  pub color: Color,
+  pub color: ColorInput,
 }
 
 impl Default for FontStyle {
@@ -337,7 +337,7 @@ impl Default for FontStyle {
       line_height: 1.0,
       font_weight: FontWeight::default(),
       max_lines: None,
-      color: Color::default(),
+      color: ColorInput::default(),
       text_align: TextAlign::default(),
     }
   }
@@ -351,7 +351,7 @@ impl From<&Style> for FontStyle {
       line_height: style.inheritable_style.line_height.unwrap_or(1.0),
       font_weight: style.inheritable_style.font_weight.unwrap_or_default(),
       max_lines: style.inheritable_style.max_lines,
-      color: style.inheritable_style.color.unwrap_or_default(),
+      color: style.inheritable_style.color.clone().unwrap_or_default(),
       text_align: style.inheritable_style.text_align.unwrap_or_default(),
     }
   }
@@ -397,7 +397,7 @@ impl From<Gap> for Size<LengthPercentage> {
 #[derive(Debug, Clone, Deserialize, Serialize, TS)]
 pub struct Border {
   /// Border color
-  pub color: Option<Color>,
+  pub color: Option<ColorInput>,
   /// Border size for each side
   pub size: SidesValue<f32>,
 }
