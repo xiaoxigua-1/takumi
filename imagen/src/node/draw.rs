@@ -11,7 +11,7 @@ use imageproc::{
 use taffy::Layout;
 
 use crate::{
-  border_radius::apply_border_radius_antialiased,
+  border_radius::{BorderRadius, apply_border_radius_antialiased},
   color::Color,
   context::FontContext,
   node::style::{FontStyle, ObjectFit, Style},
@@ -235,8 +235,11 @@ pub fn draw_image(image: &RgbaImage, style: &Style, canvas: &mut Blend<RgbaImage
   };
 
   // Apply border radius if specified
-  if let Some(border_radius) = style.inheritable_style.border_radius {
-    apply_border_radius_antialiased(&mut processed_image, border_radius);
+  if let Some(border_radius) = style.inheritable_style.border_radius.clone() {
+    apply_border_radius_antialiased(
+      &mut processed_image,
+      BorderRadius::from_layout(&layout, border_radius),
+    );
   }
 
   draw_image_overlay_fast(
@@ -273,16 +276,29 @@ pub(crate) fn draw_image_overlay_fast(
 }
 
 /// Draws a solid color background on the canvas.
-///
-/// # Arguments
-/// * `color` - The color to fill with
-/// * `canvas` - The canvas to draw on
-/// * `layout` - The layout information for positioning and size
-pub fn draw_background_color(color: Color, canvas: &mut Blend<RgbaImage>, layout: Layout) {
+pub fn draw_background_color(
+  color: Color,
+  radius: Option<BorderRadius>,
+  canvas: &mut Blend<RgbaImage>,
+  layout: Layout,
+) {
   let rect = Rect::at(layout.location.x as i32, layout.location.y as i32)
     .of_size(layout.size.width as u32, layout.size.height as u32);
 
-  draw_filled_rect_mut(canvas, rect, color.into());
+  let Some(radius) = radius else {
+    draw_filled_rect_mut(canvas, rect, color.into());
+    return;
+  };
+
+  let mut image = RgbaImage::from_pixel(rect.width(), rect.height(), color.into());
+  apply_border_radius_antialiased(&mut image, radius);
+
+  draw_image_overlay_fast(
+    canvas,
+    &image,
+    layout.location.x as u32,
+    layout.location.y as u32,
+  );
 }
 
 /// Draws debug borders around the node's layout areas.

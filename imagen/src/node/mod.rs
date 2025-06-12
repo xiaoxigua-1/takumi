@@ -19,6 +19,7 @@ use merge::Merge;
 use serde::{Deserialize, Serialize};
 use taffy::{AvailableSpace, Layout, NodeId, Size, TaffyError};
 
+use crate::border_radius::BorderRadius;
 use crate::node::draw::draw_background_color;
 use crate::{
   context::Context,
@@ -57,6 +58,11 @@ pub trait Node: Send + Sync + Debug + DynClone {
 
     self.inherit_style_for_children();
   }
+
+  /// Called after the style is inherited and before the layout is computed.
+  ///
+  /// You can use this method to modify the node's style before the layout is computed.
+  fn before_layout(&mut self) {}
 
   /// Propagates style inheritance to child nodes.
   ///
@@ -119,7 +125,14 @@ pub trait Node: Send + Sync + Debug + DynClone {
   /// * `layout` - The computed layout information for this node
   fn draw_background(&self, _context: &Context, canvas: &mut Blend<RgbaImage>, layout: Layout) {
     if let Some(background_color) = self.get_style().background_color {
-      draw_background_color(background_color, canvas, layout);
+      let radius = self
+        .get_style()
+        .inheritable_style
+        .border_radius
+        .clone()
+        .map(|radius| BorderRadius::from_layout(&layout, radius));
+
+      draw_background_color(background_color, radius, canvas, layout);
     }
   }
 

@@ -32,7 +32,7 @@ impl From<FontWeight> for Weight {
 ///
 /// Similar to CSS object-fit property.
 #[derive(Debug, Clone, Deserialize, Serialize, Copy, TS)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "snake_case")]
 pub enum ObjectFit {
   /// Scale the image to fit within the container while preserving aspect ratio
   Contain,
@@ -302,7 +302,7 @@ pub struct InheritableStyle {
   /// Maximum number of lines for text before truncation
   pub max_lines: Option<u32>,
   /// Corner radius for rounded borders in pixels
-  pub border_radius: Option<f32>,
+  pub border_radius: Option<SidesValue<ValuePercentageAuto>>,
   /// Text alignment within the element
   pub text_align: Option<TextAlign>,
 }
@@ -362,6 +362,7 @@ impl From<&Style> for FontStyle {
 /// Can be either a single value applied to both axes, or separate values
 /// for horizontal and vertical spacing.
 #[derive(Debug, Clone, Deserialize, Serialize, TS)]
+#[serde(untagged)]
 pub enum Gap {
   /// Same gap value for both horizontal and vertical spacing
   SingleValue(f32),
@@ -512,25 +513,6 @@ pub struct AxisSides<T> {
   /// Vertical axis value
   #[serde(default)]
   pub vertical: T,
-}
-
-/// Represents individual values for each side of an element.
-///
-/// Allows specification of different values for top, right, bottom, and left sides.
-#[derive(Debug, Clone, Deserialize, Serialize, TS)]
-pub struct IndividualSides<T> {
-  /// Top side value
-  #[serde(default)]
-  pub top: T,
-  /// Right side value
-  #[serde(default)]
-  pub right: T,
-  /// Bottom side value
-  #[serde(default)]
-  pub bottom: T,
-  /// Left side value
-  #[serde(default)]
-  pub left: T,
 }
 
 impl From<Style> for TaffyStyle {

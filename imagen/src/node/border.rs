@@ -3,7 +3,7 @@ use imageproc::drawing::Blend;
 use imageproc::{drawing::draw_filled_rect_mut, rect::Rect};
 use taffy::Layout;
 
-use crate::border_radius::apply_border_radius_antialiased;
+use crate::border_radius::{BorderRadius, apply_border_radius_antialiased};
 use crate::node::draw::draw_image_overlay_fast;
 use crate::node::style::Style;
 
@@ -26,14 +26,16 @@ pub fn draw_border(style: &Style, canvas: &mut Blend<RgbaImage>, layout: &Layout
   }
 
   let border_color = style.inheritable_style.border_color.unwrap_or_default();
-  let border_radius = style.inheritable_style.border_radius;
 
-  if let Some(radius) = border_radius {
+  if let Some(radius) = &style.inheritable_style.border_radius {
+    let radius: BorderRadius = BorderRadius::from_layout(layout, radius.clone());
+
     draw_rounded_border(canvas, layout, border_color.into(), radius);
   } else {
     draw_rectangular_border(canvas, layout, border_color.into());
   }
 }
+
 
 /// Draws a rectangular border without rounded corners.
 fn draw_rectangular_border(canvas: &mut Blend<RgbaImage>, layout: &Layout, color: Rgba<u8>) {
@@ -98,7 +100,7 @@ fn draw_rounded_border(
   canvas: &mut Blend<RgbaImage>,
   layout: &Layout,
   color: Rgba<u8>,
-  radius: f32,
+  radius: BorderRadius,
 ) {
   if layout.border.left == 0.0
     && layout.border.right == 0.0
@@ -124,7 +126,12 @@ fn draw_rounded_border(
   // Calculate inner radius (outer radius minus average border width, clamped to 0)
   let avg_border_width =
     (layout.border.left + layout.border.right + layout.border.top + layout.border.bottom) / 4.0;
-  let inner_radius = (radius - avg_border_width).max(0.0);
+  let inner_radius = BorderRadius {
+    top_left: (radius.top_left - avg_border_width).max(0.0),
+    top_right: (radius.top_right - avg_border_width).max(0.0),
+    bottom_right: (radius.bottom_right - avg_border_width).max(0.0),
+    bottom_left: (radius.bottom_left - avg_border_width).max(0.0),
+  };
 
   // Cut out the inner area if there's space for content
   if inner_left < inner_right && inner_top < inner_bottom {

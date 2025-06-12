@@ -1,5 +1,43 @@
 use image::RgbaImage;
-use taffy::Point;
+use taffy::{Layout, Point, Rect};
+
+use crate::node::style::{SidesValue, ValuePercentageAuto};
+
+#[derive(Debug, Clone, Copy)]
+pub struct BorderRadius {
+  pub top_left: f32,
+  pub top_right: f32,
+  pub bottom_right: f32,
+  pub bottom_left: f32,
+}
+
+impl BorderRadius {
+  pub fn from_layout(layout: &Layout, radius: SidesValue<ValuePercentageAuto>) -> Self {
+    let rect: Rect<ValuePercentageAuto> = radius.into();
+
+    // CSS border-radius percentages: use smaller of width/height for circular corners
+    let reference_size = layout.size.width.min(layout.size.height);
+
+    Self {
+      top_left: resolve_border_radius_from_percentage_css(layout, rect.top, reference_size),
+      top_right: resolve_border_radius_from_percentage_css(layout, rect.right, reference_size),
+      bottom_right: resolve_border_radius_from_percentage_css(layout, rect.bottom, reference_size),
+      bottom_left: resolve_border_radius_from_percentage_css(layout, rect.left, reference_size),
+    }
+  }
+}
+
+fn resolve_border_radius_from_percentage_css(
+  _layout: &Layout,
+  radius: ValuePercentageAuto,
+  reference_size: f32,
+) -> f32 {
+  match radius {
+    ValuePercentageAuto::SpecificValue(value) => value,
+    ValuePercentageAuto::Percentage(value) => value * reference_size,
+    ValuePercentageAuto::Auto => 0.0,
+  }
+}
 
 /// Applies antialiased border radius to an image.
 ///
@@ -9,66 +47,86 @@ use taffy::Point;
 /// # Arguments
 /// * `img` - The image to apply border radius to
 /// * `radius` - The radius of the corners in pixels
-pub fn apply_border_radius_antialiased(img: &mut RgbaImage, mut radius: f32) {
+pub fn apply_border_radius_antialiased(img: &mut RgbaImage, radius: BorderRadius) {
   let (width, height) = img.dimensions();
+  let max_radius = width.min(height) as f32 / 2.0;
 
-  radius = radius.min(width.min(height) as f32 / 2.0);
+  let clamped_radius = BorderRadius {
+    top_left: radius.top_left.min(max_radius),
+    top_right: radius.top_right.min(max_radius),
+    bottom_right: radius.bottom_right.min(max_radius),
+    bottom_left: radius.bottom_left.min(max_radius),
+  };
 
   let transition_width = 1.0;
-  let outer_radius = radius + transition_width;
-  let outer_radius_sq = outer_radius * outer_radius;
-  let radius_sq = radius * radius;
 
-  // Process only corner regions with antialiasing band
-  let band_size =
-    (outer_radius.ceil() as u32).max(radius as u32 + (transition_width * 2.0).ceil() as u32);
-
+  // Process each corner with its individual radius
   let corners = [
-    (
-      Point { x: 0, y: 0 },
-      Point {
-        x: band_size,
-        y: band_size,
-      },
-      Corner::TopLeft,
-    ),
-    (
-      Point {
-        x: width.saturating_sub(band_size),
-        y: 0,
-      },
-      Point {
-        x: width,
-        y: band_size,
-      },
-      Corner::TopRight,
-    ),
-    (
-      Point {
-        x: 0,
-        y: height.saturating_sub(band_size),
-      },
-      Point {
-        x: band_size,
-        y: height,
-      },
-      Corner::BottomLeft,
-    ),
-    (
-      Point {
-        x: width.saturating_sub(band_size),
-        y: height.saturating_sub(band_size),
-      },
-      Point {
-        x: width,
-        y: height,
-      },
-      Corner::BottomRight,
-    ),
+    (Corner::TopLeft, clamped_radius.top_left),
+    (Corner::TopRight, clamped_radius.top_right),
+    (Corner::BottomLeft, clamped_radius.bottom_left),
+    (Corner::BottomRight, clamped_radius.bottom_right),
   ];
 
-  for (start, end, corner) in corners {
-    process_corner_aa(img, start, end, radius, radius_sq, outer_radius_sq, corner);
+  for (corner, corner_radius) in corners {
+    if corner_radius > 0.0 {
+      let outer_radius = corner_radius + transition_width;
+      let outer_radius_sq = outer_radius * outer_radius;
+      let radius_sq = corner_radius * corner_radius;
+
+      let band_size = (outer_radius.ceil() as u32)
+        .max(corner_radius as u32 + (transition_width * 2.0).ceil() as u32);
+
+      let (start, end) = match corner {
+        Corner::TopLeft => (
+          Point { x: 0, y: 0 },
+          Point {
+            x: band_size,
+            y: band_size,
+          },
+        ),
+        Corner::TopRight => (
+          Point {
+            x: width.saturating_sub(band_size),
+            y: 0,
+          },
+          Point {
+            x: width,
+            y: band_size,
+          },
+        ),
+        Corner::BottomLeft => (
+          Point {
+            x: 0,
+            y: height.saturating_sub(band_size),
+          },
+          Point {
+            x: band_size,
+            y: height,
+          },
+        ),
+        Corner::BottomRight => (
+          Point {
+            x: width.saturating_sub(band_size),
+            y: height.saturating_sub(band_size),
+          },
+          Point {
+            x: width,
+            y: height,
+          },
+        ),
+      };
+
+      process_corner_aa(
+        img,
+        start,
+        end,
+        corner_radius,
+        radius_sq,
+        outer_radius_sq,
+        corner,
+      );
+    }
   }
 }
 
