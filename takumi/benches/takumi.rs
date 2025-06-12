@@ -2,6 +2,8 @@ use std::io::Cursor;
 
 use criterion::{Criterion, criterion_group, criterion_main};
 use image::{ImageFormat, RgbaImage};
+use imageproc::drawing::Blend;
+use taffy::{Layout, Point, Rect, Size, prelude::FromLength};
 use takumi::{
   color::Color,
   context::Context,
@@ -11,8 +13,6 @@ use takumi::{
   },
   render::ImageRenderer,
 };
-use imageproc::drawing::Blend;
-use taffy::{Layout, Point, Rect, Size, prelude::FromLength};
 
 fn render_scenarios(c: &mut Criterion) {
   let mut group = c.benchmark_group("render_scenarios");
@@ -89,21 +89,21 @@ fn render_scenarios(c: &mut Criterion) {
         style: Style {
           width: 1200.0.into(),
           height: 630.0.into(),
-          background_color: Some(Color::Rgb(240, 240, 240)),
+          background_color: Some(Color::Rgb(240, 240, 240).into()),
           ..Default::default()
         },
         children: vec![Box::new(ContainerNode {
           style: Style {
             width: 400.0.into(),
             height: 400.0.into(),
-            background_color: Some(Color::Rgb(200, 200, 200)),
+            background_color: Some(Color::Rgb(200, 200, 200).into()),
             ..Default::default()
           },
           children: vec![Box::new(ContainerNode {
             style: Style {
               width: 200.0.into(),
               height: 200.0.into(),
-              background_color: Some(Color::Rgb(160, 160, 160)),
+              background_color: Some(Color::Rgb(160, 160, 160).into()),
               ..Default::default()
             },
             children: vec![],
@@ -137,7 +137,7 @@ fn render_parallel_optimization(c: &mut Criterion) {
             style: Style {
               width: 100.0.into(),
               height: 100.0.into(),
-              background_color: Some(Color::Rgb(100 + i * 20, 100, 100)),
+              background_color: Some(Color::Rgb(100 + i * 20, 100, 100).into()),
               ..Default::default()
             },
             children: (0..4)
@@ -166,7 +166,7 @@ fn render_parallel_optimization(c: &mut Criterion) {
         style: Style {
           width: 1200.0.into(),
           height: 630.0.into(),
-          background_color: Some(Color::Rgb(240, 240, 240)),
+          background_color: Some(Color::Rgb(240, 240, 240).into()),
           ..Default::default()
         },
         children,
@@ -192,7 +192,7 @@ fn render_performance_analysis(c: &mut Criterion) {
     style: Style {
       width: 1200.0.into(),
       height: 630.0.into(),
-      background_color: Some(Color::Rgb(240, 240, 240)),
+      background_color: Some(Color::Rgb(240, 240, 240).into()),
       ..Default::default()
     },
     children: vec![
@@ -215,7 +215,7 @@ fn render_performance_analysis(c: &mut Criterion) {
         style: Style {
           width: 1000.0.into(),
           height: 400.0.into(),
-          background_color: Some(Color::Rgb(200, 200, 200)),
+          background_color: Some(Color::Rgb(200, 200, 200).into()),
           ..Default::default()
         },
         children: vec![
@@ -238,7 +238,7 @@ fn render_performance_analysis(c: &mut Criterion) {
             style: Style {
               width: 200.0.into(),
               height: 200.0.into(),
-              background_color: Some(Color::Rgb(160, 160, 160)),
+              background_color: Some(Color::Rgb(160, 160, 160).into()),
               ..Default::default()
             },
             children: vec![],

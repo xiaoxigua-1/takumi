@@ -7,7 +7,7 @@ use taffy::{
 };
 use ts_rs::TS;
 
-use crate::color::Color;
+use crate::color::{Color, ColorInput};
 
 /// Represents font weight as a numeric value.
 ///
@@ -252,7 +252,7 @@ pub struct Style {
   /// How images should be fitted within their container
   pub object_fit: ObjectFit,
   /// Element's background color
-  pub background_color: Option<Color>,
+  pub background_color: Option<ColorInput>,
   /// Inheritable style properties
   #[serde(flatten)]
   pub inheritable_style: InheritableStyle,

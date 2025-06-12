@@ -12,7 +12,7 @@ use taffy::Layout;
 
 use crate::{
   border_radius::{BorderRadius, apply_border_radius_antialiased},
-  color::Color,
+  color::ColorInput,
   context::FontContext,
   node::style::{FontStyle, ObjectFit, Style},
 };
@@ -275,9 +275,45 @@ pub(crate) fn draw_image_overlay_fast(
   }
 }
 
+/// Draws a filled rectangle on the canvas from a color input.
+pub fn draw_filled_rect_from_color_input(
+  color: &ColorInput,
+  rect: Rect,
+  canvas: &mut Blend<RgbaImage>,
+) {
+  match color {
+    ColorInput::Color(color) => {
+      draw_filled_rect_mut(canvas, rect, (*color).into());
+    }
+    ColorInput::Gradient(gradient) => {
+      for y in rect.top()..rect.bottom() {
+        for x in rect.left()..rect.right() {
+          let color = gradient.at(
+            rect.width() as f32,
+            rect.height() as f32,
+            x as u32,
+            y as u32,
+          );
+          canvas.draw_pixel(x as u32, y as u32, color.into());
+        }
+      }
+    }
+  }
+}
+
+/// Creates an image from a color input.
+pub fn create_image_from_color_input(color: &ColorInput, width: u32, height: u32) -> RgbaImage {
+  match color {
+    ColorInput::Color(color) => RgbaImage::from_pixel(width, height, (*color).into()),
+    ColorInput::Gradient(gradient) => RgbaImage::from_par_fn(width, height, |x, y| {
+      gradient.at(width as f32, height as f32, x, y).into()
+    }),
+  }
+}
+
 /// Draws a solid color background on the canvas.
 pub fn draw_background_color(
-  color: Color,
+  color: &ColorInput,
   radius: Option<BorderRadius>,
   canvas: &mut Blend<RgbaImage>,
   layout: Layout,
@@ -286,11 +322,12 @@ pub fn draw_background_color(
     .of_size(layout.size.width as u32, layout.size.height as u32);
 
   let Some(radius) = radius else {
-    draw_filled_rect_mut(canvas, rect, color.into());
+    draw_filled_rect_from_color_input(color, rect, canvas);
     return;
   };
 
-  let mut image = RgbaImage::from_pixel(rect.width(), rect.height(), color.into());
+  let mut image = create_image_from_color_input(color, rect.width(), rect.height());
+
   apply_border_radius_antialiased(&mut image, radius);
 
   draw_image_overlay_fast(
