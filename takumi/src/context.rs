@@ -21,9 +21,11 @@ use crate::{
 /// use std::sync::Arc;
 /// use takumi::context::ImageStore;
 /// use takumi::node::draw::ImageState;
+/// use async_trait::async_trait;
 ///
 /// struct MyImageStore;
 ///
+/// #[async_trait]
 /// impl ImageStore for MyImageStore {
 ///     fn get(&self, key: &str) -> Option<Arc<ImageState>> {
 ///         // Implement image retrieval
