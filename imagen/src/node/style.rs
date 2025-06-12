@@ -465,6 +465,12 @@ pub enum ValuePercentageAuto {
   SpecificValue(f32),
 }
 
+impl From<f32> for ValuePercentageAuto {
+  fn from(value: f32) -> Self {
+    Self::SpecificValue(value)
+  }
+}
+
 impl Default for ValuePercentageAuto {
   fn default() -> Self {
     Self::Auto

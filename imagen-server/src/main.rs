@@ -1,3 +1,4 @@
+mod args;
 mod image_store;
 
 use axum::{
@@ -20,23 +21,10 @@ use tokio::net::TcpListener;
 
 use mimalloc::MiMalloc;
 
-use crate::image_store::ImageStore;
+use crate::{args::Args, image_store::ImageStore};
 
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;
-
-#[derive(Parser, Debug)]
-#[command(author, version, about, long_about = None)]
-struct Args {
-  #[arg(short, long, default_value_t = false)]
-  print_debug_tree: bool,
-
-  #[arg(short, long, default_value_t = false)]
-  draw_debug_border: bool,
-
-  #[arg(short, long, value_parser)]
-  fonts: Vec<String>,
-}
 
 async fn generate_image_handler(
   State(context): State<Arc<Context>>,
@@ -80,7 +68,7 @@ async fn main() {
     .with_state(Arc::new(context));
 
   // Bind to all interfaces on port 3000
-  let addr = SocketAddr::from(([0, 0, 0, 0], 3000));
+  let addr = SocketAddr::from(([0, 0, 0, 0], args.port));
   let listener = TcpListener::bind(addr).await.unwrap();
 
   println!("Image generator server running on http://{}", addr);
