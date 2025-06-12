@@ -1,4 +1,4 @@
-//! Imagen is a Rust library for rendering images with a layout system similar to CSS.
+//! takumi is a Rust library for rendering images with a layout system similar to CSS.
 //! It provides a flexible way to create and render images with various styling options,
 //! including colors, fonts, borders, and layout management.
 //!

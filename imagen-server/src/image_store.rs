@@ -4,11 +4,11 @@ use std::{
 };
 
 use async_trait::async_trait;
-use imagen::{
-  context::ImageStore as ImageStoreTrait, image::load_from_memory, node::draw::ImageState,
-};
 use lru::LruCache;
 use reqwest::Client;
+use takumi::{
+  context::ImageStore as ImageStoreTrait, image::load_from_memory, node::draw::ImageState,
+};
 
 pub struct ImageStore {
   store: Mutex<LruCache<String, Arc<ImageState>>>,

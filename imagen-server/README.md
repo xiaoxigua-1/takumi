@@ -1,11 +1,11 @@
-# imagen-server
+# takumi-server
 
 HTTP server that exposes image generation as a REST API.
 
 ### Run from Source
 
 ```bash
-cargo run --release --bin imagen-server -- --fonts path/to/font.woff2
+cargo run --release --bin takumi-server -- --fonts path/to/font.woff2
 ```
 
 Checkout [Args](src/args.rs) for more options.
@@ -16,7 +16,7 @@ Checkout [Args](src/args.rs) for more options.
 
 Send a JSON payload with your layout definition to generate an image.
 
-The root node should be a [ContainerNode](../imagen/src/node/mod.rs).
+The root node should be a [ContainerNode](../takumi/src/node/mod.rs).
 
 ## License
 

@@ -1,4 +1,4 @@
-# imagen
+# takumi
 
 High-performance Rust library for generating images with CSS Flexbox-like layouts.
 
@@ -6,7 +6,7 @@ High-performance Rust library for generating images with CSS Flexbox-like layout
 
 Checkout the [minimal example](../example/src/minimal.rs) for a quick start.
 
-If you want to use it with serde, checkout the default server implementation in [imagen-server](../imagen-server/).
+If you want to use it with serde, checkout the default server implementation in [takumi-server](../takumi-server/).
 
 ## Credits
 

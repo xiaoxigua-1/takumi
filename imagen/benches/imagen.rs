@@ -2,7 +2,7 @@ use std::io::Cursor;
 
 use criterion::{Criterion, criterion_group, criterion_main};
 use image::{ImageFormat, RgbaImage};
-use imagen::{
+use takumi::{
   color::Color,
   context::Context,
   node::{

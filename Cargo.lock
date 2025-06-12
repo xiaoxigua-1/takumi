@@ -644,7 +644,7 @@ name = "example"
 version = "0.1.0"
 dependencies = [
  "async-trait",
- "imagen",
+ "takumi",
  "serde",
  "typetag",
 ]
@@ -1150,7 +1150,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "imagen"
+name = "takumi"
 version = "0.1.0"
 dependencies = [
  "async-trait",
@@ -1170,14 +1170,14 @@ dependencies = [
 ]
 
 [[package]]
-name = "imagen-server"
+name = "takumi-server"
 version = "0.1.0"
 dependencies = [
  "async-trait",
  "axum",
  "bytes",
  "clap",
- "imagen",
+ "takumi",
  "lru",
  "mimalloc",
  "reqwest",

@@ -1,7 +1,7 @@
-// Import necessary modules for file operations and imagen library components
+// Import necessary modules for file operations and takumi library components
 use std::fs::File;
 
-use imagen::{
+use takumi::{
   context::Context,
   image::ImageFormat,
   node::{
@@ -13,7 +13,7 @@ use imagen::{
 
 /// Generates a "Hello, {name}!" image with specified dimensions and styling
 ///
-/// This function creates a simple image with text using the imagen library.
+/// This function creates a simple image with text using the takumi library.
 /// The image is rendered and saved as a WebP file named "output.webp".
 pub fn say_hello_to(name: &str) {
   // Create a new context for rendering with default settings

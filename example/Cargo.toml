@@ -3,8 +3,8 @@ name = "example"
 version = "0.1.0"
 edition = "2024"
 
-[dependencies.imagen]
-path = "../imagen"
+[dependencies.takumi]
+path = "../takumi"
 
 [dependencies.serde]
 version = "1"

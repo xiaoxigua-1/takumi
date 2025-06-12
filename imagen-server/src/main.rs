@@ -9,7 +9,7 @@ use axum::{
   routing::post,
 };
 use clap::Parser;
-use imagen::{
+use takumi::{
   context::{Context, load_woff2_font_to_context},
   image::ImageFormat,
   node::{ContainerNode, Node},

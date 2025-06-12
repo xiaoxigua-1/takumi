@@ -305,7 +305,7 @@ impl Node for TextNode {
 /// Image nodes display images loaded from URLs or file paths,
 /// with support for async loading and caching.
 #[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct ImageNode {
+pub struct takumiode {
   /// The styling properties for this image node
   #[serde(default, flatten)]
   pub style: Style,
@@ -318,7 +318,7 @@ pub struct ImageNode {
 
 #[typetag::serde(name = "image")]
 #[async_trait]
-impl Node for ImageNode {
+impl Node for takumiode {
   fn get_style(&self) -> &Style {
     &self.style
   }

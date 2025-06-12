@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use imagen::{
+use takumi::{
   node::{
     Node,
     style::{SidesValue, Style, ValuePercentageAuto},
@@ -16,7 +16,7 @@ use serde::{Deserialize, Serialize};
 ///
 /// # Example
 /// ```rust
-/// use imagen::node::style::Style;
+/// use takumi::node::style::Style;
 ///
 /// let circle = CircleNode {
 ///     style: Style::default(),

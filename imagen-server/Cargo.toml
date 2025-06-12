@@ -1,5 +1,5 @@
 [package]
-name = "imagen-server"
+name = "takumi-server"
 version = "0.1.0"
 edition = "2024"
 
@@ -11,8 +11,8 @@ mimalloc = "0.1"
 async-trait = "0.1"
 lru = "0.14"
 
-[dependencies.imagen]
-path = "../imagen"
+[dependencies.takumi]
+path = "../takumi"
 
 [dependencies.tokio]
 version = "1"

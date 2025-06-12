@@ -1,16 +1,18 @@
-# Imagen
+# takumi (匠　たくみ)
 
 High-performance Rust library for generating images with CSS Flexbox-like layouts.
 
+*Takumi (匠) means "artisan" or "craftsman" in Japanese - reflecting the precision and artistry required to craft beautiful images through code.*
+
 ## Crates
 
-### [imagen](imagen/)
+### [takumi](takumi/)
 
 Core image rendering library with layout system.
 
 You can use this crate to create your own image rendering system with custom logic or [custom nodes](example/src/custom_node.rs).
 
-### [imagen-server](imagen-server/)
+### [takumi-server](takumi-server/)
 
 Default implementation of HTTP server for image generation API.
 

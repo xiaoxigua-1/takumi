@@ -19,8 +19,8 @@ use crate::{
 /// # Example
 /// ```rust
 /// use std::sync::Arc;
-/// use imagen::context::ImageStore;
-/// use imagen::node::draw::ImageState;
+/// use takumi::context::ImageStore;
+/// use takumi::node::draw::ImageState;
 ///
 /// struct MyImageStore;
 ///
