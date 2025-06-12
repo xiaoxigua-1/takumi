@@ -4,7 +4,7 @@
 //!
 //! _Takumi (匠) means "artisan" or "craftsman" in Japanese - reflecting the precision and artistry required to craft beautiful images through code._
 //!
-//! Checkout the [minimal example](https://github.com/kane50613/takumi/blob/main/example/src/minimal.rs) for a quick start.
+//! Checkout the [minimal example](https://github.com/kane50613/takumi/blob/master/example/src/minimal.rs) for a quick start.
 //!
 //! ## Credits
 //!
