@@ -12,7 +12,7 @@ use taffy::Layout;
 
 use crate::{
   border_radius::{BorderRadius, apply_border_radius_antialiased},
-  color::Color,
+  color::{ColorAt, ColorInput},
   context::FontContext,
   node::style::{FontStyle, ObjectFit, Style},
 };
@@ -46,9 +46,7 @@ pub fn draw_text(
   canvas: &mut Blend<RgbaImage>,
   layout: Layout,
 ) {
-  let alpha = font_style.color.alpha();
-
-  if alpha == 0.0 {
+  if font_style.color.is_transparent() {
     return;
   }
 
@@ -86,23 +84,32 @@ pub fn draw_text(
   buffer.draw(
     &mut font_system,
     &mut font_cache,
-    font_style.color.into(),
+    cosmic_text::Color(0),
     |x, y, w, h, color| {
-      let color = Rgba([
-        color.r(),
-        color.g(),
-        color.b(),
-        (color.a() as f32 * alpha) as u8,
-      ]);
+      let color = color.as_rgba();
 
-      if color.0[3] == 0 {
+      let text_alpha = color[3] as f32 / 255.0;
+
+      if text_alpha == 0.0 {
         return;
       }
 
-      draw_filled_rect_mut(
+      // FIXME: emojis with rich coloring with black might not be rendered correctly.
+      let mut render_color: Rgba<u8> = if color[0] == 0 && color[1] == 0 && color[2] == 0 {
+        font_style
+          .color
+          .at(content_box.width, content_box.height, x as u32, y as u32)
+          .into()
+      } else {
+        Rgba(color)
+      };
+
+      render_color.0[3] = (render_color.0[3] as f32 * text_alpha) as u8;
+
+      draw_filled_rect_mut_fast(
         canvas,
         Rect::at(start_x as i32 + x, start_y as i32 + y).of_size(w, h),
-        color,
+        render_color,
       );
     },
   );
@@ -275,9 +282,61 @@ pub(crate) fn draw_image_overlay_fast(
   }
 }
 
+fn draw_filled_rect_mut_fast(
+  canvas: &mut Blend<RgbaImage>,
+  rect: Rect,
+  color: impl Into<Rgba<u8>>,
+) {
+  let color = color.into();
+
+  if color.0[3] == 0 {
+    return;
+  }
+
+  if color.0[3] == 255 {
+    draw_filled_rect_mut(&mut canvas.0, rect, color);
+    return;
+  }
+
+  draw_filled_rect_mut(canvas, rect, color);
+}
+
+/// Draws a filled rectangle on the canvas from a color input.
+pub fn draw_filled_rect_from_color_input(
+  canvas: &mut Blend<RgbaImage>,
+  rect: Rect,
+  color: &ColorInput,
+) {
+  match color {
+    ColorInput::Color(color) => {
+      draw_filled_rect_mut_fast(canvas, rect, *color);
+    }
+    ColorInput::Gradient(gradient) => {
+      for y in rect.top()..rect.bottom() {
+        for x in rect.left()..rect.right() {
+          let color = gradient.at(
+            rect.width() as f32,
+            rect.height() as f32,
+            x as u32,
+            y as u32,
+          );
+          canvas.draw_pixel(x as u32, y as u32, color.into());
+        }
+      }
+    }
+  }
+}
+
+/// Creates an image from a color input.
+pub fn create_image_from_color_input(color: &ColorInput, width: u32, height: u32) -> RgbaImage {
+  RgbaImage::from_par_fn(width, height, |x, y| {
+    color.at(width as f32, height as f32, x, y).into()
+  })
+}
+
 /// Draws a solid color background on the canvas.
 pub fn draw_background_color(
-  color: Color,
+  color: &ColorInput,
   radius: Option<BorderRadius>,
   canvas: &mut Blend<RgbaImage>,
   layout: Layout,
@@ -286,11 +345,12 @@ pub fn draw_background_color(
     .of_size(layout.size.width as u32, layout.size.height as u32);
 
   let Some(radius) = radius else {
-    draw_filled_rect_mut(canvas, rect, color.into());
+    draw_filled_rect_from_color_input(canvas, rect, color);
     return;
   };
 
-  let mut image = RgbaImage::from_pixel(rect.width(), rect.height(), color.into());
+  let mut image = create_image_from_color_input(color, rect.width(), rect.height());
+
   apply_border_radius_antialiased(&mut image, radius);
 
   draw_image_overlay_fast(

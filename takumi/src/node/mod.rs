@@ -124,7 +124,7 @@ pub trait Node: Send + Sync + Debug + DynClone {
   /// * `canvas` - The canvas to draw on
   /// * `layout` - The computed layout information for this node
   fn draw_background(&self, _context: &Context, canvas: &mut Blend<RgbaImage>, layout: Layout) {
-    if let Some(background_color) = self.get_style().background_color {
+    if let Some(background_color) = &self.get_style().background_color {
       let radius = self
         .get_style()
         .inheritable_style

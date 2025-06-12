@@ -1,10 +1,13 @@
 use image::{GenericImage, GenericImageView, Rgba, RgbaImage};
 use imageproc::drawing::Blend;
-use imageproc::{drawing::draw_filled_rect_mut, rect::Rect};
+use imageproc::rect::Rect;
 use taffy::Layout;
 
 use crate::border_radius::{BorderRadius, apply_border_radius_antialiased};
-use crate::node::draw::draw_image_overlay_fast;
+use crate::color::ColorInput;
+use crate::node::draw::{
+  create_image_from_color_input, draw_filled_rect_from_color_input, draw_image_overlay_fast,
+};
 use crate::node::style::Style;
 
 /// Draws borders around the node with optional border radius.
@@ -25,23 +28,26 @@ pub fn draw_border(style: &Style, canvas: &mut Blend<RgbaImage>, layout: &Layout
     return;
   }
 
-  let border_color = style.inheritable_style.border_color.unwrap_or_default();
+  let border_color = style
+    .inheritable_style
+    .border_color
+    .clone()
+    .unwrap_or_default();
 
   if let Some(radius) = &style.inheritable_style.border_radius {
     let radius: BorderRadius = BorderRadius::from_layout(layout, radius.clone());
 
-    draw_rounded_border(canvas, layout, border_color.into(), radius);
+    draw_rounded_border(canvas, layout, &border_color, radius);
   } else {
-    draw_rectangular_border(canvas, layout, border_color.into());
+    draw_rectangular_border(canvas, layout, &border_color);
   }
 }
 
-
 /// Draws a rectangular border without rounded corners.
-fn draw_rectangular_border(canvas: &mut Blend<RgbaImage>, layout: &Layout, color: Rgba<u8>) {
+fn draw_rectangular_border(canvas: &mut Blend<RgbaImage>, layout: &Layout, color: &ColorInput) {
   // Top border
   if layout.border.top > 0.0 {
-    draw_filled_rect_mut(
+    draw_filled_rect_from_color_input(
       canvas,
       Rect::at(layout.location.x as i32, layout.location.y as i32)
         .of_size(layout.size.width as u32, layout.border.top as u32),
@@ -51,7 +57,7 @@ fn draw_rectangular_border(canvas: &mut Blend<RgbaImage>, layout: &Layout, color
 
   // Bottom border
   if layout.border.bottom > 0.0 {
-    draw_filled_rect_mut(
+    draw_filled_rect_from_color_input(
       canvas,
       Rect::at(
         layout.location.x as i32,
@@ -64,7 +70,7 @@ fn draw_rectangular_border(canvas: &mut Blend<RgbaImage>, layout: &Layout, color
 
   // Left border (excluding corners already drawn by top/bottom)
   if layout.border.left > 0.0 {
-    draw_filled_rect_mut(
+    draw_filled_rect_from_color_input(
       canvas,
       Rect::at(
         layout.location.x as i32,
@@ -80,7 +86,7 @@ fn draw_rectangular_border(canvas: &mut Blend<RgbaImage>, layout: &Layout, color
 
   // Right border (excluding corners already drawn by top/bottom)
   if layout.border.right > 0.0 {
-    draw_filled_rect_mut(
+    draw_filled_rect_from_color_input(
       canvas,
       Rect::at(
         layout.location.x as i32 + layout.size.width as i32 - layout.border.right as i32,
@@ -99,7 +105,7 @@ fn draw_rectangular_border(canvas: &mut Blend<RgbaImage>, layout: &Layout, color
 fn draw_rounded_border(
   canvas: &mut Blend<RgbaImage>,
   layout: &Layout,
-  color: Rgba<u8>,
+  color: &ColorInput,
   radius: BorderRadius,
 ) {
   if layout.border.left == 0.0
@@ -112,7 +118,7 @@ fn draw_rounded_border(
 
   // Create a temporary image filled with border color
   let mut border_image =
-    RgbaImage::from_pixel(layout.size.width as u32, layout.size.height as u32, color);
+    create_image_from_color_input(color, layout.size.width as u32, layout.size.height as u32);
 
   // Apply antialiased border radius to the outer edge
   apply_border_radius_antialiased(&mut border_image, radius);
