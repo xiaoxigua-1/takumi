@@ -1,4 +1,4 @@
-# takumi (匠　たくみ)
+# takumi
 
 High-performance Rust library for generating images with CSS Flexbox-like layouts.
 
