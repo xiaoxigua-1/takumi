@@ -2,6 +2,11 @@
 name = "takumi"
 version = "0.1.0"
 edition = "2024"
+license = "MIT"
+description = "High-performance Rust library for generating images with CSS Flexbox-like layouts."
+keywords = ["image", "css", "flexbox", "layout", "rendering"]
+repository = "https://github.com/takumi-rs/takumi"
+readme = "README.md"
 
 [dependencies]
 imageproc = "0.25"

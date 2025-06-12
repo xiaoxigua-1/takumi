@@ -644,8 +644,8 @@ name = "example"
 version = "0.1.0"
 dependencies = [
  "async-trait",
- "takumi",
  "serde",
+ "takumi",
  "typetag",
 ]
 
@@ -1147,42 +1147,6 @@ checksum = "b77d01e822461baa8409e156015a1d91735549f0f2c17691bd2d996bef238f7f"
 dependencies = [
  "byteorder-lite",
  "quick-error",
-]
-
-[[package]]
-name = "takumi"
-version = "0.1.0"
-dependencies = [
- "async-trait",
- "bytes",
- "cosmic-text",
- "criterion",
- "dyn-clone",
- "futures-util",
- "image",
- "imageproc",
- "merge",
- "serde",
- "taffy",
- "ts-rs",
- "typetag",
- "woff2-patched",
-]
-
-[[package]]
-name = "takumi-server"
-version = "0.1.0"
-dependencies = [
- "async-trait",
- "axum",
- "bytes",
- "clap",
- "takumi",
- "lru",
- "mimalloc",
- "reqwest",
- "serde_json",
- "tokio",
 ]
 
 [[package]]
@@ -2501,6 +2465,42 @@ dependencies = [
  "grid",
  "serde",
  "slotmap",
+]
+
+[[package]]
+name = "takumi"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "bytes",
+ "cosmic-text",
+ "criterion",
+ "dyn-clone",
+ "futures-util",
+ "image",
+ "imageproc",
+ "merge",
+ "serde",
+ "taffy",
+ "ts-rs",
+ "typetag",
+ "woff2-patched",
+]
+
+[[package]]
+name = "takumi-server"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "axum",
+ "bytes",
+ "clap",
+ "lru",
+ "mimalloc",
+ "reqwest",
+ "serde_json",
+ "takumi",
+ "tokio",
 ]
 
 [[package]]
