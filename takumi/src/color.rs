@@ -27,6 +27,19 @@ impl Default for ColorInput {
   }
 }
 
+impl ColorInput {
+  /// Determines if the color input is fully transparent.
+  ///
+  /// # Returns
+  /// `true` if the color input is transparent; otherwise, `false`.
+  pub fn is_transparent(&self) -> bool {
+    match self {
+      ColorInput::Color(color) => color.is_transparent(),
+      ColorInput::Gradient(gradient) => gradient.stops.iter().all(|color| color.is_transparent()),
+    }
+  }
+}
+
 /// Represents a gradient with color steps and an angle for directional gradients.
 #[derive(Debug, Clone, Deserialize, Serialize, TS)]
 pub struct Gradient {
@@ -141,6 +154,14 @@ impl Color {
   /// Converts the float alpha value to an 8-bit integer representation.
   pub fn alpha_u8(&self) -> u8 {
     (self.alpha() * 255.0) as u8
+  }
+
+  /// Determines if the color is fully transparent.
+  ///
+  /// # Returns
+  /// `true` if the color is transparent; otherwise, `false`.
+  pub fn is_transparent(&self) -> bool {
+    self.alpha() == 0.0
   }
 }
 

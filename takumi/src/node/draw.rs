@@ -46,12 +46,8 @@ pub fn draw_text(
   canvas: &mut Blend<RgbaImage>,
   layout: Layout,
 ) {
-  if let ColorInput::Color(color) = &font_style.color {
-    let alpha = color.alpha();
-
-    if alpha == 0.0 {
-      return;
-    }
+  if font_style.color.is_transparent() {
+    return;
   }
 
   let content_box = layout.content_box_size();
