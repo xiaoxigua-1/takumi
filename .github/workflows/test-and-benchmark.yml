@@ -79,8 +79,11 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-benchmark-
 
+      - name: Install cargo-binstall
+        uses: cargo-bins/cargo-binstall@main
+
       - name: Install cargo-criterion
-        run: cargo install cargo-criterion
+        run: cargo binstall cargo-criterion --no-confirm
 
       - name: Run baseline benchmarks
         run: |
@@ -92,7 +95,7 @@ jobs:
           cargo criterion --message-format=json > pr-results.json
 
       - name: Install criterion-compare
-        run: cargo install criterion-compare
+        run: cargo binstall criterion-compare --no-confirm
 
       - name: Compare benchmarks
         id: benchmark-comparison
@@ -155,8 +158,11 @@ jobs:
             ~/.cargo/git
           key: ${{ runner.os }}-audit-${{ hashFiles('**/Cargo.lock') }}
 
+      - name: Install cargo-binstall
+        uses: cargo-bins/cargo-binstall@main
+
       - name: Install cargo-audit
-        run: cargo install cargo-audit
+        run: cargo binstall cargo-audit --no-confirm
 
       - name: Run security audit
         run: cargo audit
@@ -183,8 +189,11 @@ jobs:
             target
           key: ${{ runner.os }}-coverage-${{ hashFiles('**/Cargo.lock') }}
 
+      - name: Install cargo-binstall
+        uses: cargo-bins/cargo-binstall@main
+
       - name: Install cargo-llvm-cov
-        run: cargo install cargo-llvm-cov
+        run: cargo binstall cargo-llvm-cov --no-confirm
 
       - name: Generate coverage report
         run: cargo llvm-cov --all-features --workspace --lcov --output-path lcov.info
