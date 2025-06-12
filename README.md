@@ -1,8 +1,10 @@
 # takumi
 
+> 🚧 This project is under development.
+
 High-performance Rust library for generating images with CSS Flexbox-like layouts.
 
-*Takumi (匠) means "artisan" or "craftsman" in Japanese - reflecting the precision and artistry required to craft beautiful images through code.*
+_Takumi (匠) means "artisan" or "craftsman" in Japanese - reflecting the precision and artistry required to craft beautiful images through code._
 
 ## Crates
 
