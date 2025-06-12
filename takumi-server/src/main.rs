@@ -9,14 +9,14 @@ use axum::{
   routing::post,
 };
 use clap::Parser;
+use reqwest::Client;
+use std::{io::Cursor, net::SocketAddr, path::Path, sync::Arc};
 use takumi::{
   context::{Context, load_woff2_font_to_context},
   image::ImageFormat,
   node::{ContainerNode, Node},
   render::ImageRenderer,
 };
-use reqwest::Client;
-use std::{io::Cursor, net::SocketAddr, path::Path, sync::Arc};
 use tokio::net::TcpListener;
 
 use mimalloc::MiMalloc;
