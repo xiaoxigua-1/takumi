@@ -2,9 +2,10 @@ use cosmic_text::{Align, Weight};
 use merge::{Merge, option::overwrite_none};
 use serde::{Deserialize, Serialize};
 use taffy::{
-  AlignItems, Dimension, Display, FlexDirection, JustifyContent, LengthPercentage,
-  LengthPercentageAuto, Position, Rect, Size, style::Style as TaffyStyle,
+  Dimension, Display, LengthPercentage, LengthPercentageAuto, Rect, Size,
+  style::Style as TaffyStyle,
 };
+use ts_rs::TS;
 
 use crate::color::Color;
 
@@ -12,7 +13,7 @@ use crate::color::Color;
 ///
 /// This wraps a u16 value that corresponds to CSS font-weight values
 /// (e.g., 100 for thin, 400 for normal, 700 for bold, 900 for black).
-#[derive(Debug, Copy, Clone, Deserialize, Serialize)]
+#[derive(Debug, Copy, Clone, Deserialize, Serialize, TS)]
 pub struct FontWeight(pub u16);
 
 impl Default for FontWeight {
@@ -30,7 +31,7 @@ impl From<FontWeight> for Weight {
 /// Defines how an image should be resized to fit its container.
 ///
 /// Similar to CSS object-fit property.
-#[derive(Debug, Clone, Deserialize, Serialize, Copy)]
+#[derive(Debug, Clone, Deserialize, Serialize, Copy, TS)]
 #[serde(rename_all = "camelCase")]
 pub enum ObjectFit {
   /// Scale the image to fit within the container while preserving aspect ratio
@@ -54,8 +55,8 @@ impl Default for ObjectFit {
 /// Text alignment options for text rendering.
 ///
 /// Corresponds to CSS text-align property values.
-#[derive(Debug, Clone, Deserialize, Serialize, Copy)]
-#[serde(rename_all = "camelCase")]
+#[derive(Debug, Clone, Deserialize, Serialize, Copy, TS)]
+#[serde(rename_all = "snake_case")]
 pub enum TextAlign {
   /// Align text to the left edge
   Left,
@@ -87,13 +88,142 @@ impl Default for TextAlign {
   }
 }
 
+/// Defines the positioning method for an element.
+///
+/// This enum determines how an element is positioned within its containing element.
+#[derive(Debug, Clone, Deserialize, Serialize, Copy, TS)]
+#[serde(rename_all = "snake_case")]
+pub enum Position {
+  /// Element is positioned according to the normal flow of the document
+  Relative,
+  /// Element is positioned relative to its nearest positioned ancestor
+  Absolute,
+}
+
+impl Default for Position {
+  fn default() -> Self {
+    Self::Relative
+  }
+}
+
+impl From<Position> for taffy::style::Position {
+  fn from(value: Position) -> Self {
+    match value {
+      Position::Relative => taffy::style::Position::Relative,
+      Position::Absolute => taffy::style::Position::Absolute,
+    }
+  }
+}
+
+/// Defines the direction of flex items within a flex container.
+///
+/// This enum determines how flex items are laid out along the main axis.
+#[derive(Debug, Clone, Deserialize, Serialize, Copy, TS)]
+#[serde(rename_all = "snake_case")]
+pub enum FlexDirection {
+  /// Items are laid out horizontally from left to right
+  Row,
+  /// Items are laid out vertically from top to bottom
+  Column,
+  /// Items are laid out horizontally from right to left
+  RowReverse,
+  /// Items are laid out vertically from bottom to top
+  ColumnReverse,
+}
+
+impl Default for FlexDirection {
+  fn default() -> Self {
+    Self::Row
+  }
+}
+
+impl From<FlexDirection> for taffy::style::FlexDirection {
+  fn from(value: FlexDirection) -> Self {
+    match value {
+      FlexDirection::Row => taffy::style::FlexDirection::Row,
+      FlexDirection::Column => taffy::style::FlexDirection::Column,
+      FlexDirection::RowReverse => taffy::style::FlexDirection::RowReverse,
+      FlexDirection::ColumnReverse => taffy::style::FlexDirection::ColumnReverse,
+    }
+  }
+}
+
+/// Defines how flex items are aligned along the main axis.
+///
+/// This enum determines how space is distributed between and around flex items
+/// along the main axis of the flex container.
+#[derive(Debug, Clone, Deserialize, Serialize, Copy, TS)]
+#[serde(rename_all = "snake_case")]
+pub enum JustifyContent {
+  /// Items are packed toward the start of the flex-direction
+  Start,
+  /// Items are packed toward the end of the flex-direction
+  End,
+  /// Items are packed toward the start of the flex-direction
+  FlexStart,
+  /// Items are packed toward the end of the flex-direction
+  FlexEnd,
+  /// Items are centered along the main axis
+  Center,
+  /// Items are evenly distributed with the first item at the start and last at the end
+  SpaceBetween,
+  /// Items are evenly distributed with equal space around them
+  SpaceAround,
+}
+
+impl From<JustifyContent> for taffy::style::JustifyContent {
+  fn from(value: JustifyContent) -> Self {
+    match value {
+      JustifyContent::Start => taffy::style::JustifyContent::Start,
+      JustifyContent::End => taffy::style::JustifyContent::End,
+      JustifyContent::FlexStart => taffy::style::JustifyContent::FlexStart,
+      JustifyContent::FlexEnd => taffy::style::JustifyContent::FlexEnd,
+      JustifyContent::Center => taffy::style::JustifyContent::Center,
+      JustifyContent::SpaceBetween => taffy::style::JustifyContent::SpaceBetween,
+      JustifyContent::SpaceAround => taffy::style::JustifyContent::SpaceAround,
+    }
+  }
+}
+
+/// Defines how flex items are aligned along the cross axis.
+///
+/// This enum determines how flex items are aligned within the flex container
+/// along the cross axis (perpendicular to the main axis).
+#[derive(Debug, Clone, Deserialize, Serialize, Copy, TS)]
+#[serde(rename_all = "snake_case")]
+pub enum AlignItems {
+  /// Items are aligned to the start of the cross axis
+  Start,
+  /// Items are aligned to the end of the cross axis
+  End,
+  /// Items are centered along the cross axis
+  Center,
+  /// Items are aligned such that their baselines align
+  Baseline,
+  /// Items are stretched to fill the container along the cross axis
+  Stretch,
+}
+
+impl From<AlignItems> for taffy::style::AlignItems {
+  fn from(value: AlignItems) -> Self {
+    match value {
+      AlignItems::Start => taffy::style::AlignItems::Start,
+      AlignItems::End => taffy::style::AlignItems::End,
+      AlignItems::Center => taffy::style::AlignItems::Center,
+      AlignItems::Baseline => taffy::style::AlignItems::Baseline,
+      AlignItems::Stretch => taffy::style::AlignItems::Stretch,
+    }
+  }
+}
+
 /// Main styling structure that contains all layout and visual properties.
 ///
 /// This structure combines both layout properties (like width, height, padding)
 /// and inheritable properties (like font settings, colors) that can be passed
 /// down to child elements.
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, TS)]
 #[serde(default)]
+#[ts(export)]
 pub struct Style {
   /// Width of the element
   pub width: ValuePercentageAuto,
@@ -154,7 +284,7 @@ impl Default for Style {
 ///
 /// These properties are typically passed down from parent to child elements
 /// in the layout hierarchy, such as font settings and colors.
-#[derive(Debug, Clone, Deserialize, Default, Serialize, Merge)]
+#[derive(Debug, Clone, Deserialize, Default, Serialize, Merge, TS)]
 #[merge(strategy = overwrite_none)]
 pub struct InheritableStyle {
   /// Color of the element's border
@@ -181,7 +311,7 @@ pub struct InheritableStyle {
 ///
 /// This structure contains all the necessary information for rendering text,
 /// including font size, family, weight, alignment, and color.
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, TS)]
 pub struct FontStyle {
   /// Font size in pixels
   pub font_size: f32,
@@ -231,8 +361,7 @@ impl From<&Style> for FontStyle {
 ///
 /// Can be either a single value applied to both axes, or separate values
 /// for horizontal and vertical spacing.
-#[derive(Debug, Clone, Deserialize, Serialize)]
-#[serde(untagged)]
+#[derive(Debug, Clone, Deserialize, Serialize, TS)]
 pub enum Gap {
   /// Same gap value for both horizontal and vertical spacing
   SingleValue(f32),
@@ -264,7 +393,7 @@ impl From<Gap> for Size<LengthPercentage> {
 /// Border styling properties.
 ///
 /// Defines the visual appearance of element borders, including color and size.
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, TS)]
 pub struct Border {
   /// Border color
   pub color: Option<Color>,
@@ -277,9 +406,9 @@ pub struct Border {
 /// This enum allows for flexible specification of values like padding, margin,
 /// or border sizes using either a single value for all sides, separate values
 /// for vertical/horizontal axes, or individual values for each side.
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, TS)]
 #[serde(untagged)]
-pub enum SidesValue<T: Default> {
+pub enum SidesValue<T> {
   /// Same value for all four sides
   SingleValue(T),
   /// Separate values for vertical and horizontal sides (vertical, horizontal)
@@ -323,7 +452,7 @@ impl<T: Copy, F: Copy + Default + Into<T>> From<SidesValue<F>> for Rect<T> {
 ///
 /// This corresponds to CSS values that can be specified as pixels, percentages,
 /// or the 'auto' keyword for automatic sizing.
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Copy)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Copy, TS)]
 #[serde(rename_all = "camelCase")]
 pub enum ValuePercentageAuto {
   /// Automatic sizing based on content
@@ -375,7 +504,7 @@ impl From<ValuePercentageAuto> for LengthPercentage {
 ///
 /// Used for properties that can have different values for horizontal
 /// and vertical directions, such as padding or margin.
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, TS)]
 pub struct AxisSides<T> {
   /// Horizontal axis value
   #[serde(default)]
@@ -388,7 +517,7 @@ pub struct AxisSides<T> {
 /// Represents individual values for each side of an element.
 ///
 /// Allows specification of different values for top, right, bottom, and left sides.
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, TS)]
 pub struct IndividualSides<T> {
   /// Top side value
   #[serde(default)]
@@ -416,11 +545,11 @@ impl From<Style> for TaffyStyle {
       inset: style.inset.into(),
       margin: style.margin.into(),
       display: Display::Flex,
-      flex_direction: style.flex_direction,
-      position: style.position,
-      justify_content: style.justify_content,
+      flex_direction: style.flex_direction.into(),
+      position: style.position.into(),
+      justify_content: style.justify_content.map(|j| j.into()),
       flex_grow: style.flex_grow,
-      align_items: style.align_items,
+      align_items: style.align_items.map(|a| a.into()),
       gap: style.gap.into(),
       ..Default::default()
     }

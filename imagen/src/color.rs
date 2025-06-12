@@ -1,5 +1,6 @@
 use image::Rgba;
 use serde::{Deserialize, Serialize};
+use ts_rs::TS;
 
 /// Represents a color in various formats with support for RGB, RGBA, and integer RGB values.
 ///
@@ -7,7 +8,7 @@ use serde::{Deserialize, Serialize};
 /// - `Rgb`: RGB color with 8-bit components (r, g, b)
 /// - `Rgba`: RGBA color with 8-bit RGB components and 32-bit float alpha (r, g, b, a)
 /// - `RgbInt`: Single 32-bit integer containing RGB values
-#[derive(Debug, Clone, Deserialize, Copy, Serialize)]
+#[derive(Debug, Clone, Deserialize, Copy, Serialize, TS)]
 #[serde(untagged)]
 pub enum Color {
   /// RGB color with 8-bit components
