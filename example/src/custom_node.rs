@@ -17,6 +17,7 @@ use takumi::{
 /// # Example
 /// ```rust
 /// use takumi::node::style::Style;
+/// use example::custom_node::CircleNode;
 ///
 /// let circle = CircleNode {
 ///     style: Style::default(),
