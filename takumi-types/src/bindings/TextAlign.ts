@@ -5,4 +5,4 @@
  *
  * Corresponds to CSS text-align property values.
  */
-export type TextAlign = "left" | "right" | "center" | "justified" | "end";
+export type TextAlign = "left" | "right" | "center" | "justify" | "end";

@@ -65,7 +65,7 @@ pub enum TextAlign {
   /// Center align text
   Center,
   /// Justify text to both edges
-  Justified,
+  Justify,
   /// Align text to the end (language-dependent)
   End,
 }
@@ -76,7 +76,7 @@ impl From<TextAlign> for Align {
       TextAlign::Left => Align::Left,
       TextAlign::Right => Align::Right,
       TextAlign::Center => Align::Center,
-      TextAlign::Justified => Align::Justified,
+      TextAlign::Justify => Align::Justified,
       TextAlign::End => Align::End,
     }
   }
