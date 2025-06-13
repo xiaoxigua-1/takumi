@@ -286,7 +286,7 @@ impl Default for Style {
 /// in the layout hierarchy, such as font settings and colors.
 #[derive(Debug, Clone, Deserialize, Default, Serialize, Merge, TS)]
 #[merge(strategy = overwrite_none)]
-#[ts(optional_fields)]
+#[ts(optional_fields, export)]
 pub struct InheritableStyle {
   /// Color of the element's border
   pub border_color: Option<ColorInput>,
