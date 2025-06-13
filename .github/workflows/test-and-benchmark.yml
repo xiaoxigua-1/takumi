@@ -14,7 +14,7 @@ jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -47,97 +47,6 @@ jobs:
 
       - name: Run doc tests
         run: cargo test --doc --all-features --workspace
-
-  benchmark:
-    name: Benchmark
-    runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
-
-    steps:
-      - name: Checkout PR branch
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.head_ref }}
-
-      - name: Checkout base branch
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.base_ref }}
-          path: base
-
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Cache Cargo registry
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-benchmark-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-benchmark-
-
-      - name: Install cargo-binstall
-        uses: cargo-bins/cargo-binstall@main
-
-      - name: Install cargo-criterion
-        run: cargo binstall cargo-criterion --no-confirm
-
-      - name: Run baseline benchmarks
-        run: |
-          cd base
-          cargo criterion --message-format=json > ../baseline-results.json
-
-      - name: Run PR benchmarks
-        run: |
-          cargo criterion --message-format=json > pr-results.json
-
-      - name: Install criterion-compare
-        run: cargo binstall criterion-compare --no-confirm
-
-      - name: Compare benchmarks
-        id: benchmark-comparison
-        run: |
-          echo "## Benchmark Results" > benchmark-comment.md
-          echo "" >> benchmark-comment.md
-
-          if criterion-compare baseline-results.json pr-results.json >> benchmark-comment.md; then
-            echo "comparison_success=true" >> $GITHUB_OUTPUT
-          else
-            echo "comparison_success=false" >> $GITHUB_OUTPUT
-            echo "⚠️ Benchmark comparison failed - results may be incomplete" >> benchmark-comment.md
-          fi
-
-          echo "" >> benchmark-comment.md
-          echo "Benchmarks run on: $(date -u)" >> benchmark-comment.md
-          echo "Base commit: ${{ github.base_ref }}" >> benchmark-comment.md
-          echo "PR commit: ${{ github.head_ref }}" >> benchmark-comment.md
-
-      - name: Comment benchmark results
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const fs = require('fs');
-            const comment = fs.readFileSync('benchmark-comment.md', 'utf8');
-
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: comment
-            });
-
-      - name: Upload benchmark artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: benchmark-results
-          path: |
-            baseline-results.json
-            pr-results.json
-            benchmark-comment.md
-          retention-days: 30
 
   security-audit:
     name: Security Audit
