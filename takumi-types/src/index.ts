@@ -28,50 +28,56 @@ type AnyNode = {
   [key: string]: JsonValue;
 };
 
+export type StyleInput = Partial<Style>;
+
 export type Node = ContainerNode | TextNode | ImageNode | AnyNode;
 
-export type ContainerNode = {
+export type ContainerNode = StyleInput & {
   type: "container";
-  style: Style;
   children: Node[];
 };
 
-export type TextNode = {
+export type TextNode = StyleInput & {
   type: "text";
-  style: Style;
   text: string;
 };
 
-export type ImageNode = {
+export type ImageNode = StyleInput & {
   type: "image";
-  style: Style;
   src: string;
 };
 
-export function container(style: Style, children: Node[]): ContainerNode {
+export function container(children: Node[], style?: StyleInput) {
   return {
+    ...style,
     type: "container",
-    style,
     children,
-  };
+  } satisfies ContainerNode;
 }
 
-export function text(style: Style, text: string): TextNode {
+export function text(text: string, style?: StyleInput) {
   return {
+    ...style,
     type: "text",
-    style,
     text,
-  };
+  } satisfies TextNode;
 }
 
-export function image(style: Style, src: string): ImageNode {
+export function image(src: string, style?: StyleInput) {
   return {
+    ...style,
     type: "image",
-    style,
     src,
-  };
+  } satisfies ImageNode;
 }
 
-export function style(style: Style): Style {
-  return style;
+/**
+ * Convert a number to a percentage struct.
+ * @param percentage - The percentage to convert (0.0 - 1.0).
+ * @returns The percentage struct.
+ */
+export function percentage(percentage: number) {
+  return {
+    percentage,
+  };
 }
