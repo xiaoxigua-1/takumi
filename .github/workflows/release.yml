@@ -73,9 +73,9 @@ jobs:
         run: |
           PREVIOUS_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
           if [ -z "$PREVIOUS_TAG" ]; then
-            COMMITS=$(git log --oneline --pretty=format:"- %s" | head -20)
+            COMMITS=$(git log --oneline --pretty=format:"- [%h](https://github.com/${{ github.repository }}/commit/%H) %s" | head -20)
           else
-            COMMITS=$(git log --oneline --pretty=format:"- %s" ${PREVIOUS_TAG}..HEAD)
+            COMMITS=$(git log --oneline --pretty=format:"- [%h](https://github.com/${{ github.repository }}/commit/%H) %s" ${PREVIOUS_TAG}..HEAD)
           fi
           
           echo "## What's Changed" > changelog.md
