@@ -1,4 +1,5 @@
 use async_trait::async_trait;
+use serde::{Deserialize, Serialize};
 use takumi::{
   node::{
     Node,
@@ -7,7 +8,6 @@ use takumi::{
   render::TaffyTreeWithNodes,
   taffy::{NodeId, TaffyError},
 };
-use serde::{Deserialize, Serialize};
 
 /// A specialized node type that renders as a circle.
 ///
@@ -17,6 +17,7 @@ use serde::{Deserialize, Serialize};
 /// # Example
 /// ```rust
 /// use takumi::node::style::Style;
+/// use example::custom_node::CircleNode;
 ///
 /// let circle = CircleNode {
 ///     style: Style::default(),
