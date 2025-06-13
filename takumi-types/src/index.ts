@@ -20,7 +20,7 @@ type AnyNode = {
   [key: string]: unknown;
 };
 
-export type Node = ContainerNode | TextNode | AnyNode;
+export type Node = ContainerNode | TextNode | ImageNode | AnyNode;
 
 export type ContainerNode = {
   type: "container";
