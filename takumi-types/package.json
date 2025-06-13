@@ -3,6 +3,16 @@
   "exports": {
     ".": "./src/index.ts"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kane50613/takumi"
+  },
+  "author": {
+    "email": "me@kane.tw",
+    "name": "Kane Wang",
+    "url": "https://kane.tw"
+  },
+  "license": "MIT",
   "version": "0.2.0",
   "type": "module",
   "devDependencies": {
