@@ -15,9 +15,17 @@ export * from "./bindings/Style";
 export * from "./bindings/TextAlign";
 export * from "./bindings/ValuePercentageAuto";
 
+type JsonValue =
+  | string
+  | number
+  | boolean
+  | null
+  | JsonValue[]
+  | { [key: string]: JsonValue };
+
 type AnyNode = {
   type: string;
-  [key: string]: unknown;
+  [key: string]: JsonValue;
 };
 
 export type Node = ContainerNode | TextNode | ImageNode | AnyNode;
