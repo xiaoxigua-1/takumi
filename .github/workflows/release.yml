@@ -1,0 +1,113 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_type:
+        description: 'Version bump type'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  release:
+    name: Create Release PR
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install semver tool
+        run: |
+          cargo install cargo-edit
+
+      - name: Get current versions
+        id: current_versions
+        run: |
+          CARGO_VERSION=$(grep '^version = ' takumi/Cargo.toml | sed 's/version = "\(.*\)"/\1/')
+          NPM_VERSION=$(grep '"version":' takumi-types/package.json | sed 's/.*"version": *"\([^"]*\)".*/\1/')
+          echo "cargo_version=$CARGO_VERSION" >> $GITHUB_OUTPUT
+          echo "npm_version=$NPM_VERSION" >> $GITHUB_OUTPUT
+          echo "Current Cargo version: $CARGO_VERSION"
+          echo "Current NPM version: $NPM_VERSION"
+
+      - name: Calculate new version
+        id: new_version
+        run: |
+          CURRENT_VERSION=${{ steps.current_versions.outputs.cargo_version }}
+          NEW_VERSION=$(bunx semver -i ${{ github.event.inputs.version_type }} $CURRENT_VERSION)
+          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "New version will be: $NEW_VERSION"
+
+      - name: Update Cargo.toml version
+        run: |
+          sed -i 's/^version = ".*"/version = "${{ steps.new_version.outputs.new_version }}"/' takumi/Cargo.toml
+
+      - name: Update package.json version
+        run: |
+          sed -i 's/"version": ".*"/"version": "${{ steps.new_version.outputs.new_version }}"/' takumi-types/package.json
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          PREVIOUS_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          if [ -z "$PREVIOUS_TAG" ]; then
+            COMMITS=$(git log --oneline --pretty=format:"- %s" | head -20)
+          else
+            COMMITS=$(git log --oneline --pretty=format:"- %s" ${PREVIOUS_TAG}..HEAD)
+          fi
+          
+          echo "## What's Changed" > changelog.md
+          echo "" >> changelog.md
+          echo "$COMMITS" >> changelog.md
+          echo "" >> changelog.md
+          echo "**Full Changelog**: https://github.com/${{ github.repository }}/compare/${PREVIOUS_TAG}...v${{ steps.new_version.outputs.new_version }}" >> changelog.md
+          
+          # Set multiline output
+          echo "changelog<<EOF" >> $GITHUB_OUTPUT
+          cat changelog.md >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "chore: bump version to v${{ steps.new_version.outputs.new_version }}"
+          title: "Release v${{ steps.new_version.outputs.new_version }}"
+          body: |
+            This PR bumps the version to v${{ steps.new_version.outputs.new_version }}.
+            
+            ## Changes
+            - 📦 Bump takumi version from v${{ steps.current_versions.outputs.cargo_version }} to v${{ steps.new_version.outputs.new_version }}
+            - 📦 Bump takumi-types version from v${{ steps.current_versions.outputs.npm_version }} to v${{ steps.new_version.outputs.new_version }}
+            
+            ${{ steps.changelog.outputs.changelog }}
+            
+            ## Checklist
+            - [ ] Version numbers updated correctly
+            - [ ] Changelog looks accurate
+            - [ ] All tests pass
+            - [ ] Ready to merge
+            
+            After merging, manually create the GitHub release with tag v${{ steps.new_version.outputs.new_version }}
+          branch: release/v${{ steps.new_version.outputs.new_version }}
+          delete-branch: true
