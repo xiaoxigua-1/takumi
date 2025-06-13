@@ -63,3 +63,7 @@ export function image(style: Style, src: string): ImageNode {
     src,
   };
 }
+
+export function style(style: Style): Style {
+  return style;
+}
