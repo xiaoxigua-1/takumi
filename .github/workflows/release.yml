@@ -78,15 +78,13 @@ jobs:
             COMMITS=$(git log --oneline --pretty=format:"- [%h](https://github.com/${{ github.repository }}/commit/%H) %s" ${PREVIOUS_TAG}..HEAD)
           fi
           
-          echo "## What's Changed" > changelog.md
-          echo "" >> changelog.md
-          echo "$COMMITS" >> changelog.md
-          echo "" >> changelog.md
-          echo "**Full Changelog**: https://github.com/${{ github.repository }}/compare/${PREVIOUS_TAG}...v${{ steps.new_version.outputs.new_version }}" >> changelog.md
-          
-          # Set multiline output
+          # Set multiline output directly
           echo "changelog<<EOF" >> $GITHUB_OUTPUT
-          cat changelog.md >> $GITHUB_OUTPUT
+          echo "## What's Changed" >> $GITHUB_OUTPUT
+          echo "" >> $GITHUB_OUTPUT
+          echo "$COMMITS" >> $GITHUB_OUTPUT
+          echo "" >> $GITHUB_OUTPUT
+          echo "**Full Changelog**: https://github.com/${{ github.repository }}/compare/${PREVIOUS_TAG}...v${{ steps.new_version.outputs.new_version }}" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Create Pull Request
@@ -99,8 +97,8 @@ jobs:
             This PR bumps the version to v${{ steps.new_version.outputs.new_version }}.
             
             ## Changes
-            - 📦 Bump takumi version from v${{ steps.current_versions.outputs.cargo_version }} to v${{ steps.new_version.outputs.new_version }}
-            - 📦 Bump takumi-types version from v${{ steps.current_versions.outputs.npm_version }} to v${{ steps.new_version.outputs.new_version }}
+            - 📦 Bump `takumi` version from v${{ steps.current_versions.outputs.cargo_version }} to v${{ steps.new_version.outputs.new_version }}
+            - 📦 Bump `takumi-types` version from v${{ steps.current_versions.outputs.npm_version }} to v${{ steps.new_version.outputs.new_version }}
             
             ${{ steps.changelog.outputs.changelog }}
             
@@ -108,7 +106,6 @@ jobs:
             - [ ] Version numbers updated correctly
             - [ ] Changelog looks accurate
             - [ ] All tests pass
-            - [ ] Ready to merge
             
             After merging, manually create the GitHub release with tag v${{ steps.new_version.outputs.new_version }}
           branch: release/v${{ steps.new_version.outputs.new_version }}
