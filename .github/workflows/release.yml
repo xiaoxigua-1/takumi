@@ -40,11 +40,12 @@ jobs:
         run: |
           sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
           sudo chmod +x /usr/local/bin/yq
+          cargo install toml-cli
 
       - name: Get current versions
         id: current_versions
         run: |
-          CARGO_VERSION=$(yq '.package.version' takumi/Cargo.toml)
+          CARGO_VERSION=$(toml get takumi/Cargo.toml package.version --raw)
           NPM_VERSION=$(jq -r '.version' takumi-types/package.json)
           echo "cargo_version=$CARGO_VERSION" >> $GITHUB_OUTPUT
           echo "npm_version=$NPM_VERSION" >> $GITHUB_OUTPUT
@@ -61,7 +62,7 @@ jobs:
 
       - name: Update Cargo.toml version
         run: |
-          yq -i '.package.version = "${{ steps.new_version.outputs.new_version }}"' takumi/Cargo.toml
+          toml set takumi/Cargo.toml package.version "${{ steps.new_version.outputs.new_version }}" > temp_cargo.toml && mv temp_cargo.toml takumi/Cargo.toml
 
       - name: Update package.json version
         run: |
