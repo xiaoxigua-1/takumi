@@ -46,11 +46,11 @@ flex_direction: FlexDirection,
 /**
  * How flex items are aligned along the main axis
  */
-justify_content: JustifyContent | null, 
+justify_content?: JustifyContent, 
 /**
  * How flex items are aligned along the cross axis
  */
-align_items: AlignItems | null, 
+align_items?: AlignItems, 
 /**
  * Positioning method (relative, absolute, etc.)
  */
@@ -74,40 +74,40 @@ object_fit: ObjectFit,
 /**
  * Element's background color
  */
-background_color: ColorInput | null, 
+background_color?: ColorInput, 
 /**
  * Color of the element's border
  */
-border_color: ColorInput | null, 
+border_color?: ColorInput, 
 /**
  * Text color for child text elements
  */
-color: ColorInput | null, 
+color?: ColorInput, 
 /**
  * Font size in pixels for text rendering
  */
-font_size: number | null, 
+font_size?: number, 
 /**
  * Font family name for text rendering
  */
-font_family: string | null, 
+font_family?: string, 
 /**
  * Line height multiplier for text spacing
  */
-line_height: number | null, 
+line_height?: number, 
 /**
  * Font weight for text rendering
  */
-font_weight: FontWeight | null, 
+font_weight?: FontWeight, 
 /**
  * Maximum number of lines for text before truncation
  */
-max_lines: number | null, 
+max_lines?: number, 
 /**
  * Corner radius for rounded borders in pixels
  */
-border_radius: SidesValue<ValuePercentageAuto> | null, 
+border_radius?: SidesValue<ValuePercentageAuto>, 
 /**
  * Text alignment within the element
  */
-text_align: TextAlign | null, };
+text_align?: TextAlign, };

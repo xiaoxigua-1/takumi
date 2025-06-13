@@ -223,7 +223,7 @@ impl From<AlignItems> for taffy::style::AlignItems {
 /// down to child elements.
 #[derive(Debug, Clone, Deserialize, Serialize, TS)]
 #[serde(default)]
-#[ts(export)]
+#[ts(export, optional_fields)]
 pub struct Style {
   /// Width of the element
   pub width: ValuePercentageAuto,
@@ -286,6 +286,7 @@ impl Default for Style {
 /// in the layout hierarchy, such as font settings and colors.
 #[derive(Debug, Clone, Deserialize, Default, Serialize, Merge, TS)]
 #[merge(strategy = overwrite_none)]
+#[ts(optional_fields)]
 pub struct InheritableStyle {
   /// Color of the element's border
   pub border_color: Option<ColorInput>,
@@ -311,7 +312,7 @@ pub struct InheritableStyle {
 ///
 /// This structure contains all the necessary information for rendering text,
 /// including font size, family, weight, alignment, and color.
-#[derive(Debug, Clone, Deserialize, Serialize, TS)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct FontStyle {
   /// Font size in pixels
   pub font_size: f32,
@@ -395,6 +396,7 @@ impl From<Gap> for Size<LengthPercentage> {
 ///
 /// Defines the visual appearance of element borders, including color and size.
 #[derive(Debug, Clone, Deserialize, Serialize, TS)]
+#[ts(optional_fields)]
 pub struct Border {
   /// Border color
   pub color: Option<ColorInput>,
