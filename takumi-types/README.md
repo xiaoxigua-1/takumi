@@ -23,7 +23,7 @@ const root = container(rootStyle, [
   ),
 ]);
 
-const response = await fetch("https://takumi-server.kane.tw/image", {
+const response = await fetch("https://your-takumi-server/image", {
   method: "POST",
   body: JSON.stringify({
     root,
