@@ -18,6 +18,10 @@ You can use this crate to create your own image rendering system with custom log
 
 Default implementation of HTTP server for image generation API.
 
+### [takumi-types](takumi-types/)
+
+TypeScript bindings for the core library.
+
 ## License
 
 Licensed under the terms in the [LICENSE](LICENSE) file.
