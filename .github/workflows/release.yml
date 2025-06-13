@@ -45,12 +45,9 @@ jobs:
       - name: Get current versions
         id: current_versions
         run: |
-          CARGO_VERSION=$(dasel -f takumi/Cargo.toml '.package.version')
-          NPM_VERSION=$(dasel -f takumi-types/package.json '.version')
+          CARGO_VERSION=$(dasel -f takumi/Cargo.toml '.package.version' | tr -d "'")
           echo "cargo_version=$CARGO_VERSION" >> $GITHUB_OUTPUT
-          echo "npm_version=$NPM_VERSION" >> $GITHUB_OUTPUT
           echo "Current Cargo version: $CARGO_VERSION"
-          echo "Current NPM version: $NPM_VERSION"
 
       - name: Calculate new version
         id: new_version
