@@ -36,15 +36,16 @@ jobs:
         with:
           bun-version: latest
 
-      - name: Install semver tool
+      - name: Install tools
         run: |
-          cargo install cargo-edit
+          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
 
       - name: Get current versions
         id: current_versions
         run: |
-          CARGO_VERSION=$(grep '^version = ' takumi/Cargo.toml | sed 's/version = "\(.*\)"/\1/')
-          NPM_VERSION=$(grep '"version":' takumi-types/package.json | sed 's/.*"version": *"\([^"]*\)".*/\1/')
+          CARGO_VERSION=$(yq '.package.version' takumi/Cargo.toml)
+          NPM_VERSION=$(jq -r '.version' takumi-types/package.json)
           echo "cargo_version=$CARGO_VERSION" >> $GITHUB_OUTPUT
           echo "npm_version=$NPM_VERSION" >> $GITHUB_OUTPUT
           echo "Current Cargo version: $CARGO_VERSION"
@@ -60,11 +61,11 @@ jobs:
 
       - name: Update Cargo.toml version
         run: |
-          sed -i 's/^version = ".*"/version = "${{ steps.new_version.outputs.new_version }}"/' takumi/Cargo.toml
+          yq -i '.package.version = "${{ steps.new_version.outputs.new_version }}"' takumi/Cargo.toml
 
       - name: Update package.json version
         run: |
-          sed -i 's/"version": ".*"/"version": "${{ steps.new_version.outputs.new_version }}"/' takumi-types/package.json
+          jq '.version = "${{ steps.new_version.outputs.new_version }}"' takumi-types/package.json > temp.json && mv temp.json takumi-types/package.json
 
       - name: Generate changelog
         id: changelog
