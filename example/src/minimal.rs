@@ -11,6 +11,8 @@ use takumi::{
   render::ImageRenderer,
 };
 
+use crate::NodeKind;
+
 /// Generates a "Hello, {name}!" image with specified dimensions and styling
 ///
 /// This function creates a simple image with text using the takumi library.
@@ -38,23 +40,19 @@ pub fn say_hello_to(name: &str) {
 
   // Create a root container node that will hold the text
   // Set dimensions to 1200x630 pixels (common size for social media images)
-  let root = ContainerNode {
-    style: Style {
-      width: 1200.0.into(),
-      height: 630.0.into(),
-      ..Default::default()
-    },
-    children: vec![Box::new(text)],
-  };
+  let root = NodeKind::Container(ContainerNode {
+    style: Default::default(),
+    children: vec![NodeKind::Text(text)],
+  });
 
   // Create an image renderer from the root node
-  let renderer = ImageRenderer::try_from(root).unwrap();
+  let mut renderer = ImageRenderer::new(1200, 630);
 
   // Generate the layout tree using Taffy (layout engine)
-  let (mut taffy, root_node_id) = renderer.create_taffy_tree();
+  renderer.construct_taffy_tree(root);
 
   // Render the image using the context and layout tree
-  let image = renderer.draw(&context, &mut taffy, root_node_id);
+  let image = renderer.draw(&context).unwrap();
 
   // Create a new file to save the rendered image
   let mut file = File::create("output.webp").unwrap();

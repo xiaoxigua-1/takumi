@@ -15,10 +15,9 @@ woff2-patched = "0.4"
 futures-util = "0.3"
 bytes = "1.10"
 async-trait = "0.1"
-typetag = "0.2"
-dyn-clone = "1.0"
 merge = "0.2"
 ts-rs = "11.0"
+slotmap = "1.0.7"
 
 [dependencies.cosmic-text]
 version = "0.14"

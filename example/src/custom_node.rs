@@ -1,13 +1,11 @@
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
-use takumi::{
-  node::{
-    Node,
-    style::{SidesValue, Style, ValuePercentageAuto},
-  },
-  render::TaffyTreeWithNodes,
-  taffy::{NodeId, TaffyError},
+use takumi::node::{
+  Node,
+  style::{SidesValue, Style, ValuePercentageAuto},
 };
+
+use crate::NodeKind;
 
 /// A specialized node type that renders as a circle.
 ///
@@ -31,8 +29,7 @@ pub struct CircleNode {
 }
 
 #[async_trait]
-#[typetag::serde(name = "circle")]
-impl Node for CircleNode {
+impl Node<NodeKind> for CircleNode {
   /// Returns a reference to the node's style properties.
   fn get_style(&self) -> &Style {
     &self.style
@@ -41,11 +38,6 @@ impl Node for CircleNode {
   /// Returns a mutable reference to the node's style properties.
   fn get_style_mut(&mut self) -> &mut Style {
     &mut self.style
-  }
-
-  /// Creates a new leaf node in the Taffy layout tree.
-  fn create_taffy_leaf(&self, taffy: &mut TaffyTreeWithNodes) -> Result<NodeId, TaffyError> {
-    taffy.new_leaf_with_context(self.style.clone().into(), Box::new(self.clone()))
   }
 
   /// Modifies the node's style before layout calculation.

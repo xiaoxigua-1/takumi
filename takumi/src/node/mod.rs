@@ -7,15 +7,17 @@ pub mod measure;
 /// Module for styling and layout properties
 pub mod style;
 
+/// Macros for node implementations
+pub mod macros;
+
 use std::fmt::Debug;
 use std::sync::{Arc, OnceLock};
 
 use async_trait::async_trait;
-use dyn_clone::{DynClone, clone_trait_object};
 use futures_util::future::join_all;
 use merge::Merge;
 use serde::{Deserialize, Serialize};
-use taffy::{AvailableSpace, Layout, NodeId, Size, TaffyError};
+use taffy::{AvailableSpace, Layout, Size};
 
 use crate::border_radius::BorderRadius;
 use crate::node::draw::{FastBlendImage, draw_background_color};
@@ -27,16 +29,19 @@ use crate::{
     measure::{measure_image, measure_text},
     style::Style,
   },
-  render::TaffyTreeWithNodes,
 };
 
 /// A trait representing a node in the layout tree.
 ///
 /// This trait defines the common interface for all elements that can be
 /// rendered in the layout system, including containers, text, and images.
-#[typetag::serde(tag = "type")]
 #[async_trait]
-pub trait Node: Send + Sync + Debug + DynClone {
+pub trait Node<N: Node<N>>: Send + Sync + Debug + Clone {
+  /// Return reference to children nodes.
+  fn get_children(&self) -> Option<Vec<&N>> {
+    None
+  }
+
   /// Returns a reference to the node's style properties.
   fn get_style(&self) -> &Style;
 
@@ -84,14 +89,6 @@ pub trait Node: Send + Sync + Debug + DynClone {
   ///
   /// This method calculates the size the node would prefer given
   /// the available space and any known dimensions.
-  ///
-  /// # Arguments
-  /// * `_context` - The rendering context
-  /// * `_available_space` - The space available for this node
-  /// * `_known_dimensions` - Any explicitly set dimensions
-  ///
-  /// # Returns
-  /// The preferred size of the node
   fn measure(
     &self,
     _context: &Context,
@@ -102,13 +99,6 @@ pub trait Node: Send + Sync + Debug + DynClone {
   }
 
   /// Draws the node onto the canvas using the computed layout.
-  ///
-  /// This method orchestrates the drawing of background, content, and borders.
-  ///
-  /// # Arguments
-  /// * `context` - The rendering context
-  /// * `canvas` - The canvas to draw on
-  /// * `layout` - The computed layout information for this node
   fn draw_on_canvas(&self, context: &Context, canvas: &mut FastBlendImage, layout: Layout) {
     self.draw_background(context, canvas, layout);
     self.draw_content(context, canvas, layout);
@@ -116,11 +106,6 @@ pub trait Node: Send + Sync + Debug + DynClone {
   }
 
   /// Draws the background of the node.
-  ///
-  /// # Arguments
-  /// * `_context` - The rendering context
-  /// * `canvas` - The canvas to draw on
-  /// * `layout` - The computed layout information for this node
   fn draw_background(&self, _context: &Context, canvas: &mut FastBlendImage, layout: Layout) {
     if let Some(background_color) = &self.get_style().background_color {
       let radius = self
@@ -135,58 +120,35 @@ pub trait Node: Send + Sync + Debug + DynClone {
   }
 
   /// Draws the main content of the node.
-  ///
-  /// This method should be overridden by specific node types to draw their content.
-  ///
-  /// # Arguments
-  /// * `_context` - The rendering context
-  /// * `_canvas` - The canvas to draw on
-  /// * `_layout` - The computed layout information for this node
   fn draw_content(&self, _context: &Context, _canvas: &mut FastBlendImage, _layout: Layout) {
     // Default implementation does nothing
   }
 
   /// Draws the border of the node.
-  ///
-  /// # Arguments
-  /// * `_context` - The rendering context
-  /// * `canvas` - The canvas to draw on
-  /// * `layout` - The computed layout information for this node
   fn draw_border(&self, _context: &Context, canvas: &mut FastBlendImage, layout: Layout) {
     draw_border(self.get_style(), canvas, &layout);
   }
-
-  /// Creates a Taffy layout node for this element.
-  ///
-  /// This method integrates the node into the Taffy layout system,
-  /// converting the node's style properties to Taffy's format.
-  ///
-  /// # Arguments
-  /// * `taffy` - The Taffy tree to add this node to
-  ///
-  /// # Returns
-  /// The ID of the created node in the Taffy tree
-  fn create_taffy_leaf(&self, taffy: &mut TaffyTreeWithNodes) -> Result<NodeId, TaffyError>;
 }
-
-clone_trait_object!(Node);
 
 /// A container node that can hold child nodes.
 ///
 /// Container nodes are used to group other nodes and apply layout
 /// properties like flexbox layout to arrange their children.
 #[derive(Debug, Deserialize, Clone, Serialize)]
-pub struct ContainerNode {
+pub struct ContainerNode<Nodes: Node<Nodes>> {
   /// The styling properties for this container
   #[serde(default, flatten)]
   pub style: Style,
   /// The child nodes contained within this container
-  pub children: Vec<Box<dyn Node>>,
+  pub children: Vec<Nodes>,
 }
 
 #[async_trait]
-#[typetag::serde(name = "container")]
-impl Node for ContainerNode {
+impl<Nodes: Node<Nodes>> Node<Nodes> for ContainerNode<Nodes> {
+  fn get_children(&self) -> Option<Vec<&Nodes>> {
+    Some(self.children.iter().collect())
+  }
+
   fn get_style(&self) -> &Style {
     &self.style
   }
@@ -221,28 +183,6 @@ impl Node for ContainerNode {
       child.inherit_style(&style);
     }
   }
-
-  fn create_taffy_leaf(&self, taffy: &mut TaffyTreeWithNodes) -> Result<NodeId, TaffyError> {
-    let taffy_style = self.style.clone().into();
-
-    let children = self
-      .children
-      .iter()
-      .map(|child| child.create_taffy_leaf(taffy))
-      .collect::<Result<Vec<NodeId>, TaffyError>>()?;
-
-    let container = taffy.new_with_children(taffy_style, children.as_slice())?;
-
-    taffy.set_node_context(
-      container,
-      Some(Box::new(ContainerNode {
-        style: self.style.clone(),
-        children: vec![],
-      })),
-    )?;
-
-    Ok(container)
-  }
 }
 
 /// A node that renders text content.
@@ -258,18 +198,13 @@ pub struct TextNode {
   pub text: String,
 }
 
-#[typetag::serde(name = "text")]
-impl Node for TextNode {
+impl<Nodes: Node<Nodes>> Node<Nodes> for TextNode {
   fn get_style(&self) -> &Style {
     &self.style
   }
 
   fn get_style_mut(&mut self) -> &mut Style {
     &mut self.style
-  }
-
-  fn create_taffy_leaf(&self, taffy: &mut TaffyTreeWithNodes) -> Result<NodeId, TaffyError> {
-    taffy.new_leaf_with_context(self.style.clone().into(), Box::new(self.clone()))
   }
 
   fn draw_content(&self, context: &Context, canvas: &mut FastBlendImage, layout: Layout) {
@@ -314,19 +249,14 @@ pub struct ImageNode {
   pub image: Arc<OnceLock<Arc<ImageState>>>,
 }
 
-#[typetag::serde(name = "image")]
 #[async_trait]
-impl Node for ImageNode {
+impl<Nodes: Node<Nodes>> Node<Nodes> for ImageNode {
   fn get_style(&self) -> &Style {
     &self.style
   }
 
   fn get_style_mut(&mut self) -> &mut Style {
     &mut self.style
-  }
-
-  fn create_taffy_leaf(&self, taffy: &mut TaffyTreeWithNodes) -> Result<NodeId, TaffyError> {
-    taffy.new_leaf_with_context(self.style.clone().into(), Box::new(self.clone()))
   }
 
   fn should_hydrate_async(&self) -> bool {
