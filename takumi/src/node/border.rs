@@ -1,12 +1,12 @@
 use image::{GenericImage, GenericImageView, Rgba, RgbaImage};
-use imageproc::drawing::Blend;
 use imageproc::rect::Rect;
 use taffy::Layout;
 
 use crate::border_radius::{BorderRadius, apply_border_radius_antialiased};
 use crate::color::ColorInput;
 use crate::node::draw::{
-  create_image_from_color_input, draw_filled_rect_from_color_input, draw_image_overlay_fast,
+  FastBlendImage, create_image_from_color_input, draw_filled_rect_from_color_input,
+  draw_image_overlay_fast,
 };
 use crate::node::style::Style;
 
@@ -19,7 +19,7 @@ use crate::node::style::Style;
 /// * `style` - The style containing border properties
 /// * `canvas` - The canvas to draw on
 /// * `layout` - The layout information for positioning
-pub fn draw_border(style: &Style, canvas: &mut Blend<RgbaImage>, layout: &Layout) {
+pub fn draw_border(style: &Style, canvas: &mut FastBlendImage, layout: &Layout) {
   if layout.border.top == 0.0
     && layout.border.right == 0.0
     && layout.border.bottom == 0.0
@@ -44,7 +44,7 @@ pub fn draw_border(style: &Style, canvas: &mut Blend<RgbaImage>, layout: &Layout
 }
 
 /// Draws a rectangular border without rounded corners.
-fn draw_rectangular_border(canvas: &mut Blend<RgbaImage>, layout: &Layout, color: &ColorInput) {
+fn draw_rectangular_border(canvas: &mut FastBlendImage, layout: &Layout, color: &ColorInput) {
   // Top border
   if layout.border.top > 0.0 {
     draw_filled_rect_from_color_input(
@@ -103,7 +103,7 @@ fn draw_rectangular_border(canvas: &mut Blend<RgbaImage>, layout: &Layout, color
 
 /// Draws a rounded border with border radius.
 fn draw_rounded_border(
-  canvas: &mut Blend<RgbaImage>,
+  canvas: &mut FastBlendImage,
   layout: &Layout,
   color: &ColorInput,
   radius: BorderRadius,

@@ -1,9 +1,9 @@
 use cosmic_text::{Attrs, Buffer, Family, Metrics, Shaping};
 use image::{
-  GenericImageView, ImageError, Rgba, RgbaImage,
+  GenericImageView, ImageError, Pixel, Rgba, RgbaImage,
   imageops::{FilterType, crop_imm, resize},
 };
-use imageproc::drawing::{Blend, Canvas};
+use imageproc::drawing::Canvas;
 use imageproc::{
   drawing::{draw_filled_rect_mut, draw_hollow_rect_mut},
   rect::Rect,
@@ -12,10 +12,47 @@ use taffy::Layout;
 
 use crate::{
   border_radius::{BorderRadius, apply_border_radius_antialiased},
-  color::{ColorAt, ColorInput},
+  color::{ColorAt, ColorInput, Gradient},
   context::FontContext,
   node::style::{FontStyle, ObjectFit, Style},
 };
+
+/// A performance-optimized implementation of image blending operations.
+///
+/// This implementation provides faster blending by skipping pixel operations when the source color is fully transparent
+/// and using direct pixel assignment when the source color is fully opaque.
+///
+/// Based on the implementation from [imageproc's Blend](https://docs.rs/imageproc/latest/imageproc/drawing/struct.Blend.html).
+pub struct FastBlendImage(pub RgbaImage);
+
+impl Canvas for FastBlendImage {
+  type Pixel = Rgba<u8>;
+
+  fn dimensions(&self) -> (u32, u32) {
+    self.0.dimensions()
+  }
+
+  fn get_pixel(&self, x: u32, y: u32) -> Self::Pixel {
+    *self.0.get_pixel(x, y)
+  }
+
+  fn draw_pixel(&mut self, x: u32, y: u32, color: Self::Pixel) {
+    if color.0[3] == 0 {
+      return;
+    }
+
+    if color.0[3] == 255 {
+      self.0.put_pixel(x, y, color);
+      return;
+    }
+
+    let mut pix = *self.0.get_pixel(x, y);
+
+    pix.blend(&color);
+
+    self.0.put_pixel(x, y, pix);
+  }
+}
 
 /// Represents the state of an image in the rendering system.
 ///
@@ -43,7 +80,7 @@ pub fn draw_text(
   text: &str,
   font_style: &FontStyle,
   context: &FontContext,
-  canvas: &mut Blend<RgbaImage>,
+  canvas: &mut FastBlendImage,
   layout: Layout,
 ) {
   if font_style.color.is_transparent() {
@@ -106,7 +143,7 @@ pub fn draw_text(
 
       render_color.0[3] = (render_color.0[3] as f32 * text_alpha) as u8;
 
-      draw_filled_rect_mut_fast(
+      draw_filled_rect_mut(
         canvas,
         Rect::at(start_x as i32 + x, start_y as i32 + y).of_size(w, h),
         render_color,
@@ -125,7 +162,7 @@ pub fn draw_text(
 /// * `style` - The style to apply to the image
 /// * `canvas` - The canvas to draw on
 /// * `layout` - The layout information for positioning
-pub fn draw_image(image: &RgbaImage, style: &Style, canvas: &mut Blend<RgbaImage>, layout: Layout) {
+pub fn draw_image(image: &RgbaImage, style: &Style, canvas: &mut FastBlendImage, layout: Layout) {
   let content_box = layout.content_box_size();
   let x = layout.content_box_x();
   let y = layout.content_box_y();
@@ -259,7 +296,7 @@ pub fn draw_image(image: &RgbaImage, style: &Style, canvas: &mut Blend<RgbaImage
 
 /// Draws an image onto the canvas without bounds checking.
 pub(crate) fn draw_image_overlay_fast(
-  canvas: &mut Blend<RgbaImage>,
+  canvas: &mut FastBlendImage,
   image: &RgbaImage,
   left: u32,
   top: u32,
@@ -268,77 +305,58 @@ pub(crate) fn draw_image_overlay_fast(
     for x in 0..image.width() {
       let pixel = unsafe { image.unsafe_get_pixel(x, y) };
 
-      if pixel.0[3] == 0 {
-        continue;
-      }
-
-      if pixel.0[3] == 255 {
-        canvas.0.draw_pixel(x + left, y + top, pixel);
-        continue;
-      }
-
       canvas.draw_pixel(x + left, y + top, pixel);
     }
   }
 }
 
-fn draw_filled_rect_mut_fast(
-  canvas: &mut Blend<RgbaImage>,
-  rect: Rect,
-  color: impl Into<Rgba<u8>>,
-) {
-  let color = color.into();
-
-  if color.0[3] == 0 {
-    return;
-  }
-
-  if color.0[3] == 255 {
-    draw_filled_rect_mut(&mut canvas.0, rect, color);
-    return;
-  }
-
-  draw_filled_rect_mut(canvas, rect, color);
-}
-
 /// Draws a filled rectangle on the canvas from a color input.
 pub fn draw_filled_rect_from_color_input(
-  canvas: &mut Blend<RgbaImage>,
+  canvas: &mut FastBlendImage,
   rect: Rect,
   color: &ColorInput,
 ) {
   match color {
     ColorInput::Color(color) => {
-      draw_filled_rect_mut_fast(canvas, rect, *color);
+      draw_filled_rect_mut(canvas, rect, (*color).into());
     }
     ColorInput::Gradient(gradient) => {
-      for y in rect.top()..rect.bottom() {
-        for x in rect.left()..rect.right() {
-          let color = gradient.at(
-            rect.width() as f32,
-            rect.height() as f32,
-            x as u32,
-            y as u32,
-          );
-          canvas.draw_pixel(x as u32, y as u32, color.into());
-        }
-      }
+      let gradient_image = create_gradient_image(gradient, rect.width(), rect.height());
+
+      draw_image_overlay_fast(
+        canvas,
+        &gradient_image,
+        rect.left() as u32,
+        rect.top() as u32,
+      );
     }
   }
 }
 
-/// Creates an image from a color input.
-pub fn create_image_from_color_input(color: &ColorInput, width: u32, height: u32) -> RgbaImage {
+/// Creates an image from a gradient.
+pub fn create_gradient_image(color: &Gradient, width: u32, height: u32) -> RgbaImage {
   RgbaImage::from_par_fn(width, height, |x, y| {
     color.at(width as f32, height as f32, x, y).into()
   })
+}
+
+/// Creates an image from a color input.
+pub fn create_image_from_color_input(color: &ColorInput, width: u32, height: u32) -> RgbaImage {
+  match color {
+    ColorInput::Color(color) => {
+      let color = *color;
+
+      RgbaImage::from_pixel(width, height, color.into())
+    }
+    ColorInput::Gradient(gradient) => create_gradient_image(gradient, width, height),
+  }
 }
 
 /// Draws a solid color background on the canvas.
 pub fn draw_background_color(
   color: &ColorInput,
   radius: Option<BorderRadius>,
-  canvas: &mut Blend<RgbaImage>,
+  canvas: &mut FastBlendImage,
   layout: Layout,
 ) {
   let rect = Rect::at(layout.location.x as i32, layout.location.y as i32)
@@ -365,11 +383,7 @@ pub fn draw_background_color(
 ///
 /// This function draws colored rectangles to visualize the content box
 /// (red) and the full layout box (green) for debugging purposes.
-///
-/// # Arguments
-/// * `canvas` - The canvas to draw on
-/// * `layout` - The layout information for the node
-pub fn draw_debug_border(canvas: &mut Blend<RgbaImage>, layout: Layout) {
+pub fn draw_debug_border(canvas: &mut FastBlendImage, layout: Layout) {
   let x = layout.content_box_x();
   let y = layout.content_box_y();
   let size = layout.content_box_size();

@@ -1,10 +1,13 @@
 use image::{ImageBuffer, RgbaImage};
-use imageproc::drawing::Blend;
 use taffy::{AvailableSpace, NodeId, Point, TaffyTree, geometry::Size};
 
 use crate::{
   context::Context,
-  node::{ContainerNode, Node, draw::draw_debug_border, style::ValuePercentageAuto},
+  node::{
+    ContainerNode, Node,
+    draw::{FastBlendImage, draw_debug_border},
+    style::ValuePercentageAuto,
+  },
 };
 
 /// Type alias for a TaffyTree that uses `Box<dyn Node>` as its node type
@@ -87,7 +90,7 @@ impl ImageRenderer {
     taffy: &mut TaffyTreeWithNodes,
     root_node_id: NodeId,
   ) -> RgbaImage {
-    let mut canvas = Blend(ImageBuffer::new(self.content_width, self.content_height));
+    let mut canvas = FastBlendImage(ImageBuffer::new(self.content_width, self.content_height));
 
     let available_space = Size {
       width: AvailableSpace::Definite(self.content_width as f32),
@@ -136,7 +139,7 @@ impl ImageRenderer {
 /// * `relative_offset` - The offset from the parent node's position
 fn draw_from_node_id_with_layout(
   context: &Context,
-  canvas: &mut Blend<RgbaImage>,
+  canvas: &mut FastBlendImage,
   taffy: &mut TaffyTreeWithNodes,
   node_id: NodeId,
   relative_offset: Point<f32>,

@@ -2,13 +2,13 @@ use std::io::Cursor;
 
 use criterion::{Criterion, criterion_group, criterion_main};
 use image::{ImageFormat, RgbaImage};
-use imageproc::drawing::Blend;
 use taffy::{Layout, Point, Rect, Size, prelude::FromLength};
 use takumi::{
-  color::Color,
+  color::{Color, ColorInput, Gradient},
   context::Context,
   node::{
     ContainerNode, Node, TextNode,
+    draw::FastBlendImage,
     style::{FontWeight, InheritableStyle, Style, TextAlign},
   },
   render::ImageRenderer,
@@ -16,6 +16,30 @@ use takumi::{
 
 fn render_scenarios(c: &mut Criterion) {
   let mut group = c.benchmark_group("render_scenarios");
+
+  group.bench_function("gradient_background", |b| {
+    b.iter(|| {
+      let context = Context::default();
+      let renderer = ImageRenderer::try_from(ContainerNode {
+        style: Style {
+          width: 1200.0.into(),
+          height: 630.0.into(),
+          background_color: Some(ColorInput::Gradient(Gradient {
+            stops: vec![Color::Rgb(242, 102, 223), Color::Rgb(157, 201, 106)],
+            angle: 45.0,
+          })),
+          ..Default::default()
+        },
+        children: vec![],
+      })
+      .unwrap();
+      let (mut taffy, root_node_id) = renderer.create_taffy_tree();
+      let mut buffer = Vec::new();
+      let mut cursor = Cursor::new(&mut buffer);
+      let image = renderer.draw(&context, &mut taffy, root_node_id);
+      image.write_to(&mut cursor, ImageFormat::WebP).unwrap();
+    })
+  });
 
   // Empty container baseline
   group.bench_function("empty_container", |b| {
@@ -74,7 +98,7 @@ fn render_scenarios(c: &mut Criterion) {
       margin: Rect::default(),
     };
     let context = Context::default();
-    let mut canvas = Blend(RgbaImage::new(800, 600));
+    let mut canvas = FastBlendImage(RgbaImage::new(800, 600));
 
     b.iter(|| {
       node.draw_on_canvas(&context, &mut canvas, layout);

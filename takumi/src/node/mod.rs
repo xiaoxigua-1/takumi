@@ -13,14 +13,12 @@ use std::sync::{Arc, OnceLock};
 use async_trait::async_trait;
 use dyn_clone::{DynClone, clone_trait_object};
 use futures_util::future::join_all;
-use image::RgbaImage;
-use imageproc::drawing::Blend;
 use merge::Merge;
 use serde::{Deserialize, Serialize};
 use taffy::{AvailableSpace, Layout, NodeId, Size, TaffyError};
 
 use crate::border_radius::BorderRadius;
-use crate::node::draw::draw_background_color;
+use crate::node::draw::{FastBlendImage, draw_background_color};
 use crate::{
   context::Context,
   node::{
@@ -111,7 +109,7 @@ pub trait Node: Send + Sync + Debug + DynClone {
   /// * `context` - The rendering context
   /// * `canvas` - The canvas to draw on
   /// * `layout` - The computed layout information for this node
-  fn draw_on_canvas(&self, context: &Context, canvas: &mut Blend<RgbaImage>, layout: Layout) {
+  fn draw_on_canvas(&self, context: &Context, canvas: &mut FastBlendImage, layout: Layout) {
     self.draw_background(context, canvas, layout);
     self.draw_content(context, canvas, layout);
     self.draw_border(context, canvas, layout);
@@ -123,7 +121,7 @@ pub trait Node: Send + Sync + Debug + DynClone {
   /// * `_context` - The rendering context
   /// * `canvas` - The canvas to draw on
   /// * `layout` - The computed layout information for this node
-  fn draw_background(&self, _context: &Context, canvas: &mut Blend<RgbaImage>, layout: Layout) {
+  fn draw_background(&self, _context: &Context, canvas: &mut FastBlendImage, layout: Layout) {
     if let Some(background_color) = &self.get_style().background_color {
       let radius = self
         .get_style()
@@ -144,7 +142,7 @@ pub trait Node: Send + Sync + Debug + DynClone {
   /// * `_context` - The rendering context
   /// * `_canvas` - The canvas to draw on
   /// * `_layout` - The computed layout information for this node
-  fn draw_content(&self, _context: &Context, _canvas: &mut Blend<RgbaImage>, _layout: Layout) {
+  fn draw_content(&self, _context: &Context, _canvas: &mut FastBlendImage, _layout: Layout) {
     // Default implementation does nothing
   }
 
@@ -154,7 +152,7 @@ pub trait Node: Send + Sync + Debug + DynClone {
   /// * `_context` - The rendering context
   /// * `canvas` - The canvas to draw on
   /// * `layout` - The computed layout information for this node
-  fn draw_border(&self, _context: &Context, canvas: &mut Blend<RgbaImage>, layout: Layout) {
+  fn draw_border(&self, _context: &Context, canvas: &mut FastBlendImage, layout: Layout) {
     draw_border(self.get_style(), canvas, &layout);
   }
 
@@ -274,7 +272,7 @@ impl Node for TextNode {
     taffy.new_leaf_with_context(self.style.clone().into(), Box::new(self.clone()))
   }
 
-  fn draw_content(&self, context: &Context, canvas: &mut Blend<RgbaImage>, layout: Layout) {
+  fn draw_content(&self, context: &Context, canvas: &mut FastBlendImage, layout: Layout) {
     draw_text(
       &self.text,
       &(&self.style).into(),
@@ -371,7 +369,7 @@ impl Node for ImageNode {
     )
   }
 
-  fn draw_content(&self, _context: &Context, canvas: &mut Blend<RgbaImage>, layout: Layout) {
+  fn draw_content(&self, _context: &Context, canvas: &mut FastBlendImage, layout: Layout) {
     let ImageState::Fetched(image) = self.image.get().unwrap().as_ref() else {
       return;
     };
