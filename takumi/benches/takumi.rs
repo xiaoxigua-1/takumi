@@ -6,6 +6,7 @@ use taffy::{Layout, Point, Rect, Size, prelude::FromLength};
 use takumi::{
   color::{Color, ColorInput, Gradient},
   context::Context,
+  impl_node_enum,
   node::{
     ContainerNode, Node, TextNode,
     draw::FastBlendImage,
@@ -20,28 +21,7 @@ enum NodeKind {
   Text(TextNode),
 }
 
-impl Node<NodeKind> for NodeKind {
-  fn get_style(&self) -> &Style {
-    match self {
-      NodeKind::Container(container) => &container.style,
-      NodeKind::Text(text) => &text.style,
-    }
-  }
-
-  fn get_style_mut(&mut self) -> &mut Style {
-    match self {
-      NodeKind::Container(container) => &mut container.style,
-      NodeKind::Text(text) => &mut text.style,
-    }
-  }
-
-  fn get_children(&self) -> Option<Vec<&Self>> {
-    match self {
-      NodeKind::Container(container) => container.get_children(),
-      NodeKind::Text(text) => text.get_children(),
-    }
-  }
-}
+impl_node_enum!(NodeKind, Container => ContainerNode<NodeKind>, Text => TextNode);
 
 type ImageRendererNodes = ImageRenderer<NodeKind>;
 
@@ -52,18 +32,21 @@ fn render_scenarios(c: &mut Criterion) {
     b.iter(|| {
       let context = Context::default();
       let mut renderer = ImageRendererNodes::new(1200, 630);
-      renderer.construct_taffy_tree(NodeKind::Container(ContainerNode {
-        style: Style {
-          width: 1200.0.into(),
-          height: 630.0.into(),
-          background_color: Some(ColorInput::Gradient(Gradient {
-            stops: vec![Color::Rgb(242, 102, 223), Color::Rgb(157, 201, 106)],
-            angle: 45.0,
-          })),
-          ..Default::default()
-        },
-        children: vec![],
-      }));
+      renderer.construct_taffy_tree(
+        ContainerNode {
+          style: Style {
+            width: 1200.0.into(),
+            height: 630.0.into(),
+            background_color: Some(ColorInput::Gradient(Gradient {
+              stops: vec![Color::Rgb(242, 102, 223), Color::Rgb(157, 201, 106)],
+              angle: 45.0,
+            })),
+            ..Default::default()
+          },
+          children: vec![],
+        }
+        .into(),
+      );
       let image = renderer.draw(&context).unwrap();
       let mut buffer = Vec::new();
       let mut cursor = Cursor::new(&mut buffer);
@@ -76,14 +59,17 @@ fn render_scenarios(c: &mut Criterion) {
     b.iter(|| {
       let context = Context::default();
       let mut renderer = ImageRendererNodes::new(1200, 630);
-      renderer.construct_taffy_tree(NodeKind::Container(ContainerNode {
-        style: Style {
-          width: 1200.0.into(),
-          height: 630.0.into(),
-          ..Default::default()
-        },
-        children: vec![],
-      }));
+      renderer.construct_taffy_tree(
+        ContainerNode {
+          style: Style {
+            width: 1200.0.into(),
+            height: 630.0.into(),
+            ..Default::default()
+          },
+          children: vec![],
+        }
+        .into(),
+      );
       let image = renderer.draw(&context).unwrap();
       let mut buffer = Vec::new();
       let mut cursor = Cursor::new(&mut buffer);
@@ -139,31 +125,40 @@ fn render_scenarios(c: &mut Criterion) {
     b.iter(|| {
       let context = Context::default();
       let mut renderer = ImageRendererNodes::new(1200, 630);
-      renderer.construct_taffy_tree(NodeKind::Container(ContainerNode {
-        style: Style {
-          width: 1200.0.into(),
-          height: 630.0.into(),
-          background_color: Some(Color::Rgb(240, 240, 240).into()),
-          ..Default::default()
-        },
-        children: vec![NodeKind::Container(ContainerNode {
+      renderer.construct_taffy_tree(
+        ContainerNode {
           style: Style {
-            width: 400.0.into(),
-            height: 400.0.into(),
-            background_color: Some(Color::Rgb(200, 200, 200).into()),
+            width: 1200.0.into(),
+            height: 630.0.into(),
+            background_color: Some(Color::Rgb(240, 240, 240).into()),
             ..Default::default()
           },
-          children: vec![NodeKind::Container(ContainerNode {
-            style: Style {
-              width: 200.0.into(),
-              height: 200.0.into(),
-              background_color: Some(Color::Rgb(160, 160, 160).into()),
-              ..Default::default()
-            },
-            children: vec![],
-          })],
-        })],
-      }));
+          children: vec![
+            ContainerNode {
+              style: Style {
+                width: 400.0.into(),
+                height: 400.0.into(),
+                background_color: Some(Color::Rgb(200, 200, 200).into()),
+                ..Default::default()
+              },
+              children: vec![
+                ContainerNode {
+                  style: Style {
+                    width: 200.0.into(),
+                    height: 200.0.into(),
+                    background_color: Some(Color::Rgb(160, 160, 160).into()),
+                    ..Default::default()
+                  },
+                  children: vec![],
+                }
+                .into(),
+              ],
+            }
+            .into(),
+          ],
+        }
+        .into(),
+      );
       let image = renderer.draw(&context).unwrap();
       let mut buffer = Vec::new();
       let mut cursor = Cursor::new(&mut buffer);
@@ -186,7 +181,7 @@ fn render_parallel_optimization(c: &mut Criterion) {
       // Create a layout with many sibling containers to benefit from parallel processing
       let children: Vec<NodeKind> = (0..8)
         .map(|i| {
-          NodeKind::Container(ContainerNode {
+          ContainerNode {
             style: Style {
               width: 100.0.into(),
               height: 100.0.into(),
@@ -195,7 +190,7 @@ fn render_parallel_optimization(c: &mut Criterion) {
             },
             children: (0..4)
               .map(|j| {
-                NodeKind::Text(TextNode {
+                TextNode {
                   style: Style {
                     width: 80.0.into(),
                     height: 20.0.into(),
@@ -208,22 +203,27 @@ fn render_parallel_optimization(c: &mut Criterion) {
                     ..Default::default()
                   },
                   text: format!("Child {} Text {}", i, j),
-                })
+                }
+                .into()
               })
               .collect(),
-          })
+          }
+          .into()
         })
-        .collect();
+        .collect::<Vec<NodeKind>>();
 
-      renderer.construct_taffy_tree(NodeKind::Container(ContainerNode {
-        style: Style {
-          width: 1200.0.into(),
-          height: 630.0.into(),
-          background_color: Some(Color::Rgb(240, 240, 240).into()),
-          ..Default::default()
-        },
-        children,
-      }));
+      renderer.construct_taffy_tree(
+        ContainerNode {
+          style: Style {
+            width: 1200.0.into(),
+            height: 630.0.into(),
+            background_color: Some(Color::Rgb(240, 240, 240).into()),
+            ..Default::default()
+          },
+          children,
+        }
+        .into(),
+      );
 
       let image = renderer.draw(&context).unwrap();
       let mut buffer = Vec::new();
@@ -240,7 +240,7 @@ fn render_performance_analysis(c: &mut Criterion) {
 
   // Complex layout for detailed analysis
   let complex_layout = || {
-    NodeKind::Container(ContainerNode {
+    ContainerNode {
       style: Style {
         width: 1200.0.into(),
         height: 630.0.into(),
@@ -248,7 +248,7 @@ fn render_performance_analysis(c: &mut Criterion) {
         ..Default::default()
       },
       children: vec![
-        NodeKind::Text(TextNode {
+        TextNode {
           style: Style {
             width: 800.0.into(),
             height: 100.0.into(),
@@ -262,8 +262,9 @@ fn render_performance_analysis(c: &mut Criterion) {
             ..Default::default()
           },
           text: "Complex Layout Benchmark".to_string(),
-        }),
-        NodeKind::Container(ContainerNode {
+        }
+        .into(),
+        ContainerNode {
           style: Style {
             width: 1000.0.into(),
             height: 400.0.into(),
@@ -271,7 +272,7 @@ fn render_performance_analysis(c: &mut Criterion) {
             ..Default::default()
           },
           children: vec![
-            NodeKind::Text(TextNode {
+            TextNode {
               style: Style {
                 width: 400.0.into(),
                 height: 100.0.into(),
@@ -285,8 +286,9 @@ fn render_performance_analysis(c: &mut Criterion) {
               },
               text: "This is a complex layout with multiple nested elements and text nodes."
                 .to_string(),
-            }),
-            NodeKind::Container(ContainerNode {
+            }
+            .into(),
+            ContainerNode {
               style: Style {
                 width: 200.0.into(),
                 height: 200.0.into(),
@@ -294,11 +296,14 @@ fn render_performance_analysis(c: &mut Criterion) {
                 ..Default::default()
               },
               children: vec![],
-            }),
+            }
+            .into(),
           ],
-        }),
+        }
+        .into(),
       ],
-    })
+    }
+    .into()
   };
 
   // Full pipeline benchmark

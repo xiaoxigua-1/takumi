@@ -15,11 +15,11 @@
 ///   Container(ContainerNode<NodeKind>),
 /// }
 ///
-/// impl_node_enum!(NodeKind, Image, Text, Container);
+/// impl_node_enum!(NodeKind, Container => ContainerNode<NodeKind>, Image => ImageNode, Text => TextNode);
 /// ```
 #[macro_export]
 macro_rules! impl_node_enum {
-  ($name:ident, $($variant:ident),*) => {
+  ($name:ident, $($variant:ident => $variant_type:ty),*) => {
     #[::async_trait::async_trait]
     impl ::takumi::node::Node<$name> for $name {
       fn get_children(&self) -> Option<Vec<&$name>> {
@@ -106,5 +106,13 @@ macro_rules! impl_node_enum {
         }
       }
     }
+
+    $(
+      impl From<$variant_type> for $name {
+        fn from(inner: $variant_type) -> Self {
+          $name::$variant(inner)
+        }
+      }
+    )*
   };
 }

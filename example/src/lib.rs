@@ -16,4 +16,4 @@ pub enum NodeKind {
   Circle(CircleNode),
 }
 
-impl_node_enum!(NodeKind, Container, Text, Image, Circle);
+impl_node_enum!(NodeKind, Container => ContainerNode<NodeKind>, Text => TextNode, Image => ImageNode, Circle => CircleNode);

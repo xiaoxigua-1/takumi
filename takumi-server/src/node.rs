@@ -12,4 +12,4 @@ pub enum NodeKind {
   Container(ContainerNode<NodeKind>),
 }
 
-impl_node_enum!(NodeKind, Container, Image, Text);
+impl_node_enum!(NodeKind, Container => ContainerNode<NodeKind>, Image => ImageNode, Text => TextNode);

@@ -40,10 +40,11 @@ pub fn say_hello_to(name: &str) {
 
   // Create a root container node that will hold the text
   // Set dimensions to 1200x630 pixels (common size for social media images)
-  let root = NodeKind::Container(ContainerNode {
+  let root: NodeKind = ContainerNode {
     style: Default::default(),
-    children: vec![NodeKind::Text(text)],
-  });
+    children: vec![text.into()],
+  }
+  .into();
 
   // Create an image renderer from the root node
   let mut renderer = ImageRenderer::new(1200, 630);
