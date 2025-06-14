@@ -6,6 +6,7 @@ use taffy::{Layout, Point, Rect, Size, prelude::FromLength};
 use takumi::{
   color::{Color, ColorInput, Gradient},
   context::Context,
+  impl_node_enum,
   node::{
     ContainerNode, Node, TextNode,
     draw::FastBlendImage,
@@ -14,29 +15,41 @@ use takumi::{
   render::ImageRenderer,
 };
 
+#[derive(Debug, Clone)]
+enum NodeKind {
+  Container(ContainerNode<NodeKind>),
+  Text(TextNode),
+}
+
+impl_node_enum!(NodeKind, Container => ContainerNode<NodeKind>, Text => TextNode);
+
+type ImageRendererNodes = ImageRenderer<NodeKind>;
+
 fn render_scenarios(c: &mut Criterion) {
   let mut group = c.benchmark_group("render_scenarios");
 
   group.bench_function("gradient_background", |b| {
     b.iter(|| {
       let context = Context::default();
-      let renderer = ImageRenderer::try_from(ContainerNode {
-        style: Style {
-          width: 1200.0.into(),
-          height: 630.0.into(),
-          background_color: Some(ColorInput::Gradient(Gradient {
-            stops: vec![Color::Rgb(242, 102, 223), Color::Rgb(157, 201, 106)],
-            angle: 45.0,
-          })),
-          ..Default::default()
-        },
-        children: vec![],
-      })
-      .unwrap();
-      let (mut taffy, root_node_id) = renderer.create_taffy_tree();
+      let mut renderer = ImageRendererNodes::new(1200, 630);
+      renderer.construct_taffy_tree(
+        ContainerNode {
+          style: Style {
+            width: 1200.0.into(),
+            height: 630.0.into(),
+            background_color: Some(ColorInput::Gradient(Gradient {
+              stops: vec![Color::Rgb(242, 102, 223), Color::Rgb(157, 201, 106)],
+              angle: 45.0,
+            })),
+            ..Default::default()
+          },
+          children: vec![],
+        }
+        .into(),
+      );
+      let image = renderer.draw(&context).unwrap();
       let mut buffer = Vec::new();
       let mut cursor = Cursor::new(&mut buffer);
-      let image = renderer.draw(&context, &mut taffy, root_node_id);
       image.write_to(&mut cursor, ImageFormat::WebP).unwrap();
     })
   });
@@ -45,19 +58,21 @@ fn render_scenarios(c: &mut Criterion) {
   group.bench_function("empty_container", |b| {
     b.iter(|| {
       let context = Context::default();
-      let renderer = ImageRenderer::try_from(ContainerNode {
-        style: Style {
-          width: 1200.0.into(),
-          height: 630.0.into(),
-          ..Default::default()
-        },
-        children: vec![],
-      })
-      .unwrap();
-      let (mut taffy, root_node_id) = renderer.create_taffy_tree();
+      let mut renderer = ImageRendererNodes::new(1200, 630);
+      renderer.construct_taffy_tree(
+        ContainerNode {
+          style: Style {
+            width: 1200.0.into(),
+            height: 630.0.into(),
+            ..Default::default()
+          },
+          children: vec![],
+        }
+        .into(),
+      );
+      let image = renderer.draw(&context).unwrap();
       let mut buffer = Vec::new();
       let mut cursor = Cursor::new(&mut buffer);
-      let image = renderer.draw(&context, &mut taffy, root_node_id);
       image.write_to(&mut cursor, ImageFormat::WebP).unwrap();
     })
   });
@@ -101,7 +116,7 @@ fn render_scenarios(c: &mut Criterion) {
     let mut canvas = FastBlendImage(RgbaImage::new(800, 600));
 
     b.iter(|| {
-      node.draw_on_canvas(&context, &mut canvas, layout);
+      <TextNode as Node<NodeKind>>::draw_on_canvas(&node, &context, &mut canvas, layout);
     })
   });
 
@@ -109,36 +124,44 @@ fn render_scenarios(c: &mut Criterion) {
   group.bench_function("nested_containers", |b| {
     b.iter(|| {
       let context = Context::default();
-      let renderer = ImageRenderer::try_from(ContainerNode {
-        style: Style {
-          width: 1200.0.into(),
-          height: 630.0.into(),
-          background_color: Some(Color::Rgb(240, 240, 240).into()),
-          ..Default::default()
-        },
-        children: vec![Box::new(ContainerNode {
+      let mut renderer = ImageRendererNodes::new(1200, 630);
+      renderer.construct_taffy_tree(
+        ContainerNode {
           style: Style {
-            width: 400.0.into(),
-            height: 400.0.into(),
-            background_color: Some(Color::Rgb(200, 200, 200).into()),
+            width: 1200.0.into(),
+            height: 630.0.into(),
+            background_color: Some(Color::Rgb(240, 240, 240).into()),
             ..Default::default()
           },
-          children: vec![Box::new(ContainerNode {
-            style: Style {
-              width: 200.0.into(),
-              height: 200.0.into(),
-              background_color: Some(Color::Rgb(160, 160, 160).into()),
-              ..Default::default()
-            },
-            children: vec![],
-          })],
-        })],
-      })
-      .unwrap();
-      let (mut taffy, root_node_id) = renderer.create_taffy_tree();
+          children: vec![
+            ContainerNode {
+              style: Style {
+                width: 400.0.into(),
+                height: 400.0.into(),
+                background_color: Some(Color::Rgb(200, 200, 200).into()),
+                ..Default::default()
+              },
+              children: vec![
+                ContainerNode {
+                  style: Style {
+                    width: 200.0.into(),
+                    height: 200.0.into(),
+                    background_color: Some(Color::Rgb(160, 160, 160).into()),
+                    ..Default::default()
+                  },
+                  children: vec![],
+                }
+                .into(),
+              ],
+            }
+            .into(),
+          ],
+        }
+        .into(),
+      );
+      let image = renderer.draw(&context).unwrap();
       let mut buffer = Vec::new();
       let mut cursor = Cursor::new(&mut buffer);
-      let image = renderer.draw(&context, &mut taffy, root_node_id);
       image.write_to(&mut cursor, ImageFormat::WebP).unwrap();
     })
   });
@@ -153,11 +176,12 @@ fn render_parallel_optimization(c: &mut Criterion) {
   group.bench_function("many_siblings_parallel", |b| {
     b.iter(|| {
       let context = Context::default();
+      let mut renderer = ImageRendererNodes::new(1200, 630);
 
       // Create a layout with many sibling containers to benefit from parallel processing
-      let children: Vec<Box<dyn Node>> = (0..8)
+      let children: Vec<NodeKind> = (0..8)
         .map(|i| {
-          Box::new(ContainerNode {
+          ContainerNode {
             style: Style {
               width: 100.0.into(),
               height: 100.0.into(),
@@ -166,7 +190,7 @@ fn render_parallel_optimization(c: &mut Criterion) {
             },
             children: (0..4)
               .map(|j| {
-                Box::new(TextNode {
+                TextNode {
                   style: Style {
                     width: 80.0.into(),
                     height: 20.0.into(),
@@ -179,28 +203,31 @@ fn render_parallel_optimization(c: &mut Criterion) {
                     ..Default::default()
                   },
                   text: format!("Child {} Text {}", i, j),
-                }) as Box<dyn Node>
+                }
+                .into()
               })
               .collect(),
-          }) as Box<dyn Node>
+          }
+          .into()
         })
-        .collect();
+        .collect::<Vec<NodeKind>>();
 
-      let renderer = ImageRenderer::try_from(ContainerNode {
-        style: Style {
-          width: 1200.0.into(),
-          height: 630.0.into(),
-          background_color: Some(Color::Rgb(240, 240, 240).into()),
-          ..Default::default()
-        },
-        children,
-      })
-      .unwrap();
+      renderer.construct_taffy_tree(
+        ContainerNode {
+          style: Style {
+            width: 1200.0.into(),
+            height: 630.0.into(),
+            background_color: Some(Color::Rgb(240, 240, 240).into()),
+            ..Default::default()
+          },
+          children,
+        }
+        .into(),
+      );
 
-      let (mut taffy, root_node_id) = renderer.create_taffy_tree();
+      let image = renderer.draw(&context).unwrap();
       let mut buffer = Vec::new();
       let mut cursor = Cursor::new(&mut buffer);
-      let image = renderer.draw(&context, &mut taffy, root_node_id);
       image.write_to(&mut cursor, ImageFormat::WebP).unwrap();
     })
   });
@@ -212,75 +239,82 @@ fn render_performance_analysis(c: &mut Criterion) {
   let mut group = c.benchmark_group("performance_analysis");
 
   // Complex layout for detailed analysis
-  let complex_layout = || ContainerNode {
-    style: Style {
-      width: 1200.0.into(),
-      height: 630.0.into(),
-      background_color: Some(Color::Rgb(240, 240, 240).into()),
-      ..Default::default()
-    },
-    children: vec![
-      Box::new(TextNode {
-        style: Style {
-          width: 800.0.into(),
-          height: 100.0.into(),
-          inheritable_style: InheritableStyle {
-            font_size: Some(48.0),
-            color: Some(Color::Rgb(0, 0, 0).into()),
-            text_align: Some(TextAlign::Center),
-            font_weight: Some(FontWeight(700)),
+  let complex_layout = || {
+    ContainerNode {
+      style: Style {
+        width: 1200.0.into(),
+        height: 630.0.into(),
+        background_color: Some(Color::Rgb(240, 240, 240).into()),
+        ..Default::default()
+      },
+      children: vec![
+        TextNode {
+          style: Style {
+            width: 800.0.into(),
+            height: 100.0.into(),
+            inheritable_style: InheritableStyle {
+              font_size: Some(48.0),
+              color: Some(Color::Rgb(0, 0, 0).into()),
+              text_align: Some(TextAlign::Center),
+              font_weight: Some(FontWeight(700)),
+              ..Default::default()
+            },
             ..Default::default()
           },
-          ..Default::default()
-        },
-        text: "Complex Layout Benchmark".to_string(),
-      }),
-      Box::new(ContainerNode {
-        style: Style {
-          width: 1000.0.into(),
-          height: 400.0.into(),
-          background_color: Some(Color::Rgb(200, 200, 200).into()),
-          ..Default::default()
-        },
-        children: vec![
-          Box::new(TextNode {
-            style: Style {
-              width: 400.0.into(),
-              height: 100.0.into(),
-              inheritable_style: InheritableStyle {
-                font_size: Some(24.0),
-                color: Some(Color::Rgb(50, 50, 50).into()),
-                text_align: Some(TextAlign::Left),
+          text: "Complex Layout Benchmark".to_string(),
+        }
+        .into(),
+        ContainerNode {
+          style: Style {
+            width: 1000.0.into(),
+            height: 400.0.into(),
+            background_color: Some(Color::Rgb(200, 200, 200).into()),
+            ..Default::default()
+          },
+          children: vec![
+            TextNode {
+              style: Style {
+                width: 400.0.into(),
+                height: 100.0.into(),
+                inheritable_style: InheritableStyle {
+                  font_size: Some(24.0),
+                  color: Some(Color::Rgb(50, 50, 50).into()),
+                  text_align: Some(TextAlign::Left),
+                  ..Default::default()
+                },
                 ..Default::default()
               },
-              ..Default::default()
-            },
-            text: "This is a complex layout with multiple nested elements and text nodes."
-              .to_string(),
-          }),
-          Box::new(ContainerNode {
-            style: Style {
-              width: 200.0.into(),
-              height: 200.0.into(),
-              background_color: Some(Color::Rgb(160, 160, 160).into()),
-              ..Default::default()
-            },
-            children: vec![],
-          }),
-        ],
-      }),
-    ],
+              text: "This is a complex layout with multiple nested elements and text nodes."
+                .to_string(),
+            }
+            .into(),
+            ContainerNode {
+              style: Style {
+                width: 200.0.into(),
+                height: 200.0.into(),
+                background_color: Some(Color::Rgb(160, 160, 160).into()),
+                ..Default::default()
+              },
+              children: vec![],
+            }
+            .into(),
+          ],
+        }
+        .into(),
+      ],
+    }
+    .into()
   };
 
   // Full pipeline benchmark
   group.bench_function("full_pipeline", |b| {
     b.iter(|| {
       let context = Context::default();
-      let renderer = ImageRenderer::try_from(complex_layout()).unwrap();
-      let (mut taffy, root_node_id) = renderer.create_taffy_tree();
+      let mut renderer = ImageRendererNodes::new(1200, 630);
+      renderer.construct_taffy_tree(complex_layout());
+      let image = renderer.draw(&context).unwrap();
       let mut buffer = Vec::new();
       let mut cursor = Cursor::new(&mut buffer);
-      let image = renderer.draw(&context, &mut taffy, root_node_id);
       image.write_to(&mut cursor, ImageFormat::WebP).unwrap();
     })
   });
@@ -288,26 +322,26 @@ fn render_performance_analysis(c: &mut Criterion) {
   // Tree creation step
   group.bench_function("tree_creation", |b| {
     b.iter(|| {
-      let renderer = ImageRenderer::try_from(complex_layout()).unwrap();
-      renderer.create_taffy_tree()
+      let mut renderer = ImageRendererNodes::new(1200, 630);
+      renderer.construct_taffy_tree(complex_layout());
     })
   });
 
   // Drawing step
   group.bench_function("image_drawing", |b| {
     let context = Context::default();
-    let renderer = ImageRenderer::try_from(complex_layout()).unwrap();
-    let (mut taffy, root_node_id) = renderer.create_taffy_tree();
+    let mut renderer = ImageRendererNodes::new(1200, 630);
+    renderer.construct_taffy_tree(complex_layout());
 
-    b.iter(|| renderer.draw(&context, &mut taffy, root_node_id))
+    b.iter(|| renderer.draw(&context).unwrap())
   });
 
   // Encoding step
   group.bench_function("webp_encoding", |b| {
     let context = Context::default();
-    let renderer = ImageRenderer::try_from(complex_layout()).unwrap();
-    let (mut taffy, root_node_id) = renderer.create_taffy_tree();
-    let image = renderer.draw(&context, &mut taffy, root_node_id);
+    let mut renderer = ImageRendererNodes::new(1200, 630);
+    renderer.construct_taffy_tree(complex_layout());
+    let image = renderer.draw(&context).unwrap();
 
     b.iter(|| {
       let mut buffer = Vec::new();

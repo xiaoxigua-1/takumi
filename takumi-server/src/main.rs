@@ -1,5 +1,6 @@
 mod args;
 mod image_store;
+mod node;
 
 use axum::{
   Router,
@@ -14,33 +15,41 @@ use std::{io::Cursor, net::SocketAddr, path::Path, sync::Arc};
 use takumi::{
   context::{Context, load_woff2_font_to_context},
   image::ImageFormat,
-  node::{ContainerNode, Node},
+  node::{Node, style::ValuePercentageAuto},
   render::ImageRenderer,
 };
 use tokio::net::TcpListener;
 
 use mimalloc::MiMalloc;
 
-use crate::{args::Args, image_store::ImageStore};
+use crate::{args::Args, image_store::ImageStore, node::NodeKind};
 
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;
 
 async fn generate_image_handler(
   State(context): State<Arc<Context>>,
-  Json(root_node): Json<ContainerNode>,
+  Json(mut root_node): Json<NodeKind>,
 ) -> Result<Response, StatusCode> {
-  let mut renderer = ImageRenderer::try_from(root_node).map_err(|_| StatusCode::BAD_REQUEST)?;
+  let ValuePercentageAuto::SpecificValue(width) = root_node.get_style().width else {
+    return Err(StatusCode::BAD_REQUEST);
+  };
 
-  renderer.root_node.inherit_style_for_children();
-  renderer.root_node.hydrate_async(&context).await;
+  let ValuePercentageAuto::SpecificValue(height) = root_node.get_style().height else {
+    return Err(StatusCode::BAD_REQUEST);
+  };
 
-  let (mut taffy, root_node_id) = renderer.create_taffy_tree();
+  root_node.inherit_style_for_children();
+  root_node.hydrate_async(&context).await;
+
+  let mut renderer = ImageRenderer::new(width as u32, height as u32);
+
+  renderer.construct_taffy_tree(root_node);
 
   let mut buffer = Vec::new();
   let mut cursor = Cursor::new(&mut buffer);
 
-  let image = renderer.draw(&context, &mut taffy, root_node_id);
+  let image = renderer.draw(&context).unwrap();
 
   image.write_to(&mut cursor, ImageFormat::WebP).unwrap();
 
