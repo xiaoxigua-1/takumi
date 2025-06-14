@@ -18,7 +18,9 @@ use crate::NodeKind;
 /// This function creates a simple image with text using the takumi library.
 /// The image is rendered and saved as a WebP file named "output.webp".
 pub fn say_hello_to(name: &str) {
-  // Create a new context for rendering with default settings
+  // Create a new context for rendering with default settings,
+  // Only one instance should be created for the entire application,
+  // you can wrap it in a Arc<Context> to share it across threads if needed.
   let context = Context::default();
 
   // Note: Font loading can be done here using load_woff2_font_to_context
@@ -40,17 +42,16 @@ pub fn say_hello_to(name: &str) {
 
   // Create a root container node that will hold the text
   // Set dimensions to 1200x630 pixels (common size for social media images)
-  let root: NodeKind = ContainerNode {
+  let root = ContainerNode {
     style: Default::default(),
     children: vec![text.into()],
-  }
-  .into();
+  };
 
   // Create an image renderer from the root node
-  let mut renderer = ImageRenderer::new(1200, 630);
+  let mut renderer: ImageRenderer<NodeKind> = ImageRenderer::new(1200, 630);
 
   // Generate the layout tree using Taffy (layout engine)
-  renderer.construct_taffy_tree(root);
+  renderer.construct_taffy_tree(root.into());
 
   // Render the image using the context and layout tree
   let image = renderer.draw(&context).unwrap();
