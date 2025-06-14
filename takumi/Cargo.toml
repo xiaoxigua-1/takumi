@@ -8,6 +8,7 @@ keywords = ["image", "css", "flexbox", "layout", "rendering"]
 repository = "https://github.com/kane50613/takumi"
 readme = "README.md"
 exclude = ["benches/**/*"]
+rust-version = "1.85.1"
 
 [dependencies]
 imageproc = "0.25"
