@@ -8,6 +8,7 @@
 /// ```rust
 /// use takumi::{impl_node_enum, node::{ContainerNode, ImageNode, TextNode}};
 ///
+/// #[derive(Debug, Clone)]
 /// enum NodeKind {
 ///   Image(ImageNode),
 ///   Text(TextNode),
