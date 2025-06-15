@@ -65,7 +65,7 @@ macro_rules! impl_node_enum {
         }
       }
 
-      async fn hydrate_async(&self, context: &::takumi::context::Context) {
+      async fn hydrate_async(&self, context: &::takumi::context::GlobalContext) {
         match self {
           $( $name::$variant(inner) => <_ as ::takumi::node::Node<$name>>::hydrate_async(inner, context).await, )*
         }
@@ -73,7 +73,7 @@ macro_rules! impl_node_enum {
 
       fn measure(
         &self,
-        context: &::takumi::context::Context,
+        context: &::takumi::render::RenderContext,
         available_space: ::takumi::taffy::Size<::takumi::taffy::AvailableSpace>,
         known_dimensions: ::takumi::taffy::Size<Option<f32>>,
       ) -> ::takumi::taffy::Size<f32> {
@@ -82,25 +82,25 @@ macro_rules! impl_node_enum {
         }
       }
 
-      fn draw_on_canvas(&self, context: &::takumi::context::Context, canvas: &mut ::takumi::node::draw::FastBlendImage, layout: ::takumi::taffy::Layout) {
+      fn draw_on_canvas(&self, context: &::takumi::render::RenderContext, canvas: &mut ::takumi::node::draw::FastBlendImage, layout: ::takumi::taffy::Layout) {
         match self {
           $( $name::$variant(inner) => <_ as ::takumi::node::Node<$name>>::draw_on_canvas(inner, context, canvas, layout), )*
         }
       }
 
-      fn draw_background(&self, context: &::takumi::context::Context, canvas: &mut ::takumi::node::draw::FastBlendImage, layout: ::takumi::taffy::Layout) {
+      fn draw_background(&self, context: &::takumi::render::RenderContext, canvas: &mut ::takumi::node::draw::FastBlendImage, layout: ::takumi::taffy::Layout) {
         match self {
           $( $name::$variant(inner) => <_ as ::takumi::node::Node<$name>>::draw_background(inner, context, canvas, layout), )*
         }
       }
 
-      fn draw_content(&self, context: &::takumi::context::Context, canvas: &mut ::takumi::node::draw::FastBlendImage, layout: ::takumi::taffy::Layout) {
+      fn draw_content(&self, context: &::takumi::render::RenderContext, canvas: &mut ::takumi::node::draw::FastBlendImage, layout: ::takumi::taffy::Layout) {
         match self {
           $( $name::$variant(inner) => <_ as ::takumi::node::Node<$name>>::draw_content(inner, context, canvas, layout), )*
         }
       }
 
-      fn draw_border(&self, context: &::takumi::context::Context, canvas: &mut ::takumi::node::draw::FastBlendImage, layout: ::takumi::taffy::Layout) {
+      fn draw_border(&self, context: &::takumi::render::RenderContext, canvas: &mut ::takumi::node::draw::FastBlendImage, layout: ::takumi::taffy::Layout) {
         match self {
           $( $name::$variant(inner) => <_ as ::takumi::node::Node<$name>>::draw_border(inner, context, canvas, layout), )*
         }

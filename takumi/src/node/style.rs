@@ -7,7 +7,10 @@ use taffy::{
 };
 use ts_rs::TS;
 
-use crate::color::ColorInput;
+use crate::{
+  color::ColorInput,
+  render::{DEFAULT_FONT_SIZE, DEFAULT_LINE_HEIGHT, RenderContext},
+};
 
 /// Represents font weight as a numeric value.
 ///
@@ -32,7 +35,7 @@ impl From<FontWeight> for Weight {
 ///
 /// Similar to CSS object-fit property.
 #[derive(Debug, Clone, Deserialize, Serialize, Copy, TS)]
-#[serde(rename_all = "snake_case")]
+#[serde(rename_all = "kebab-case")]
 pub enum ObjectFit {
   /// Scale the image to fit within the container while preserving aspect ratio
   Contain,
@@ -56,7 +59,7 @@ impl Default for ObjectFit {
 ///
 /// Corresponds to CSS text-align property values.
 #[derive(Debug, Clone, Deserialize, Serialize, Copy, TS)]
-#[serde(rename_all = "snake_case")]
+#[serde(rename_all = "kebab-case")]
 pub enum TextAlign {
   /// Align text to the left edge
   Left,
@@ -66,6 +69,8 @@ pub enum TextAlign {
   Center,
   /// Justify text to both edges
   Justify,
+  /// Align text to the start (language-dependent)
+  Start,
   /// Align text to the end (language-dependent)
   End,
 }
@@ -77,6 +82,7 @@ impl From<TextAlign> for Align {
       TextAlign::Right => Align::Right,
       TextAlign::Center => Align::Center,
       TextAlign::Justify => Align::Justified,
+      TextAlign::Start => Align::Left, // Start maps to Left for LTR languages
       TextAlign::End => Align::End,
     }
   }
@@ -84,7 +90,7 @@ impl From<TextAlign> for Align {
 
 impl Default for TextAlign {
   fn default() -> Self {
-    Self::Left
+    Self::Start
   }
 }
 
@@ -92,25 +98,34 @@ impl Default for TextAlign {
 ///
 /// This enum determines how an element is positioned within its containing element.
 #[derive(Debug, Clone, Deserialize, Serialize, Copy, TS)]
-#[serde(rename_all = "snake_case")]
+#[serde(rename_all = "kebab-case")]
 pub enum Position {
+  /// Element is positioned according to the normal flow of the document
+  Static,
   /// Element is positioned according to the normal flow of the document
   Relative,
   /// Element is positioned relative to its nearest positioned ancestor
   Absolute,
+  /// Element is positioned relative to the initial containing block
+  Fixed,
+  /// Element is positioned based on the user's scroll position
+  Sticky,
 }
 
 impl Default for Position {
   fn default() -> Self {
-    Self::Relative
+    Self::Static
   }
 }
 
 impl From<Position> for taffy::style::Position {
   fn from(value: Position) -> Self {
     match value {
+      Position::Static => taffy::style::Position::Relative,
       Position::Relative => taffy::style::Position::Relative,
       Position::Absolute => taffy::style::Position::Absolute,
+      Position::Fixed => taffy::style::Position::Absolute,
+      Position::Sticky => taffy::style::Position::Relative,
     }
   }
 }
@@ -119,7 +134,7 @@ impl From<Position> for taffy::style::Position {
 ///
 /// This enum determines how flex items are laid out along the main axis.
 #[derive(Debug, Clone, Deserialize, Serialize, Copy, TS)]
-#[serde(rename_all = "snake_case")]
+#[serde(rename_all = "kebab-case")]
 pub enum FlexDirection {
   /// Items are laid out horizontally from left to right
   Row,
@@ -153,11 +168,11 @@ impl From<FlexDirection> for taffy::style::FlexDirection {
 /// This enum determines how space is distributed between and around flex items
 /// along the main axis of the flex container.
 #[derive(Debug, Clone, Deserialize, Serialize, Copy, TS)]
-#[serde(rename_all = "snake_case")]
+#[serde(rename_all = "kebab-case")]
 pub enum JustifyContent {
-  /// Items are packed toward the start of the flex-direction
+  /// Items are packed toward the start of the writing-mode direction
   Start,
-  /// Items are packed toward the end of the flex-direction
+  /// Items are packed toward the end of the writing-mode direction
   End,
   /// Items are packed toward the start of the flex-direction
   FlexStart,
@@ -169,6 +184,8 @@ pub enum JustifyContent {
   SpaceBetween,
   /// Items are evenly distributed with equal space around them
   SpaceAround,
+  /// Items are evenly distributed with equal space between them
+  SpaceEvenly,
 }
 
 impl From<JustifyContent> for taffy::style::JustifyContent {
@@ -181,6 +198,7 @@ impl From<JustifyContent> for taffy::style::JustifyContent {
       JustifyContent::Center => taffy::style::JustifyContent::Center,
       JustifyContent::SpaceBetween => taffy::style::JustifyContent::SpaceBetween,
       JustifyContent::SpaceAround => taffy::style::JustifyContent::SpaceAround,
+      JustifyContent::SpaceEvenly => taffy::style::JustifyContent::SpaceEvenly,
     }
   }
 }
@@ -190,12 +208,16 @@ impl From<JustifyContent> for taffy::style::JustifyContent {
 /// This enum determines how flex items are aligned within the flex container
 /// along the cross axis (perpendicular to the main axis).
 #[derive(Debug, Clone, Deserialize, Serialize, Copy, TS)]
-#[serde(rename_all = "snake_case")]
+#[serde(rename_all = "kebab-case")]
 pub enum AlignItems {
-  /// Items are aligned to the start of the cross axis
+  /// Items are aligned to the start of the writing-mode direction
   Start,
-  /// Items are aligned to the end of the cross axis
+  /// Items are aligned to the end of the writing-mode direction
   End,
+  /// Items are aligned to the start of the cross axis
+  FlexStart,
+  /// Items are aligned to the end of the cross axis
+  FlexEnd,
   /// Items are centered along the cross axis
   Center,
   /// Items are aligned such that their baselines align
@@ -209,11 +231,61 @@ impl From<AlignItems> for taffy::style::AlignItems {
     match value {
       AlignItems::Start => taffy::style::AlignItems::Start,
       AlignItems::End => taffy::style::AlignItems::End,
+      AlignItems::FlexStart => taffy::style::AlignItems::FlexStart,
+      AlignItems::FlexEnd => taffy::style::AlignItems::FlexEnd,
       AlignItems::Center => taffy::style::AlignItems::Center,
       AlignItems::Baseline => taffy::style::AlignItems::Baseline,
       AlignItems::Stretch => taffy::style::AlignItems::Stretch,
     }
   }
+}
+
+/// Defines how flex items should wrap.
+///
+/// This enum determines how flex items should wrap within the flex container.
+#[derive(Debug, Clone, Deserialize, Serialize, Copy, TS)]
+#[serde(rename_all = "kebab-case")]
+pub enum FlexWrap {
+  /// Flex items will not wrap and will shrink to fit within the container
+  NoWrap,
+  /// Flex items will wrap to the next line when they exceed the container width
+  Wrap,
+  /// Flex items will wrap to the previous line when they exceed the container width
+  WrapReverse,
+}
+
+impl From<FlexWrap> for taffy::style::FlexWrap {
+  fn from(value: FlexWrap) -> Self {
+    match value {
+      FlexWrap::NoWrap => taffy::style::FlexWrap::NoWrap,
+      FlexWrap::Wrap => taffy::style::FlexWrap::Wrap,
+      FlexWrap::WrapReverse => taffy::style::FlexWrap::WrapReverse,
+    }
+  }
+}
+
+/// Represents the resolved font style for a text node.
+///
+/// This struct contains the resolved font style properties after inheriting
+/// from parent elements.
+#[derive(Debug, Clone)]
+pub struct ResolvedFontStyle {
+  /// Font size in pixels for text rendering
+  pub font_size: f32,
+  /// Line height multiplier for text spacing
+  pub line_height: f32,
+  /// Font weight for text rendering
+  pub font_weight: Weight,
+  /// Maximum number of lines for text before truncation
+  pub line_clamp: Option<u32>,
+  /// Font family name for text rendering
+  pub font_family: Option<String>,
+  /// Letter spacing for text rendering
+  pub letter_spacing: Option<f32>,
+  /// Text alignment within the element
+  pub text_align: Align,
+  /// Text color for child text elements
+  pub color: ColorInput,
 }
 
 /// Main styling structure that contains all layout and visual properties.
@@ -226,29 +298,45 @@ impl From<AlignItems> for taffy::style::AlignItems {
 #[ts(export, optional_fields)]
 pub struct Style {
   /// Width of the element
-  pub width: ValuePercentageAuto,
+  pub width: LengthUnit,
   /// Height of the element
-  pub height: ValuePercentageAuto,
+  pub height: LengthUnit,
+  /// Max width of the element
+  pub max_width: LengthUnit,
+  /// Max height of the element
+  pub max_height: LengthUnit,
+  /// Min width of the element
+  pub min_width: LengthUnit,
+  /// Min height of the element
+  pub min_height: LengthUnit,
+  /// Aspect ratio of the element
+  pub aspect_ratio: Option<f32>,
   /// Internal spacing around the element's content
-  pub padding: SidesValue<ValuePercentageAuto>,
+  pub padding: SidesValue<LengthUnit>,
   /// External spacing around the element
-  pub margin: SidesValue<ValuePercentageAuto>,
+  pub margin: SidesValue<LengthUnit>,
   /// Positioning offset from the element's normal position
-  pub inset: SidesValue<ValuePercentageAuto>,
+  pub inset: SidesValue<LengthUnit>,
   /// Direction of flex layout (row or column)
   pub flex_direction: FlexDirection,
   /// How flex items are aligned along the main axis
   pub justify_content: Option<JustifyContent>,
   /// How flex items are aligned along the cross axis
   pub align_items: Option<AlignItems>,
+  /// How flex items should wrap
+  pub flex_wrap: FlexWrap,
+  /// The initial size of the flex item
+  pub flex_basis: LengthUnit,
   /// Positioning method (relative, absolute, etc.)
   pub position: Position,
   /// Spacing between flex items
   pub gap: Gap,
   /// How much the element should grow relative to other flex items
   pub flex_grow: f32,
+  /// How much the element should shrink relative to other flex items
+  pub flex_shrink: f32,
   /// Width of the element's border
-  pub border_width: SidesValue<ValuePercentageAuto>,
+  pub border_width: SidesValue<LengthUnit>,
   /// How images should be fitted within their container
   pub object_fit: ObjectFit,
   /// Element's background color
@@ -261,9 +349,14 @@ pub struct Style {
 impl Default for Style {
   fn default() -> Self {
     Self {
-      margin: SidesValue::SingleValue(ValuePercentageAuto::SpecificValue(0.0)),
+      margin: SidesValue::SingleValue(LengthUnit::Px(0.0)),
       width: Default::default(),
       height: Default::default(),
+      max_width: Default::default(),
+      max_height: Default::default(),
+      min_width: Default::default(),
+      min_height: Default::default(),
+      aspect_ratio: None,
       padding: Default::default(),
       inset: Default::default(),
       flex_direction: Default::default(),
@@ -271,7 +364,10 @@ impl Default for Style {
       align_items: Default::default(),
       position: Default::default(),
       gap: Default::default(),
-      flex_grow: Default::default(),
+      flex_grow: 0.0,
+      flex_shrink: 1.0,
+      flex_basis: Default::default(),
+      flex_wrap: FlexWrap::NoWrap,
       border_width: Default::default(),
       object_fit: Default::default(),
       background_color: Default::default(),
@@ -293,100 +389,57 @@ pub struct InheritableStyle {
   /// Text color for child text elements
   pub color: Option<ColorInput>,
   /// Font size in pixels for text rendering
-  pub font_size: Option<f32>,
+  pub font_size: Option<LengthUnit>,
   /// Font family name for text rendering
   pub font_family: Option<String>,
   /// Line height multiplier for text spacing
-  pub line_height: Option<f32>,
+  pub line_height: Option<LengthUnit>,
   /// Font weight for text rendering
   pub font_weight: Option<FontWeight>,
   /// Maximum number of lines for text before truncation
-  pub max_lines: Option<u32>,
+  pub line_clamp: Option<u32>,
   /// Corner radius for rounded borders in pixels
-  pub border_radius: Option<SidesValue<ValuePercentageAuto>>,
+  pub border_radius: Option<SidesValue<LengthUnit>>,
   /// Text alignment within the element
   pub text_align: Option<TextAlign>,
-}
-
-/// Font styling properties for text rendering.
-///
-/// This structure contains all the necessary information for rendering text,
-/// including font size, family, weight, alignment, and color.
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct FontStyle {
-  /// Font size in pixels
-  pub font_size: f32,
-  /// Font family name
-  pub font_family: Option<String>,
-  /// Text alignment
-  pub text_align: TextAlign,
-  /// Line height multiplier
-  pub line_height: f32,
-  /// Font weight
-  pub font_weight: FontWeight,
-  /// Maximum number of lines before truncation
-  pub max_lines: Option<u32>,
-  /// Text color
-  pub color: ColorInput,
-}
-
-impl Default for FontStyle {
-  fn default() -> Self {
-    Self {
-      font_size: 16.0,
-      font_family: None,
-      line_height: 1.0,
-      font_weight: FontWeight::default(),
-      max_lines: None,
-      color: ColorInput::default(),
-      text_align: TextAlign::default(),
-    }
-  }
-}
-
-impl From<&Style> for FontStyle {
-  fn from(style: &Style) -> Self {
-    Self {
-      font_size: style.inheritable_style.font_size.unwrap_or(16.0),
-      font_family: style.inheritable_style.font_family.clone(),
-      line_height: style.inheritable_style.line_height.unwrap_or(1.0),
-      font_weight: style.inheritable_style.font_weight.unwrap_or_default(),
-      max_lines: style.inheritable_style.max_lines,
-      color: style.inheritable_style.color.clone().unwrap_or_default(),
-      text_align: style.inheritable_style.text_align.unwrap_or_default(),
-    }
-  }
+  /// Letter spacing for text rendering
+  /// Value is measured in EM units
+  pub letter_spacing: Option<f32>,
 }
 
 /// Represents spacing between flex items.
 ///
 /// Can be either a single value applied to both axes, or separate values
 /// for horizontal and vertical spacing.
-#[derive(Debug, Clone, Deserialize, Serialize, TS)]
+#[derive(Debug, Clone, Copy, Deserialize, Serialize, TS)]
 #[serde(untagged)]
 pub enum Gap {
   /// Same gap value for both horizontal and vertical spacing
-  SingleValue(f32),
+  SingleValue(LengthUnit),
   /// Separate values for horizontal and vertical spacing (horizontal, vertical)
-  Array(f32, f32),
+  Array(LengthUnit, LengthUnit),
 }
 
 impl Default for Gap {
   fn default() -> Self {
-    Self::SingleValue(0.0)
+    Self::SingleValue(LengthUnit::Px(0.0))
   }
 }
 
-impl From<Gap> for Size<LengthPercentage> {
-  fn from(gap: Gap) -> Self {
-    match gap {
+impl Gap {
+  /// Resolves the gap to a size in length percentages.
+  ///
+  /// This method converts the gap value to a size in length percentages,
+  /// which can be used to set the size of flex items in a flex container.
+  pub fn resolve_to_size(self, context: &RenderContext) -> Size<LengthPercentage> {
+    match self {
       Gap::SingleValue(value) => Size {
-        width: LengthPercentage::length(value),
-        height: LengthPercentage::length(value),
+        width: value.resolve_to_length_percentage(context),
+        height: value.resolve_to_length_percentage(context),
       },
       Gap::Array(horizontal, vertical) => Size {
-        width: LengthPercentage::length(horizontal),
-        height: LengthPercentage::length(vertical),
+        width: horizontal.resolve_to_length_percentage(context),
+        height: vertical.resolve_to_length_percentage(context),
       },
     }
   }
@@ -401,7 +454,7 @@ pub struct Border {
   /// Border color
   pub color: Option<ColorInput>,
   /// Border size for each side
-  pub size: SidesValue<f32>,
+  pub size: SidesValue<LengthUnit>,
 }
 
 /// Represents values that can be applied to all sides of an element.
@@ -409,7 +462,7 @@ pub struct Border {
 /// This enum allows for flexible specification of values like padding, margin,
 /// or border sizes using either a single value for all sides, separate values
 /// for vertical/horizontal axes, or individual values for each side.
-#[derive(Debug, Clone, Deserialize, Serialize, TS)]
+#[derive(Debug, Clone, Copy, Deserialize, Serialize, TS)]
 #[serde(untagged)]
 pub enum SidesValue<T> {
   /// Same value for all four sides
@@ -451,60 +504,124 @@ impl<T: Copy, F: Copy + Default + Into<T>> From<SidesValue<F>> for Rect<T> {
   }
 }
 
+fn resolve_length_unit_rect_to_length_percentage(
+  context: &RenderContext,
+  value: Rect<LengthUnit>,
+) -> Rect<LengthPercentage> {
+  Rect {
+    left: value.left.resolve_to_length_percentage(context),
+    right: value.right.resolve_to_length_percentage(context),
+    top: value.top.resolve_to_length_percentage(context),
+    bottom: value.bottom.resolve_to_length_percentage(context),
+  }
+}
+
+fn resolve_length_unit_rect_to_length_percentage_auto(
+  context: &RenderContext,
+  value: Rect<LengthUnit>,
+) -> Rect<LengthPercentageAuto> {
+  Rect {
+    left: value.left.resolve_to_length_percentage_auto(context),
+    right: value.right.resolve_to_length_percentage_auto(context),
+    top: value.top.resolve_to_length_percentage_auto(context),
+    bottom: value.bottom.resolve_to_length_percentage_auto(context),
+  }
+}
+
 /// Represents a value that can be a specific length, percentage, or automatic.
 ///
 /// This corresponds to CSS values that can be specified as pixels, percentages,
 /// or the 'auto' keyword for automatic sizing.
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Copy, TS)]
 #[serde(rename_all = "camelCase")]
-pub enum ValuePercentageAuto {
+pub enum LengthUnit {
   /// Automatic sizing based on content
   Auto,
-  /// Percentage value relative to parent container
+  /// Percentage value relative to parent container (0-100)
   Percentage(f32),
+  /// Rem value relative to the root font size
+  Rem(f32),
+  /// Em value relative to the font size
+  Em(f32),
+  /// Vh value relative to the viewport height (0-100)
+  Vh(f32),
+  /// Vw value relative to the viewport width (0-100)
+  Vw(f32),
   /// Specific pixel value
   #[serde(untagged)]
-  SpecificValue(f32),
+  Px(f32),
 }
 
-impl From<f32> for ValuePercentageAuto {
+impl From<f32> for LengthUnit {
   fn from(value: f32) -> Self {
-    Self::SpecificValue(value)
+    Self::Px(value)
   }
 }
 
-impl Default for ValuePercentageAuto {
+impl Default for LengthUnit {
   fn default() -> Self {
     Self::Auto
   }
 }
 
-impl From<ValuePercentageAuto> for Dimension {
-  fn from(value: ValuePercentageAuto) -> Self {
-    match value {
-      ValuePercentageAuto::Auto => Dimension::auto(),
-      ValuePercentageAuto::SpecificValue(value) => Dimension::length(value),
-      ValuePercentageAuto::Percentage(value) => Dimension::percent(value),
+impl LengthUnit {
+  /// Resolves the length unit to a `LengthPercentage`.
+  pub fn resolve_to_length_percentage(self, context: &RenderContext) -> LengthPercentage {
+    match self {
+      LengthUnit::Auto => LengthPercentage::length(0.0),
+      LengthUnit::Px(value) => LengthPercentage::length(value),
+      LengthUnit::Percentage(value) => LengthPercentage::percent(value / 100.0),
+      LengthUnit::Rem(value) => LengthPercentage::length(value * context.viewport.font_size),
+      LengthUnit::Em(value) => LengthPercentage::length(value * context.parent_font_size),
+      LengthUnit::Vh(value) => {
+        LengthPercentage::length(context.viewport.height as f32 * value / 100.0)
+      }
+      LengthUnit::Vw(value) => {
+        LengthPercentage::length(context.viewport.width as f32 * value / 100.0)
+      }
     }
   }
-}
 
-impl From<ValuePercentageAuto> for LengthPercentageAuto {
-  fn from(value: ValuePercentageAuto) -> Self {
-    match value {
-      ValuePercentageAuto::Auto => LengthPercentageAuto::auto(),
-      ValuePercentageAuto::SpecificValue(value) => LengthPercentageAuto::length(value),
-      ValuePercentageAuto::Percentage(value) => LengthPercentageAuto::percent(value),
+  /// Resolves the length unit to a pixel value.
+  pub fn resolve_to_px(self, context: &RenderContext) -> f32 {
+    match self {
+      LengthUnit::Auto => 0.0,
+      LengthUnit::Px(value) => value,
+      LengthUnit::Percentage(value) => value * context.parent_font_size / 100.0,
+      LengthUnit::Rem(value) => value * context.viewport.font_size,
+      LengthUnit::Em(value) => value * context.parent_font_size,
+      LengthUnit::Vh(value) => value * context.viewport.height as f32 / 100.0,
+      LengthUnit::Vw(value) => value * context.viewport.width as f32 / 100.0,
     }
   }
-}
 
-impl From<ValuePercentageAuto> for LengthPercentage {
-  fn from(value: ValuePercentageAuto) -> Self {
-    match value {
-      ValuePercentageAuto::Auto => LengthPercentage::length(0.0),
-      ValuePercentageAuto::SpecificValue(value) => LengthPercentage::length(value),
-      ValuePercentageAuto::Percentage(value) => LengthPercentage::percent(value),
+  /// Resolves the length unit to a `LengthPercentageAuto`.
+  pub fn resolve_to_length_percentage_auto(self, context: &RenderContext) -> LengthPercentageAuto {
+    match self {
+      LengthUnit::Auto => LengthPercentageAuto::auto(),
+      LengthUnit::Px(value) => LengthPercentageAuto::length(value),
+      LengthUnit::Percentage(value) => LengthPercentageAuto::percent(value / 100.0),
+      LengthUnit::Rem(value) => LengthPercentageAuto::length(value * context.viewport.font_size),
+      LengthUnit::Em(value) => LengthPercentageAuto::length(value * context.parent_font_size),
+      LengthUnit::Vh(value) => {
+        LengthPercentageAuto::length(context.viewport.height as f32 * value / 100.0)
+      }
+      LengthUnit::Vw(value) => {
+        LengthPercentageAuto::length(context.viewport.width as f32 * value / 100.0)
+      }
+    }
+  }
+
+  /// Resolves the length unit to a `Dimension`.
+  pub fn resolve_to_dimension(self, context: &RenderContext) -> Dimension {
+    match self {
+      LengthUnit::Auto => Dimension::auto(),
+      LengthUnit::Px(value) => Dimension::length(value),
+      LengthUnit::Percentage(value) => Dimension::percent(value / 100.0),
+      LengthUnit::Rem(value) => Dimension::length(value * context.viewport.font_size),
+      LengthUnit::Em(value) => Dimension::length(value * context.parent_font_size),
+      LengthUnit::Vh(value) => Dimension::length(context.viewport.height as f32 * value / 100.0),
+      LengthUnit::Vw(value) => Dimension::length(context.viewport.width as f32 * value / 100.0),
     }
   }
 }
@@ -523,25 +640,64 @@ pub struct AxisSides<T> {
   pub vertical: T,
 }
 
-impl From<Style> for TaffyStyle {
-  fn from(style: Style) -> Self {
-    Self {
+impl Style {
+  /// Resolves the style to a `TaffyStyle`.
+  pub fn resolve_to_taffy_style(&self, context: &RenderContext) -> TaffyStyle {
+    TaffyStyle {
       size: Size {
-        width: style.width.into(),
-        height: style.height.into(),
+        width: self.width.resolve_to_dimension(context),
+        height: self.height.resolve_to_dimension(context),
       },
-      border: style.border_width.into(),
-      padding: style.padding.into(),
-      inset: style.inset.into(),
-      margin: style.margin.into(),
+      border: resolve_length_unit_rect_to_length_percentage(context, self.border_width.into()),
+      padding: resolve_length_unit_rect_to_length_percentage(context, self.padding.into()),
+      inset: resolve_length_unit_rect_to_length_percentage_auto(context, self.inset.into()),
+      margin: resolve_length_unit_rect_to_length_percentage_auto(context, self.margin.into()),
       display: Display::Flex,
-      flex_direction: style.flex_direction.into(),
-      position: style.position.into(),
-      justify_content: style.justify_content.map(|j| j.into()),
-      flex_grow: style.flex_grow,
-      align_items: style.align_items.map(|a| a.into()),
-      gap: style.gap.into(),
+      flex_direction: self.flex_direction.into(),
+      position: self.position.into(),
+      justify_content: self.justify_content.map(|j| j.into()),
+      flex_grow: self.flex_grow,
+      align_items: self.align_items.map(|a| a.into()),
+      gap: self.gap.resolve_to_size(context),
+      flex_basis: self.flex_basis.resolve_to_dimension(context),
+      flex_shrink: self.flex_shrink,
+      flex_wrap: self.flex_wrap.into(),
+      min_size: Size {
+        width: self.min_width.resolve_to_dimension(context),
+        height: self.min_height.resolve_to_dimension(context),
+      },
+      max_size: Size {
+        width: self.max_width.resolve_to_dimension(context),
+        height: self.max_height.resolve_to_dimension(context),
+      },
+      aspect_ratio: self.aspect_ratio,
       ..Default::default()
+    }
+  }
+
+  /// Resolves the style to a `ResolvedFontStyle`.
+  pub fn resolve_to_font_style(&self, context: &RenderContext) -> ResolvedFontStyle {
+    ResolvedFontStyle {
+      color: self.inheritable_style.color.clone().unwrap_or_default(),
+      font_size: self
+        .inheritable_style
+        .font_size
+        .map(|f| f.resolve_to_px(context))
+        .unwrap_or(DEFAULT_FONT_SIZE),
+      line_height: self
+        .inheritable_style
+        .line_height
+        .map(|f| f.resolve_to_px(context))
+        .unwrap_or(DEFAULT_LINE_HEIGHT),
+      font_weight: self
+        .inheritable_style
+        .font_weight
+        .unwrap_or_default()
+        .into(),
+      line_clamp: self.inheritable_style.line_clamp,
+      font_family: self.inheritable_style.font_family.clone(),
+      letter_spacing: self.inheritable_style.letter_spacing,
+      text_align: self.inheritable_style.text_align.unwrap_or_default().into(),
     }
   }
 }

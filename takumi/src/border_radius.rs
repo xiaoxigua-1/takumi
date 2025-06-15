@@ -1,7 +1,10 @@
 use image::RgbaImage;
 use taffy::{Layout, Point, Rect};
 
-use crate::node::style::{SidesValue, ValuePercentageAuto};
+use crate::{
+  node::style::{LengthUnit, SidesValue},
+  render::RenderContext,
+};
 
 #[derive(Debug, Clone, Copy)]
 pub struct BorderRadius {
@@ -12,30 +15,38 @@ pub struct BorderRadius {
 }
 
 impl BorderRadius {
-  pub fn from_layout(layout: &Layout, radius: SidesValue<ValuePercentageAuto>) -> Self {
-    let rect: Rect<ValuePercentageAuto> = radius.into();
+  pub fn from_layout(
+    context: &RenderContext,
+    layout: &Layout,
+    radius: SidesValue<LengthUnit>,
+  ) -> Self {
+    let rect: Rect<LengthUnit> = radius.into();
 
     // CSS border-radius percentages: use smaller of width/height for circular corners
     let reference_size = layout.size.width.min(layout.size.height);
 
     Self {
-      top_left: resolve_border_radius_from_percentage_css(layout, rect.top, reference_size),
-      top_right: resolve_border_radius_from_percentage_css(layout, rect.right, reference_size),
-      bottom_right: resolve_border_radius_from_percentage_css(layout, rect.bottom, reference_size),
-      bottom_left: resolve_border_radius_from_percentage_css(layout, rect.left, reference_size),
+      top_left: resolve_border_radius_from_percentage_css(context, rect.top, reference_size),
+      top_right: resolve_border_radius_from_percentage_css(context, rect.right, reference_size),
+      bottom_right: resolve_border_radius_from_percentage_css(context, rect.bottom, reference_size),
+      bottom_left: resolve_border_radius_from_percentage_css(context, rect.left, reference_size),
     }
   }
 }
 
 fn resolve_border_radius_from_percentage_css(
-  _layout: &Layout,
-  radius: ValuePercentageAuto,
+  context: &RenderContext,
+  radius: LengthUnit,
   reference_size: f32,
 ) -> f32 {
   match radius {
-    ValuePercentageAuto::SpecificValue(value) => value,
-    ValuePercentageAuto::Percentage(value) => value * reference_size,
-    ValuePercentageAuto::Auto => 0.0,
+    LengthUnit::Px(value) => value,
+    LengthUnit::Percentage(value) => value * reference_size / 100.0,
+    LengthUnit::Auto => 0.0,
+    LengthUnit::Rem(value) => value * context.parent_font_size,
+    LengthUnit::Em(value) => value * context.parent_font_size,
+    LengthUnit::Vh(value) => value * context.viewport.height as f32 / 100.0,
+    LengthUnit::Vw(value) => value * context.viewport.width as f32 / 100.0,
   }
 }
 
@@ -43,10 +54,6 @@ fn resolve_border_radius_from_percentage_css(
 ///
 /// This function processes the corners of the image to create smooth, antialiased rounded corners.
 /// The border radius is automatically clamped to half the minimum dimension of the image.
-///
-/// # Arguments
-/// * `img` - The image to apply border radius to
-/// * `radius` - The radius of the corners in pixels
 pub fn apply_border_radius_antialiased(img: &mut RgbaImage, radius: BorderRadius) {
   let (width, height) = img.dimensions();
   let max_radius = width.min(height) as f32 / 2.0;
@@ -147,15 +154,6 @@ enum Corner {
 ///
 /// This function handles the antialiasing calculations for a specific corner,
 /// creating a smooth transition between the rounded corner and the rest of the image.
-///
-/// # Arguments
-/// * `img` - The image being processed
-/// * `start` - Starting point of the corner region
-/// * `end` - Ending point of the corner region
-/// * `radius` - The radius of the corner
-/// * `radius_sq` - The squared radius (for optimization)
-/// * `outer_radius_sq` - The squared outer radius of the antialiasing band
-/// * `corner` - Which corner is being processed
 #[inline]
 fn process_corner_aa(
   img: &mut RgbaImage,
@@ -224,13 +222,6 @@ fn process_corner_aa(
 }
 
 /// Sets the alpha value for an entire row of pixels in the image.
-///
-/// # Arguments
-/// * `img` - The image to modify
-/// * `start_x` - Starting x coordinate
-/// * `end_x` - Ending x coordinate
-/// * `y` - The y coordinate of the row
-/// * `alpha` - The alpha value to set (0-255)
 #[inline]
 fn set_row_alpha(img: &mut RgbaImage, start_x: u32, end_x: u32, y: u32, alpha: u8) {
   let width = img.width();

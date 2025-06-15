@@ -2,13 +2,13 @@
 use std::fs::File;
 
 use takumi::{
-  context::Context,
+  context::GlobalContext,
   image::ImageFormat,
   node::{
     ContainerNode, TextNode,
     style::{InheritableStyle, Style},
   },
-  render::ImageRenderer,
+  render::{ImageRenderer, Viewport},
 };
 
 use crate::NodeKind;
@@ -21,7 +21,7 @@ pub fn say_hello_to(name: &str) {
   // Create a new context for rendering with default settings,
   // Only one instance should be created for the entire application,
   // you can wrap it in a Arc<Context> to share it across threads if needed.
-  let context = Context::default();
+  let context = GlobalContext::default();
 
   // Note: Font loading can be done here using load_woff2_font_to_context
   // Example:
@@ -32,7 +32,7 @@ pub fn say_hello_to(name: &str) {
   let text = TextNode {
     style: Style {
       inheritable_style: InheritableStyle {
-        font_size: 48.0.into(),
+        font_size: Some(48.0.into()),
         ..Default::default()
       },
       ..Default::default()
@@ -48,10 +48,10 @@ pub fn say_hello_to(name: &str) {
   };
 
   // Create an image renderer from the root node
-  let mut renderer: ImageRenderer<NodeKind> = ImageRenderer::new(1200, 630);
+  let mut renderer: ImageRenderer<NodeKind> = ImageRenderer::new(Viewport::new(1200, 630));
 
   // Generate the layout tree using Taffy (layout engine)
-  renderer.construct_taffy_tree(root.into());
+  renderer.construct_taffy_tree(root.into(), &context);
 
   // Render the image using the context and layout tree
   let image = renderer.draw(&context).unwrap();

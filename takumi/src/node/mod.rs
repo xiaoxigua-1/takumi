@@ -20,16 +20,15 @@ use serde::{Deserialize, Serialize};
 use taffy::{AvailableSpace, Layout, Size};
 
 use crate::border_radius::BorderRadius;
+use crate::context::GlobalContext;
 use crate::node::draw::{FastBlendImage, draw_background_color};
-use crate::{
-  context::Context,
-  node::{
-    border::draw_border,
-    draw::{ImageState, draw_image, draw_text},
-    measure::{measure_image, measure_text},
-    style::Style,
-  },
+use crate::node::{
+  border::draw_border,
+  draw::{ImageState, draw_image, draw_text},
+  measure::{measure_image, measure_text},
+  style::Style,
 };
+use crate::render::RenderContext;
 
 /// A trait representing a node in the layout tree.
 ///
@@ -83,7 +82,7 @@ pub trait Node<N: Node<N>>: Send + Sync + Debug + Clone {
   ///
   /// This method is called for nodes that return true from `should_hydrate_async()`
   /// to load external resources before rendering.
-  async fn hydrate_async(&self, _context: &Context) {}
+  async fn hydrate_async(&self, _context: &GlobalContext) {}
 
   /// Measures the intrinsic size of the node.
   ///
@@ -91,7 +90,7 @@ pub trait Node<N: Node<N>>: Send + Sync + Debug + Clone {
   /// the available space and any known dimensions.
   fn measure(
     &self,
-    _context: &Context,
+    _context: &RenderContext,
     _available_space: Size<AvailableSpace>,
     _known_dimensions: Size<Option<f32>>,
   ) -> Size<f32> {
@@ -99,34 +98,33 @@ pub trait Node<N: Node<N>>: Send + Sync + Debug + Clone {
   }
 
   /// Draws the node onto the canvas using the computed layout.
-  fn draw_on_canvas(&self, context: &Context, canvas: &mut FastBlendImage, layout: Layout) {
+  fn draw_on_canvas(&self, context: &RenderContext, canvas: &mut FastBlendImage, layout: Layout) {
     self.draw_background(context, canvas, layout);
     self.draw_content(context, canvas, layout);
     self.draw_border(context, canvas, layout);
   }
 
   /// Draws the background of the node.
-  fn draw_background(&self, _context: &Context, canvas: &mut FastBlendImage, layout: Layout) {
+  fn draw_background(&self, context: &RenderContext, canvas: &mut FastBlendImage, layout: Layout) {
     if let Some(background_color) = &self.get_style().background_color {
       let radius = self
         .get_style()
         .inheritable_style
         .border_radius
-        .clone()
-        .map(|radius| BorderRadius::from_layout(&layout, radius));
+        .map(|radius| BorderRadius::from_layout(context, &layout, radius));
 
       draw_background_color(background_color, radius, canvas, layout);
     }
   }
 
   /// Draws the main content of the node.
-  fn draw_content(&self, _context: &Context, _canvas: &mut FastBlendImage, _layout: Layout) {
+  fn draw_content(&self, _context: &RenderContext, _canvas: &mut FastBlendImage, _layout: Layout) {
     // Default implementation does nothing
   }
 
   /// Draws the border of the node.
-  fn draw_border(&self, _context: &Context, canvas: &mut FastBlendImage, layout: Layout) {
-    draw_border(self.get_style(), canvas, &layout);
+  fn draw_border(&self, context: &RenderContext, canvas: &mut FastBlendImage, layout: Layout) {
+    draw_border(context, self.get_style(), canvas, &layout);
   }
 }
 
@@ -164,7 +162,7 @@ impl<Nodes: Node<Nodes>> Node<Nodes> for ContainerNode<Nodes> {
       .any(|child| child.should_hydrate_async())
   }
 
-  async fn hydrate_async(&self, context: &Context) {
+  async fn hydrate_async(&self, context: &GlobalContext) {
     let futures = self.children.iter().filter_map(|child| {
       if child.should_hydrate_async() {
         Some(child.hydrate_async(context))
@@ -207,11 +205,11 @@ impl<Nodes: Node<Nodes>> Node<Nodes> for TextNode {
     &mut self.style
   }
 
-  fn draw_content(&self, context: &Context, canvas: &mut FastBlendImage, layout: Layout) {
+  fn draw_content(&self, context: &RenderContext, canvas: &mut FastBlendImage, layout: Layout) {
     draw_text(
       &self.text,
-      &(&self.style).into(),
-      &context.font_context,
+      &self.style.resolve_to_font_style(context),
+      context,
       canvas,
       layout,
     );
@@ -219,14 +217,14 @@ impl<Nodes: Node<Nodes>> Node<Nodes> for TextNode {
 
   fn measure(
     &self,
-    context: &Context,
+    context: &RenderContext,
     available_space: Size<AvailableSpace>,
     known_dimensions: Size<Option<f32>>,
   ) -> Size<f32> {
     measure_text(
-      &context.font_context,
+      context,
       &self.text,
-      &(&self.style).into(),
+      &self.style.resolve_to_font_style(context),
       known_dimensions,
       available_space,
     )
@@ -263,7 +261,7 @@ impl<Nodes: Node<Nodes>> Node<Nodes> for ImageNode {
     self.image.get().is_none()
   }
 
-  async fn hydrate_async(&self, context: &Context) {
+  async fn hydrate_async(&self, context: &GlobalContext) {
     let image_store = &context.image_store;
 
     if let Some(img) = image_store.get(&self.src) {
@@ -279,7 +277,7 @@ impl<Nodes: Node<Nodes>> Node<Nodes> for ImageNode {
 
   fn measure(
     &self,
-    _context: &Context,
+    _context: &RenderContext,
     available_space: Size<AvailableSpace>,
     known_dimensions: Size<Option<f32>>,
   ) -> Size<f32> {
@@ -299,11 +297,11 @@ impl<Nodes: Node<Nodes>> Node<Nodes> for ImageNode {
     )
   }
 
-  fn draw_content(&self, _context: &Context, canvas: &mut FastBlendImage, layout: Layout) {
+  fn draw_content(&self, context: &RenderContext, canvas: &mut FastBlendImage, layout: Layout) {
     let ImageState::Fetched(image) = self.image.get().unwrap().as_ref() else {
       return;
     };
 
-    draw_image(image, &self.style, canvas, layout);
+    draw_image(image, &self.style, context, canvas, layout);
   }
 }

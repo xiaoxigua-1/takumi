@@ -7,21 +7,20 @@ Types and helper functions for [takumi](https://github.com/kane50613/takumi).
 ```ts
 import { container, text, image, style } from "takumi-types";
 
-const rootStyle = style({
+const root = container({
   width: 1200,
   height: 630,
+  children: [
+    text(
+      style({
+        font_size: 24,
+        font_weight: 700,
+        color: 0xFFFFFF,
+      }),
+      "Hello, world!"
+    ),
+  ],
 });
-
-const root = container(rootStyle, [
-  text(
-    style({
-      font_size: 24,
-      font_weight: 700,
-      color: [255, 255, 255],
-    }),
-    "Hello, world!"
-  ),
-]);
 
 const response = await fetch("https://your-takumi-server/image", {
   method: "POST",

@@ -13,10 +13,10 @@ use clap::Parser;
 use reqwest::Client;
 use std::{io::Cursor, net::SocketAddr, path::Path, sync::Arc};
 use takumi::{
-  context::{Context, load_woff2_font_to_context},
+  context::{GlobalContext, load_woff2_font_to_context},
   image::ImageFormat,
-  node::{Node, style::ValuePercentageAuto},
-  render::ImageRenderer,
+  node::{Node, style::LengthUnit},
+  render::{ImageRenderer, Viewport},
 };
 use tokio::net::TcpListener;
 
@@ -28,23 +28,23 @@ use crate::{args::Args, image_store::ImageStore, node::NodeKind};
 static GLOBAL: MiMalloc = MiMalloc;
 
 async fn generate_image_handler(
-  State(context): State<Arc<Context>>,
+  State(context): State<Arc<GlobalContext>>,
   Json(mut root_node): Json<NodeKind>,
 ) -> Result<Response, StatusCode> {
-  let ValuePercentageAuto::SpecificValue(width) = root_node.get_style().width else {
+  let LengthUnit::Px(width) = root_node.get_style().width else {
     return Err(StatusCode::BAD_REQUEST);
   };
 
-  let ValuePercentageAuto::SpecificValue(height) = root_node.get_style().height else {
+  let LengthUnit::Px(height) = root_node.get_style().height else {
     return Err(StatusCode::BAD_REQUEST);
   };
 
   root_node.inherit_style_for_children();
   root_node.hydrate_async(&context).await;
 
-  let mut renderer = ImageRenderer::new(width as u32, height as u32);
+  let mut renderer = ImageRenderer::new(Viewport::new(width as u32, height as u32));
 
-  renderer.construct_taffy_tree(root_node);
+  renderer.construct_taffy_tree(root_node, &context);
 
   let mut buffer = Vec::new();
   let mut cursor = Cursor::new(&mut buffer);
@@ -60,7 +60,7 @@ async fn generate_image_handler(
 async fn main() {
   let args = Args::parse();
 
-  let context = Context {
+  let context = GlobalContext {
     print_debug_tree: args.print_debug_tree,
     draw_debug_border: args.draw_debug_border,
     image_store: Box::new(ImageStore::new(Client::new())),

@@ -2,7 +2,7 @@ use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use takumi::node::{
   Node,
-  style::{SidesValue, Style, ValuePercentageAuto},
+  style::{LengthUnit, SidesValue, Style},
 };
 
 use crate::NodeKind;
@@ -43,8 +43,7 @@ impl Node<NodeKind> for CircleNode {
   /// Modifies the node's style before layout calculation.
   /// Sets the border radius to 50% to ensure the node renders as a perfect circle.
   fn before_layout(&mut self) {
-    self.style.inheritable_style.border_radius = Some(SidesValue::SingleValue(
-      ValuePercentageAuto::Percentage(0.5),
-    ));
+    self.style.inheritable_style.border_radius =
+      Some(SidesValue::SingleValue(LengthUnit::Percentage(50.0)));
   }
 }

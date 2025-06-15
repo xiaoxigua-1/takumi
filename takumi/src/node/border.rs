@@ -9,17 +9,18 @@ use crate::node::draw::{
   draw_image_overlay_fast,
 };
 use crate::node::style::Style;
+use crate::render::RenderContext;
 
 /// Draws borders around the node with optional border radius.
 ///
 /// This function draws borders with specified size and color. If border_radius is specified,
 /// it creates a rounded border using a custom drawing approach.
-///
-/// # Arguments
-/// * `style` - The style containing border properties
-/// * `canvas` - The canvas to draw on
-/// * `layout` - The layout information for positioning
-pub fn draw_border(style: &Style, canvas: &mut FastBlendImage, layout: &Layout) {
+pub fn draw_border(
+  context: &RenderContext,
+  style: &Style,
+  canvas: &mut FastBlendImage,
+  layout: &Layout,
+) {
   if layout.border.top == 0.0
     && layout.border.right == 0.0
     && layout.border.bottom == 0.0
@@ -35,7 +36,7 @@ pub fn draw_border(style: &Style, canvas: &mut FastBlendImage, layout: &Layout) 
     .unwrap_or_default();
 
   if let Some(radius) = &style.inheritable_style.border_radius {
-    let radius: BorderRadius = BorderRadius::from_layout(layout, radius.clone());
+    let radius: BorderRadius = BorderRadius::from_layout(context, layout, *radius);
 
     draw_rounded_border(canvas, layout, &border_color, radius);
   } else {

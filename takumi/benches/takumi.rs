@@ -1,18 +1,16 @@
 use std::io::Cursor;
 
 use criterion::{Criterion, criterion_group, criterion_main};
-use image::{ImageFormat, RgbaImage};
-use taffy::{Layout, Point, Rect, Size, prelude::FromLength};
+use image::ImageFormat;
 use takumi::{
   color::{Color, ColorInput, Gradient},
-  context::Context,
+  context::GlobalContext,
   impl_node_enum,
   node::{
-    ContainerNode, Node, TextNode,
-    draw::FastBlendImage,
+    ContainerNode, TextNode,
     style::{FontWeight, InheritableStyle, Style, TextAlign},
   },
-  render::ImageRenderer,
+  render::{ImageRenderer, Viewport},
 };
 
 #[derive(Debug, Clone)]
@@ -23,15 +21,13 @@ enum NodeKind {
 
 impl_node_enum!(NodeKind, Container => ContainerNode<NodeKind>, Text => TextNode);
 
-type ImageRendererNodes = ImageRenderer<NodeKind>;
-
 fn render_scenarios(c: &mut Criterion) {
   let mut group = c.benchmark_group("render_scenarios");
 
   group.bench_function("gradient_background", |b| {
     b.iter(|| {
-      let context = Context::default();
-      let mut renderer = ImageRendererNodes::new(1200, 630);
+      let context = GlobalContext::default();
+      let mut renderer: ImageRenderer<NodeKind> = ImageRenderer::new(Viewport::new(1200, 630));
       renderer.construct_taffy_tree(
         ContainerNode {
           style: Style {
@@ -46,6 +42,7 @@ fn render_scenarios(c: &mut Criterion) {
           children: vec![],
         }
         .into(),
+        &context,
       );
       let image = renderer.draw(&context).unwrap();
       let mut buffer = Vec::new();
@@ -57,8 +54,8 @@ fn render_scenarios(c: &mut Criterion) {
   // Empty container baseline
   group.bench_function("empty_container", |b| {
     b.iter(|| {
-      let context = Context::default();
-      let mut renderer = ImageRendererNodes::new(1200, 630);
+      let context = GlobalContext::default();
+      let mut renderer: ImageRenderer<NodeKind> = ImageRenderer::new(Viewport::new(1200, 630));
       renderer.construct_taffy_tree(
         ContainerNode {
           style: Style {
@@ -69,6 +66,7 @@ fn render_scenarios(c: &mut Criterion) {
           children: vec![],
         }
         .into(),
+        &context,
       );
       let image = renderer.draw(&context).unwrap();
       let mut buffer = Vec::new();
@@ -77,54 +75,11 @@ fn render_scenarios(c: &mut Criterion) {
     })
   });
 
-  // Text rendering
-  group.bench_function("text_rendering", |b| {
-    let node = TextNode {
-      style: Style {
-        inheritable_style: InheritableStyle {
-          font_size: Some(48.0),
-          color: Some(Color::Rgb(0, 0, 0).into()),
-          text_align: Some(TextAlign::Center),
-          font_weight: Some(FontWeight(700)),
-          ..Default::default()
-        },
-        ..Default::default()
-      },
-      text: "Hello, World! This is a benchmark test for text rendering.".to_string(),
-    };
-
-    let layout = Layout {
-      order: 0,
-      location: Point::from_length(0.0),
-      size: Size {
-        width: 800.0,
-        height: 600.0,
-      },
-      content_size: Size {
-        width: 800.0,
-        height: 600.0,
-      },
-      scrollbar_size: Size {
-        width: 0.0,
-        height: 0.0,
-      },
-      border: Rect::default(),
-      padding: Rect::default(),
-      margin: Rect::default(),
-    };
-    let context = Context::default();
-    let mut canvas = FastBlendImage(RgbaImage::new(800, 600));
-
-    b.iter(|| {
-      <TextNode as Node<NodeKind>>::draw_on_canvas(&node, &context, &mut canvas, layout);
-    })
-  });
-
   // Nested containers
   group.bench_function("nested_containers", |b| {
     b.iter(|| {
-      let context = Context::default();
-      let mut renderer = ImageRendererNodes::new(1200, 630);
+      let context = GlobalContext::default();
+      let mut renderer: ImageRenderer<NodeKind> = ImageRenderer::new(Viewport::new(1200, 630));
       renderer.construct_taffy_tree(
         ContainerNode {
           style: Style {
@@ -158,73 +113,8 @@ fn render_scenarios(c: &mut Criterion) {
           ],
         }
         .into(),
+        &context,
       );
-      let image = renderer.draw(&context).unwrap();
-      let mut buffer = Vec::new();
-      let mut cursor = Cursor::new(&mut buffer);
-      image.write_to(&mut cursor, ImageFormat::WebP).unwrap();
-    })
-  });
-
-  group.finish();
-}
-
-fn render_parallel_optimization(c: &mut Criterion) {
-  let mut group = c.benchmark_group("parallel_optimization");
-
-  // Benchmark with many sibling nodes to test parallel benefits
-  group.bench_function("many_siblings_parallel", |b| {
-    b.iter(|| {
-      let context = Context::default();
-      let mut renderer = ImageRendererNodes::new(1200, 630);
-
-      // Create a layout with many sibling containers to benefit from parallel processing
-      let children: Vec<NodeKind> = (0..8)
-        .map(|i| {
-          ContainerNode {
-            style: Style {
-              width: 100.0.into(),
-              height: 100.0.into(),
-              background_color: Some(Color::Rgb(100 + i * 20, 100, 100).into()),
-              ..Default::default()
-            },
-            children: (0..4)
-              .map(|j| {
-                TextNode {
-                  style: Style {
-                    width: 80.0.into(),
-                    height: 20.0.into(),
-                    inheritable_style: InheritableStyle {
-                      font_size: Some(12.0),
-                      color: Some(Color::Rgb(0, 0, 0).into()),
-                      text_align: Some(TextAlign::Left),
-                      ..Default::default()
-                    },
-                    ..Default::default()
-                  },
-                  text: format!("Child {} Text {}", i, j),
-                }
-                .into()
-              })
-              .collect(),
-          }
-          .into()
-        })
-        .collect::<Vec<NodeKind>>();
-
-      renderer.construct_taffy_tree(
-        ContainerNode {
-          style: Style {
-            width: 1200.0.into(),
-            height: 630.0.into(),
-            background_color: Some(Color::Rgb(240, 240, 240).into()),
-            ..Default::default()
-          },
-          children,
-        }
-        .into(),
-      );
-
       let image = renderer.draw(&context).unwrap();
       let mut buffer = Vec::new();
       let mut cursor = Cursor::new(&mut buffer);
@@ -253,7 +143,7 @@ fn render_performance_analysis(c: &mut Criterion) {
             width: 800.0.into(),
             height: 100.0.into(),
             inheritable_style: InheritableStyle {
-              font_size: Some(48.0),
+              font_size: Some(48.0.into()),
               color: Some(Color::Rgb(0, 0, 0).into()),
               text_align: Some(TextAlign::Center),
               font_weight: Some(FontWeight(700)),
@@ -277,7 +167,7 @@ fn render_performance_analysis(c: &mut Criterion) {
                 width: 400.0.into(),
                 height: 100.0.into(),
                 inheritable_style: InheritableStyle {
-                  font_size: Some(24.0),
+                  font_size: Some(24.0.into()),
                   color: Some(Color::Rgb(50, 50, 50).into()),
                   text_align: Some(TextAlign::Left),
                   ..Default::default()
@@ -309,9 +199,9 @@ fn render_performance_analysis(c: &mut Criterion) {
   // Full pipeline benchmark
   group.bench_function("full_pipeline", |b| {
     b.iter(|| {
-      let context = Context::default();
-      let mut renderer = ImageRendererNodes::new(1200, 630);
-      renderer.construct_taffy_tree(complex_layout());
+      let context = GlobalContext::default();
+      let mut renderer: ImageRenderer<NodeKind> = ImageRenderer::new(Viewport::new(1200, 630));
+      renderer.construct_taffy_tree(complex_layout(), &context);
       let image = renderer.draw(&context).unwrap();
       let mut buffer = Vec::new();
       let mut cursor = Cursor::new(&mut buffer);
@@ -322,25 +212,26 @@ fn render_performance_analysis(c: &mut Criterion) {
   // Tree creation step
   group.bench_function("tree_creation", |b| {
     b.iter(|| {
-      let mut renderer = ImageRendererNodes::new(1200, 630);
-      renderer.construct_taffy_tree(complex_layout());
+      let context = GlobalContext::default();
+      let mut renderer = ImageRenderer::new(Viewport::new(1200, 630));
+      renderer.construct_taffy_tree(complex_layout(), &context);
     })
   });
 
   // Drawing step
   group.bench_function("image_drawing", |b| {
-    let context = Context::default();
-    let mut renderer = ImageRendererNodes::new(1200, 630);
-    renderer.construct_taffy_tree(complex_layout());
+    let context = GlobalContext::default();
+    let mut renderer = ImageRenderer::new(Viewport::new(1200, 630));
+    renderer.construct_taffy_tree(complex_layout(), &context);
 
     b.iter(|| renderer.draw(&context).unwrap())
   });
 
   // Encoding step
   group.bench_function("webp_encoding", |b| {
-    let context = Context::default();
-    let mut renderer = ImageRendererNodes::new(1200, 630);
-    renderer.construct_taffy_tree(complex_layout());
+    let context = GlobalContext::default();
+    let mut renderer = ImageRenderer::new(Viewport::new(1200, 630));
+    renderer.construct_taffy_tree(complex_layout(), &context);
     let image = renderer.draw(&context).unwrap();
 
     b.iter(|| {
@@ -353,10 +244,5 @@ fn render_performance_analysis(c: &mut Criterion) {
   group.finish();
 }
 
-criterion_group!(
-  benches,
-  render_scenarios,
-  render_parallel_optimization,
-  render_performance_analysis
-);
+criterion_group!(benches, render_scenarios, render_performance_analysis);
 criterion_main!(benches);

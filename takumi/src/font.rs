@@ -13,16 +13,6 @@ pub enum FontError {
 }
 
 /// Loads a WOFF2 font file and converts it to TTF format.
-///
-/// # Arguments
-/// * `font_file` - Path to the WOFF2 font file
-///
-/// # Returns
-/// * `Result<Vec<u8>, FontError>` - The converted TTF font data as bytes, or an error if conversion fails
-///
-/// # Errors
-/// * `FontError::Io` - If the font file cannot be read
-/// * `FontError::Woff2` - If the WOFF2 to TTF conversion fails
 pub fn load_woff2_font(font_file: &Path) -> Result<Vec<u8>, FontError> {
   let woff_data = read(font_file).map_err(FontError::Io)?;
   let mut font = Bytes::from(woff_data);
