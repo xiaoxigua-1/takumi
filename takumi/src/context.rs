@@ -23,10 +23,12 @@ use crate::{
 /// use takumi::node::draw::ImageState;
 /// use async_trait::async_trait;
 ///
-/// struct MyImageStore;
+/// #[derive(Debug)]
+/// struct MyImageStore {
+///   // http client and image store hashmap
+/// }
 ///
 /// #[async_trait]
-/// #[derive(Debug)]
 /// impl ImageStore for MyImageStore {
 ///     fn get(&self, key: &str) -> Option<Arc<ImageState>> {
 ///         // Implement image retrieval
