@@ -3,15 +3,21 @@ use taffy::{Layout, Point, Rect};
 
 use crate::{node::style::LengthUnit, render::RenderContext};
 
+/// Represents the four corners of an image for border radius processing.
 #[derive(Debug, Clone, Copy)]
 pub struct BorderRadius {
+  /// The radius of the top-left corner
   pub top_left: f32,
+  /// The radius of the top-right corner
   pub top_right: f32,
+  /// The radius of the bottom-right corner
   pub bottom_right: f32,
+  /// The radius of the bottom-left corner
   pub bottom_left: f32,
 }
 
 impl BorderRadius {
+  /// Creates a new `BorderRadius` from a `Layout` and a `Rect` of `LengthUnit`s.
   pub fn from_layout(context: &RenderContext, layout: &Layout, radius: Rect<LengthUnit>) -> Self {
     // CSS border-radius percentages: use smaller of width/height for circular corners
     let reference_size = layout.size.width.min(layout.size.height);
