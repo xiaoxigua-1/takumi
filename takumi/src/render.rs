@@ -201,7 +201,9 @@ impl<Nodes: Node<Nodes>> ImageRenderer<Nodes> {
             viewport,
             parent_font_size: node.parent_font_size,
           };
-          node.node.measure(&render_context, available_space, known_dimensions)
+          node
+            .node
+            .measure(&render_context, available_space, known_dimensions)
         },
       )
       .unwrap();
@@ -253,7 +255,7 @@ fn draw_node_with_layout<Nodes: Node<Nodes>>(
     viewport,
     parent_font_size: node_render.parent_font_size,
   };
-  
+
   node_render
     .node
     .draw_on_canvas(&render_context, canvas, node_layout);
@@ -263,6 +265,13 @@ fn draw_node_with_layout<Nodes: Node<Nodes>>(
   }
 
   for child in taffy_context.taffy.children(node_id).unwrap() {
-    draw_node_with_layout(taffy_context, global, viewport, canvas, child, node_layout.location);
+    draw_node_with_layout(
+      taffy_context,
+      global,
+      viewport,
+      canvas,
+      child,
+      node_layout.location,
+    );
   }
 }
