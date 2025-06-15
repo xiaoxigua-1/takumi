@@ -1,20 +1,13 @@
-use cosmic_text::{Attrs, Buffer, Family, Metrics, Shaping};
 use taffy::{AvailableSpace, geometry::Size};
 
-use crate::{context::FontContext, node::style::FontStyle};
+use crate::{
+  node::draw::construct_text_buffer, node::style::ResolvedFontStyle, render::RenderContext,
+};
 
 /// Measures the size of an image based on available space and known dimensions.
 ///
 /// This function handles aspect ratio preservation and respects both explicit
 /// dimensions and available space constraints.
-///
-/// # Arguments
-/// * `image_size` - The original size of the image
-/// * `known_dimensions` - Any known dimensions that should be respected
-/// * `available_space` - The space available for the image
-///
-/// # Returns
-/// * `Size<f32>` - The measured size that should be used for the image
 pub fn measure_image(
   image_size: Size<f32>,
   known_dimensions: Size<Option<f32>>,
@@ -56,20 +49,10 @@ pub fn measure_image(
 ///
 /// This function handles text wrapping, line height, and respects both explicit
 /// dimensions and available space constraints.
-///
-/// # Arguments
-/// * `font_context` - The font context containing font system and cache
-/// * `text` - The text to measure
-/// * `font_style` - The font styling to apply
-/// * `known_dimensions` - Any known dimensions that should be respected
-/// * `available_space` - The space available for the text
-///
-/// # Returns
-/// * `Size<f32>` - The measured size that should be used for the text
 pub fn measure_text(
-  font_context: &FontContext,
+  context: &RenderContext,
   text: &str,
-  font_style: &FontStyle,
+  style: &ResolvedFontStyle,
   known_dimensions: Size<Option<f32>>,
   available_space: Size<AvailableSpace>,
 ) -> Size<f32> {
@@ -85,39 +68,23 @@ pub fn measure_text(
     AvailableSpace::Definite(height) => Some(height),
   });
 
-  let height_constraint_with_max_lines = match (font_style.max_lines, height_constraint) {
+  let height_constraint_with_max_lines = match (style.line_clamp, height_constraint) {
     (Some(max_lines), Some(height)) => {
-      Some((max_lines as f32 * font_style.line_height * font_style.font_size).min(height))
+      Some((max_lines as f32 * style.line_height * style.font_size).min(height))
     }
-    (Some(max_lines), None) => {
-      Some(max_lines as f32 * font_style.line_height * font_style.font_size)
-    }
+    (Some(max_lines), None) => Some(max_lines as f32 * style.line_height * style.font_size),
     (None, Some(height)) => Some(height),
     (None, None) => None,
   };
 
-  let metrics = Metrics::relative(font_style.font_size, font_style.line_height);
-  let mut buffer = Buffer::new_empty(metrics);
+  let mut buffer = construct_text_buffer(text, style, context);
 
-  let mut attrs = Attrs::new().weight(font_style.font_weight.into());
-
-  if let Some(font_family) = font_style.font_family.as_ref() {
-    attrs = attrs.family(Family::Name(font_family));
-  }
-
-  let mut font_system = font_context.font_system.lock().unwrap();
+  let mut font_system = context.global.font_context.font_system.lock().unwrap();
 
   buffer.set_size(
     &mut font_system,
     width_constraint,
     height_constraint_with_max_lines,
-  );
-  buffer.set_rich_text(
-    &mut font_system,
-    [(text, attrs.clone())],
-    &attrs,
-    Shaping::Advanced,
-    None,
   );
 
   let (width, total_lines) = buffer

@@ -13,8 +13,8 @@ use taffy::Layout;
 use crate::{
   border_radius::{BorderRadius, apply_border_radius_antialiased},
   color::{ColorAt, ColorInput, Gradient},
-  context::FontContext,
-  node::style::{FontStyle, ObjectFit, Style},
+  node::style::{ObjectFit, ResolvedFontStyle, Style},
+  render::RenderContext,
 };
 
 /// A performance-optimized implementation of image blending operations.
@@ -69,54 +69,33 @@ pub enum ImageState {
 }
 
 /// Draws text on the canvas with the specified font style and layout.
-///
-/// # Arguments
-/// * `text` - The text to draw
-/// * `font_style` - The font styling to apply
-/// * `context` - The font context containing font system and cache
-/// * `canvas` - The canvas to draw on
-/// * `layout` - The layout information for positioning
 pub fn draw_text(
   text: &str,
-  font_style: &FontStyle,
-  context: &FontContext,
+  style: &ResolvedFontStyle,
+  context: &RenderContext,
   canvas: &mut FastBlendImage,
   layout: Layout,
 ) {
-  if font_style.color.is_transparent() {
+  if style.color.is_transparent() || style.font_size == 0.0 {
     return;
   }
 
   let content_box = layout.content_box_size();
 
   let start_x = layout.content_box_x();
-  let start_y =
-    layout.content_box_y() + font_style.font_size * ((font_style.line_height - 1.0) / 2.0);
+  let start_y = layout.content_box_y() + style.font_size * ((style.line_height - 1.0) / 2.0);
 
-  let metrics = Metrics::relative(font_style.font_size, font_style.line_height);
-  let mut buffer = Buffer::new_empty(metrics);
+  let mut buffer = construct_text_buffer(text, style, context);
 
-  let mut attrs = Attrs::new().weight(font_style.font_weight.into());
-  if let Some(font_family) = font_style.font_family.as_ref() {
-    attrs = attrs.family(Family::Name(font_family));
-  }
-
-  let mut font_system = context.font_system.lock().unwrap();
+  let mut font_system = context.global.font_context.font_system.lock().unwrap();
 
   buffer.set_size(
     &mut font_system,
     Some(content_box.width),
     Some(content_box.height),
   );
-  buffer.set_rich_text(
-    &mut font_system,
-    [(text, attrs.clone())],
-    &attrs,
-    Shaping::Advanced,
-    Some(font_style.text_align.into()),
-  );
 
-  let mut font_cache = context.font_cache.lock().unwrap();
+  let mut font_cache = context.global.font_context.font_cache.lock().unwrap();
 
   buffer.draw(
     &mut font_system,
@@ -133,7 +112,7 @@ pub fn draw_text(
 
       // FIXME: emojis with rich coloring with black might not be rendered correctly.
       let mut render_color: Rgba<u8> = if color[0] == 0 && color[1] == 0 && color[2] == 0 {
-        font_style
+        style
           .color
           .at(content_box.width, content_box.height, x as u32, y as u32)
           .into()
@@ -156,13 +135,13 @@ pub fn draw_text(
 ///
 /// The image will be resized and positioned according to the object_fit style property.
 /// Border radius will be applied if specified in the style.
-///
-/// # Arguments
-/// * `image` - The image to draw
-/// * `style` - The style to apply to the image
-/// * `canvas` - The canvas to draw on
-/// * `layout` - The layout information for positioning
-pub fn draw_image(image: &RgbaImage, style: &Style, canvas: &mut FastBlendImage, layout: Layout) {
+pub fn draw_image(
+  image: &RgbaImage,
+  style: &Style,
+  context: &RenderContext,
+  canvas: &mut FastBlendImage,
+  layout: Layout,
+) {
   let content_box = layout.content_box_size();
   let x = layout.content_box_x();
   let y = layout.content_box_y();
@@ -279,10 +258,10 @@ pub fn draw_image(image: &RgbaImage, style: &Style, canvas: &mut FastBlendImage,
   };
 
   // Apply border radius if specified
-  if let Some(border_radius) = style.inheritable_style.border_radius.clone() {
+  if let Some(border_radius) = style.inheritable_style.border_radius {
     apply_border_radius_antialiased(
       &mut processed_image,
-      BorderRadius::from_layout(&layout, border_radius),
+      BorderRadius::from_layout(context, &layout, border_radius),
     );
   }
 
@@ -400,4 +379,35 @@ pub fn draw_debug_border(canvas: &mut FastBlendImage, layout: Layout) {
       .of_size(layout.size.width as u32, layout.size.height as u32),
     Rgba([0, 255, 0, 100]),
   );
+}
+
+pub(crate) fn construct_text_buffer(
+  text: &str,
+  font_style: &ResolvedFontStyle,
+  context: &RenderContext,
+) -> Buffer {
+  let metrics = Metrics::relative(font_style.font_size, font_style.line_height);
+  let mut buffer = Buffer::new_empty(metrics);
+
+  let mut attrs = Attrs::new().weight(font_style.font_weight);
+
+  if let Some(font_family) = font_style.font_family.as_ref() {
+    attrs = attrs.family(Family::Name(font_family));
+  }
+
+  if let Some(letter_spacing) = font_style.letter_spacing {
+    attrs = attrs.letter_spacing(letter_spacing);
+  }
+
+  let mut font_system = context.global.font_context.font_system.lock().unwrap();
+
+  buffer.set_rich_text(
+    &mut font_system,
+    [(text, attrs.clone())],
+    &attrs,
+    Shaping::Advanced,
+    Some(font_style.text_align),
+  );
+
+  buffer
 }

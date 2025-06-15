@@ -10,6 +10,7 @@ use takumi::{
   context::ImageStore as ImageStoreTrait, image::load_from_memory, node::draw::ImageState,
 };
 
+#[derive(Debug)]
 pub struct ImageStore {
   store: Mutex<LruCache<String, Arc<ImageState>>>,
   http: Client,

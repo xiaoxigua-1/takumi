@@ -5,4 +5,4 @@
  *
  * This enum determines how flex items are laid out along the main axis.
  */
-export type FlexDirection = "row" | "column" | "row_reverse" | "column_reverse";
+export type FlexDirection = "row" | "column" | "row-reverse" | "column-reverse";

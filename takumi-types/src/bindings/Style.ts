@@ -2,14 +2,15 @@
 import type { AlignItems } from "./AlignItems";
 import type { ColorInput } from "./ColorInput";
 import type { FlexDirection } from "./FlexDirection";
+import type { FlexWrap } from "./FlexWrap";
 import type { FontWeight } from "./FontWeight";
 import type { Gap } from "./Gap";
 import type { JustifyContent } from "./JustifyContent";
+import type { LengthUnit } from "./LengthUnit";
 import type { ObjectFit } from "./ObjectFit";
 import type { Position } from "./Position";
 import type { SidesValue } from "./SidesValue";
 import type { TextAlign } from "./TextAlign";
-import type { ValuePercentageAuto } from "./ValuePercentageAuto";
 
 /**
  * Main styling structure that contains all layout and visual properties.
@@ -22,23 +23,43 @@ export type Style = {
 /**
  * Width of the element
  */
-width: ValuePercentageAuto, 
+width: LengthUnit, 
 /**
  * Height of the element
  */
-height: ValuePercentageAuto, 
+height: LengthUnit, 
+/**
+ * Max width of the element
+ */
+max_width: LengthUnit, 
+/**
+ * Max height of the element
+ */
+max_height: LengthUnit, 
+/**
+ * Min width of the element
+ */
+min_width: LengthUnit, 
+/**
+ * Min height of the element
+ */
+min_height: LengthUnit, 
+/**
+ * Aspect ratio of the element
+ */
+aspect_ratio?: number, 
 /**
  * Internal spacing around the element's content
  */
-padding: SidesValue<ValuePercentageAuto>, 
+padding: SidesValue<LengthUnit>, 
 /**
  * External spacing around the element
  */
-margin: SidesValue<ValuePercentageAuto>, 
+margin: SidesValue<LengthUnit>, 
 /**
  * Positioning offset from the element's normal position
  */
-inset: SidesValue<ValuePercentageAuto>, 
+inset: SidesValue<LengthUnit>, 
 /**
  * Direction of flex layout (row or column)
  */
@@ -52,6 +73,14 @@ justify_content?: JustifyContent,
  */
 align_items?: AlignItems, 
 /**
+ * How flex items should wrap
+ */
+flex_wrap: FlexWrap, 
+/**
+ * The initial size of the flex item
+ */
+flex_basis: LengthUnit, 
+/**
  * Positioning method (relative, absolute, etc.)
  */
 position: Position, 
@@ -64,9 +93,13 @@ gap: Gap,
  */
 flex_grow: number, 
 /**
+ * How much the element should shrink relative to other flex items
+ */
+flex_shrink: number, 
+/**
  * Width of the element's border
  */
-border_width: SidesValue<ValuePercentageAuto>, 
+border_width: SidesValue<LengthUnit>, 
 /**
  * How images should be fitted within their container
  */
@@ -86,7 +119,7 @@ color?: ColorInput,
 /**
  * Font size in pixels for text rendering
  */
-font_size?: number, 
+font_size?: LengthUnit, 
 /**
  * Font family name for text rendering
  */
@@ -94,7 +127,7 @@ font_family?: string,
 /**
  * Line height multiplier for text spacing
  */
-line_height?: number, 
+line_height?: LengthUnit, 
 /**
  * Font weight for text rendering
  */
@@ -102,12 +135,17 @@ font_weight?: FontWeight,
 /**
  * Maximum number of lines for text before truncation
  */
-max_lines?: number, 
+line_clamp?: number, 
 /**
  * Corner radius for rounded borders in pixels
  */
-border_radius?: SidesValue<ValuePercentageAuto>, 
+border_radius?: SidesValue<LengthUnit>, 
 /**
  * Text alignment within the element
  */
-text_align?: TextAlign, };
+text_align?: TextAlign, 
+/**
+ * Letter spacing for text rendering
+ * Value is measured in EM units
+ */
+letter_spacing?: number, };
