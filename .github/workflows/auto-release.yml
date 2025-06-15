@@ -27,7 +27,7 @@ jobs:
         id: check
         run: |
           CURRENT_VERSION=$(cargo pkgid -p takumi | cut -d "#" -f2)
-          PREVIOUS_VERSION=$(git show HEAD~1:takumi/Cargo.toml | grep '^version = ' | sed 's/version = "\(.*\)"/\1/' || echo "0.0.0")
+          PREVIOUS_VERSION=$(git show HEAD~1:takumi/Cargo.toml | grep '^version = ' | cut -d'"' -f2 || echo "0.0.0")
 
           echo "Current version: $CURRENT_VERSION"
           echo "Previous version: $PREVIOUS_VERSION"
