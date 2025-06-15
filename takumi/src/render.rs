@@ -63,10 +63,19 @@ pub struct ImageRenderer<Nodes: Node<Nodes>> {
   taffy_context: Option<TaffyContext<Nodes>>,
 }
 
+/// A renderer for a single node.
+///
+/// This renderer is used to render a single node with the specified dimensions.
+/// It is used to render the node with the specified dimensions.
+pub struct NodeRender<Nodes: Node<Nodes>> {
+  node: Nodes,
+  parent_font_size: f32,
+}
+
 struct TaffyContext<Nodes: Node<Nodes>> {
   taffy: TaffyTree<()>,
   root_node_id: NodeId,
-  node_map: SecondaryMap<DefaultKey, Nodes>,
+  node_map: SecondaryMap<DefaultKey, NodeRender<Nodes>>,
 }
 
 impl<Nodes: Node<Nodes>> ImageRenderer<Nodes> {
@@ -88,7 +97,7 @@ pub enum RenderError {
 
 fn insert_taffy_node<Nodes: Node<Nodes>>(
   taffy: &mut TaffyTree<()>,
-  node_map: &mut SecondaryMap<DefaultKey, Nodes>,
+  node_map: &mut SecondaryMap<DefaultKey, NodeRender<Nodes>>,
   node: Nodes,
   render_context: &RenderContext,
 ) -> NodeId {
@@ -117,7 +126,13 @@ fn insert_taffy_node<Nodes: Node<Nodes>>(
     taffy.set_children(node_id, &children_ids).unwrap();
   }
 
-  node_map.insert(KeyData::from_ffi(node_id.into()).into(), node);
+  node_map.insert(
+    KeyData::from_ffi(node_id.into()).into(),
+    NodeRender {
+      node,
+      parent_font_size: render_context.parent_font_size,
+    },
+  );
 
   node_id
 }
@@ -146,17 +161,18 @@ impl<Nodes: Node<Nodes>> ImageRenderer<Nodes> {
 
   /// Renders the image using the provided context and TaffyTree.
   pub fn draw(&mut self, global: &GlobalContext) -> Result<RgbaImage, RenderError> {
-    let mut canvas = FastBlendImage(ImageBuffer::new(self.viewport.width, self.viewport.height));
+    let viewport = self.viewport;
+    let mut canvas = FastBlendImage(ImageBuffer::new(viewport.width, viewport.height));
 
     let available_space = Size {
-      width: AvailableSpace::Definite(self.viewport.width as f32),
-      height: AvailableSpace::Definite(self.viewport.height as f32),
+      width: AvailableSpace::Definite(viewport.width as f32),
+      height: AvailableSpace::Definite(viewport.height as f32),
     };
 
     let render_context = RenderContext {
       global,
-      viewport: self.viewport,
-      parent_font_size: self.viewport.font_size,
+      viewport,
+      parent_font_size: viewport.font_size,
     };
 
     let taffy_context = self.get_taffy_context_mut()?;
@@ -180,7 +196,12 @@ impl<Nodes: Node<Nodes>> ImageRenderer<Nodes> {
             return Size { width, height };
           }
 
-          node.measure(&render_context, available_space, known_dimensions)
+          let render_context = RenderContext {
+            global,
+            viewport,
+            parent_font_size: node.parent_font_size,
+          };
+          node.node.measure(&render_context, available_space, known_dimensions)
         },
       )
       .unwrap();
@@ -191,7 +212,8 @@ impl<Nodes: Node<Nodes>> ImageRenderer<Nodes> {
 
     draw_node_with_layout(
       taffy_context,
-      &render_context,
+      global,
+      viewport,
       &mut canvas,
       taffy_context.root_node_id,
       Point::zero(),
@@ -210,12 +232,13 @@ impl<Nodes: Node<Nodes>> ImageRenderer<Nodes> {
 
 fn draw_node_with_layout<Nodes: Node<Nodes>>(
   taffy_context: &TaffyContext<Nodes>,
-  context: &RenderContext,
+  global: &GlobalContext,
+  viewport: Viewport,
   canvas: &mut FastBlendImage,
   node_id: NodeId,
   relative_offset: Point<f32>,
 ) {
-  let node = taffy_context
+  let node_render = taffy_context
     .node_map
     .get(KeyData::from_ffi(node_id.into()).into())
     .unwrap();
@@ -225,13 +248,21 @@ fn draw_node_with_layout<Nodes: Node<Nodes>>(
   node_layout.location.x += relative_offset.x;
   node_layout.location.y += relative_offset.y;
 
-  node.draw_on_canvas(context, canvas, node_layout);
+  let render_context = RenderContext {
+    global,
+    viewport,
+    parent_font_size: node_render.parent_font_size,
+  };
+  
+  node_render
+    .node
+    .draw_on_canvas(&render_context, canvas, node_layout);
 
-  if context.global.draw_debug_border {
+  if global.draw_debug_border {
     draw_debug_border(canvas, node_layout);
   }
 
   for child in taffy_context.taffy.children(node_id).unwrap() {
-    draw_node_with_layout(taffy_context, context, canvas, child, node_layout.location);
+    draw_node_with_layout(taffy_context, global, viewport, canvas, child, node_layout.location);
   }
 }
