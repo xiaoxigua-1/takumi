@@ -1,103 +1,118 @@
-use image::{GenericImage, GenericImageView, Rgba, RgbaImage};
+use image::{Rgba, RgbaImage};
 use imageproc::rect::Rect;
-use taffy::Layout;
+use taffy::{Layout, Point, Size};
 
 use crate::border_radius::{BorderRadius, apply_border_radius_antialiased};
 use crate::color::ColorInput;
 use crate::node::draw::{
   FastBlendImage, create_image_from_color_input, draw_filled_rect_from_color_input,
-  draw_image_overlay_fast,
 };
 use crate::node::style::Style;
 use crate::render::RenderContext;
+
+/// Represents the properties of a border.
+#[derive(Debug, Clone)]
+pub struct BorderProperties {
+  /// The width of the border.
+  pub width: taffy::Rect<f32>,
+  /// The offset of the border.
+  pub offset: Point<f32>,
+  /// The size of the border.
+  pub size: Size<f32>,
+  /// The color of the border.
+  pub color: ColorInput,
+  /// The radius of the border.
+  pub radius: Option<BorderRadius>,
+}
+
+impl BorderProperties {
+  /// Creates a new `BorderProperties` from a `Layout` and a `Style`.
+  pub fn from_layout(context: &RenderContext, layout: &Layout, style: &Style) -> Self {
+    Self {
+      width: layout.border,
+      offset: layout.location,
+      size: layout.size,
+      color: style
+        .inheritable_style
+        .border_color
+        .clone()
+        .unwrap_or_default(),
+      radius: style
+        .inheritable_style
+        .border_radius
+        .map(|radius| BorderRadius::from_layout(context, layout, radius.into())),
+    }
+  }
+}
 
 /// Draws borders around the node with optional border radius.
 ///
 /// This function draws borders with specified size and color. If border_radius is specified,
 /// it creates a rounded border using a custom drawing approach.
-pub fn draw_border(
-  context: &RenderContext,
-  style: &Style,
-  canvas: &mut FastBlendImage,
-  layout: &Layout,
-) {
-  if layout.border.top == 0.0
-    && layout.border.right == 0.0
-    && layout.border.bottom == 0.0
-    && layout.border.left == 0.0
-  {
-    return;
-  }
+pub fn draw_border(canvas: &mut FastBlendImage, border: BorderProperties) {
+  let radius = border.radius;
 
-  let border_color = style
-    .inheritable_style
-    .border_color
-    .clone()
-    .unwrap_or_default();
-
-  if let Some(radius) = &style.inheritable_style.border_radius {
-    let radius: BorderRadius = BorderRadius::from_layout(context, layout, *radius);
-
-    draw_rounded_border(canvas, layout, &border_color, radius);
+  if let Some(radius) = radius {
+    draw_rounded_border(canvas, border, radius);
   } else {
-    draw_rectangular_border(canvas, layout, &border_color);
+    draw_rectangular_border(canvas, border);
   }
 }
 
 /// Draws a rectangular border without rounded corners.
-fn draw_rectangular_border(canvas: &mut FastBlendImage, layout: &Layout, color: &ColorInput) {
+fn draw_rectangular_border(canvas: &mut FastBlendImage, border: BorderProperties) {
   // Top border
-  if layout.border.top > 0.0 {
+  if border.width.top > 0.0 {
     draw_filled_rect_from_color_input(
       canvas,
-      Rect::at(layout.location.x as i32, layout.location.y as i32)
-        .of_size(layout.size.width as u32, layout.border.top as u32),
-      color,
+      Rect::at(border.offset.x as i32, border.offset.y as i32)
+        .of_size(border.size.width as u32, border.width.top as u32),
+      &border.color,
     );
   }
 
   // Bottom border
-  if layout.border.bottom > 0.0 {
+  if border.width.bottom > 0.0 {
     draw_filled_rect_from_color_input(
       canvas,
       Rect::at(
-        layout.location.x as i32,
-        layout.location.y as i32 + layout.size.height as i32 - layout.border.bottom as i32,
+        border.offset.x as i32,
+        border.offset.y as i32 + border.size.height as i32 - border.width.bottom as i32,
       )
-      .of_size(layout.size.width as u32, layout.border.bottom as u32),
-      color,
+      .of_size(border.size.width as u32, border.width.bottom as u32),
+      &border.color,
     );
   }
 
   // Left border (excluding corners already drawn by top/bottom)
-  if layout.border.left > 0.0 {
+  if border.width.left > 0.0 {
     draw_filled_rect_from_color_input(
       canvas,
       Rect::at(
-        layout.location.x as i32,
-        layout.location.y as i32 + layout.border.top as i32,
+        border.offset.x as i32,
+        border.offset.y as i32 + border.width.top as i32,
       )
       .of_size(
-        layout.border.left as u32,
-        (layout.size.height - layout.border.top - layout.border.bottom) as u32,
+        border.width.left as u32,
+        (border.size.height - border.width.top - border.width.bottom) as u32,
       ),
-      color,
+      &border.color,
     );
   }
 
   // Right border (excluding corners already drawn by top/bottom)
-  if layout.border.right > 0.0 {
+  if border.width.right > 0.0 {
     draw_filled_rect_from_color_input(
       canvas,
       Rect::at(
-        layout.location.x as i32 + layout.size.width as i32 - layout.border.right as i32,
-        layout.location.y as i32 + layout.border.top as i32,
+        border.offset.x as i32 + border.size.width as i32 - border.width.right as i32,
+        border.offset.y as i32 + border.width.top as i32,
       )
       .of_size(
-        layout.border.right as u32,
-        (layout.size.height - layout.border.top - layout.border.bottom) as u32,
+        border.width.right as u32,
+        (border.size.height - border.width.top - border.width.bottom) as u32,
       ),
-      color,
+      &border.color,
     );
   }
 }
@@ -105,34 +120,36 @@ fn draw_rectangular_border(canvas: &mut FastBlendImage, layout: &Layout, color: 
 /// Draws a rounded border with border radius.
 fn draw_rounded_border(
   canvas: &mut FastBlendImage,
-  layout: &Layout,
-  color: &ColorInput,
+  border: BorderProperties,
   radius: BorderRadius,
 ) {
-  if layout.border.left == 0.0
-    && layout.border.right == 0.0
-    && layout.border.top == 0.0
-    && layout.border.bottom == 0.0
+  if border.width.left == 0.0
+    && border.width.right == 0.0
+    && border.width.top == 0.0
+    && border.width.bottom == 0.0
   {
     return;
   }
 
   // Create a temporary image filled with border color
-  let mut border_image =
-    create_image_from_color_input(color, layout.size.width as u32, layout.size.height as u32);
+  let mut border_image = create_image_from_color_input(
+    &border.color,
+    border.size.width as u32,
+    border.size.height as u32,
+  );
 
   // Apply antialiased border radius to the outer edge
   apply_border_radius_antialiased(&mut border_image, radius);
 
   // Calculate inner bounds (content area)
-  let inner_left = layout.border.left as u32;
-  let inner_right = layout.size.width as u32 - layout.border.right as u32;
-  let inner_top = layout.border.top as u32;
-  let inner_bottom = layout.size.height as u32 - layout.border.bottom as u32;
+  let inner_left = border.width.left as u32;
+  let inner_right = border.size.width as u32 - border.width.right as u32;
+  let inner_top = border.width.top as u32;
+  let inner_bottom = border.size.height as u32 - border.width.bottom as u32;
 
   // Calculate inner radius (outer radius minus average border width, clamped to 0)
   let avg_border_width =
-    (layout.border.left + layout.border.right + layout.border.top + layout.border.bottom) / 4.0;
+    (border.width.left + border.width.right + border.width.top + border.width.bottom) / 4.0;
   let inner_radius = BorderRadius {
     top_left: (radius.top_left - avg_border_width).max(0.0),
     top_right: (radius.top_right - avg_border_width).max(0.0),
@@ -151,39 +168,39 @@ fn draw_rounded_border(
     apply_border_radius_antialiased(&mut inner_image, inner_radius);
 
     // Cut out the inner area while preserving antialiasing from inner border
+    let inner_stride = inner_width as usize * 4;
+    let border_stride = border.size.width as usize * 4;
+
     for py in 0..inner_height {
+      let inner_row_start = py as usize * inner_stride;
+      let border_row_start = (py + inner_top) as usize * border_stride + inner_left as usize * 4;
+
+      let inner_slice = &inner_image.as_raw()[inner_row_start..inner_row_start + inner_stride];
+
       for px in 0..inner_width {
-        let inner_pixel = unsafe { inner_image.unsafe_get_pixel(px, py) };
+        let inner_alpha_idx = px as usize * 4 + 3;
+        let inner_alpha = inner_slice[inner_alpha_idx];
+
         // Use inverted alpha for cutting out - where inner has alpha, we remove border
-        let cutout_alpha = 255 - inner_pixel[3];
+        let cutout_alpha = 255 - inner_alpha;
         if cutout_alpha < 255 {
-          let border_x = px + inner_left;
-          let border_y = py + inner_top;
-          let current_pixel = unsafe { border_image.unsafe_get_pixel(border_x, border_y) };
+          let border_pixel_idx = border_row_start + px as usize * 4;
+          let border_slice = border_image.as_mut();
+
           // Blend the cutout with existing border color, preserving border's antialiasing
-          let new_alpha = ((current_pixel[3] as u32 * cutout_alpha as u32) / 255) as u8;
-          unsafe {
-            border_image.unsafe_put_pixel(
-              border_x,
-              border_y,
-              Rgba([
-                current_pixel[0],
-                current_pixel[1],
-                current_pixel[2],
-                new_alpha,
-              ]),
-            );
-          }
+
+          let current_alpha = border_slice[border_pixel_idx + 3];
+          let new_alpha = ((current_alpha as u32 * cutout_alpha as u32) / 255) as u8;
+          border_slice[border_pixel_idx + 3] = new_alpha;
         }
       }
     }
   }
 
   // Overlay the border image onto the canvas
-  draw_image_overlay_fast(
-    canvas,
+  canvas.overlay_image(
     &border_image,
-    layout.location.x as u32,
-    layout.location.y as u32,
+    border.offset.x as u32,
+    border.offset.y as u32,
   );
 }
