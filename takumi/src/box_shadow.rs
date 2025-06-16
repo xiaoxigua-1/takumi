@@ -225,7 +225,9 @@ fn remove_inner_section(
   apply_border_radius_antialiased(&mut mask, border_radius);
 
   image.par_enumerate_pixels_mut().for_each(|(x, y, pixel)| {
-    let Some(masked_pixel) = mask.get_pixel_checked((x as i32 - offset.x) as u32, (y as i32 - offset.y) as u32) else {
+    let Some(masked_pixel) =
+      mask.get_pixel_checked((x as i32 - offset.x) as u32, (y as i32 - offset.y) as u32)
+    else {
       return;
     };
 
