@@ -22,6 +22,7 @@ use taffy::{AvailableSpace, Layout, Size};
 use crate::border_radius::BorderRadius;
 use crate::box_shadow::draw_box_shadow;
 use crate::context::GlobalContext;
+use crate::node::border::BorderProperties;
 use crate::node::draw::{FastBlendImage, draw_background_color};
 use crate::node::{
   border::draw_border,
@@ -109,7 +110,13 @@ pub trait Node<N: Node<N>>: Send + Sync + Debug + Clone {
   /// Draws the box shadow of the node.
   fn draw_box_shadow(&self, context: &RenderContext, canvas: &mut FastBlendImage, layout: Layout) {
     if let Some(box_shadow) = &self.get_style().box_shadow {
-      draw_box_shadow(box_shadow, self.get_style(), context, canvas, layout);
+      let border_radius = self
+        .get_style()
+        .inheritable_style
+        .border_radius
+        .map(|radius| BorderRadius::from_layout(context, &layout, radius.into()));
+
+      draw_box_shadow(context, box_shadow, border_radius, canvas, layout);
     }
   }
 
@@ -133,7 +140,9 @@ pub trait Node<N: Node<N>>: Send + Sync + Debug + Clone {
 
   /// Draws the border of the node.
   fn draw_border(&self, context: &RenderContext, canvas: &mut FastBlendImage, layout: Layout) {
-    draw_border(context, self.get_style(), canvas, &layout);
+    let border = BorderProperties::from_layout(context, &layout, self.get_style());
+
+    draw_border(canvas, border);
   }
 }
 

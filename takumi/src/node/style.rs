@@ -192,6 +192,7 @@ impl BoxShadow {
       offset_y: self.offset_y.resolve_to_px(context),
       blur_radius: self.blur_radius.resolve_to_px(context),
       spread_radius: self.spread_radius.resolve_to_px(context),
+      inset: self.inset,
     }
   }
 }
@@ -202,6 +203,7 @@ pub(crate) struct BoxShadowResolved {
   pub offset_y: f32,
   pub blur_radius: f32,
   pub spread_radius: f32,
+  pub inset: bool,
 }
 
 /// Defines a box shadow for an element.

@@ -1,6 +1,6 @@
 use cosmic_text::{Attrs, Buffer, Family, Metrics, Shaping};
 use image::{
-  GenericImageView, ImageError, Pixel, Rgba, RgbaImage,
+  ImageError, Pixel, Rgba, RgbaImage,
   imageops::{FilterType, crop_imm, resize},
 };
 use imageproc::drawing::Canvas;
@@ -16,6 +16,8 @@ use crate::{
   node::style::{ObjectFit, ResolvedFontStyle, Style},
   render::RenderContext,
 };
+
+use rayon::prelude::*;
 
 /// A performance-optimized implementation of image blending operations.
 ///
@@ -51,6 +53,49 @@ impl Canvas for FastBlendImage {
     pix.blend(&color);
 
     self.0.put_pixel(x, y, pix);
+  }
+}
+
+impl FastBlendImage {
+  /// Draws an image onto the canvas with an offset.
+  ///
+  /// This function enables rayon for parallel processing when the overlay size is greater than 50% of the image size.
+  pub fn overlay_image(&mut self, image: &RgbaImage, left: u32, top: u32) {
+    let target_width = image.width().min(self.width().saturating_sub(left));
+    let target_height = image.height().min(self.height().saturating_sub(top));
+
+    let overlay_size_percentage =
+      (target_width * target_height) as f32 / (image.width() * image.height()) as f32;
+
+    if overlay_size_percentage < 0.5 {
+      for y in 0..target_height {
+        for x in 0..target_width {
+          let pixel = *image.get_pixel(x, y);
+          self.draw_pixel(x + left, y + top, pixel);
+        }
+      }
+
+      return;
+    }
+
+    self.0.par_enumerate_pixels_mut().for_each(|(x, y, pixel)| {
+      if x < left || y < top || x >= left + target_width || y >= top + target_height {
+        return;
+      }
+
+      let image_pixel = *image.get_pixel(x - left, y - top);
+
+      if image_pixel.0[3] == 0 {
+        return;
+      }
+
+      if image_pixel.0[3] == 255 {
+        *pixel = image_pixel;
+        return;
+      }
+
+      pixel.blend(&image_pixel);
+    });
   }
 }
 
@@ -265,28 +310,7 @@ pub fn draw_image(
     );
   }
 
-  draw_image_overlay_fast(
-    canvas,
-    &processed_image,
-    offset_x + x as u32,
-    offset_y + y as u32,
-  );
-}
-
-/// Draws an image onto the canvas without bounds checking.
-pub(crate) fn draw_image_overlay_fast(
-  canvas: &mut FastBlendImage,
-  image: &RgbaImage,
-  left: u32,
-  top: u32,
-) {
-  for y in 0..image.height() {
-    for x in 0..image.width() {
-      let pixel = unsafe { image.unsafe_get_pixel(x, y) };
-
-      canvas.draw_pixel(x + left, y + top, pixel);
-    }
-  }
+  canvas.overlay_image(&processed_image, offset_x + x as u32, offset_y + y as u32);
 }
 
 /// Draws a filled rectangle on the canvas from a color input.
@@ -302,12 +326,7 @@ pub fn draw_filled_rect_from_color_input(
     ColorInput::Gradient(gradient) => {
       let gradient_image = create_gradient_image(gradient, rect.width(), rect.height());
 
-      draw_image_overlay_fast(
-        canvas,
-        &gradient_image,
-        rect.left() as u32,
-        rect.top() as u32,
-      );
+      canvas.overlay_image(&gradient_image, rect.left() as u32, rect.top() as u32);
     }
   }
 }
@@ -350,12 +369,7 @@ pub fn draw_background_color(
 
   apply_border_radius_antialiased(&mut image, radius);
 
-  draw_image_overlay_fast(
-    canvas,
-    &image,
-    layout.location.x as u32,
-    layout.location.y as u32,
-  );
+  canvas.overlay_image(&image, layout.location.x as u32, layout.location.y as u32);
 }
 
 /// Draws debug borders around the node's layout areas.

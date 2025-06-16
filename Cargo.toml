@@ -2,9 +2,9 @@
 resolver = "3"
 members = ["takumi", "takumi-server", "example"]
 
-[profile.release]
-strip = true
-opt-level = "z"
-lto = true
-codegen-units = 1
-panic = "abort"
+# [profile.release]
+# strip = true
+# opt-level = "z"
+# lto = true
+# codegen-units = 1
+# panic = "abort"

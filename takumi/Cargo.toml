@@ -19,6 +19,7 @@ async-trait = "0.1"
 merge = "0.2"
 ts-rs = "11.0"
 slotmap = "1.0.7"
+rayon = "1.10.0"
 
 [dependencies.cosmic-text]
 version = "0.14"

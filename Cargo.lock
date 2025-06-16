@@ -2453,6 +2453,7 @@ dependencies = [
  "image",
  "imageproc",
  "merge",
+ "rayon",
  "serde",
  "slotmap",
  "taffy",

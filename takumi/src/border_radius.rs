@@ -33,6 +33,14 @@ impl BorderRadius {
       bottom_left: resolve_border_radius_from_percentage_css(context, radius.left, reference_size),
     }
   }
+
+  /// Offsets the border radius by a given number of pixels.
+  pub fn offset_px(&mut self, offset: f32) {
+    self.top_left += offset;
+    self.top_right += offset;
+    self.bottom_right += offset;
+    self.bottom_left += offset;
+  }
 }
 
 fn resolve_border_radius_from_percentage_css(
