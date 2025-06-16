@@ -101,10 +101,10 @@ pub trait Node<N: Node<N>>: Send + Sync + Debug + Clone {
 
   /// Draws the node onto the canvas using the computed layout.
   fn draw_on_canvas(&self, context: &RenderContext, canvas: &mut FastBlendImage, layout: Layout) {
-    self.draw_box_shadow(context, canvas, layout);
     self.draw_background(context, canvas, layout);
-    self.draw_content(context, canvas, layout);
     self.draw_border(context, canvas, layout);
+    self.draw_content(context, canvas, layout);
+    self.draw_box_shadow(context, canvas, layout);
   }
 
   /// Draws the box shadow of the node.
