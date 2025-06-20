@@ -1,6 +1,4 @@
 mod args;
-mod image_store;
-mod node;
 
 use axum::{
   Router,
@@ -10,26 +8,25 @@ use axum::{
   routing::post,
 };
 use clap::Parser;
-use reqwest::Client;
 use std::{io::Cursor, net::SocketAddr, path::Path, sync::Arc};
 use takumi::{
   context::{GlobalContext, load_woff2_font_to_context},
   image::ImageFormat,
-  node::{Node, style::LengthUnit},
+  node::{DefaultNodeKind, Node, style::LengthUnit},
   render::{ImageRenderer, Viewport},
 };
 use tokio::net::TcpListener;
 
 use mimalloc::MiMalloc;
 
-use crate::{args::Args, image_store::ImageStore, node::NodeKind};
+use crate::args::Args;
 
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;
 
 async fn generate_image_handler(
   State(context): State<Arc<GlobalContext>>,
-  Json(mut root_node): Json<NodeKind>,
+  Json(mut root_node): Json<DefaultNodeKind>,
 ) -> Result<Response, StatusCode> {
   let LengthUnit::Px(width) = root_node.get_style().width else {
     return Err(StatusCode::BAD_REQUEST);
@@ -63,7 +60,6 @@ async fn main() {
   let context = GlobalContext {
     print_debug_tree: args.print_debug_tree,
     draw_debug_border: args.draw_debug_border,
-    image_store: Box::new(ImageStore::new(Client::new())),
     ..Default::default()
   };
 

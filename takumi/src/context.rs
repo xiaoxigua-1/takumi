@@ -1,4 +1,5 @@
 use std::{
+  num::NonZeroUsize,
   path::Path,
   sync::{Arc, Mutex},
 };
@@ -93,8 +94,69 @@ impl Default for GlobalContext {
         font_system: Mutex::new(FontSystem::new()),
         font_cache: Mutex::new(SwashCache::new()),
       },
+      #[cfg(feature = "default_impl")]
+      image_store: Box::new(DefaultImageStore::new(
+        Client::new(),
+        NonZeroUsize::new(100).unwrap(),
+      )),
+      #[cfg(not(feature = "default_impl"))]
       image_store: Box::new(NoopImageStore),
     }
+  }
+}
+
+#[cfg(feature = "default_impl")]
+use lru::LruCache;
+
+#[cfg(feature = "default_impl")]
+use reqwest::Client;
+
+#[cfg(feature = "default_impl")]
+/// A default implementation of ImageStore that uses a LRU cache and a HTTP client.
+#[derive(Debug)]
+pub struct DefaultImageStore {
+  store: Mutex<LruCache<String, Arc<ImageState>>>,
+  http: Client,
+}
+
+#[cfg(feature = "default_impl")]
+impl DefaultImageStore {
+  /// Creates a new DefaultImageStore with the given HTTP client and maximum size.
+  pub fn new(http: Client, max_size: NonZeroUsize) -> Self {
+    Self {
+      store: Mutex::new(LruCache::new(max_size)),
+      http,
+    }
+  }
+}
+
+#[cfg(feature = "default_impl")]
+#[async_trait]
+impl ImageStore for DefaultImageStore {
+  fn get(&self, key: &str) -> Option<Arc<ImageState>> {
+    self.store.lock().unwrap().get(key).cloned()
+  }
+
+  fn insert(&self, key: String, value: Arc<ImageState>) {
+    self.store.lock().unwrap().put(key, value);
+  }
+
+  async fn fetch_async(&self, key: &str) -> Arc<ImageState> {
+    let Ok(response) = self.http.get(key).send().await else {
+      return Arc::new(ImageState::NetworkError);
+    };
+
+    let Ok(body) = response.bytes().await else {
+      return Arc::new(ImageState::NetworkError);
+    };
+
+    let image = image::load_from_memory(body.as_ref());
+
+    if let Err(e) = image {
+      return Arc::new(ImageState::DecodeError(e));
+    }
+
+    Arc::new(ImageState::Fetched(image.unwrap().into()))
   }
 }
 

@@ -21,94 +21,93 @@
 macro_rules! impl_node_enum {
   ($name:ident, $($variant:ident => $variant_type:ty),*) => {
     #[::async_trait::async_trait]
-    impl ::takumi::node::Node<$name> for $name {
+    impl $crate::node::Node<$name> for $name {
       fn get_children(&self) -> Option<Vec<&$name>> {
         match self {
           $( $name::$variant(inner) => inner.get_children(), )*
-          _ => None,
         }
       }
 
-      fn get_style(&self) -> &::takumi::node::style::Style {
+      fn get_style(&self) -> &$crate::node::style::Style {
         match self {
-          $( $name::$variant(inner) => <_ as ::takumi::node::Node<$name>>::get_style(inner), )*
+          $( $name::$variant(inner) => <_ as $crate::node::Node<$name>>::get_style(inner), )*
         }
       }
 
-      fn get_style_mut(&mut self) -> &mut ::takumi::node::style::Style {
+      fn get_style_mut(&mut self) -> &mut $crate::node::style::Style {
         match self {
-          $( $name::$variant(inner) => <_ as ::takumi::node::Node<$name>>::get_style_mut(inner), )*
+          $( $name::$variant(inner) => <_ as $crate::node::Node<$name>>::get_style_mut(inner), )*
         }
       }
 
-      fn inherit_style(&mut self, parent: &::takumi::node::style::Style) {
+      fn inherit_style(&mut self, parent: &$crate::node::style::Style) {
         match self {
-          $( $name::$variant(inner) => <_ as ::takumi::node::Node<$name>>::inherit_style(inner, parent), )*
+          $( $name::$variant(inner) => <_ as $crate::node::Node<$name>>::inherit_style(inner, parent), )*
         }
       }
 
       fn before_layout(&mut self) {
         match self {
-          $( $name::$variant(inner) => <_ as ::takumi::node::Node<$name>>::before_layout(inner), )*
+          $( $name::$variant(inner) => <_ as $crate::node::Node<$name>>::before_layout(inner), )*
         }
       }
 
       fn inherit_style_for_children(&mut self) {
         match self {
-          $( $name::$variant(inner) => <_ as ::takumi::node::Node<$name>>::inherit_style_for_children(inner), )*
+          $( $name::$variant(inner) => <_ as $crate::node::Node<$name>>::inherit_style_for_children(inner), )*
         }
       }
 
       fn should_hydrate_async(&self) -> bool {
         match self {
-          $( $name::$variant(inner) => <_ as ::takumi::node::Node<$name>>::should_hydrate_async(inner), )*
+          $( $name::$variant(inner) => <_ as $crate::node::Node<$name>>::should_hydrate_async(inner), )*
         }
       }
 
-      async fn hydrate_async(&self, context: &::takumi::context::GlobalContext) {
+      async fn hydrate_async(&self, context: &$crate::context::GlobalContext) {
         match self {
-          $( $name::$variant(inner) => <_ as ::takumi::node::Node<$name>>::hydrate_async(inner, context).await, )*
+          $( $name::$variant(inner) => <_ as $crate::node::Node<$name>>::hydrate_async(inner, context).await, )*
         }
       }
 
       fn measure(
         &self,
-        context: &::takumi::render::RenderContext,
-        available_space: ::takumi::taffy::Size<::takumi::taffy::AvailableSpace>,
-        known_dimensions: ::takumi::taffy::Size<Option<f32>>,
-      ) -> ::takumi::taffy::Size<f32> {
+        context: &$crate::render::RenderContext,
+        available_space: $crate::taffy::Size<$crate::taffy::AvailableSpace>,
+        known_dimensions: $crate::taffy::Size<Option<f32>>,
+      ) -> $crate::taffy::Size<f32> {
         match self {
-          $( $name::$variant(inner) => <_ as ::takumi::node::Node<$name>>::measure(inner, context, available_space, known_dimensions), )*
+          $( $name::$variant(inner) => <_ as $crate::node::Node<$name>>::measure(inner, context, available_space, known_dimensions), )*
         }
       }
 
-      fn draw_on_canvas(&self, context: &::takumi::render::RenderContext, canvas: &mut ::takumi::node::draw::FastBlendImage, layout: ::takumi::taffy::Layout) {
+      fn draw_on_canvas(&self, context: &$crate::render::RenderContext, canvas: &mut $crate::node::draw::FastBlendImage, layout: $crate::taffy::Layout) {
         match self {
-          $( $name::$variant(inner) => <_ as ::takumi::node::Node<$name>>::draw_on_canvas(inner, context, canvas, layout), )*
+          $( $name::$variant(inner) => <_ as $crate::node::Node<$name>>::draw_on_canvas(inner, context, canvas, layout), )*
         }
       }
 
-      fn draw_background(&self, context: &::takumi::render::RenderContext, canvas: &mut ::takumi::node::draw::FastBlendImage, layout: ::takumi::taffy::Layout) {
+      fn draw_background(&self, context: &$crate::render::RenderContext, canvas: &mut $crate::node::draw::FastBlendImage, layout: $crate::taffy::Layout) {
         match self {
-          $( $name::$variant(inner) => <_ as ::takumi::node::Node<$name>>::draw_background(inner, context, canvas, layout), )*
+          $( $name::$variant(inner) => <_ as $crate::node::Node<$name>>::draw_background(inner, context, canvas, layout), )*
         }
       }
 
-      fn draw_content(&self, context: &::takumi::render::RenderContext, canvas: &mut ::takumi::node::draw::FastBlendImage, layout: ::takumi::taffy::Layout) {
+      fn draw_content(&self, context: &$crate::render::RenderContext, canvas: &mut $crate::node::draw::FastBlendImage, layout: $crate::taffy::Layout) {
         match self {
-          $( $name::$variant(inner) => <_ as ::takumi::node::Node<$name>>::draw_content(inner, context, canvas, layout), )*
+          $( $name::$variant(inner) => <_ as $crate::node::Node<$name>>::draw_content(inner, context, canvas, layout), )*
         }
       }
 
-      fn draw_border(&self, context: &::takumi::render::RenderContext, canvas: &mut ::takumi::node::draw::FastBlendImage, layout: ::takumi::taffy::Layout) {
+      fn draw_border(&self, context: &$crate::render::RenderContext, canvas: &mut $crate::node::draw::FastBlendImage, layout: $crate::taffy::Layout) {
         match self {
-          $( $name::$variant(inner) => <_ as ::takumi::node::Node<$name>>::draw_border(inner, context, canvas, layout), )*
+          $( $name::$variant(inner) => <_ as $crate::node::Node<$name>>::draw_border(inner, context, canvas, layout), )*
         }
       }
 
-      fn draw_box_shadow(&self, context: &::takumi::render::RenderContext, canvas: &mut ::takumi::node::draw::FastBlendImage, layout: ::takumi::taffy::Layout) {
+      fn draw_box_shadow(&self, context: &$crate::render::RenderContext, canvas: &mut $crate::node::draw::FastBlendImage, layout: $crate::taffy::Layout) {
         match self {
-          $( $name::$variant(inner) => <_ as ::takumi::node::Node<$name>>::draw_box_shadow(inner, context, canvas, layout), )*
+          $( $name::$variant(inner) => <_ as $crate::node::Node<$name>>::draw_box_shadow(inner, context, canvas, layout), )*
         }
       }
     }
