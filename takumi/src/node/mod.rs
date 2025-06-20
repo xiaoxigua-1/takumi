@@ -22,6 +22,7 @@ use taffy::{AvailableSpace, Layout, Size};
 use crate::border_radius::BorderRadius;
 use crate::box_shadow::draw_box_shadow;
 use crate::context::GlobalContext;
+use crate::impl_node_enum;
 use crate::node::border::BorderProperties;
 use crate::node::draw::{FastBlendImage, draw_background_color};
 use crate::node::{
@@ -335,3 +336,19 @@ impl<Nodes: Node<Nodes>> Node<Nodes> for ImageNode {
     draw_image(image, &self.style, context, canvas, layout);
   }
 }
+
+/// A union of all node types.
+///
+/// This enum is used to represent all possible node types in the layout system.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(tag = "type", rename_all = "camelCase")]
+pub enum DefaultNodeKind {
+  /// A node that displays an image.
+  Image(ImageNode),
+  /// A node that displays text.
+  Text(TextNode),
+  /// A node that contains other nodes.
+  Container(ContainerNode<DefaultNodeKind>),
+}
+
+impl_node_enum!(DefaultNodeKind, Container => ContainerNode<DefaultNodeKind>, Image => ImageNode, Text => TextNode);

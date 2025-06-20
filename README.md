@@ -16,7 +16,7 @@ You can use this crate to create your own image rendering system with custom log
 
 ### [takumi-server](takumi-server/)
 
-Default implementation of HTTP server for image generation API.
+Default implementation of http server for image generation API.
 
 ### [takumi-types](takumi-types/)
 

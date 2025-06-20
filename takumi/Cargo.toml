@@ -21,6 +21,16 @@ ts-rs = "11.0"
 slotmap = "1.0.7"
 rayon = "1.10.0"
 
+[dependencies.reqwest]
+version = "0.12"
+default-features = false
+features = ["rustls-tls", "http2"]
+optional = true
+
+[dependencies.lru]
+version = "0.14"
+optional = true
+
 [dependencies.cosmic-text]
 version = "0.14"
 features = ["shape-run-cache", "hashbrown"]
@@ -41,7 +51,14 @@ features = ["jpeg", "png", "webp"]
 [dev-dependencies.criterion]
 version = "0.6"
 features = ["html_reports"]
+default-features = false
 
 [[bench]]
 name = "takumi"
 harness = false
+
+[features]
+default = ["default_impl"]
+default_impl = ["image_store_impl", "node_kind_enum_impl"]
+image_store_impl = ["dep:reqwest", "dep:lru"]
+node_kind_enum_impl = []
