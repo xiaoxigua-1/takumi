@@ -10,48 +10,128 @@ use takumi::{
 };
 
 #[napi]
+#[derive(Default)]
 pub struct Renderer(GlobalContext);
 
-#[napi(object)]
-pub struct RenderOptions {
-  pub fonts: Vec<Buffer>,
+pub struct RenderTask<'ctx> {
+  pub node: Option<DefaultNodeKind>,
+  pub context: &'ctx GlobalContext,
+  pub viewport: Viewport,
 }
 
-#[napi]
-impl Renderer {
-  #[napi(constructor)]
-  pub fn new(options: RenderOptions) -> Self {
-    let context = GlobalContext::default();
+impl<'ctx> Task for RenderTask<'ctx> {
+  type Output = Vec<u8>;
+  type JsValue = Buffer;
 
-    let mut system = context.font_context.font_system.lock().unwrap();
-    for font in options.fonts {
-      system.db_mut().load_font_data(font.into());
-    }
-
-    Self(GlobalContext::default())
-  }
-
-  #[napi(ts_args_type = "source: { type: string }")]
-  pub fn render(&self, env: &Env, source: Object) -> Result<Buffer> {
-    let mut node: DefaultNodeKind = env.from_js_value(source)?;
+  fn compute(&mut self) -> Result<Self::Output> {
+    let mut node = self.node.take().unwrap();
 
     node.inherit_style_for_children();
-    node.hydrate(&self.0);
+    node.hydrate(self.context);
 
-    let mut render: ImageRenderer<DefaultNodeKind> = ImageRenderer::new(Viewport::new(1200, 630));
+    let mut render = ImageRenderer::new(self.viewport);
 
-    render.construct_taffy_tree(node, &self.0);
+    render.construct_taffy_tree(node, self.context);
     render
-      .draw(&self.0)
+      .draw(self.context)
       .map_err(|err| napi::Error::from_reason(format!("{err:?}")))?;
 
     let mut buffer = Vec::new();
     let mut cursor = Cursor::new(&mut buffer);
 
-    let image = render.draw(&self.0).unwrap();
+    let image = render.draw(self.context).unwrap();
 
     image.write_to(&mut cursor, ImageFormat::WebP).unwrap();
 
-    Ok(buffer.into())
+    Ok(buffer)
+  }
+
+  fn resolve(&mut self, _env: Env, output: Self::Output) -> Result<Self::JsValue> {
+    Ok(output.into())
+  }
+}
+
+pub struct PreloadImageTask<'ctx> {
+  pub context: &'ctx GlobalContext,
+  pub url: Option<String>,
+}
+
+impl<'ctx> Task for PreloadImageTask<'ctx> {
+  type Output = bool;
+
+  type JsValue = bool;
+
+  fn compute(&mut self) -> Result<Self::Output> {
+    let url = self.url.take().unwrap();
+
+    let state = self.context.image_store.fetch(&url);
+    let is_fetched = state.is_fetched();
+
+    self.context.image_store.insert(url, state);
+
+    Ok(is_fetched)
+  }
+
+  fn resolve(&mut self, _env: Env, output: Self::Output) -> Result<Self::JsValue> {
+    Ok(output)
+  }
+}
+
+#[napi]
+impl Renderer {
+  #[napi(constructor)]
+  pub fn new() -> Self {
+    Self::default()
+  }
+
+  #[napi]
+  pub fn add_font(&self, data: Buffer) {
+    let mut system = self.0.font_context.font_system.lock().unwrap();
+
+    system.db_mut().load_font_data(data.into());
+  }
+
+  #[napi]
+  pub fn clear_image_store(&self) {
+    self.0.image_store.clear();
+  }
+
+  #[napi(ts_return_type = "Promise<void>")]
+  pub fn preload_image_async(
+    &self,
+    url: String,
+    signal: Option<AbortSignal>,
+  ) -> AsyncTask<PreloadImageTask> {
+    AsyncTask::with_optional_signal(
+      PreloadImageTask {
+        context: &self.0,
+        url: Some(url),
+      },
+      signal,
+    )
+  }
+
+  #[napi(
+    ts_args_type = "source: { type: string }, width: number, height: number, signal?: AbortSignal",
+    ts_return_type = "Promise<Buffer>"
+  )]
+  pub fn render_async(
+    &self,
+    env: &Env,
+    source: Object,
+    width: u32,
+    height: u32,
+    signal: Option<AbortSignal>,
+  ) -> Result<AsyncTask<RenderTask>> {
+    let node = env.from_js_value(source)?;
+
+    Ok(AsyncTask::with_optional_signal(
+      RenderTask {
+        node: Some(node),
+        context: &self.0,
+        viewport: Viewport::new(width, height),
+      },
+      signal,
+    ))
   }
 }

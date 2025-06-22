@@ -52,6 +52,9 @@ pub trait ImageStore: Send + Sync + std::fmt::Debug {
 
   /// Asynchronously fetches an image from a remote source and stores it.
   fn fetch(&self, key: &str) -> Arc<ImageState>;
+
+  /// Clear stored image data
+  fn clear(&self);
 }
 
 /// A context for managing fonts in the rendering system.
@@ -156,6 +159,10 @@ impl ImageStore for DefaultImageStore {
 
     Arc::new(ImageState::Fetched(image.unwrap().into()))
   }
+
+  fn clear(&self) {
+    self.store.lock().unwrap().clear();
+  }
 }
 
 /// A no-op implementation of ImageStore that does nothing.
@@ -179,6 +186,10 @@ impl ImageStore for NoopImageStore {
   /// Always panics as this is a no-op implementation.
   fn fetch(&self, _key: &str) -> Arc<ImageState> {
     unimplemented!("NoopImageStore does not support fetching images")
+  }
+
+  fn clear(&self) {
+    // No-op
   }
 }
 

@@ -1,13 +1,11 @@
 import { test, expect } from "bun:test";
 import { Renderer } from "../index";
-import { container, image } from "@takumi/helpers";
+import { container, image, percentage } from "@takumi/helpers";
 
 test("render", async () => {
-  const render = new Renderer({
-    fonts: [],
-  });
+  const render = new Renderer();
 
-  const result = render.render(
+  const result = await render.renderAsync(
     container({
       children: [
         image("https://yeecord.com/img/logo.png", {
@@ -16,13 +14,11 @@ test("render", async () => {
         }),
       ],
       background_color: 0xffffff,
-      width: {
-        percentage: 100,
-      },
-      height: {
-        percentage: 100,
-      },
-    })
+      width: percentage(100),
+      height: percentage(100),
+    }),
+    1200,
+    630
   );
 
   expect(result).toBeInstanceOf(Buffer);
