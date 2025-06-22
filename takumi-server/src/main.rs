@@ -8,7 +8,7 @@ use axum::{
   routing::post,
 };
 use clap::Parser;
-use glob::glob;
+use globwalk::glob;
 use std::{fs::read, io::Cursor, net::SocketAddr, sync::Arc};
 use takumi::{
   context::GlobalContext,
@@ -78,15 +78,15 @@ async fn main() {
     for font in glob(font_glob).unwrap() {
       match font {
         Ok(path) => {
-          if path.is_dir() {
+          if path.path().is_dir() {
             continue;
           }
 
-          let file = read(&path).unwrap();
+          let file = read(path.path()).unwrap();
 
           context.font_context.load_font(file).unwrap();
 
-          info!("Loaded font: {}", path.display())
+          info!("Loaded font: {}", path.file_name().display())
         }
         Err(e) => error!("Failed to load font: {e}"),
       }

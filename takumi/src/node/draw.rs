@@ -427,7 +427,7 @@ pub(crate) fn construct_text_buffer(
     [(text, attrs.clone())],
     &attrs,
     Shaping::Advanced,
-    Some(font_style.text_align),
+    font_style.text_align,
   );
 
   buffer
