@@ -53,7 +53,8 @@ async fn generate_image_handler(
 
     buffer
   })
-  .await.unwrap();
+  .await
+  .unwrap();
 
   Ok(([("content-type", "image/webp")], buffer).into_response())
 }

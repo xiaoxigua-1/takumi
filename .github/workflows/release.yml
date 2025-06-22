@@ -61,7 +61,7 @@ jobs:
 
       - name: Update package.json version
         run: |
-          jq -r '.version = "${{ steps.new_version.outputs.new_version }}"' takumi-helpers/package.json > temp.json && mv temp.json takumi-types/package.json
+          jq -r '.version = "${{ steps.new_version.outputs.new_version }}"' takumi-helpers/package.json > temp.json && mv temp.json takumi-helpers/package.json
           jq -r '.version = "${{ steps.new_version.outputs.new_version }}"' takumi-napi-core/package.json > temp.json && mv temp.json takumi-napi-core/package.json
 
       - name: Generate changelog
@@ -94,7 +94,8 @@ jobs:
 
             ## Changes
             - 📦 Bump `takumi` version from v${{ steps.current_versions.outputs.cargo_version }} to v${{ steps.new_version.outputs.new_version }}
-            - 📦 Bump `takumi-types` version from v${{ steps.current_versions.outputs.npm_version }} to v${{ steps.new_version.outputs.new_version }}
+            - 📦 Bump `@takumi/core` version from v${{ steps.current_versions.outputs.npm_version }} to v${{ steps.new_version.outputs.new_version }}
+            - 📦 Bump `@takumi/helpers` version from v${{ steps.current_versions.outputs.npm_version }} to v${{ steps.new_version.outputs.new_version }}
 
             ${{ steps.changelog.outputs.changelog }}
 
