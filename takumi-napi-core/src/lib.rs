@@ -88,12 +88,10 @@ impl<'ctx> Task for LoadFontTask<'ctx> {
 
   fn compute(&mut self) -> Result<Self::Output> {
     let buffers = std::mem::take(&mut self.buffers);
-    
+
     let loaded_count = buffers
       .into_par_iter()
-      .map(|buffer| {
-        self.context.font_context.load_font(buffer).is_ok() as usize
-      })
+      .map(|buffer| self.context.font_context.load_font(buffer).is_ok() as usize)
       .sum();
 
     Ok(loaded_count)
