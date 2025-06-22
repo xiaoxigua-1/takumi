@@ -2,5 +2,5 @@
 
 cargo publish -p takumi
 
-bun publish --cwd takumi-napi-core
-bun publish --cwd takumi-helpers
+bun run release --cwd takumi-napi-core
+bun run release --cwd takumi-helpers
