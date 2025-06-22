@@ -31,11 +31,8 @@ pub struct Args {
   #[arg(short, long, default_value_t = false)]
   pub draw_debug_border: bool,
 
-  /// List of font files to load into the server.
-  ///
-  /// These should be valid WOFF2 font files that will be loaded
-  /// and made available for use in image generation.
-  /// Example: `--fonts path/to/font1.woff2 path/to/font2.woff2` or `-f font1.woff2 -f font2.woff2`
-  #[arg(short, long, value_parser)]
-  pub fonts: Vec<String>,
+  /// Glob pattern of font files to load into the server.
+  /// Example: `--fonts assets/*`
+  #[arg(short, long)]
+  pub font_glob: Option<String>,
 }

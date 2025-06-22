@@ -8,7 +8,8 @@ use axum::{
   routing::post,
 };
 use clap::Parser;
-use std::{fs::read, io::Cursor, net::SocketAddr, path::Path, sync::Arc};
+use glob::glob;
+use std::{fs::read, io::Cursor, net::SocketAddr, sync::Arc};
 use takumi::{
   context::GlobalContext,
   image::ImageFormat,
@@ -16,6 +17,8 @@ use takumi::{
   render::{ImageRenderer, Viewport},
 };
 use tokio::{net::TcpListener, task::spawn_blocking};
+use tracing::{Level, error, info};
+use tracing_subscriber::fmt;
 
 use mimalloc::MiMalloc;
 
@@ -61,6 +64,8 @@ async fn generate_image_handler(
 
 #[tokio::main]
 async fn main() {
+  fmt().with_max_level(Level::INFO).init();
+
   let args = Args::parse();
 
   let context = GlobalContext {
@@ -69,10 +74,23 @@ async fn main() {
     ..Default::default()
   };
 
-  for font in args.fonts {
-    let file = read(Path::new(&font)).unwrap();
+  if let Some(font_glob) = args.font_glob.as_ref() {
+    for font in glob(font_glob).unwrap() {
+      match font {
+        Ok(path) => {
+          if path.is_dir() {
+            continue;
+          }
 
-    context.font_context.load_font(file).unwrap();
+          let file = read(&path).unwrap();
+
+          context.font_context.load_font(file).unwrap();
+
+          info!("Loaded font: {}", path.display())
+        }
+        Err(e) => error!("Failed to load font: {e}"),
+      }
+    }
   }
 
   // Initialize the router with our image generation endpoint
