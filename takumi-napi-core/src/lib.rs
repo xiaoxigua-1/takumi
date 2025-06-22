@@ -2,6 +2,7 @@ use std::io::Cursor;
 
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
+use rayon::prelude::*;
 use takumi::{
   context::GlobalContext,
   image::ImageFormat,
@@ -78,27 +79,28 @@ impl<'ctx> Task for PreloadImageTask<'ctx> {
 
 pub struct LoadFontTask<'ctx> {
   pub context: &'ctx GlobalContext,
-  pub buffer: Option<Vec<u8>>,
+  pub buffers: Vec<Vec<u8>>,
 }
 
 impl<'ctx> Task for LoadFontTask<'ctx> {
-  type Output = ();
-  type JsValue = ();
+  type Output = usize;
+  type JsValue = u32;
 
   fn compute(&mut self) -> Result<Self::Output> {
-    let buffer = self.buffer.take().unwrap();
+    let buffers = std::mem::take(&mut self.buffers);
+    
+    let loaded_count = buffers
+      .into_par_iter()
+      .map(|buffer| {
+        self.context.font_context.load_font(buffer).is_ok() as usize
+      })
+      .sum();
 
-    self
-      .context
-      .font_context
-      .load_font(buffer)
-      .map_err(|err| napi::Error::from_reason(format!("{err:?}")))?;
-
-    Ok(())
+    Ok(loaded_count)
   }
 
-  fn resolve(&mut self, _env: Env, _output: Self::Output) -> Result<Self::JsValue> {
-    Ok(())
+  fn resolve(&mut self, _env: Env, output: Self::Output) -> Result<Self::JsValue> {
+    Ok(output as u32)
   }
 }
 
@@ -109,7 +111,7 @@ impl Renderer {
     Self::default()
   }
 
-  #[napi(ts_return_type = "Promise<void>")]
+  #[napi(ts_return_type = "Promise<number>")]
   pub fn load_font_async(
     &self,
     data: ArrayBuffer,
@@ -118,7 +120,22 @@ impl Renderer {
     AsyncTask::with_optional_signal(
       LoadFontTask {
         context: &self.0,
-        buffer: Some(data.to_vec()),
+        buffers: vec![data.to_vec()],
+      },
+      signal,
+    )
+  }
+
+  #[napi(ts_return_type = "Promise<number>")]
+  pub fn load_fonts_async(
+    &self,
+    fonts: Vec<ArrayBuffer>,
+    signal: Option<AbortSignal>,
+  ) -> AsyncTask<LoadFontTask> {
+    AsyncTask::with_optional_signal(
+      LoadFontTask {
+        context: &self.0,
+        buffers: fonts.into_iter().map(|buf| buf.to_vec()).collect(),
       },
       signal,
     )

@@ -11,15 +11,16 @@ test("preloadImageAsync", async () => {
   await renderer.preloadImageAsync(logo);
 });
 
-test("loadFontAsync", async () => {
+test("loadFontsAsync", async () => {
   const glob = new Glob("../assets/fonts/**/*.{woff2,ttf}");
   const files = await Array.fromAsync(glob.scan());
 
-  await Promise.all(
-    files.map(async (file) =>
-      renderer.loadFontAsync(await Bun.file(file).arrayBuffer())
-    )
+  const buffers = await Promise.all(
+    files.map((file) => Bun.file(file).arrayBuffer())
   );
+
+  const count = await renderer.loadFontsAsync(buffers);
+  expect(count).toBe(files.length);
 });
 
 test("renderAsync", async () => {

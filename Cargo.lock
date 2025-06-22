@@ -2663,6 +2663,7 @@ dependencies = [
  "napi",
  "napi-build 3.0.0-beta.0",
  "napi-derive",
+ "rayon",
  "takumi",
 ]
 

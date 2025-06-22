@@ -7,6 +7,9 @@ license = "MIT"
 [lib]
 crate-type = ["cdylib"]
 
+[dependencies]
+rayon = "1.10.0"
+
 [dependencies.takumi]
 path = "../takumi"
 
