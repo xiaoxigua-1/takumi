@@ -40,6 +40,11 @@ use crate::{
 ///         // Implement async image fetching
 ///         unimplemented!()
 ///     }
+///
+///     fn clear(&self) {
+///         // clear internal storage here
+///         unimplemented!()
+///     }
 /// }
 /// ```
 pub trait ImageStore: Send + Sync + std::fmt::Debug {
