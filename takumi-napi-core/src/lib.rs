@@ -76,6 +76,32 @@ impl<'ctx> Task for PreloadImageTask<'ctx> {
   }
 }
 
+pub struct LoadFontTask<'ctx> {
+  pub context: &'ctx GlobalContext,
+  pub buffer: Option<Vec<u8>>,
+}
+
+impl<'ctx> Task for LoadFontTask<'ctx> {
+  type Output = ();
+  type JsValue = ();
+
+  fn compute(&mut self) -> Result<Self::Output> {
+    let buffer = self.buffer.take().unwrap();
+
+    self
+      .context
+      .font_context
+      .load_font(buffer)
+      .map_err(|err| napi::Error::from_reason(format!("{err:?}")))?;
+
+    Ok(())
+  }
+
+  fn resolve(&mut self, _env: Env, _output: Self::Output) -> Result<Self::JsValue> {
+    Ok(())
+  }
+}
+
 #[napi]
 impl Renderer {
   #[napi(constructor)]
@@ -83,13 +109,19 @@ impl Renderer {
     Self::default()
   }
 
-  #[napi]
-  pub fn load_font(&self, data: ArrayBuffer) -> Result<()> {
-    self
-      .0
-      .font_context
-      .load_font(data.to_vec())
-      .map_err(|err| napi::Error::from_reason(format!("{err:?}")))
+  #[napi(ts_return_type = "Promise<void>")]
+  pub fn load_font_async(
+    &self,
+    data: ArrayBuffer,
+    signal: Option<AbortSignal>,
+  ) -> AsyncTask<LoadFontTask> {
+    AsyncTask::with_optional_signal(
+      LoadFontTask {
+        context: &self.0,
+        buffer: Some(data.to_vec()),
+      },
+      signal,
+    )
   }
 
   #[napi]

@@ -1,6 +1,7 @@
-import { test, expect, beforeAll } from "bun:test";
+import { test, expect } from "bun:test";
 import { Renderer } from "../index";
 import { container, image, percentage, rem, text } from "@takumi/helpers";
+import { Glob } from "bun";
 
 let renderer = new Renderer();
 
@@ -10,11 +11,14 @@ test("preloadImageAsync", async () => {
   await renderer.preloadImageAsync(logo);
 });
 
-test("loadFont", async () => {
-  renderer.loadFont(
-    await Bun.file(
-      "../assets/noto-sans-tc-v36-chinese-traditional_latin-700.woff2"
-    ).arrayBuffer()
+test("loadFontAsync", async () => {
+  const glob = new Glob("../assets/fonts/**/*.{woff2,ttf}");
+  const files = await Array.fromAsync(glob.scan());
+
+  await Promise.all(
+    files.map(async (file) =>
+      renderer.loadFontAsync(await Bun.file(file).arrayBuffer())
+    )
   );
 });
 
