@@ -58,7 +58,6 @@ pub struct PreloadImageTask<'ctx> {
 
 impl<'ctx> Task for PreloadImageTask<'ctx> {
   type Output = bool;
-
   type JsValue = bool;
 
   fn compute(&mut self) -> Result<Self::Output> {
@@ -85,10 +84,10 @@ impl Renderer {
   }
 
   #[napi]
-  pub fn add_font(&self, data: Buffer) {
+  pub fn load_font(&self, data: ArrayBuffer) {
     let mut system = self.0.font_context.font_system.lock().unwrap();
 
-    system.db_mut().load_font_data(data.into());
+    system.db_mut().load_font_data(data.to_vec());
   }
 
   #[napi]
