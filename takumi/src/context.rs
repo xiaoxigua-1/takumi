@@ -1,13 +1,12 @@
 use std::{
   num::NonZeroUsize,
-  path::Path,
   sync::{Arc, Mutex},
 };
 
-use cosmic_text::{FontSystem, SwashCache};
+use cosmic_text::{FontSystem, SwashCache, fontdb::Database};
 
 use crate::{
-  font::{FontError, load_woff2_font},
+  font::{FontError, load_font},
   node::draw::ImageState,
 };
 
@@ -71,9 +70,24 @@ pub struct FontContext {
 impl Default for FontContext {
   fn default() -> Self {
     Self {
-      font_system: Mutex::new(FontSystem::new()),
+      font_system: Mutex::new(FontSystem::new_with_locale_and_db(
+        "en-US".to_string(),
+        Database::new(),
+      )),
       font_cache: Mutex::new(SwashCache::new()),
     }
+  }
+}
+
+impl FontContext {
+  /// Loads font into internal font db
+  pub fn load_font(&self, source: Vec<u8>) -> Result<(), FontError> {
+    let font_data = load_font(source, None)?;
+
+    let mut lock = self.font_system.lock().unwrap();
+    lock.db_mut().load_font_data(font_data);
+
+    Ok(())
   }
 }
 
@@ -191,15 +205,4 @@ impl ImageStore for NoopImageStore {
   fn clear(&self) {
     // No-op
   }
-}
-
-/// Loads a WOFF2 font file and adds it to the font context.
-pub fn load_woff2_font_to_context(
-  font_context: &FontContext,
-  font_file: &Path,
-) -> Result<(), FontError> {
-  let font = load_woff2_font(font_file)?;
-  let mut system = font_context.font_system.lock().unwrap();
-  system.db_mut().load_font_data(font);
-  Ok(())
 }

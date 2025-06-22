@@ -2561,6 +2561,7 @@ dependencies = [
  "bytes",
  "cosmic-text",
  "criterion",
+ "flate2",
  "image",
  "imageproc",
  "lru",

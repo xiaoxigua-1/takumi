@@ -84,10 +84,12 @@ impl Renderer {
   }
 
   #[napi]
-  pub fn load_font(&self, data: ArrayBuffer) {
-    let mut system = self.0.font_context.font_system.lock().unwrap();
-
-    system.db_mut().load_font_data(data.to_vec());
+  pub fn load_font(&self, data: ArrayBuffer) -> Result<()> {
+    self
+      .0
+      .font_context
+      .load_font(data.to_vec())
+      .map_err(|err| napi::Error::from_reason(format!("{err:?}")))
   }
 
   #[napi]

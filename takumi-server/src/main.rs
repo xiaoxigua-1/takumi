@@ -8,9 +8,9 @@ use axum::{
   routing::post,
 };
 use clap::Parser;
-use std::{io::Cursor, net::SocketAddr, path::Path, sync::Arc};
+use std::{fs::read, io::Cursor, net::SocketAddr, path::Path, sync::Arc};
 use takumi::{
-  context::{GlobalContext, load_woff2_font_to_context},
+  context::GlobalContext,
   image::ImageFormat,
   node::{DefaultNodeKind, Node, style::LengthUnit},
   render::{ImageRenderer, Viewport},
@@ -70,7 +70,9 @@ async fn main() {
   };
 
   for font in args.fonts {
-    load_woff2_font_to_context(&context.font_context, Path::new(&font)).unwrap();
+    let file = read(Path::new(&font)).unwrap();
+
+    context.font_context.load_font(file).unwrap();
   }
 
   // Initialize the router with our image generation endpoint
