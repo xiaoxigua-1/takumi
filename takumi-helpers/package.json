@@ -1,0 +1,37 @@
+{
+  "name": "@takumi/helpers",
+  "version": "0.6.0",
+  "author": {
+    "email": "me@kane.tw",
+    "name": "Kane Wang",
+    "url": "https://kane.tw"
+  },
+  "files": [
+    "dist",
+    "package.json",
+    "README.md",
+    "tsconfig.json"
+  ],
+  "scripts": {
+    "build": "bun build.ts",
+    "release": "bun run build && bun publish"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kane50613/takumi"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/react": "^19.1.8",
+    "bun-plugin-dts": "^0.3.0"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "exports": {
+    "types": "./dist/index.d.ts",
+    "default": "./dist/index.js"
+  },
+  "license": "MIT",
+  "type": "module"
+}

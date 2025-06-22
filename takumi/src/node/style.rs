@@ -339,7 +339,7 @@ pub struct ResolvedFontStyle {
   /// Letter spacing for text rendering
   pub letter_spacing: Option<f32>,
   /// Text alignment within the element
-  pub text_align: Align,
+  pub text_align: Option<Align>,
   /// Text color for child text elements
   pub color: ColorInput,
 }
@@ -756,7 +756,7 @@ impl Style {
       line_clamp: self.inheritable_style.line_clamp,
       font_family: self.inheritable_style.font_family.clone(),
       letter_spacing: self.inheritable_style.letter_spacing,
-      text_align: self.inheritable_style.text_align.unwrap_or_default().into(),
+      text_align: self.inheritable_style.text_align.map(|align| align.into()),
     }
   }
 }

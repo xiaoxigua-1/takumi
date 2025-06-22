@@ -1,2 +1,2 @@
 [env]
-TS_RS_EXPORT_DIR = "../takumi-types/src/bindings"
+TS_RS_EXPORT_DIR = "../takumi-helpers/src/bindings"

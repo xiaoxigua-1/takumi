@@ -67,7 +67,7 @@ pub struct ImageRenderer<Nodes: Node<Nodes>> {
 ///
 /// This renderer is used to render a single node with the specified dimensions.
 /// It is used to render the node with the specified dimensions.
-pub struct NodeRender<Nodes: Node<Nodes>> {
+struct NodeRender<Nodes: Node<Nodes>> {
   node: Nodes,
   parent_font_size: f32,
 }

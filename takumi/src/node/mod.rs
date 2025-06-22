@@ -13,9 +13,8 @@ pub mod macros;
 use std::fmt::Debug;
 use std::sync::{Arc, OnceLock};
 
-use async_trait::async_trait;
-use futures_util::future::join_all;
 use merge::Merge;
+use rayon::iter::{ParallelBridge, ParallelIterator};
 use serde::{Deserialize, Serialize};
 use taffy::{AvailableSpace, Layout, Size};
 
@@ -37,7 +36,6 @@ use crate::render::RenderContext;
 ///
 /// This trait defines the common interface for all elements that can be
 /// rendered in the layout system, including containers, text, and images.
-#[async_trait]
 pub trait Node<N: Node<N>>: Send + Sync + Debug + Clone {
   /// Return reference to children nodes.
   fn get_children(&self) -> Option<Vec<&N>> {
@@ -74,18 +72,18 @@ pub trait Node<N: Node<N>>: Send + Sync + Debug + Clone {
   /// Override this method in container nodes to pass styles to children.
   fn inherit_style_for_children(&mut self) {}
 
-  /// Returns true if this node requires async hydration before rendering.
+  /// Returns true if this node requires hydration before rendering.
   ///
   /// Used for nodes that need to load external resources like images.
-  fn should_hydrate_async(&self) -> bool {
+  fn should_hydrate(&self) -> bool {
     false
   }
 
-  /// Performs async hydration of the node.
+  /// Performs hydration of the node.
   ///
-  /// This method is called for nodes that return true from `should_hydrate_async()`
+  /// This method is called for nodes that return true from `should_hydrate()`
   /// to load external resources before rendering.
-  async fn hydrate_async(&self, _context: &GlobalContext) {}
+  fn hydrate(&self, _context: &GlobalContext) {}
 
   /// Measures the intrinsic size of the node.
   ///
@@ -160,7 +158,6 @@ pub struct ContainerNode<Nodes: Node<Nodes>> {
   pub children: Option<Vec<Nodes>>,
 }
 
-#[async_trait]
 impl<Nodes: Node<Nodes>> Node<Nodes> for ContainerNode<Nodes> {
   fn get_children(&self) -> Option<Vec<&Nodes>> {
     self
@@ -177,28 +174,24 @@ impl<Nodes: Node<Nodes>> Node<Nodes> for ContainerNode<Nodes> {
     &mut self.style
   }
 
-  fn should_hydrate_async(&self) -> bool {
+  fn should_hydrate(&self) -> bool {
     self
       .children
       .as_ref()
-      .map(|children| children.iter().any(|child| child.should_hydrate_async()))
+      .map(|children| children.iter().any(|child| child.should_hydrate()))
       .unwrap_or(false)
   }
 
-  async fn hydrate_async(&self, context: &GlobalContext) {
+  fn hydrate(&self, context: &GlobalContext) {
     let Some(children) = &self.children else {
       return;
     };
 
-    let futures = children.iter().filter_map(|child| {
-      if child.should_hydrate_async() {
-        Some(child.hydrate_async(context))
-      } else {
-        None
-      }
-    });
-
-    join_all(futures).await;
+    children
+      .iter()
+      .filter(|child| child.should_hydrate())
+      .par_bridge()
+      .for_each(|child| child.hydrate(context));
   }
 
   fn inherit_style_for_children(&mut self) {
@@ -278,7 +271,6 @@ pub struct ImageNode {
   pub image: Arc<OnceLock<Arc<ImageState>>>,
 }
 
-#[async_trait]
 impl<Nodes: Node<Nodes>> Node<Nodes> for ImageNode {
   fn get_style(&self) -> &Style {
     &self.style
@@ -288,11 +280,11 @@ impl<Nodes: Node<Nodes>> Node<Nodes> for ImageNode {
     &mut self.style
   }
 
-  fn should_hydrate_async(&self) -> bool {
+  fn should_hydrate(&self) -> bool {
     self.image.get().is_none()
   }
 
-  async fn hydrate_async(&self, context: &GlobalContext) {
+  fn hydrate(&self, context: &GlobalContext) {
     let image_store = &context.image_store;
 
     if let Some(img) = image_store.get(&self.src) {
@@ -300,7 +292,7 @@ impl<Nodes: Node<Nodes>> Node<Nodes> for ImageNode {
       return;
     }
 
-    let img = image_store.fetch_async(&self.src).await;
+    let img = image_store.fetch(&self.src);
 
     image_store.insert(self.src.clone(), img.clone());
     self.image.set(img).unwrap();

@@ -20,7 +20,6 @@
 #[macro_export]
 macro_rules! impl_node_enum {
   ($name:ident, $($variant:ident => $variant_type:ty),*) => {
-    #[::async_trait::async_trait]
     impl $crate::node::Node<$name> for $name {
       fn get_children(&self) -> Option<Vec<&$name>> {
         match self {
@@ -58,15 +57,15 @@ macro_rules! impl_node_enum {
         }
       }
 
-      fn should_hydrate_async(&self) -> bool {
+      fn should_hydrate(&self) -> bool {
         match self {
-          $( $name::$variant(inner) => <_ as $crate::node::Node<$name>>::should_hydrate_async(inner), )*
+          $( $name::$variant(inner) => <_ as $crate::node::Node<$name>>::should_hydrate(inner), )*
         }
       }
 
-      async fn hydrate_async(&self, context: &$crate::context::GlobalContext) {
+      fn hydrate(&self, context: &$crate::context::GlobalContext) {
         match self {
-          $( $name::$variant(inner) => <_ as $crate::node::Node<$name>>::hydrate_async(inner, context).await, )*
+          $( $name::$variant(inner) => <_ as $crate::node::Node<$name>>::hydrate(inner, context), )*
         }
       }
 

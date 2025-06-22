@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["takumi", "takumi-server", "example"]
+members = ["takumi", "takumi-server", "takumi-napi-core", "example"]
 
 [profile.release]
 strip = true

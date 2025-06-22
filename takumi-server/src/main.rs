@@ -8,14 +8,17 @@ use axum::{
   routing::post,
 };
 use clap::Parser;
-use std::{io::Cursor, net::SocketAddr, path::Path, sync::Arc};
+use globwalk::glob;
+use std::{fs::read, io::Cursor, net::SocketAddr, sync::Arc};
 use takumi::{
-  context::{GlobalContext, load_woff2_font_to_context},
+  context::GlobalContext,
   image::ImageFormat,
   node::{DefaultNodeKind, Node, style::LengthUnit},
   render::{ImageRenderer, Viewport},
 };
-use tokio::net::TcpListener;
+use tokio::{net::TcpListener, task::spawn_blocking};
+use tracing::{Level, error, info};
+use tracing_subscriber::fmt;
 
 use mimalloc::MiMalloc;
 
@@ -36,25 +39,33 @@ async fn generate_image_handler(
     return Err(StatusCode::BAD_REQUEST);
   };
 
-  root_node.inherit_style_for_children();
-  root_node.hydrate_async(&context).await;
+  let buffer = spawn_blocking(move || -> Vec<u8> {
+    root_node.inherit_style_for_children();
+    root_node.hydrate(&context);
 
-  let mut renderer = ImageRenderer::new(Viewport::new(width as u32, height as u32));
+    let mut renderer = ImageRenderer::new(Viewport::new(width as u32, height as u32));
 
-  renderer.construct_taffy_tree(root_node, &context);
+    renderer.construct_taffy_tree(root_node, &context);
 
-  let mut buffer = Vec::new();
-  let mut cursor = Cursor::new(&mut buffer);
+    let mut buffer = Vec::new();
+    let mut cursor = Cursor::new(&mut buffer);
 
-  let image = renderer.draw(&context).unwrap();
+    let image = renderer.draw(&context).unwrap();
 
-  image.write_to(&mut cursor, ImageFormat::WebP).unwrap();
+    image.write_to(&mut cursor, ImageFormat::WebP).unwrap();
+
+    buffer
+  })
+  .await
+  .unwrap();
 
   Ok(([("content-type", "image/webp")], buffer).into_response())
 }
 
 #[tokio::main]
 async fn main() {
+  fmt().with_max_level(Level::INFO).init();
+
   let args = Args::parse();
 
   let context = GlobalContext {
@@ -63,8 +74,23 @@ async fn main() {
     ..Default::default()
   };
 
-  for font in args.fonts {
-    load_woff2_font_to_context(&context.font_context, Path::new(&font)).unwrap();
+  if let Some(font_glob) = args.font_glob.as_ref() {
+    for font in glob(font_glob).unwrap() {
+      match font {
+        Ok(path) => {
+          if path.path().is_dir() {
+            continue;
+          }
+
+          let file = read(path.path()).unwrap();
+
+          context.font_context.load_font(file).unwrap();
+
+          info!("Loaded font: {}", path.file_name().display())
+        }
+        Err(e) => error!("Failed to load font: {e}"),
+      }
+    }
   }
 
   // Initialize the router with our image generation endpoint

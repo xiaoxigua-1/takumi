@@ -5,7 +5,10 @@ edition = "2024"
 
 [dependencies]
 axum = "0.8"
+globwalk = "0.9.1"
 mimalloc = "0.1"
+tracing = "0.1.41"
+tracing-subscriber = "0.3.19"
 
 [dependencies.takumi]
 path = "../takumi"

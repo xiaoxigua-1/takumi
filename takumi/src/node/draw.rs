@@ -113,6 +113,13 @@ pub enum ImageState {
   DecodeError(ImageError),
 }
 
+impl ImageState {
+  /// check if image is in fetched state
+  pub fn is_fetched(&self) -> bool {
+    matches!(self, ImageState::Fetched(_))
+  }
+}
+
 /// Draws text on the canvas with the specified font style and layout.
 pub fn draw_text(
   text: &str,
@@ -420,7 +427,7 @@ pub(crate) fn construct_text_buffer(
     [(text, attrs.clone())],
     &attrs,
     Shaping::Advanced,
-    Some(font_style.text_align),
+    font_style.text_align,
   );
 
   buffer
