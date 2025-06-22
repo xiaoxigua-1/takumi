@@ -1,11 +1,11 @@
-# takumi-types
+# @takumi/helpers
 
 Types and helper functions for [takumi](https://github.com/kane50613/takumi).
 
 ## Example
 
 ```ts
-import { container, text, image, style } from "takumi-types";
+import { container, text, image, style } from "@takumi/helpers";
 
 const root = container({
   width: 1200,
@@ -22,12 +22,5 @@ const root = container({
   ],
 });
 
-const response = await fetch("https://your-takumi-server/image", {
-  method: "POST",
-  body: JSON.stringify({
-    root,
-  }),
-});
-
-const image = await response.arrayBuffer();
+// Fetch takumi server or with @takumi/core
 ```

@@ -1,0 +1,23 @@
+[package]
+name = "takumi-napi-core"
+version = "1.0.0"
+edition = "2021"
+license = "MIT"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies.takumi]
+path = "../takumi"
+
+[dependencies.napi]
+version = "3.0.0-beta.8"
+default-features = false
+features = ["napi10", "serde-json"]
+
+[dependencies.napi-derive]
+version = "3.0.0-beta.8"
+features = ["type-def"]
+
+[build-dependencies]
+napi-build = "3.0.0-beta.0"

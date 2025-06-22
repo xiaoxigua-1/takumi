@@ -2,4 +2,5 @@
 
 cargo publish -p takumi
 
-bun publish --cwd takumi-types
+bun publish --cwd takumi-napi-core
+bun publish --cwd takumi-helpers

@@ -1,5 +1,5 @@
 {
-  "name": "takumi-types",
+  "name": "@takumi/helpers",
   "exports": {
     ".": "./src/index.ts"
   },

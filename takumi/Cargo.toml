@@ -12,10 +12,7 @@ rust-version = "1.85.1"
 
 [dependencies]
 imageproc = "0.25"
-woff2-patched = "0.4"
-futures-util = "0.3"
 bytes = "1.10"
-async-trait = "0.1"
 merge = "0.2"
 ts-rs = "11.0"
 slotmap = "1.0.7"
@@ -24,7 +21,11 @@ rayon = "1.10.0"
 [dependencies.reqwest]
 version = "0.12"
 default-features = false
-features = ["rustls-tls", "http2"]
+features = ["rustls-tls", "http2", "blocking"]
+optional = true
+
+[dependencies.woff2-patched]
+version = "0.4"
 optional = true
 
 [dependencies.lru]
@@ -58,7 +59,8 @@ name = "takumi"
 harness = false
 
 [features]
-default = ["default_impl"]
+default = ["default_impl", "woff2"]
+woff2 = ["dep:woff2-patched"]
 default_impl = ["image_store_impl", "node_kind_enum_impl"]
 image_store_impl = ["dep:reqwest", "dep:lru"]
 node_kind_enum_impl = []

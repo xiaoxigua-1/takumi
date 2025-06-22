@@ -4,7 +4,6 @@ use std::{
   sync::{Arc, Mutex},
 };
 
-use async_trait::async_trait;
 use cosmic_text::{FontSystem, SwashCache};
 
 use crate::{
@@ -22,14 +21,12 @@ use crate::{
 /// use std::sync::Arc;
 /// use takumi::context::ImageStore;
 /// use takumi::node::draw::ImageState;
-/// use async_trait::async_trait;
 ///
 /// #[derive(Debug)]
 /// struct MyImageStore {
 ///   // http client and image store hashmap
 /// }
 ///
-/// #[async_trait]
 /// impl ImageStore for MyImageStore {
 ///     fn get(&self, key: &str) -> Option<Arc<ImageState>> {
 ///         // Implement image retrieval
@@ -40,13 +37,12 @@ use crate::{
 ///         // Implement image storage
 ///     }
 ///
-///     async fn fetch_async(&self, key: &str) -> Arc<ImageState> {
+///     fn fetch(&self, key: &str) -> Arc<ImageState> {
 ///         // Implement async image fetching
 ///         unimplemented!()
 ///     }
 /// }
 /// ```
-#[async_trait]
 pub trait ImageStore: Send + Sync + std::fmt::Debug {
   /// Retrieves an image from the store by its key.
   fn get(&self, key: &str) -> Option<Arc<ImageState>>;
@@ -55,7 +51,7 @@ pub trait ImageStore: Send + Sync + std::fmt::Debug {
   fn insert(&self, key: String, value: Arc<ImageState>);
 
   /// Asynchronously fetches an image from a remote source and stores it.
-  async fn fetch_async(&self, key: &str) -> Arc<ImageState>;
+  fn fetch(&self, key: &str) -> Arc<ImageState>;
 }
 
 /// A context for managing fonts in the rendering system.
@@ -67,6 +63,15 @@ pub struct FontContext {
   pub font_system: Mutex<FontSystem>,
   /// The cache for font glyphs and metrics
   pub font_cache: Mutex<SwashCache>,
+}
+
+impl Default for FontContext {
+  fn default() -> Self {
+    Self {
+      font_system: Mutex::new(FontSystem::new()),
+      font_cache: Mutex::new(SwashCache::new()),
+    }
+  }
 }
 
 /// The main context for image rendering.
@@ -85,18 +90,18 @@ pub struct GlobalContext {
   pub image_store: Box<dyn ImageStore>,
 }
 
+#[cfg(feature = "default_impl")]
+use reqwest::blocking;
+
 impl Default for GlobalContext {
   fn default() -> Self {
     Self {
       print_debug_tree: false,
       draw_debug_border: false,
-      font_context: FontContext {
-        font_system: Mutex::new(FontSystem::new()),
-        font_cache: Mutex::new(SwashCache::new()),
-      },
+      font_context: FontContext::default(),
       #[cfg(feature = "default_impl")]
       image_store: Box::new(DefaultImageStore::new(
-        Client::new(),
+        blocking::Client::new(),
         NonZeroUsize::new(100).unwrap(),
       )),
       #[cfg(not(feature = "default_impl"))]
@@ -106,32 +111,25 @@ impl Default for GlobalContext {
 }
 
 #[cfg(feature = "default_impl")]
-use lru::LruCache;
-
-#[cfg(feature = "default_impl")]
-use reqwest::Client;
-
-#[cfg(feature = "default_impl")]
 /// A default implementation of ImageStore that uses a LRU cache and a HTTP client.
 #[derive(Debug)]
 pub struct DefaultImageStore {
-  store: Mutex<LruCache<String, Arc<ImageState>>>,
-  http: Client,
+  store: Mutex<lru::LruCache<String, Arc<ImageState>>>,
+  http: blocking::Client,
 }
 
 #[cfg(feature = "default_impl")]
 impl DefaultImageStore {
   /// Creates a new DefaultImageStore with the given HTTP client and maximum size.
-  pub fn new(http: Client, max_size: NonZeroUsize) -> Self {
+  pub fn new(http: blocking::Client, max_size: NonZeroUsize) -> Self {
     Self {
-      store: Mutex::new(LruCache::new(max_size)),
+      store: Mutex::new(lru::LruCache::new(max_size)),
       http,
     }
   }
 }
 
 #[cfg(feature = "default_impl")]
-#[async_trait]
 impl ImageStore for DefaultImageStore {
   fn get(&self, key: &str) -> Option<Arc<ImageState>> {
     self.store.lock().unwrap().get(key).cloned()
@@ -141,12 +139,12 @@ impl ImageStore for DefaultImageStore {
     self.store.lock().unwrap().put(key, value);
   }
 
-  async fn fetch_async(&self, key: &str) -> Arc<ImageState> {
-    let Ok(response) = self.http.get(key).send().await else {
+  fn fetch(&self, key: &str) -> Arc<ImageState> {
+    let Ok(response) = self.http.get(key).send() else {
       return Arc::new(ImageState::NetworkError);
     };
 
-    let Ok(body) = response.bytes().await else {
+    let Ok(body) = response.bytes() else {
       return Arc::new(ImageState::NetworkError);
     };
 
@@ -167,7 +165,6 @@ impl ImageStore for DefaultImageStore {
 #[derive(Default, Debug)]
 pub struct NoopImageStore;
 
-#[async_trait]
 impl ImageStore for NoopImageStore {
   /// Always returns None as this is a no-op implementation.
   fn get(&self, _key: &str) -> Option<Arc<ImageState>> {
@@ -180,7 +177,7 @@ impl ImageStore for NoopImageStore {
   }
 
   /// Always panics as this is a no-op implementation.
-  async fn fetch_async(&self, _key: &str) -> Arc<ImageState> {
+  fn fetch(&self, _key: &str) -> Arc<ImageState> {
     unimplemented!("NoopImageStore does not support fetching images")
   }
 }
