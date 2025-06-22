@@ -58,6 +58,7 @@ jobs:
       - name: Update Cargo.toml version
         run: |
           cargo set-version -p takumi "${{ steps.new_version.outputs.new_version }}"
+          cargo set-version -p takumi-napi-core "${{ steps.new_version.outputs.new_version }}"
 
       - name: Update package.json version
         run: |
