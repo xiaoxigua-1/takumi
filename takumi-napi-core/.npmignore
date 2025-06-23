@@ -1,5 +1,5 @@
 target
-Cargo.lock
+Cargo.*
 .cargo
 .github
 npm
@@ -12,3 +12,4 @@ yarn.lock
 renovate.json
 tests
 artifacts
+*.rs
