@@ -195,6 +195,7 @@ jobs:
         working-directory: takumi-napi-core
         run: |
           echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> ~/.npmrc
+          bun artifacts
           npm publish --access public --provenance
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
