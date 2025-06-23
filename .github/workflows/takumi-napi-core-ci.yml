@@ -180,4 +180,6 @@ jobs:
 
       - name: Publish
         working-directory: takumi-napi-core
-        run: npm publish --access public --dry-run
+        run: npm publish --access public
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
