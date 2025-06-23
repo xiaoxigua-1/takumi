@@ -6,6 +6,17 @@
 //!
 //! Checkout the [minimal example](https://github.com/kane50613/takumi/blob/master/example/src/minimal.rs) for a quick start.
 //!
+//! ## Module Organization
+//!
+//! The library is organized into the following modules:
+//!
+//! - [`core`] - Core types, traits, and configuration
+//! - [`style`] - CSS-like styling system with colors, units, and properties
+//! - [`layout`] - Node-based layout system with flexbox support
+//! - [`rendering`] - High-performance image rendering and canvas operations
+//! - [`effects`] - Visual effects like borders, shadows, and radius
+//! - [`resources`] - External resource management (fonts, images)
+//!
 //! ## Credits
 //!
 //! - [taffy](https://github.com/DioxusLabs/taffy) for the layout system.
@@ -16,26 +27,38 @@
 
 #![deny(missing_docs)]
 
-/// Module for handling border radius calculations and styling
-pub mod border_radius;
+/// Core types and traits for the takumi rendering system
+pub mod core;
 
-/// Module for color management and conversion between different color formats
-pub mod color;
+/// CSS-like styling system with colors, units, and properties
+pub mod style;
 
-/// Module for managing rendering context, including font systems and image storage
-pub mod context;
+/// Node-based layout system with flexbox support
+pub mod layout;
 
-/// Module for font loading and management, with support for WOFF2 fonts
-pub mod font;
+/// High-performance image rendering and canvas operations
+pub mod rendering;
 
-/// Module for node-based layout system and drawing primitives
-pub mod node;
+/// Visual effects like borders, shadows, and radius
+pub mod effects;
 
-/// Module for image rendering and canvas management
-pub mod render;
+/// External resource management (fonts, images)
+pub mod resources;
 
-/// Module for box shadow operations
-pub mod box_shadow;
+// Re-export commonly used types from each module
+pub use core::{GlobalContext, ImageStore, RenderContext, Viewport};
+pub use effects::BorderRadius;
+pub use layout::{
+  ContainerNode, DefaultNodeKind, ImageNode, Node, TextNode, measure_image, measure_text,
+};
+pub use rendering::{FastBlendImage, ImageRenderer};
+pub use resources::{FontError, ImageState};
+pub use style::{
+  AlignItems, BoxShadow, BoxShadowInput, Color, ColorInput, FlexDirection, FlexWrap, FontWeight,
+  Gap, Gradient, InheritableStyle, JustifyContent, LengthUnit, ObjectFit, Position,
+  ResolvedFontStyle, SidesValue, Style, TextAlign,
+};
 
+// Re-export external dependencies for convenience
 pub use image;
 pub use taffy;

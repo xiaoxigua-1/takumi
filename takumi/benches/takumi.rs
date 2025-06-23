@@ -3,14 +3,8 @@ use std::io::Cursor;
 use criterion::{Criterion, criterion_group, criterion_main};
 use image::ImageFormat;
 use takumi::{
-  color::{Color, ColorInput, Gradient},
-  context::GlobalContext,
-  impl_node_enum,
-  node::{
-    ContainerNode, TextNode,
-    style::{FontWeight, InheritableStyle, Style, TextAlign},
-  },
-  render::{ImageRenderer, Viewport},
+  Color, ColorInput, ContainerNode, FontWeight, GlobalContext, Gradient, ImageRenderer,
+  InheritableStyle, Style, TextAlign, TextNode, Viewport, impl_node_enum,
 };
 
 #[derive(Debug, Clone)]

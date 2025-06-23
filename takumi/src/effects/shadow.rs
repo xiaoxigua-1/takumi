@@ -5,16 +5,14 @@ use image::{
 use taffy::{Layout, Point, Size};
 
 use crate::{
-  border_radius::{BorderRadius, apply_border_radius_antialiased},
-  node::{
-    draw::create_image_from_color_input,
-    style::{BoxShadowInput, BoxShadowResolved},
-  },
-  render::RenderContext,
+  core::RenderContext,
+  effects::{BorderRadius, apply_border_radius_antialiased},
+  rendering::create_image_from_color_input,
+  style::{BoxShadowInput, BoxShadowResolved},
 };
 use rayon::prelude::*;
 
-use crate::node::draw::FastBlendImage;
+use crate::rendering::FastBlendImage;
 
 /// Applies a fast blur to an image using image-rs's optimized implementation.
 fn apply_fast_blur(image: &mut RgbaImage, radius: f32) {

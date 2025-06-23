@@ -1,7 +1,7 @@
 use image::RgbaImage;
 use taffy::{Layout, Point, Rect};
 
-use crate::{node::style::LengthUnit, render::RenderContext};
+use crate::{core::RenderContext, style::LengthUnit};
 
 /// Represents the four corners of an image for border radius processing.
 #[derive(Debug, Clone, Copy)]

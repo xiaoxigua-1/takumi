@@ -3,12 +3,7 @@ use std::io::Cursor;
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
 use rayon::prelude::*;
-use takumi::{
-  context::GlobalContext,
-  image::ImageFormat,
-  node::{DefaultNodeKind, Node},
-  render::{ImageRenderer, Viewport},
-};
+use takumi::{DefaultNodeKind, GlobalContext, ImageRenderer, Node, Viewport, image::ImageFormat};
 
 #[napi]
 #[derive(Default)]

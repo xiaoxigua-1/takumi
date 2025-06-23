@@ -1,8 +1,6 @@
 use taffy::{AvailableSpace, geometry::Size};
 
-use crate::{
-  node::draw::construct_text_buffer, node::style::ResolvedFontStyle, render::RenderContext,
-};
+use crate::{core::RenderContext, rendering::construct_text_buffer, style::ResolvedFontStyle};
 
 /// Measures the size of an image based on available space and known dimensions.
 ///

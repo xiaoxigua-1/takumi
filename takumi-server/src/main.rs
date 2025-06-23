@@ -11,10 +11,7 @@ use clap::Parser;
 use globwalk::glob;
 use std::{fs::read, io::Cursor, net::SocketAddr, sync::Arc};
 use takumi::{
-  context::GlobalContext,
-  image::ImageFormat,
-  node::{DefaultNodeKind, Node, style::LengthUnit},
-  render::{ImageRenderer, Viewport},
+  DefaultNodeKind, GlobalContext, ImageRenderer, LengthUnit, Node, Viewport, image::ImageFormat,
 };
 use tokio::{net::TcpListener, task::spawn_blocking};
 use tracing::{Level, error, info};

@@ -2,13 +2,12 @@ use image::{Rgba, RgbaImage};
 use imageproc::rect::Rect;
 use taffy::{Layout, Point, Size};
 
-use crate::border_radius::{BorderRadius, apply_border_radius_antialiased};
-use crate::color::ColorInput;
-use crate::node::draw::{
+use crate::core::RenderContext;
+use crate::effects::{BorderRadius, apply_border_radius_antialiased};
+use crate::rendering::{
   FastBlendImage, create_image_from_color_input, draw_filled_rect_from_color_input,
 };
-use crate::node::style::Style;
-use crate::render::RenderContext;
+use crate::style::{ColorInput, Style};
 
 /// Represents the properties of a border.
 #[derive(Debug, Clone)]

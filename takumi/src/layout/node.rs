@@ -1,14 +1,8 @@
-/// Module for border drawing operations
-pub mod border;
-/// Module for drawing operations on canvas
-pub mod draw;
-/// Module for measuring text and image dimensions
-pub mod measure;
-/// Module for styling and layout properties
-pub mod style;
-
-/// Macros for node implementations
-pub mod macros;
+//! Node trait and implementations for the takumi layout system.
+//!
+//! This module contains the core Node trait that defines the interface for
+//! all renderable elements, as well as concrete implementations for containers,
+//! text, and image nodes.
 
 use std::fmt::Debug;
 use std::sync::{Arc, OnceLock};
@@ -18,19 +12,14 @@ use rayon::iter::{ParallelBridge, ParallelIterator};
 use serde::{Deserialize, Serialize};
 use taffy::{AvailableSpace, Layout, Size};
 
-use crate::border_radius::BorderRadius;
-use crate::box_shadow::draw_box_shadow;
-use crate::context::GlobalContext;
-use crate::impl_node_enum;
-use crate::node::border::BorderProperties;
-use crate::node::draw::{FastBlendImage, draw_background_color};
-use crate::node::{
-  border::draw_border,
-  draw::{ImageState, draw_image, draw_text},
-  measure::{measure_image, measure_text},
+use crate::{
+  core::{GlobalContext, RenderContext},
+  effects::{BorderRadius, draw_box_shadow},
+  layout::{measure_image, measure_text},
+  rendering::{FastBlendImage, draw_background_color, draw_image, draw_text},
+  resources::ImageState,
   style::Style,
 };
-use crate::render::RenderContext;
 
 /// A trait representing a node in the layout tree.
 ///
@@ -139,8 +128,9 @@ pub trait Node<N: Node<N>>: Send + Sync + Debug + Clone {
 
   /// Draws the border of the node.
   fn draw_border(&self, context: &RenderContext, canvas: &mut FastBlendImage, layout: Layout) {
-    let border = BorderProperties::from_layout(context, &layout, self.get_style());
+    use crate::effects::{BorderProperties, draw_border};
 
+    let border = BorderProperties::from_layout(context, &layout, self.get_style());
     draw_border(canvas, border);
   }
 }
@@ -343,4 +333,4 @@ pub enum DefaultNodeKind {
   Container(ContainerNode<DefaultNodeKind>),
 }
 
-impl_node_enum!(DefaultNodeKind, Container => ContainerNode<DefaultNodeKind>, Image => ImageNode, Text => TextNode);
+crate::impl_node_enum!(DefaultNodeKind, Container => ContainerNode<DefaultNodeKind>, Image => ImageNode, Text => TextNode);

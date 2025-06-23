@@ -5,21 +5,17 @@ use std::{
 
 use cosmic_text::{FontSystem, SwashCache, fontdb::Database};
 
-use crate::{
-  font::{FontError, load_font},
-  node::draw::ImageState,
-};
+use crate::resources::{FontError, ImageState, load_font};
 
 /// A trait for storing and retrieving images in an image rendering system.
 ///
-/// This trait allows implementors to provide their own image storage and caching mechanisms.
+/// This trait allow developers to provide their own image storage and caching mechanisms.
 /// The trait is designed to be thread-safe and can be used in async contexts.
 ///
 /// # Example
 /// ```rust
 /// use std::sync::Arc;
-/// use takumi::context::ImageStore;
-/// use takumi::node::draw::ImageState;
+/// use takumi::{ImageStore, ImageState};
 ///
 /// #[derive(Debug)]
 /// struct MyImageStore {
