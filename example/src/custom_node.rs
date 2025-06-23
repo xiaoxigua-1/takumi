@@ -10,7 +10,7 @@ use crate::NodeKind;
 ///
 /// # Example
 /// ```rust
-/// use takumi::node::style::Style;
+/// use takumi::Style;
 /// use example::custom_node::CircleNode;
 ///
 /// let circle = CircleNode {
