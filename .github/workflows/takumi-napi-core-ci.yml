@@ -168,13 +168,9 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      - name: Move artifacts
+      - name: Prepare Publish
         working-directory: takumi-napi-core
-        run: bun run artifacts
-
-      - name: List packages
-        working-directory: takumi-napi-core
-        run: ls -R ./npm
+        run: bun prepare-publish
 
       - uses: actions/setup-node@v4
         with:
