@@ -37,8 +37,9 @@ jobs:
           bun-version: latest
 
       - name: Install cargo-edit
-        run: |
-          cargo install cargo-edit
+        uses: baptiste0928/cargo-install@v3
+        with:
+          crate: cargo-edit
 
       - name: Get current versions
         id: current_versions
