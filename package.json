@@ -1,0 +1,7 @@
+{
+  "name": "takumi",
+  "workspaces": [
+    "takumi-helpers",
+    "takumi-napi-core"
+  ]
+}
