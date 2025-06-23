@@ -176,8 +176,9 @@ jobs:
 
       - name: Move artifacts
         working-directory: takumi-napi-core
-        run: bun run artifacts
+        # don't know why fails to write to this folder: ENOENT: no such file or directory
+        run: mkdir -p npm/darwin-arm64 && bun run artifacts
 
       - name: List packages
         working-directory: takumi-napi-core
-        run: ls -R .
+        run: ls -R ./npm
