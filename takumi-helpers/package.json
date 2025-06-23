@@ -16,8 +16,7 @@
     "build": "bun build.ts"
   },
   "repository": {
-    "type": "git",
-    "url": "https://github.com/kane50613/takumi"
+    "url": "git+https://github.com/kane50613/takumi.git"
   },
   "devDependencies": {
     "@types/bun": "latest",
