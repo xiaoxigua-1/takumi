@@ -29,23 +29,20 @@ jobs:
             build: napi build --release --platform --strip --target aarch64-apple-darwin
           - host: ubuntu-latest
             target: aarch64-unknown-linux-gnu
-            docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian-aarch64
             build: napi build --release --platform --strip --target aarch64-unknown-linux-gnu
           - host: ubuntu-latest
             target: aarch64-unknown-linux-musl
-            docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine
             build: |-
-              set -e &&
               rustup target add aarch64-unknown-linux-musl &&
               napi build --release --platform --strip --target aarch64-unknown-linux-musl
           - host: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-            docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian
             build: napi build --release --platform --strip --target x86_64-unknown-linux-gnu
           - host: ubuntu-latest
             target: x86_64-unknown-linux-musl
-            docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine
-            build: napi build --release --platform --strip --target x86_64-unknown-linux-musl
+            build: |-
+              rustup target add x86_64-unknown-linux-musl &&
+              napi build --release --platform --strip --target x86_64-unknown-linux-musl
 
     name: Build ${{ matrix.settings.target }}
     runs-on: ${{ matrix.settings.host }}
@@ -57,13 +54,11 @@ jobs:
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
-        if: ${{ !matrix.settings.docker }}
         with:
           bun-version: latest
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
-        if: ${{ !matrix.settings.docker }}
         with:
           toolchain: stable
           targets: ${{ matrix.settings.target }}
@@ -87,21 +82,8 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      - name: Build in docker
-        uses: addnab/docker-run-action@v3
-        if: ${{ matrix.settings.docker }}
-        with:
-          image: ${{ matrix.settings.docker }}
-          options: "--user 0:0 -v ${{ github.workspace }}/.cargo-cache/git/db:/usr/local/cargo/git/db -v ${{ github.workspace }}/.cargo/registry/cache:/usr/local/cargo/registry/cache -v ${{ github.workspace }}/.cargo/registry/index:/usr/local/cargo/registry/index -v ${{ github.workspace }}:/build -w /build/takumi-napi-core"
-          run: |
-            corepack enable
-            npm install -g bun
-            bun install --frozen-lockfile
-            ${{ matrix.settings.build }}
-
       - name: Build
         run: ${{ matrix.settings.build }}
-        if: ${{ !matrix.settings.docker }}
         shell: bash
 
       - name: Upload artifact
@@ -124,16 +106,20 @@ jobs:
             test_cmd: bun test
           - host: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-            test_cmd: docker run --rm -v $(pwd)/..:/build -w /build/takumi-napi-core node:NODE_VERSION-slim sh -c "corepack enable && npm install -g bun && bun install --frozen-lockfile && bun test"
+            architecture: x64
+            test_cmd: bun test
           - host: ubuntu-latest
             target: x86_64-unknown-linux-musl
-            test_cmd: docker run --rm -v $(pwd)/..:/build -w /build/takumi-napi-core node:NODE_VERSION-alpine sh -c "corepack enable && npm install -g bun && bun install --frozen-lockfile && bun test"
-          - host: ubuntu-24.04-arm
+            architecture: x64
+            test_cmd: bun test
+          - host: ubuntu-latest
             target: aarch64-unknown-linux-gnu
-            test_cmd: docker run --rm --platform linux/arm64 -v $(pwd)/..:/build -w /build/takumi-napi-core node:NODE_VERSION-slim sh -c "corepack enable && npm install -g bun && bun install --frozen-lockfile && bun test"
-          - host: ubuntu-24.04-arm
+            architecture: x64
+            test_cmd: bun test
+          - host: ubuntu-latest
             target: aarch64-unknown-linux-musl
-            test_cmd: docker run --rm --platform linux/arm64 -v $(pwd)/..:/build -w /build/takumi-napi-core node:NODE_VERSION-alpine sh -c "corepack enable && npm install -g bun && bun install --frozen-lockfile && bun test"
+            architecture: x64
+            test_cmd: bun test
         node:
           - "20"
           - "22"
@@ -146,19 +132,16 @@ jobs:
 
       - name: Setup node
         uses: actions/setup-node@v4
-        if: ${{ !contains(matrix.settings.test_cmd, 'docker') }}
         with:
           node-version: ${{ matrix.node }}
           architecture: ${{ matrix.settings.architecture }}
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
-        if: ${{ !contains(matrix.settings.test_cmd, 'docker') }}
         with:
           bun-version: latest
 
       - name: Install dependencies
-        if: ${{ !contains(matrix.settings.test_cmd, 'docker') }}
         run: bun install --frozen-lockfile
 
       - name: Download artifacts
@@ -168,12 +151,5 @@ jobs:
           path: takumi-napi-core
 
       - name: Test bindings
-        run: |
-          if [[ "${{ matrix.settings.test_cmd }}" == *"docker"* ]]; then
-            cmd="${{ matrix.settings.test_cmd }}"
-            cmd="${cmd//NODE_VERSION/${{ matrix.node }}}"
-            eval $cmd
-          else
-            ${{ matrix.settings.test_cmd }}
-          fi
+        run: ${{ matrix.settings.test_cmd }}
         shell: bash
