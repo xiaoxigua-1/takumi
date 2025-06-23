@@ -30,7 +30,8 @@
   "scripts": {
     "build": "napi build --release --platform --strip",
     "build:debug": "napi build",
-    "prepare-publish": "napi create-npm-dirs && napi artifacts && napi prepublish -t npm --no-gh-release",
+    "prepublishOnly": "bunx napi prepublish -t npm --no-gh-release",
+    "artifacts": "napi create-npm-dirs && napi artifacts",
     "version": "napi version"
   },
   "devDependencies": {
