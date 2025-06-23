@@ -148,10 +148,31 @@ jobs:
           docker run --rm -v $PWD:/workspace -w /workspace/takumi-napi-core \
             oven/bun:alpine bun test
 
-  publish:
-    needs: [build, test-bindings]
+  version-check:
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/master'
+    outputs:
+      version-exists: ${{ steps.check.outputs.exists }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+
+      - name: Check if version exists
+        id: check
+        working-directory: takumi-napi-core
+        run: |
+          PACKAGE_NAME=$(node -pe "require('./package.json').name")
+          PACKAGE_VERSION=$(node -pe "require('./package.json').version")
+          if npm view "$PACKAGE_NAME@$PACKAGE_VERSION" version 2>/dev/null; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
+  publish:
+    needs: [build, test-bindings, version-check]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master' && needs.version-check.outputs.version-exists == 'false'
     steps:
       - uses: actions/checkout@v4
 
@@ -168,28 +189,11 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      - name: Prepare Publish
-        working-directory: takumi-napi-core
-        run: bun prepare-publish
-
       - uses: actions/setup-node@v4
         with:
           registry-url: "https://npm.pkg.github.com"
 
-      - name: Check if version exists
-        id: version-check
-        working-directory: takumi-napi-core
-        run: |
-          PACKAGE_NAME=$(node -pe "require('./package.json').name")
-          PACKAGE_VERSION=$(node -pe "require('./package.json').version")
-          if npm view "$PACKAGE_NAME@$PACKAGE_VERSION" version 2>/dev/null; then
-            echo "exists=true" >> $GITHUB_OUTPUT
-          else
-            echo "exists=false" >> $GITHUB_OUTPUT
-          fi
-
       - name: Publish
-        if: steps.version-check.outputs.exists == 'false'
         working-directory: takumi-napi-core
         run: npm config set provenance true && npm publish --access public
         env:
