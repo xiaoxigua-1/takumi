@@ -170,7 +170,7 @@ jobs:
 
       - name: Move artifacts
         working-directory: takumi-napi-core
-        run: bun run create-npm-dirs && bun run artifacts
+        run: bun run artifacts
 
       - name: List packages
         working-directory: takumi-napi-core

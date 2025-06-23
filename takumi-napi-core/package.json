@@ -32,7 +32,7 @@
     "build": "napi build --release --platform --strip",
     "build:debug": "napi build",
     "prepublishOnly": "bunx napi prepublish -t npm",
-    "artifacts": "napi artifacts",
+    "artifacts": "napi create-npm-dirs && napi artifacts",
     "version": "napi version"
   },
   "devDependencies": {
