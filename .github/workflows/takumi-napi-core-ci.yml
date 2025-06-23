@@ -1,0 +1,301 @@
+name: Takumi NAPI Core CI
+
+env:
+  DEBUG: napi:*
+  APP_NAME: core
+  MACOSX_DEPLOYMENT_TARGET: "10.13"
+  CARGO_INCREMENTAL: "1"
+
+permissions:
+  contents: write
+  id-token: write
+
+on:
+  push:
+    paths:
+      - "takumi-napi-core/**"
+      - "takumi/**"
+    tags-ignore:
+      - "**"
+  pull_request:
+    paths:
+      - "takumi-napi-core/**"
+      - "takumi/**"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quick-test:
+    name: Quick Test on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        node-version: [20, 22]
+
+    defaults:
+      run:
+        working-directory: takumi-napi-core
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            takumi-napi-core/target/
+            takumi/target/
+          key: ${{ runner.os }}-cargo-quick-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-quick-
+            ${{ runner.os }}-cargo-
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Check Rust formatting
+        run: cargo fmt -- --check
+
+      - name: Run Rust lints
+        run: cargo clippy -- -D warnings
+
+      - name: Build debug
+        run: npm run build:debug
+
+      - name: Run cargo tests
+        run: cargo test --all-features
+
+      - name: Run cargo tests for takumi core
+        run: cargo test --all-features --manifest-path ../takumi/Cargo.toml
+
+      - name: Run tests
+        run: bun test
+
+  security:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: takumi-napi-core
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install cargo-audit
+        run: cargo install cargo-audit
+
+      - name: Run cargo audit
+        run: cargo audit
+
+      - name: Run bun audit
+        run: bun audit || true
+
+  typecheck:
+    name: TypeScript Check
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: takumi-napi-core
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Type check
+        run: bunx tsc --noEmit
+
+  build:
+    needs: [quick-test, security, typecheck]
+    strategy:
+      fail-fast: false
+      matrix:
+        settings:
+          - host: macos-latest
+            target: aarch64-apple-darwin
+            build: napi build --release --platform --strip --target aarch64-apple-darwin
+          - host: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+            docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian-aarch64
+            build: napi build --release --platform --strip --target aarch64-unknown-linux-gnu
+          - host: ubuntu-latest
+            target: aarch64-unknown-linux-musl
+            docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine
+            build: |-
+              set -e &&
+              rustup target add aarch64-unknown-linux-musl &&
+              napi build --release --platform --strip --target aarch64-unknown-linux-musl
+          - host: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian
+            build: napi build --release --platform --strip --target x86_64-unknown-linux-gnu
+          - host: ubuntu-latest
+            target: x86_64-unknown-linux-musl
+            docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine
+            build: napi build --release --platform --strip --target x86_64-unknown-linux-musl
+
+    name: Build ${{ matrix.settings.target }}
+    runs-on: ${{ matrix.settings.host }}
+    defaults:
+      run:
+        working-directory: takumi-napi-core
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        if: ${{ !matrix.settings.docker }}
+        with:
+          bun-version: latest
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        if: ${{ !matrix.settings.docker }}
+        with:
+          toolchain: stable
+          targets: ${{ matrix.settings.target }}
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            .cargo-cache
+            takumi-napi-core/target/
+          key: ${{ matrix.settings.target }}-cargo-${{ matrix.settings.host }}
+
+      - name: Setup toolchain
+        run: ${{ matrix.settings.setup }}
+        if: ${{ matrix.settings.setup }}
+        shell: bash
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build in docker
+        uses: addnab/docker-run-action@v3
+        if: ${{ matrix.settings.docker }}
+        with:
+          image: ${{ matrix.settings.docker }}
+          options: "--user 0:0 -v ${{ github.workspace }}/.cargo-cache/git/db:/usr/local/cargo/git/db -v ${{ github.workspace }}/.cargo/registry/cache:/usr/local/cargo/registry/cache -v ${{ github.workspace }}/.cargo/registry/index:/usr/local/cargo/registry/index -v ${{ github.workspace }}:/build -w /build/takumi-napi-core"
+          run: |
+            corepack enable
+            npm install -g bun
+            bun install --frozen-lockfile
+            ${{ matrix.settings.build }}
+
+      - name: Build
+        run: ${{ matrix.settings.build }}
+        if: ${{ !matrix.settings.docker }}
+        shell: bash
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bindings-${{ matrix.settings.target }}
+          path: takumi-napi-core/${{ env.APP_NAME }}.*.node
+          if-no-files-found: error
+
+  test-bindings:
+    name: Test ${{ matrix.settings.target }} - node@${{ matrix.node }}
+    needs: [build]
+    strategy:
+      fail-fast: false
+      matrix:
+        settings:
+          - host: macos-latest
+            target: aarch64-apple-darwin
+            architecture: arm64
+            test_cmd: bun test
+          - host: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            test_cmd: docker run --rm -v $(pwd)/..:/build -w /build/takumi-napi-core node:NODE_VERSION-slim sh -c "corepack enable && npm install -g bun && bun install --frozen-lockfile && bun test"
+          - host: ubuntu-latest
+            target: x86_64-unknown-linux-musl
+            test_cmd: docker run --rm -v $(pwd)/..:/build -w /build/takumi-napi-core node:NODE_VERSION-alpine sh -c "corepack enable && npm install -g bun && bun install --frozen-lockfile && bun test"
+          - host: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-gnu
+            test_cmd: docker run --rm --platform linux/arm64 -v $(pwd)/..:/build -w /build/takumi-napi-core node:NODE_VERSION-slim sh -c "corepack enable && npm install -g bun && bun install --frozen-lockfile && bun test"
+          - host: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-musl
+            test_cmd: docker run --rm --platform linux/arm64 -v $(pwd)/..:/build -w /build/takumi-napi-core node:NODE_VERSION-alpine sh -c "corepack enable && npm install -g bun && bun install --frozen-lockfile && bun test"
+        node:
+          - "20"
+          - "22"
+    runs-on: ${{ matrix.settings.host }}
+    defaults:
+      run:
+        working-directory: takumi-napi-core
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup node
+        uses: actions/setup-node@v4
+        if: ${{ !contains(matrix.settings.test_cmd, 'docker') }}
+        with:
+          node-version: ${{ matrix.node }}
+          architecture: ${{ matrix.settings.architecture }}
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        if: ${{ !contains(matrix.settings.test_cmd, 'docker') }}
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        if: ${{ !contains(matrix.settings.test_cmd, 'docker') }}
+        run: bun install --frozen-lockfile
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: bindings-${{ matrix.settings.target }}
+          path: takumi-napi-core
+
+      - name: Test bindings
+        run: |
+          if [[ "${{ matrix.settings.test_cmd }}" == *"docker"* ]]; then
+            cmd="${{ matrix.settings.test_cmd }}"
+            cmd="${cmd//NODE_VERSION/${{ matrix.node }}}"
+            eval $cmd
+          else
+            ${{ matrix.settings.test_cmd }}
+          fi
+        shell: bash
