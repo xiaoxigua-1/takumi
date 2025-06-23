@@ -31,7 +31,7 @@
   "scripts": {
     "build": "napi build --release --platform --strip",
     "build:debug": "napi build",
-    "prepublishOnly": "napi prepublish -t npm",
+    "prepublishOnly": "bunx napi prepublish -t npm",
     "artifacts": "napi artifacts",
     "version": "napi version"
   },

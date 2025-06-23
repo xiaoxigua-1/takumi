@@ -147,9 +147,11 @@ jobs:
         run: |
           docker run --rm -v $PWD:/workspace -w /workspace/takumi-napi-core \
             oven/bun:alpine bun test
+
   publish:
     needs: [build, test-bindings]
     runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master'
     steps:
       - uses: actions/checkout@v4
 
@@ -168,9 +170,14 @@ jobs:
 
       - name: Move artifacts
         working-directory: takumi-napi-core
-        # don't know why fails to write to this folder: ENOENT: no such file or directory
-        run: mkdir -p npm/darwin-arm64 && bun run artifacts
+        run: bun run create-npm-dirs && bun run artifacts
 
       - name: List packages
         working-directory: takumi-napi-core
         run: ls -R ./npm
+
+      - uses: actions/setup-node@v4
+
+      - name: Publish
+        working-directory: takumi-napi-core
+        run: npm publish --access public --dry-run
