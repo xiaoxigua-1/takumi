@@ -1,10 +1,10 @@
-# @takumi/core
+# @takumi-rs/core
 
 ## Usage
 
 ```ts
-import { Renderer } from "@takumi/core";
-import { container, image } from "@takumi/helpers";
+import { Renderer } from "@takumi-rs/core";
+import { container, image } from "@takumi-rs/helpers";
 import { writeFile } from "fs/promises";
 
 const render = new Renderer();

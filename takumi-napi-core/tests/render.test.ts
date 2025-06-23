@@ -1,6 +1,6 @@
 import { test, expect } from "bun:test";
 import { Renderer } from "../index";
-import { container, image, percentage, rem, text } from "@takumi/helpers";
+import { container, image, percentage, rem, text } from "@takumi-rs/helpers";
 import { Glob } from "bun";
 
 let renderer = new Renderer();

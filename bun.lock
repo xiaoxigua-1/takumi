@@ -5,7 +5,7 @@
       "name": "takumi",
     },
     "takumi-helpers": {
-      "name": "@takumi/helpers",
+      "name": "@takumi-rs/helpers",
       "version": "0.6.0",
       "devDependencies": {
         "@types/bun": "latest",
@@ -17,11 +17,11 @@
       },
     },
     "takumi-napi-core": {
-      "name": "@takumi/core",
+      "name": "@takumi-rs/core",
       "version": "0.6.0",
       "devDependencies": {
         "@napi-rs/cli": "^3.0.0-alpha.89",
-        "@takumi/helpers": "workspace:*",
+        "@takumi-rs/helpers": "workspace:*",
         "@types/bun": "^1.2.17",
         "typescript": "^5.8.3",
       },
@@ -190,9 +190,9 @@
 
     "@octokit/types": ["@octokit/types@14.1.0", "", { "dependencies": { "@octokit/openapi-types": "^25.1.0" } }, "sha512-1y6DgTy8Jomcpu33N+p5w58l6xyt55Ar2I91RPiIA0xCJBXyUAhXCcmZaDWSANiha7R9a6qJJ2CRomGPZ6f46g=="],
 
-    "@takumi/core": ["@takumi/core@workspace:takumi-napi-core"],
+    "@takumi-rs/core": ["@takumi-rs/core@workspace:takumi-napi-core"],
 
-    "@takumi/helpers": ["@takumi/helpers@workspace:takumi-helpers"],
+    "@takumi-rs/helpers": ["@takumi-rs/helpers@workspace:takumi-helpers"],
 
     "@tybys/wasm-util": ["@tybys/wasm-util@0.9.0", "", { "dependencies": { "tslib": "^2.4.0" } }, "sha512-6+7nlbMVX/PVDCwaIQ8nTOPveOcFLSt8GcXdx8hD0bt39uWxYT88uXzqTd4fTvqta7oeUJqudepapKNt2DYJFw=="],
 
