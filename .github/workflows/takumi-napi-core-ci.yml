@@ -152,6 +152,7 @@ jobs:
         run: bun test
         shell: bash
   publish:
+    needs: [build, test-bindings]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
