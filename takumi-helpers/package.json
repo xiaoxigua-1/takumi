@@ -13,8 +13,7 @@
     "tsconfig.json"
   ],
   "scripts": {
-    "build": "bun build.ts",
-    "release": "bun run build && bun publish"
+    "build": "bun build.ts"
   },
   "repository": {
     "type": "git",
