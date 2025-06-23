@@ -147,8 +147,10 @@ jobs:
 
       - name: List packages
         run: ls -R .
+        working-directory: takumi-napi-core
 
       - name: Test bindings
+        working-directory: takumi-napi-core
         run: bun test
         shell: bash
   publish:
@@ -162,16 +164,18 @@ jobs:
         with:
           bun-version: latest
 
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
-
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
-          path: artifacts
+          path: takumi-napi-core/artifacts
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
 
       - name: Move artifacts
+        working-directory: takumi-napi-core
         run: bun run artifacts
 
       - name: List packages
-        run: ls -R ./
+        working-directory: takumi-napi-core
+        run: ls -R .
