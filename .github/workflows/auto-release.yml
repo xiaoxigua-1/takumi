@@ -92,7 +92,7 @@ jobs:
   create-release:
     name: Create GitHub Release
     runs-on: ubuntu-latest
-    needs: check-version
+    needs: [check-version, publish-takumi-helpers, publish-to-crate-io]
     if: needs.check-version.outputs.version_changed == 'true'
 
     steps:
