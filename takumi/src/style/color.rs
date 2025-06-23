@@ -32,10 +32,11 @@ impl ColorInput {
   ///
   /// # Returns
   /// `true` if the color input is transparent; otherwise, `false`.
+  #[must_use]
   pub fn is_transparent(&self) -> bool {
     match self {
       ColorInput::Color(color) => color.is_transparent(),
-      ColorInput::Gradient(gradient) => gradient.stops.iter().all(|color| color.is_transparent()),
+      ColorInput::Gradient(gradient) => gradient.stops.iter().all(Color::is_transparent),
     }
   }
 }
@@ -142,7 +143,8 @@ impl Color {
   ///
   /// For RGB colors, returns 1.0 (fully opaque).
   /// For RGBA colors, returns the stored alpha value.
-  pub fn alpha(&self) -> f32 {
+  #[must_use]
+  pub const fn alpha(&self) -> f32 {
     match self {
       Color::Rgba(_, _, _, a) => *a,
       _ => 1.0,
@@ -152,6 +154,7 @@ impl Color {
   /// Returns the alpha value as an 8-bit integer (0-255).
   ///
   /// Converts the float alpha value to an 8-bit integer representation.
+  #[must_use]
   pub fn alpha_u8(&self) -> u8 {
     (self.alpha() * 255.0) as u8
   }
@@ -160,6 +163,7 @@ impl Color {
   ///
   /// # Returns
   /// `true` if the color is transparent; otherwise, `false`.
+  #[must_use]
   pub fn is_transparent(&self) -> bool {
     self.alpha() == 0.0
   }
@@ -172,7 +176,7 @@ impl ColorAt for Color {
 }
 
 impl From<Color> for cosmic_text::Color {
-  /// Converts a Color to a cosmic_text::Color.
+  /// Converts a Color to a `cosmic_text::Color`.
   ///
   /// Handles all color formats and properly converts alpha values.
   fn from(color: Color) -> Self {
@@ -210,7 +214,7 @@ impl From<Color> for Rgba<u8> {
   /// Converts a Color to an `image::Rgba<u8>`.
   ///
   /// Handles all color formats and properly converts alpha values.
-  /// For RgbInt, extracts RGB components using bit shifting.
+  /// For `RgbInt`, extracts RGB components using bit shifting.
   fn from(color: Color) -> Self {
     let (r, g, b, a) = color.into();
     Rgba([r, g, b, (a * 255.0) as u8])

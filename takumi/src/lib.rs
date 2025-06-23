@@ -26,6 +26,15 @@
 //! - [ts-rs](https://github.com/AlephAlpha/ts-rs) for the type-safe serialization.
 
 #![deny(missing_docs)]
+#![deny(clippy::all)]
+#![deny(clippy::redundant_closure_for_method_calls)]
+#![allow(clippy::module_name_repetitions)]
+#![allow(clippy::missing_errors_doc)]
+#![allow(clippy::missing_panics_doc)]
+#![allow(clippy::use_self)]
+#![allow(clippy::doc_markdown)]
+#![allow(clippy::must_use_candidate)]
+#![allow(clippy::missing_const_for_fn)]
 
 /// Core types and traits for the takumi rendering system
 pub mod core;

@@ -1,7 +1,4 @@
-use takumi::{
-  impl_node_enum,
-  node::{ContainerNode, ImageNode, TextNode},
-};
+use takumi::{ContainerNode, ImageNode, TextNode, impl_node_enum};
 
 use crate::custom_node::CircleNode;
 

@@ -2,13 +2,8 @@
 use std::fs::File;
 
 use takumi::{
-  context::GlobalContext,
+  ContainerNode, GlobalContext, ImageRenderer, InheritableStyle, Style, TextNode, Viewport,
   image::ImageFormat,
-  node::{
-    ContainerNode, TextNode,
-    style::{InheritableStyle, Style},
-  },
-  render::{ImageRenderer, Viewport},
 };
 
 use crate::NodeKind;

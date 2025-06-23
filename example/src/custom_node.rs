@@ -1,9 +1,5 @@
-use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
-use takumi::node::{
-  Node,
-  style::{LengthUnit, SidesValue, Style},
-};
+use takumi::{LengthUnit, Node, SidesValue, Style};
 
 use crate::NodeKind;
 
@@ -28,7 +24,6 @@ pub struct CircleNode {
   pub style: Style,
 }
 
-#[async_trait]
 impl Node<NodeKind> for CircleNode {
   /// Returns a reference to the node's style properties.
   fn get_style(&self) -> &Style {

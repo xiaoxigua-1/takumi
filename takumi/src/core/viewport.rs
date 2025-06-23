@@ -22,12 +22,14 @@ pub struct Viewport {
 
 impl Viewport {
   /// Creates a new viewport with the default font size.
-  pub fn new(width: u32, height: u32) -> Self {
+  #[must_use]
+  pub const fn new(width: u32, height: u32) -> Self {
     Self::new_with_font_size(width, height, DEFAULT_FONT_SIZE)
   }
 
   /// Creates a new viewport with the specified font size.
-  pub fn new_with_font_size(width: u32, height: u32, font_size: f32) -> Self {
+  #[must_use]
+  pub const fn new_with_font_size(width: u32, height: u32, font_size: f32) -> Self {
     Self {
       width,
       height,

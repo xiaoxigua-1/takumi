@@ -487,9 +487,9 @@ impl Style {
       display: Display::Flex,
       flex_direction: self.flex_direction.into(),
       position: self.position.into(),
-      justify_content: self.justify_content.map(|j| j.into()),
+      justify_content: self.justify_content.map(Into::into),
       flex_grow: self.flex_grow,
-      align_items: self.align_items.map(|a| a.into()),
+      align_items: self.align_items.map(Into::into),
       gap: self.gap.resolve_to_size(context),
       flex_basis: self.flex_basis.resolve_to_dimension(context),
       flex_shrink: self.flex_shrink,
@@ -529,7 +529,7 @@ impl Style {
       line_clamp: self.inheritable_style.line_clamp,
       font_family: self.inheritable_style.font_family.clone(),
       letter_spacing: self.inheritable_style.letter_spacing,
-      text_align: self.inheritable_style.text_align.map(|align| align.into()),
+      text_align: self.inheritable_style.text_align.map(Into::into),
     }
   }
 }
