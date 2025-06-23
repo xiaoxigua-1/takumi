@@ -27,22 +27,20 @@ jobs:
           - host: macos-latest
             target: aarch64-apple-darwin
             build: bun run build --target aarch64-apple-darwin
-          - host: ubuntu-latest
+          - host: ubuntu-24.04-arm
             target: aarch64-unknown-linux-gnu
             build: bun run build --target aarch64-unknown-linux-gnu
           - host: ubuntu-latest
             target: aarch64-unknown-linux-musl
-            build: |-
-              rustup target add aarch64-unknown-linux-musl &&
-              bun run build --target aarch64-unknown-linux-musl
+            build: docker run --rm -v "$(pwd)":/code -w /code messense/rust-musl-cross:aarch64-musl bun run build --target aarch64-unknown-linux-musl
+            setup: rustup target add aarch64-unknown-linux-musl
           - host: ubuntu-latest
             target: x86_64-unknown-linux-gnu
             build: bun run build --target x86_64-unknown-linux-gnu
           - host: ubuntu-latest
             target: x86_64-unknown-linux-musl
-            build: |-
-              rustup target add x86_64-unknown-linux-musl &&
-              bun run build --target x86_64-unknown-linux-musl
+            build: docker run --rm -v "$(pwd)":/code -w /code messense/rust-musl-cross:x86_64-musl bun run build --target x86_64-unknown-linux-musl
+            setup: rustup target add x86_64-unknown-linux-musl
 
     name: Build ${{ matrix.settings.target }}
     runs-on: ${{ matrix.settings.host }}
@@ -94,7 +92,7 @@ jobs:
           if-no-files-found: error
 
   test-bindings:
-    name: Test ${{ matrix.settings.target }} - node@${{ matrix.node }}
+    name: Test ${{ matrix.settings.target }}
     needs: [build]
     strategy:
       fail-fast: false
@@ -112,29 +110,20 @@ jobs:
             target: x86_64-unknown-linux-musl
             architecture: x64
             test_cmd: bun test
-          - host: ubuntu-latest
+          - host: ubuntu-24.04-arm
             target: aarch64-unknown-linux-gnu
-            architecture: x64
+            architecture: arm64
             test_cmd: bun test
           - host: ubuntu-latest
             target: aarch64-unknown-linux-musl
             architecture: x64
             test_cmd: bun test
-        node:
-          - "20"
-          - "22"
     runs-on: ${{ matrix.settings.host }}
     defaults:
       run:
         working-directory: takumi-napi-core
     steps:
       - uses: actions/checkout@v4
-
-      - name: Setup node
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ matrix.node }}
-          architecture: ${{ matrix.settings.architecture }}
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
