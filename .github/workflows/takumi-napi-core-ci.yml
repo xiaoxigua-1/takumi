@@ -191,6 +191,7 @@ jobs:
       - name: Publish
         if: steps.version-check.outputs.exists == 'false'
         working-directory: takumi-napi-core
-        run: npm publish --access public
+        run: npm config set provenance true && npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
