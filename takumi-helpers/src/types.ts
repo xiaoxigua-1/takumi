@@ -36,7 +36,7 @@ export type Node = ContainerNode | TextNode | ImageNode | AnyNode;
 
 export type ContainerNode = StyleInput & {
   type: "container";
-  children: Node[];
+  children?: Node[];
 };
 
 export type TextNode = StyleInput & {
