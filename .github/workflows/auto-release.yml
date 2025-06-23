@@ -2,6 +2,7 @@ name: Auto Release
 
 permissions:
   id-token: write
+  contents: write
 
 on:
   push:
