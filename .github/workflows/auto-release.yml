@@ -1,5 +1,8 @@
 name: Auto Release
 
+permissions:
+  id-token: write
+
 on:
   push:
     branches: [master]
@@ -70,7 +73,7 @@ jobs:
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
-        
+
       - uses: actions/setup-node@v4
 
       - name: Build
