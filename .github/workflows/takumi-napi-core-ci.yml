@@ -108,19 +108,14 @@ jobs:
         settings:
           - host: macos-latest
             target: aarch64-apple-darwin
-            architecture: arm64
           - host: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-            architecture: x64
           - host: ubuntu-latest
             target: x86_64-unknown-linux-musl
-            architecture: x64
           - host: ubuntu-24.04-arm
             target: aarch64-unknown-linux-gnu
-            architecture: arm64
           - host: ubuntu-24.04-arm
             target: aarch64-unknown-linux-musl
-            architecture: arm64
     runs-on: ${{ matrix.settings.host }}
     steps:
       - uses: actions/checkout@v4
@@ -150,9 +145,16 @@ jobs:
         working-directory: takumi-napi-core
 
       - name: Test bindings
+        if: ${{ !contains(matrix.settings.target, 'musl') }}
         working-directory: takumi-napi-core
         run: bun test
         shell: bash
+
+      - name: Test bindings in Alpine (musl)
+        if: contains(matrix.settings.target, 'musl')
+        run: |
+          docker run --rm -v $PWD:/workspace -w /workspace/takumi-napi-core \
+            oven/bun:alpine bun test
   publish:
     needs: [build, test-bindings]
     runs-on: ubuntu-latest
