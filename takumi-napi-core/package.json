@@ -6,8 +6,7 @@
     "node": ">= 12.22.0 < 13 || >= 14.17.0 < 15 || >= 15.12.0 < 16 || >= 16.0.0"
   },
   "repository": {
-    "type": "git",
-    "url": "https://github.com/kane50613/takumi"
+    "url": "git+https://github.com/kane50613/takumi.git"
   },
   "author": {
     "email": "me@kane.tw",
