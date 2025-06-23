@@ -11,3 +11,4 @@ yarn.lock
 .yarn
 renovate.json
 tests
+artifacts
