@@ -57,5 +57,5 @@ pub fn say_hello_to(name: &str) {
   let mut file = File::create("output.webp").unwrap();
 
   // Write the image to the file in WebP format
-  write_image(&image, &mut file, ImageOutputFormat::WebP).unwrap();
+  write_image(&image, &mut file, ImageOutputFormat::WebP, None).unwrap();
 }

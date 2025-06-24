@@ -91,13 +91,26 @@ describe("renderAsync", () => {
     expect(result).toBeInstanceOf(Buffer);
   });
 
-  test("jpeg", async () => {
+  test("jpeg 75%", async () => {
     const result = await renderer.renderAsync(node, {
       ...options,
       format: OutputFormat.Jpeg,
+      quality: 75
     });
 
-    await writeFile("./test.jpg", result);
+    await writeFile("./test-75.jpg", result);
+
+    expect(result).toBeInstanceOf(Buffer);
+  });
+
+  test("jpeg 100%", async () => {
+    const result = await renderer.renderAsync(node, {
+      ...options,
+      format: OutputFormat.Jpeg,
+      quality: 100
+    });
+
+    await writeFile("./test-100.jpg", result);
 
     expect(result).toBeInstanceOf(Buffer);
   });

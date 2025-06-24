@@ -15,7 +15,8 @@ pub struct Renderer(GlobalContext);
 pub struct RenderOptions {
   pub width: u32,
   pub height: u32,
-  pub format: OutputFormat,
+  pub format: Option<OutputFormat>,
+  pub quality: Option<u8>,
 }
 
 #[napi(string_enum)]
@@ -132,7 +133,8 @@ impl Renderer {
         node: Some(node),
         context: &self.0,
         viewport: Viewport::new(options.width, options.height),
-        format: options.format.into(),
+        format: options.format.unwrap_or(OutputFormat::Png).into(),
+        quality: options.quality,
       },
       signal,
     ))

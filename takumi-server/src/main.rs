@@ -29,6 +29,7 @@ static GLOBAL: MiMalloc = MiMalloc;
 #[derive(Deserialize)]
 struct GenerateImageQuery {
   format: Option<ImageOutputFormat>,
+  quality: Option<u8>,
 }
 
 async fn generate_image_handler(
@@ -59,7 +60,7 @@ async fn generate_image_handler(
     let mut buffer = Vec::new();
     let mut cursor = Cursor::new(&mut buffer);
 
-    write_image(&image, &mut cursor, format.into()).unwrap();
+    write_image(&image, &mut cursor, format.into(), query.quality).unwrap();
 
     buffer
   })

@@ -11,6 +11,7 @@ pub struct RenderTask<'ctx> {
   pub context: &'ctx GlobalContext,
   pub viewport: Viewport,
   pub format: ImageOutputFormat,
+  pub quality: Option<u8>,
 }
 
 impl<'ctx> Task for RenderTask<'ctx> {
@@ -34,7 +35,7 @@ impl<'ctx> Task for RenderTask<'ctx> {
     let mut buffer = Vec::new();
     let mut cursor = Cursor::new(&mut buffer);
 
-    write_image(&image, &mut cursor, self.format.into())
+    write_image(&image, &mut cursor, self.format.into(), self.quality)
       .map_err(|e| napi::Error::from_reason(format!("Failed to write to buffer: {e:?}")))?;
 
     Ok(buffer)

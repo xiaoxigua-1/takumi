@@ -1,6 +1,6 @@
 use std::io::{Seek, Write};
 
-use image::{ImageFormat, RgbImage, RgbaImage};
+use image::{ImageFormat, RgbImage, RgbaImage, codecs::jpeg::JpegEncoder};
 use serde::{Deserialize, Serialize};
 use slotmap::{DefaultKey, KeyData, SecondaryMap};
 use taffy::{AvailableSpace, NodeId, Point, TaffyTree, geometry::Size};
@@ -75,6 +75,7 @@ pub fn write_image<T: Write + Seek>(
   image: &RgbaImage,
   destination: &mut T,
   format: ImageOutputFormat,
+  jpeg_quality: Option<u8>,
 ) -> Result<(), image::ImageError> {
   match format {
     ImageOutputFormat::Png | ImageOutputFormat::WebP => {
@@ -85,7 +86,10 @@ pub fn write_image<T: Write + Seek>(
         let pixel = image.get_pixel(x, y);
         image::Rgb([pixel[0], pixel[1], pixel[2]])
       });
-      rgb_image.write_to(destination, format.into())?;
+
+      let mut encoder = JpegEncoder::new_with_quality(destination, jpeg_quality.unwrap_or(75));
+
+      encoder.encode_image(&rgb_image)?;
     }
   }
 
