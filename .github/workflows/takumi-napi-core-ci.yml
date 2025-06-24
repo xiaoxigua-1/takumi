@@ -41,9 +41,6 @@ jobs:
 
     name: Build ${{ matrix.settings.target }}
     runs-on: ${{ matrix.settings.host }}
-    defaults:
-      run:
-        working-directory: takumi-napi-core
     steps:
       - uses: actions/checkout@v4
 
@@ -77,8 +74,8 @@ jobs:
         run: bun install --frozen-lockfile
 
       - name: Build
+        working-directory: takumi-napi-core
         run: ${{ matrix.settings.build }}
-        shell: bash
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -139,7 +136,6 @@ jobs:
         if: ${{ !contains(matrix.settings.target, 'musl') }}
         working-directory: takumi-napi-core
         run: bun test
-        shell: bash
 
       - name: Test bindings in Alpine (musl)
         if: contains(matrix.settings.target, 'musl')
