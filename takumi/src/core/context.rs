@@ -1,5 +1,7 @@
 use std::num::NonZeroUsize;
 
+use crate::core::LocalImageStore;
+
 use super::{DefaultImageStore, FontContext, ImageStore};
 
 #[cfg(feature = "default_impl")]
@@ -19,6 +21,8 @@ pub struct GlobalContext {
   pub font_context: FontContext,
   /// The image store for caching and retrieving images
   pub image_store: Box<dyn ImageStore>,
+  /// The image store for local contents
+  pub local_image_store: LocalImageStore,
 }
 
 impl Default for GlobalContext {
@@ -27,6 +31,7 @@ impl Default for GlobalContext {
       print_debug_tree: false,
       draw_debug_border: false,
       font_context: FontContext::default(),
+      local_image_store: LocalImageStore::default(),
       #[cfg(feature = "default_impl")]
       image_store: Box::new(DefaultImageStore::new(
         blocking::Client::new(),

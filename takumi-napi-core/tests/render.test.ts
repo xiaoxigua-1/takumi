@@ -1,11 +1,16 @@
-import { test, expect } from "bun:test";
-import { Renderer } from "../index";
+import { expect, test } from "bun:test";
+import { writeFile } from "node:fs/promises";
 import { container, image, percentage, rem, text } from "@takumi-rs/helpers";
 import { Glob } from "bun";
+import { Renderer } from "../index";
 
-let renderer = new Renderer();
+const renderer = new Renderer();
 
 const logo = "https://yeecord.com/img/logo.png";
+const localImagePath = "../assets/images/yeecord.png";
+
+const localImage = await Bun.file(localImagePath).arrayBuffer();
+const dataUri = `data:image/png;base64,${Buffer.from(localImage).toString("base64")}`;
 
 test("preloadImageAsync", async () => {
   await renderer.preloadImageAsync(logo);
@@ -16,11 +21,15 @@ test("loadFontsAsync", async () => {
   const files = await Array.fromAsync(glob.scan());
 
   const buffers = await Promise.all(
-    files.map((file) => Bun.file(file).arrayBuffer())
+    files.map((file) => Bun.file(file).arrayBuffer()),
   );
 
   const count = await renderer.loadFontsAsync(buffers);
   expect(count).toBe(files.length);
+});
+
+test("loadLocalImageAsync", async () => {
+  await renderer.loadLocalImageAsync(localImagePath, localImage);
 });
 
 test("renderAsync", async () => {
@@ -28,14 +37,24 @@ test("renderAsync", async () => {
     container({
       children: [
         image(logo, {
-          width: 128,
-          height: 128,
+          width: 96,
+          height: 96,
           border_radius: percentage(50),
         }),
-        text("Hello World"),
+        text("Remote"),
+        image(localImagePath, {
+          width: 96,
+          height: 96,
+          border_radius: percentage(25),
+        }),
+        text("Local"),
+        image(dataUri, {
+          width: 96,
+          height: 96,
+          border_radius: percentage(25),
+        }),
+        text("Data URI"),
       ],
-      padding: rem(2),
-      flex_direction: "column",
       justify_content: "center",
       align_items: "center",
       gap: rem(1.5),
@@ -44,8 +63,10 @@ test("renderAsync", async () => {
       height: percentage(100),
     }),
     1200,
-    630
+    630,
   );
+
+  await writeFile("./test.webp", result);
 
   expect(result).toBeInstanceOf(Buffer);
 });
