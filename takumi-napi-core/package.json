@@ -1,22 +1,26 @@
 {
   "name": "@takumi-rs/core",
   "version": "0.8.0",
-  "license": "MIT",
-  "engines": {
-    "node": ">= 12.22.0 < 13 || >= 14.17.0 < 15 || >= 15.12.0 < 16 || >= 16.0.0"
-  },
-  "repository": {
-    "url": "git+https://github.com/kane50613/takumi.git"
-  },
   "author": {
     "email": "me@kane.tw",
     "name": "Kane Wang",
     "url": "https://kane.tw"
   },
-  "type": "commonjs",
+  "repository": {
+    "url": "git+https://github.com/kane50613/takumi.git"
+  },
   "main": "index.js",
-  "types": "index.d.ts",
+  "devDependencies": {
+    "@napi-rs/cli": "^3.0.0-alpha.90",
+    "@takumi-rs/helpers": "workspace:*",
+    "@types/bun": "^1.2.17",
+    "typescript": "^5.8.3"
+  },
   "browser": "browser.js",
+  "engines": {
+    "node": ">= 12.22.0 < 13 || >= 14.17.0 < 15 || >= 15.12.0 < 16 || >= 16.0.0"
+  },
+  "license": "MIT",
   "napi": {
     "binaryName": "core",
     "targets": [
@@ -34,10 +38,6 @@
     "artifacts": "napi create-npm-dirs && napi artifacts",
     "version": "napi version"
   },
-  "devDependencies": {
-    "@napi-rs/cli": "^3.0.0-alpha.89",
-    "@takumi-rs/helpers": "workspace:*",
-    "@types/bun": "^1.2.17",
-    "typescript": "^5.8.3"
-  }
+  "type": "commonjs",
+  "types": "index.d.ts"
 }

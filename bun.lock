@@ -23,7 +23,7 @@
       "name": "@takumi-rs/core",
       "version": "0.8.0",
       "devDependencies": {
-        "@napi-rs/cli": "^3.0.0-alpha.89",
+        "@napi-rs/cli": "^3.0.0-alpha.90",
         "@takumi-rs/helpers": "workspace:*",
         "@types/bun": "^1.2.17",
         "typescript": "^5.8.3",
