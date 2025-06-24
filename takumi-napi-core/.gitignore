@@ -199,3 +199,5 @@ Cargo.lock
 index.js
 index.d.ts
 *.webp
+*.png
+*.jpg

@@ -1,12 +1,16 @@
 use std::io::Cursor;
 
 use napi::bindgen_prelude::*;
-use takumi::{DefaultNodeKind, GlobalContext, ImageRenderer, Node, Viewport, image::ImageFormat};
+use takumi::{
+  DefaultNodeKind, GlobalContext, ImageRenderer, Node, Viewport,
+  rendering::{ImageOutputFormat, write_image},
+};
 
 pub struct RenderTask<'ctx> {
   pub node: Option<DefaultNodeKind>,
   pub context: &'ctx GlobalContext,
   pub viewport: Viewport,
+  pub format: ImageOutputFormat,
 }
 
 impl<'ctx> Task for RenderTask<'ctx> {
@@ -22,16 +26,16 @@ impl<'ctx> Task for RenderTask<'ctx> {
     let mut render = ImageRenderer::new(self.viewport);
 
     render.construct_taffy_tree(node, self.context);
-    render
+
+    let image = render
       .draw(self.context)
-      .map_err(|err| napi::Error::from_reason(format!("{err:?}")))?;
+      .map_err(|e| napi::Error::from_reason(format!("Failed to draw: {e:?}")))?;
 
     let mut buffer = Vec::new();
     let mut cursor = Cursor::new(&mut buffer);
 
-    let image = render.draw(self.context).unwrap();
-
-    image.write_to(&mut cursor, ImageFormat::WebP).unwrap();
+    write_image(&image, &mut cursor, self.format.into())
+      .map_err(|e| napi::Error::from_reason(format!("Failed to write to buffer: {e:?}")))?;
 
     Ok(buffer)
   }

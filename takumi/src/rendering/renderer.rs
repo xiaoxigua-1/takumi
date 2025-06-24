@@ -1,4 +1,7 @@
-use image::{ImageBuffer, RgbaImage};
+use std::io::{Seek, Write};
+
+use image::{ImageFormat, RgbImage, RgbaImage};
+use serde::{Deserialize, Serialize};
 use slotmap::{DefaultKey, KeyData, SecondaryMap};
 use taffy::{AvailableSpace, NodeId, Point, TaffyTree, geometry::Size};
 
@@ -32,6 +35,61 @@ struct TaffyContext<Nodes: Node<Nodes>> {
   taffy: TaffyTree<()>,
   root_node_id: NodeId,
   node_map: SecondaryMap<DefaultKey, NodeRender<Nodes>>,
+}
+
+/// Output format for the rendered image.
+#[derive(Debug, Clone, Copy, Deserialize, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum ImageOutputFormat {
+  /// WebP format, suitable for web images with good compression.
+  WebP,
+  /// PNG format, lossless and supports transparency.
+  Png,
+  /// JPEG format, lossy compression suitable for photographs.
+  Jpeg,
+}
+
+impl ImageOutputFormat {
+  /// Returns the MIME type for the image output format.
+  pub fn content_type(&self) -> &'static str {
+    match self {
+      ImageOutputFormat::WebP => "image/webp",
+      ImageOutputFormat::Png => "image/png",
+      ImageOutputFormat::Jpeg => "image/jpeg",
+    }
+  }
+}
+
+impl From<ImageOutputFormat> for ImageFormat {
+  fn from(format: ImageOutputFormat) -> Self {
+    match format {
+      ImageOutputFormat::WebP => Self::WebP,
+      ImageOutputFormat::Png => Self::Png,
+      ImageOutputFormat::Jpeg => Self::Jpeg,
+    }
+  }
+}
+
+/// Writes the rendered image to the specified destination.
+pub fn write_image<T: Write + Seek>(
+  image: &RgbaImage,
+  destination: &mut T,
+  format: ImageOutputFormat,
+) -> Result<(), image::ImageError> {
+  match format {
+    ImageOutputFormat::Png | ImageOutputFormat::WebP => {
+      image.write_to(destination, format.into())?;
+    }
+    ImageOutputFormat::Jpeg => {
+      let rgb_image = RgbImage::from_par_fn(image.width(), image.height(), |x, y| {
+        let pixel = image.get_pixel(x, y);
+        image::Rgb([pixel[0], pixel[1], pixel[2]])
+      });
+      rgb_image.write_to(destination, format.into())?;
+    }
+  }
+
+  Ok(())
 }
 
 impl<Nodes: Node<Nodes>> ImageRenderer<Nodes> {
@@ -118,7 +176,7 @@ impl<Nodes: Node<Nodes>> ImageRenderer<Nodes> {
   /// Renders the image using the provided context and TaffyTree.
   pub fn draw(&mut self, global: &GlobalContext) -> Result<RgbaImage, RenderError> {
     let viewport = self.viewport;
-    let mut canvas = FastBlendImage(ImageBuffer::new(viewport.width, viewport.height));
+    let mut canvas = FastBlendImage(RgbaImage::new(viewport.width, viewport.height));
 
     let available_space = Size {
       width: AvailableSpace::Definite(viewport.width as f32),

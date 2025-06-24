@@ -3,7 +3,7 @@ use std::fs::File;
 
 use takumi::{
   ContainerNode, GlobalContext, ImageRenderer, InheritableStyle, Style, TextNode, Viewport,
-  image::ImageFormat,
+  rendering::{ImageOutputFormat, write_image},
 };
 
 use crate::NodeKind;
@@ -18,9 +18,11 @@ pub fn say_hello_to(name: &str) {
   // you can wrap it in a Arc<Context> to share it across threads if needed.
   let context = GlobalContext::default();
 
-  // Note: Font loading can be done here using load_woff2_font_to_context
+  // Font loading can be done here if you have custom fonts to use,
+  // by default, takumi WON'T load any system fonts.
+  //
   // Example:
-  // load_woff2_font_to_context(&context.font_context, Path::new("fonts/font-name.woff2")).unwrap();
+  // context.font_context.load_font()
 
   // Create a text node with custom styling
   // Font size is set to 48.0 and other styles use default values
@@ -55,5 +57,5 @@ pub fn say_hello_to(name: &str) {
   let mut file = File::create("output.webp").unwrap();
 
   // Write the image to the file in WebP format
-  image.write_to(&mut file, ImageFormat::WebP).unwrap();
+  write_image(&image, &mut file, ImageOutputFormat::WebP).unwrap();
 }

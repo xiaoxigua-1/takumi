@@ -2,16 +2,18 @@ mod args;
 
 use axum::{
   Router,
-  extract::{Json, State},
+  extract::{Json, Query, State},
   http::StatusCode,
   response::{IntoResponse, Response},
   routing::post,
 };
 use clap::Parser;
 use globwalk::glob;
+use serde::Deserialize;
 use std::{fs::read, io::Cursor, net::SocketAddr, sync::Arc};
 use takumi::{
-  DefaultNodeKind, GlobalContext, ImageRenderer, LengthUnit, Node, Viewport, image::ImageFormat,
+  DefaultNodeKind, GlobalContext, ImageRenderer, LengthUnit, Node, Viewport,
+  rendering::{ImageOutputFormat, write_image},
 };
 use tokio::{net::TcpListener, task::spawn_blocking};
 use tracing::{Level, error, info};
@@ -24,7 +26,13 @@ use crate::args::Args;
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;
 
+#[derive(Deserialize)]
+struct GenerateImageQuery {
+  format: Option<ImageOutputFormat>,
+}
+
 async fn generate_image_handler(
+  Query(query): Query<GenerateImageQuery>,
   State(context): State<Arc<GlobalContext>>,
   Json(mut root_node): Json<DefaultNodeKind>,
 ) -> Result<Response, StatusCode> {
@@ -36,6 +44,8 @@ async fn generate_image_handler(
     return Err(StatusCode::BAD_REQUEST);
   };
 
+  let format = query.format.unwrap_or(ImageOutputFormat::WebP);
+
   let buffer = spawn_blocking(move || -> Vec<u8> {
     root_node.inherit_style_for_children();
     root_node.hydrate(&context);
@@ -44,19 +54,19 @@ async fn generate_image_handler(
 
     renderer.construct_taffy_tree(root_node, &context);
 
+    let image = renderer.draw(&context).unwrap();
+
     let mut buffer = Vec::new();
     let mut cursor = Cursor::new(&mut buffer);
 
-    let image = renderer.draw(&context).unwrap();
-
-    image.write_to(&mut cursor, ImageFormat::WebP).unwrap();
+    write_image(&image, &mut cursor, format.into()).unwrap();
 
     buffer
   })
   .await
   .unwrap();
 
-  Ok(([("content-type", "image/webp")], buffer).into_response())
+  Ok(([("content-type", format.content_type())], buffer).into_response())
 }
 
 #[tokio::main]

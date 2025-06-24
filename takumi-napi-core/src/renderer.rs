@@ -1,6 +1,6 @@
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
-use takumi::{GlobalContext, ImageStore, Viewport};
+use takumi::{GlobalContext, ImageStore, Viewport, rendering::ImageOutputFormat};
 
 use crate::{
   load_font_task::LoadFontTask, load_local_image_task::LoadLocalImageTask,
@@ -10,6 +10,30 @@ use crate::{
 #[napi]
 #[derive(Default)]
 pub struct Renderer(GlobalContext);
+
+#[napi(object)]
+pub struct RenderOptions {
+  pub width: u32,
+  pub height: u32,
+  pub format: OutputFormat,
+}
+
+#[napi(string_enum)]
+pub enum OutputFormat {
+  WebP,
+  Png,
+  Jpeg,
+}
+
+impl From<OutputFormat> for ImageOutputFormat {
+  fn from(format: OutputFormat) -> Self {
+    match format {
+      OutputFormat::Png => ImageOutputFormat::Png,
+      OutputFormat::Jpeg => ImageOutputFormat::Jpeg,
+      OutputFormat::WebP => ImageOutputFormat::WebP,
+    }
+  }
+}
 
 #[napi]
 impl Renderer {
@@ -91,15 +115,14 @@ impl Renderer {
   }
 
   #[napi(
-    ts_args_type = "source: { type: string }, width: number, height: number, signal?: AbortSignal",
+    ts_args_type = "source: { type: string }, options: RenderOptions, signal?: AbortSignal",
     ts_return_type = "Promise<Buffer>"
   )]
   pub fn render_async(
     &self,
     env: &Env,
     source: Object,
-    width: u32,
-    height: u32,
+    options: RenderOptions,
     signal: Option<AbortSignal>,
   ) -> Result<AsyncTask<RenderTask>> {
     let node = env.from_js_value(source)?;
@@ -108,7 +131,8 @@ impl Renderer {
       RenderTask {
         node: Some(node),
         context: &self.0,
-        viewport: Viewport::new(width, height),
+        viewport: Viewport::new(options.width, options.height),
+        format: options.format.into(),
       },
       signal,
     ))

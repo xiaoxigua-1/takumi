@@ -1,5 +1,5 @@
 use image::{
-  ImageBuffer, Rgba, RgbaImage,
+  Rgba, RgbaImage,
   imageops::{fast_blur, overlay},
 };
 use taffy::{Layout, Point, Size};
@@ -66,7 +66,7 @@ pub fn draw_box_shadow(
 }
 
 struct ShadowDraw {
-  image: ImageBuffer<Rgba<u8>, Vec<u8>>,
+  image: RgbaImage,
   offset: Point<f32>,
 }
 
@@ -95,7 +95,7 @@ fn draw_inset_shadow(
   shadow: &BoxShadowResolved,
   border_radius: Option<BorderRadius>,
   layout: Layout,
-) -> ImageBuffer<Rgba<u8>, Vec<u8>> {
+) -> RgbaImage {
   let mut shadow_image = create_image_from_color_input(
     &shadow.color,
     layout.size.width as u32,
@@ -137,7 +137,7 @@ fn draw_outset_shadow(
   shadow: &BoxShadowResolved,
   border_radius: Option<BorderRadius>,
   layout: Layout,
-) -> ImageBuffer<Rgba<u8>, Vec<u8>> {
+) -> RgbaImage {
   let mut spread_image = create_image_from_color_input(
     &shadow.color,
     (layout.size.width + shadow.spread_radius * 2.0) as u32,
