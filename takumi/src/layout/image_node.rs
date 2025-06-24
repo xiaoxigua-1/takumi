@@ -9,6 +9,7 @@ use serde::{Deserialize, Serialize};
 use taffy::{AvailableSpace, Layout, Size};
 
 use crate::{
+  ImageStore,
   core::{GlobalContext, RenderContext},
   layout::{measure_image, trait_node::Node},
   rendering::{FastBlendImage, draw_image},
@@ -46,16 +47,32 @@ impl<Nodes: Node<Nodes>> Node<Nodes> for ImageNode {
   }
 
   fn hydrate(&self, context: &GlobalContext) {
-    let image_store = &context.image_store;
-
-    if let Some(img) = image_store.get(&self.src) {
-      self.image.set(img).unwrap();
-      return;
+    if is_data_uri(&self.src) {
+      #[cfg(feature = "image_data_uri")]
+      {
+        let img = parse_data_uri_image(&self.src);
+        return self.image.set(Arc::new(img)).unwrap();
+      }
+      #[cfg(not(feature = "image_data_uri"))]
+      {
+        return self
+          .image
+          .set(Arc::new(ImageState::DataUriParseNotSupported))
+          .unwrap();
+      }
     }
 
-    let img = image_store.fetch(&self.src);
+    if let Some(img) = context.local_image_store.get(&self.src) {
+      return self.image.set(img).unwrap();
+    }
 
-    image_store.insert(self.src.clone(), img.clone());
+    if let Some(img) = context.image_store.get(&self.src) {
+      return self.image.set(img).unwrap();
+    }
+
+    let img = context.image_store.fetch(&self.src);
+
+    context.image_store.insert(self.src.clone(), img.clone());
     self.image.set(img).unwrap();
   }
 
@@ -65,7 +82,7 @@ impl<Nodes: Node<Nodes>> Node<Nodes> for ImageNode {
     available_space: Size<AvailableSpace>,
     known_dimensions: Size<Option<f32>>,
   ) -> Size<f32> {
-    let ImageState::Fetched(image) = self.image.get().unwrap().as_ref() else {
+    let Ok(image) = self.image.get().unwrap().as_ref() else {
       return Size::ZERO;
     };
 
@@ -82,10 +99,40 @@ impl<Nodes: Node<Nodes>> Node<Nodes> for ImageNode {
   }
 
   fn draw_content(&self, context: &RenderContext, canvas: &mut FastBlendImage, layout: Layout) {
-    let ImageState::Fetched(image) = self.image.get().unwrap().as_ref() else {
+    let Ok(image) = self.image.get().unwrap().as_ref() else {
       return;
     };
 
     draw_image(image, &self.style, context, canvas, layout);
   }
+}
+
+const DATA_URI_PREFIX: &str = "data:";
+
+fn is_data_uri(src: &str) -> bool {
+  src.starts_with(DATA_URI_PREFIX)
+}
+
+#[cfg(feature = "image_data_uri")]
+fn parse_data_uri_image(src: &str) -> ImageState {
+  use base64::{Engine as _, engine::general_purpose};
+
+  use crate::resources::ImageError;
+
+  let comma_pos = src.find(',').ok_or(ImageError::InvalidDataUriFormat)?;
+
+  let metadata = &src[DATA_URI_PREFIX.len()..comma_pos];
+  let data = &src[comma_pos + 1..];
+
+  if !metadata.contains("base64") {
+    return Err(ImageError::InvalidDataUriFormat);
+  }
+
+  let image_bytes = general_purpose::STANDARD
+    .decode(data)
+    .map_err(|_| ImageError::MalformedDataUri)?;
+
+  let img = image::load_from_memory(&image_bytes).map_err(ImageError::DecodeError)?;
+
+  Ok(img.to_rgba8())
 }

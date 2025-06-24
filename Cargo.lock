@@ -2639,6 +2639,7 @@ dependencies = [
 name = "takumi"
 version = "0.7.4"
 dependencies = [
+ "base64",
  "bytes",
  "cosmic-text",
  "criterion",
