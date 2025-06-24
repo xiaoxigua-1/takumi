@@ -3,7 +3,7 @@
 ## Usage
 
 ```ts
-import { Renderer } from "@takumi-rs/core";
+import { Renderer, OutputFormat } from "@takumi-rs/core";
 import { container, image } from "@takumi-rs/helpers";
 import { writeFile } from "fs/promises";
 
@@ -24,6 +24,6 @@ const node = container({
 const buffer = await render.renderAsync(node, {
   width: 1200,
   height: 630,
-  format: "webp"
+  format: OutputFormat.WebP
 });
 ```
