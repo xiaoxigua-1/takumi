@@ -60,7 +60,7 @@ async fn generate_image_handler(
     let mut buffer = Vec::new();
     let mut cursor = Cursor::new(&mut buffer);
 
-    write_image(&image, &mut cursor, format.into(), query.quality).unwrap();
+    write_image(&image, &mut cursor, format, query.quality).unwrap();
 
     buffer
   })
