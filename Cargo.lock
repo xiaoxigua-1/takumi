@@ -2637,7 +2637,7 @@ dependencies = [
 
 [[package]]
 name = "takumi"
-version = "0.7.4"
+version = "0.8.0"
 dependencies = [
  "base64",
  "bytes",
@@ -2659,7 +2659,7 @@ dependencies = [
 
 [[package]]
 name = "takumi-napi-core"
-version = "0.7.4"
+version = "0.8.0"
 dependencies = [
  "napi",
  "napi-build 3.0.0-beta.0",
