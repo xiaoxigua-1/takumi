@@ -191,14 +191,6 @@ fn process_corner_aa(
       continue;
     }
 
-    // Early exit - if entire row is inside radius
-    if dy_sq < radius_sq
-      && (start.x as f32 - corner_x).abs() < radius
-      && (end.x as f32 - corner_x).abs() < radius
-    {
-      continue; // Keep original alpha
-    }
-
     for x in start.x..end.x {
       let fx = x as f32;
       let dx = (fx - corner_x).abs();
