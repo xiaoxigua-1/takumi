@@ -33,10 +33,10 @@ pub fn measure_image(
     (Some(width), Some(height)) => Size { width, height },
     (Some(width), None) => Size {
       width,
-      height: width / source_aspect_ratio,
+      height: (width / source_aspect_ratio).ceil(),
     },
     (None, Some(height)) => Size {
-      width: height * source_aspect_ratio,
+      width: (height * source_aspect_ratio).ceil(),
       height,
     },
     (None, None) => image_size,
@@ -92,5 +92,8 @@ pub fn measure_text(
     });
   let height = total_lines as f32 * buffer.metrics().line_height;
 
-  taffy::Size { width, height }
+  taffy::Size {
+    width: width.ceil(),
+    height: height.ceil(),
+  }
 }

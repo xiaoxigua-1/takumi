@@ -12,8 +12,6 @@ pub mod background_drawing;
 pub mod canvas;
 /// Debug drawing utilities
 pub mod debug_drawing;
-/// Drawing utilities and primitives
-pub mod draw;
 /// Image drawing functions
 pub mod image_drawing;
 /// Main image renderer and viewport management
@@ -21,6 +19,9 @@ pub mod renderer;
 /// Text drawing functions
 pub mod text_drawing;
 
+pub use background_drawing::*;
 pub use canvas::*;
-pub use draw::*;
+pub use debug_drawing::*;
+pub use image_drawing::*;
 pub use renderer::*;
+pub use text_drawing::*;
