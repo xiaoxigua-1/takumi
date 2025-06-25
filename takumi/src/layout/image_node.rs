@@ -70,7 +70,7 @@ impl<Nodes: Node<Nodes>> Node<Nodes> for ImageNode {
       return self.image.set(img).unwrap();
     }
 
-    let img = context.image_store.fetch(&self.src);
+    let img = Arc::new(context.image_store.fetch(&self.src));
 
     context.image_store.insert(self.src.clone(), img.clone());
     self.image.set(img).unwrap();

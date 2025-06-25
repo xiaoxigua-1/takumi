@@ -39,7 +39,7 @@ impl Viewport {
 }
 
 /// The context for the image renderer.
-#[derive(Debug, Clone, Copy)]
+#[derive(Clone, Copy)]
 pub struct RenderContext<'a> {
   /// The global context.
   pub global: &'a crate::core::GlobalContext,

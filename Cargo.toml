@@ -6,3 +6,5 @@ members = ["takumi", "takumi-server", "takumi-napi-core", "example"]
 strip = true
 opt-level = "z"
 lto = true
+panic = "abort"
+codegen-units = 1
