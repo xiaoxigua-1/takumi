@@ -1,17 +1,12 @@
-use std::num::NonZeroUsize;
-
-use crate::core::LocalImageStore;
-
-use super::{DefaultImageStore, FontContext, ImageStore};
-
-#[cfg(feature = "default_impl")]
-use reqwest::blocking;
+use crate::{
+  ImageStore,
+  core::{FontContext, LocalImageStore},
+};
 
 /// The main context for image rendering.
 ///
 /// This struct holds all the necessary state for rendering images, including
 /// font management, image storage, and debug options.
-#[derive(Debug)]
 pub struct GlobalContext {
   /// Whether to print the debug tree during layout
   pub print_debug_tree: bool,
@@ -32,12 +27,11 @@ impl Default for GlobalContext {
       draw_debug_border: false,
       font_context: FontContext::default(),
       local_image_store: LocalImageStore::default(),
-      #[cfg(feature = "default_impl")]
-      image_store: Box::new(DefaultImageStore::new(
-        blocking::Client::new(),
-        NonZeroUsize::new(100).unwrap(),
+      #[cfg(feature = "image_store_impl")]
+      image_store: Box::new(crate::core::DefaultImageStore::new(
+        std::num::NonZeroUsize::new(100).unwrap(),
       )),
-      #[cfg(not(feature = "default_impl"))]
+      #[cfg(not(feature = "image_store_impl"))]
       image_store: Box::new(super::NoopImageStore),
     }
   }

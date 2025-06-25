@@ -55,10 +55,10 @@ pub trait ImageStore: Send + Sync + std::fmt::Debug {
   fn clear(&self);
 }
 
-#[cfg(feature = "default_impl")]
+#[cfg(feature = "image_store_impl")]
 use reqwest::blocking;
 
-#[cfg(feature = "default_impl")]
+#[cfg(feature = "image_store_impl")]
 /// A default implementation of `ImageStore` that uses a LRU cache and a HTTP client.
 #[derive(Debug)]
 pub struct DefaultImageStore {
@@ -66,7 +66,7 @@ pub struct DefaultImageStore {
   http: blocking::Client,
 }
 
-#[cfg(feature = "default_impl")]
+#[cfg(feature = "image_store_impl")]
 impl DefaultImageStore {
   /// Creates a new `DefaultImageStore` with the given HTTP client and maximum size.
   #[must_use]
@@ -78,7 +78,7 @@ impl DefaultImageStore {
   }
 }
 
-#[cfg(feature = "default_impl")]
+#[cfg(feature = "image_store_impl")]
 impl ImageStore for DefaultImageStore {
   fn get(&self, key: &str) -> Option<Arc<ImageState>> {
     self.store.lock().unwrap().get(key).cloned()

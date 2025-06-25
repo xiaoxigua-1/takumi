@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use napi::bindgen_prelude::*;
 use takumi::GlobalContext;
 
@@ -16,7 +18,7 @@ impl<'ctx> Task for PreloadImageTask<'ctx> {
     let state = self.context.image_store.fetch(&url);
     let is_fetched = state.is_ok();
 
-    self.context.image_store.insert(url, state);
+    self.context.image_store.insert(url, Arc::new(state));
 
     Ok(is_fetched)
   }

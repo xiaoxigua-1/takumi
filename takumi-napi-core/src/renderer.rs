@@ -36,11 +36,22 @@ impl From<OutputFormat> for ImageOutputFormat {
   }
 }
 
+#[napi(object)]
+#[derive(Default)]
+pub struct ConstructRendererOptions {
+  pub debug: Option<bool>,
+}
+
 #[napi]
 impl Renderer {
   #[napi(constructor)]
-  pub fn new() -> Self {
-    Self::default()
+  pub fn new(options: Option<ConstructRendererOptions>) -> Self {
+    let options = options.unwrap_or_default();
+
+    Self(GlobalContext {
+      draw_debug_border: options.debug.unwrap_or_default(),
+      ..Default::default()
+    })
   }
 
   #[napi(ts_return_type = "Promise<void>")]
@@ -121,7 +132,7 @@ impl Renderer {
   )]
   pub fn render_async(
     &self,
-    env: &Env,
+    env: Env,
     source: Object,
     options: RenderOptions,
     signal: Option<AbortSignal>,

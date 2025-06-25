@@ -1,7 +1,6 @@
 use std::{
   collections::HashMap,
-  num::NonZeroUsize,
-  sync::{Arc, Mutex, RwLock},
+  sync::{Arc, RwLock},
 };
 
 use crate::resources::ImageState;
@@ -16,7 +15,6 @@ use crate::resources::ImageState;
 /// use std::sync::Arc;
 /// use takumi::{ImageStore, ImageState};
 ///
-/// #[derive(Debug)]
 /// struct MyImageStore {
 ///   // http client and image store hashmap
 /// }
@@ -31,7 +29,7 @@ use crate::resources::ImageState;
 ///         // Implement image storage
 ///     }
 ///
-///     fn fetch(&self, key: &str) -> Arc<ImageState> {
+///     fn fetch(&self, key: &str) -> ImageState {
 ///         // Implement async image fetching
 ///         unimplemented!()
 ///     }
@@ -42,7 +40,7 @@ use crate::resources::ImageState;
 ///     }
 /// }
 /// ```
-pub trait ImageStore: Send + Sync + std::fmt::Debug {
+pub trait ImageStore: Send + Sync {
   /// Retrieves an image from the store by its key.
   fn get(&self, key: &str) -> Option<Arc<ImageState>>;
 
@@ -50,72 +48,14 @@ pub trait ImageStore: Send + Sync + std::fmt::Debug {
   fn insert(&self, key: String, value: Arc<ImageState>);
 
   /// Asynchronously fetches an image from a remote source and stores it.
-  fn fetch(&self, key: &str) -> Arc<ImageState>;
+  fn fetch(&self, key: &str) -> ImageState;
 
   /// Clear stored image data
   fn clear(&self);
 }
 
-#[cfg(feature = "default_impl")]
-use reqwest::blocking;
-
-#[cfg(feature = "default_impl")]
-/// A default implementation of `ImageStore` that uses a LRU cache and a HTTP client.
-#[derive(Debug)]
-pub struct DefaultImageStore {
-  store: Mutex<lru::LruCache<String, Arc<ImageState>>>,
-  http: blocking::Client,
-}
-
-#[cfg(feature = "default_impl")]
-impl DefaultImageStore {
-  /// Creates a new `DefaultImageStore` with the given HTTP client and maximum size.
-  #[must_use]
-  pub fn new(http: blocking::Client, max_size: NonZeroUsize) -> Self {
-    Self {
-      store: Mutex::new(lru::LruCache::new(max_size)),
-      http,
-    }
-  }
-}
-
-#[cfg(feature = "default_impl")]
-impl ImageStore for DefaultImageStore {
-  fn get(&self, key: &str) -> Option<Arc<ImageState>> {
-    self.store.lock().unwrap().get(key).cloned()
-  }
-
-  fn insert(&self, key: String, value: Arc<ImageState>) {
-    self.store.lock().unwrap().put(key, value);
-  }
-
-  fn fetch(&self, key: &str) -> Arc<ImageState> {
-    use crate::resources::ImageError;
-
-    let Ok(response) = self.http.get(key).send() else {
-      return Arc::new(Err(ImageError::NetworkError));
-    };
-
-    let Ok(body) = response.bytes() else {
-      return Arc::new(Err(ImageError::NetworkError));
-    };
-
-    let image = image::load_from_memory(body.as_ref());
-
-    if let Err(e) = image {
-      return Arc::new(Err(ImageError::DecodeError(e)));
-    }
-
-    Arc::new(Ok(image.unwrap().into()))
-  }
-
-  fn clear(&self) {
-    self.store.lock().unwrap().clear();
-  }
-}
-
 /// Implementation for storing local images, calls to `fetch` function would panic.
-#[derive(Debug, Default)]
+#[derive(Default)]
 pub struct LocalImageStore(RwLock<HashMap<String, Arc<ImageState>>>);
 
 impl ImageStore for LocalImageStore {
@@ -127,7 +67,7 @@ impl ImageStore for LocalImageStore {
     self.0.write().unwrap().insert(key, value);
   }
 
-  fn fetch(&self, _key: &str) -> Arc<ImageState> {
+  fn fetch(&self, _key: &str) -> ImageState {
     unreachable!()
   }
 
@@ -155,8 +95,8 @@ impl ImageStore for NoopImageStore {
   }
 
   /// Always panics as this is a no-op implementation.
-  fn fetch(&self, _key: &str) -> Arc<ImageState> {
-    unimplemented!("NoopImageStore does not support fetching images")
+  fn fetch(&self, _key: &str) -> ImageState {
+    unreachable!()
   }
 
   fn clear(&self) {

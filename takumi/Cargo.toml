@@ -25,10 +25,9 @@ optional = true
 version = "1.10"
 optional = true
 
-[dependencies.reqwest]
-version = "0.12"
-default-features = false
-features = ["rustls-tls", "http2", "blocking"]
+[dependencies.minreq]
+version = "2.13"
+features = ["https"]
 optional = true
 
 [dependencies.flate2]
@@ -45,7 +44,7 @@ optional = true
 
 [dependencies.cosmic-text]
 version = "0.14"
-features = ["shape-run-cache", "hashbrown"]
+features = ["shape-run-cache"]
 
 [dependencies.taffy]
 version = "0.8"
@@ -75,5 +74,5 @@ image_data_uri = ["dep:base64"]
 woff2 = ["dep:woff2-patched", "dep:bytes"]
 woff = ["dep:flate2"]
 default_impl = ["image_store_impl", "node_kind_enum_impl"]
-image_store_impl = ["dep:reqwest", "dep:lru"]
+image_store_impl = ["dep:minreq", "dep:lru"]
 node_kind_enum_impl = []
