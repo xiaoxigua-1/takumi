@@ -8,9 +8,9 @@ use minreq::{Method::Get, Request};
 use crate::{ImageState, ImageStore, resources::ImageError};
 
 /// A default implementation of `ImageStore` that uses a LRU cache and minreq.
-pub struct DefaultImageStore(Mutex<lru::LruCache<String, Arc<ImageState>>>);
+pub struct HttpImageStore(Mutex<lru::LruCache<String, Arc<ImageState>>>);
 
-impl DefaultImageStore {
+impl HttpImageStore {
   /// Creates a new `DefaultImageStore` with the given maximum cache size.
   #[must_use]
   pub fn new(max_size: NonZeroUsize) -> Self {
@@ -18,7 +18,7 @@ impl DefaultImageStore {
   }
 }
 
-impl ImageStore for DefaultImageStore {
+impl ImageStore for HttpImageStore {
   fn get(&self, key: &str) -> Option<Arc<ImageState>> {
     self.0.lock().unwrap().get(key).cloned()
   }
@@ -39,5 +39,9 @@ impl ImageStore for DefaultImageStore {
 
   fn clear(&self) {
     self.0.lock().unwrap().clear();
+  }
+
+  fn count(&self) -> usize {
+    self.0.lock().unwrap().len()
   }
 }

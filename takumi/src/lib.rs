@@ -68,6 +68,9 @@ pub use style::{
   ResolvedFontStyle, SidesValue, Style, TextAlign,
 };
 
+#[cfg(feature = "http_image_store")]
+pub use core::HttpImageStore;
+
 // Re-export external dependencies for convenience
 pub use image;
 pub use taffy;

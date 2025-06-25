@@ -14,13 +14,13 @@ pub mod image_store;
 pub mod viewport;
 
 /// Default `ImageStore` implementation uses reqwest and lru
-#[cfg(feature = "image_store_impl")]
-pub mod default_image_store;
+#[cfg(feature = "http_image_store")]
+pub mod http_image_store;
 
 pub use context::*;
 pub use font_context::*;
 pub use image_store::*;
 pub use viewport::*;
 
-#[cfg(feature = "image_store_impl")]
-pub use default_image_store::*;
+#[cfg(feature = "http_image_store")]
+pub use http_image_store::*;

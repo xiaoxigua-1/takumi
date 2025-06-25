@@ -57,22 +57,26 @@ impl<Nodes: Node<Nodes>> Node<Nodes> for ImageNode {
       {
         return self
           .image
-          .set(Arc::new(ImageState::DataUriParseNotSupported))
+          .set(Arc::new(Err(crate::ImageError::DataUriParseNotSupported)))
           .unwrap();
       }
     }
 
-    if let Some(img) = context.local_image_store.get(&self.src) {
+    if let Some(img) = context.persistent_image_store.get(&self.src) {
       return self.image.set(img).unwrap();
     }
 
-    if let Some(img) = context.image_store.get(&self.src) {
+    let Some(remote_store) = context.remote_image_store.as_ref() else {
+      return;
+    };
+
+    if let Some(img) = remote_store.get(&self.src) {
       return self.image.set(img).unwrap();
     }
 
-    let img = Arc::new(context.image_store.fetch(&self.src));
+    let img = Arc::new(remote_store.fetch(&self.src));
 
-    context.image_store.insert(self.src.clone(), img.clone());
+    remote_store.insert(self.src.clone(), img.clone());
     self.image.set(img).unwrap();
   }
 

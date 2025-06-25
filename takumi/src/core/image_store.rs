@@ -38,6 +38,11 @@ use crate::resources::ImageState;
 ///         // clear internal storage here
 ///         unimplemented!()
 ///     }
+///
+///     fn count(&self) -> usize {
+///         // return items count in your internal storage
+///         0
+///     }
 /// }
 /// ```
 pub trait ImageStore: Send + Sync {
@@ -52,13 +57,16 @@ pub trait ImageStore: Send + Sync {
 
   /// Clear stored image data
   fn clear(&self);
+
+  /// Retrieves items count of the store
+  fn count(&self) -> usize;
 }
 
-/// Implementation for storing local images, calls to `fetch` function would panic.
+/// Implementation for storing persistent images, calls to `fetch` function would panic.
 #[derive(Default)]
-pub struct LocalImageStore(RwLock<HashMap<String, Arc<ImageState>>>);
+pub struct PersistentImageStore(RwLock<HashMap<String, Arc<ImageState>>>);
 
-impl ImageStore for LocalImageStore {
+impl ImageStore for PersistentImageStore {
   fn get(&self, key: &str) -> Option<Arc<ImageState>> {
     self.0.read().unwrap().get(key).cloned()
   }
@@ -74,32 +82,8 @@ impl ImageStore for LocalImageStore {
   fn clear(&self) {
     self.0.write().unwrap().clear();
   }
-}
 
-/// A no-op implementation of `ImageStore` that does nothing.
-///
-/// This is used as the default implementation when no custom `ImageStore` is provided.
-/// It always returns None for get operations and does nothing for insert operations.
-#[derive(Default, Debug)]
-pub struct NoopImageStore;
-
-impl ImageStore for NoopImageStore {
-  /// Always returns None as this is a no-op implementation.
-  fn get(&self, _key: &str) -> Option<Arc<ImageState>> {
-    None
-  }
-
-  /// Does nothing as this is a no-op implementation.
-  fn insert(&self, _key: String, _value: Arc<ImageState>) {
-    // No-op
-  }
-
-  /// Always panics as this is a no-op implementation.
-  fn fetch(&self, _key: &str) -> ImageState {
-    unreachable!()
-  }
-
-  fn clear(&self) {
-    // No-op
+  fn count(&self) -> usize {
+    self.0.read().unwrap().len()
   }
 }

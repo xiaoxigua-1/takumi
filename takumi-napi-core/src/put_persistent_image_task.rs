@@ -6,13 +6,13 @@ use takumi::{
   image::{RgbaImage, load_from_memory},
 };
 
-pub struct LoadLocalImageTask<'ctx> {
-  pub key: Option<String>,
+pub struct PutPersistentImageTask<'ctx> {
+  pub src: Option<String>,
   pub context: &'ctx GlobalContext,
   pub buffer: Vec<u8>,
 }
 
-impl<'ctx> Task for LoadLocalImageTask<'ctx> {
+impl<'ctx> Task for PutPersistentImageTask<'ctx> {
   type Output = ();
   type JsValue = ();
 
@@ -21,8 +21,8 @@ impl<'ctx> Task for LoadLocalImageTask<'ctx> {
 
     self
       .context
-      .local_image_store
-      .insert(self.key.take().unwrap(), Arc::new(Ok(image)));
+      .persistent_image_store
+      .insert(self.src.take().unwrap(), Arc::new(Ok(image)));
 
     Ok(())
   }

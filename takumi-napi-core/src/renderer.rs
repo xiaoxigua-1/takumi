@@ -3,8 +3,8 @@ use napi_derive::napi;
 use takumi::{GlobalContext, ImageStore, Viewport, rendering::ImageOutputFormat};
 
 use crate::{
-  load_font_task::LoadFontTask, load_local_image_task::LoadLocalImageTask,
-  preload_image_task::PreloadImageTask, render_task::RenderTask,
+  load_font_task::LoadFontTask, put_persistent_image_task::PutPersistentImageTask,
+  render_task::RenderTask,
 };
 
 #[napi]
@@ -55,15 +55,15 @@ impl Renderer {
   }
 
   #[napi(ts_return_type = "Promise<void>")]
-  pub fn load_local_image_async(
+  pub fn put_persistent_image_async(
     &self,
-    key: String,
+    src: String,
     data: ArrayBuffer,
     signal: Option<AbortSignal>,
-  ) -> AsyncTask<LoadLocalImageTask> {
+  ) -> AsyncTask<PutPersistentImageTask> {
     AsyncTask::with_optional_signal(
-      LoadLocalImageTask {
-        key: Some(key),
+      PutPersistentImageTask {
+        src: Some(src),
         context: &self.0,
         buffer: data.to_vec(),
       },
@@ -103,27 +103,7 @@ impl Renderer {
 
   #[napi]
   pub fn clear_image_store(&self) {
-    self.0.image_store.clear();
-  }
-
-  #[napi]
-  pub fn clear_local_image_store(&self) {
-    self.0.local_image_store.clear();
-  }
-
-  #[napi(ts_return_type = "Promise<void>")]
-  pub fn preload_image_async(
-    &self,
-    url: String,
-    signal: Option<AbortSignal>,
-  ) -> AsyncTask<PreloadImageTask> {
-    AsyncTask::with_optional_signal(
-      PreloadImageTask {
-        context: &self.0,
-        url: Some(url),
-      },
-      signal,
-    )
+    self.0.persistent_image_store.clear();
   }
 
   #[napi(

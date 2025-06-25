@@ -14,8 +14,8 @@ rust-version = "1.85.1"
 imageproc = "0.25"
 merge = "0.2"
 ts-rs = "11.0"
-slotmap = "1.0.7"
-rayon = "1.10.0"
+slotmap = "1.0"
+rayon = "1.10"
 
 [dependencies.base64]
 version = "0.22"
@@ -59,7 +59,7 @@ default-features = false
 version = "0.25"
 features = ["jpeg", "png", "webp"]
 
-[dev-dependencies.criterion]
+[target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies.criterion]
 version = "0.6"
 features = ["html_reports"]
 default-features = false
@@ -67,12 +67,11 @@ default-features = false
 [[bench]]
 name = "takumi"
 harness = false
+required-features = []
 
 [features]
-default = ["default_impl", "woff2", "woff", "image_data_uri"]
+default = ["woff2", "woff", "image_data_uri", "http_image_store"]
 image_data_uri = ["dep:base64"]
 woff2 = ["dep:woff2-patched", "dep:bytes"]
 woff = ["dep:flate2"]
-default_impl = ["image_store_impl", "node_kind_enum_impl"]
-image_store_impl = ["dep:minreq", "dep:lru"]
-node_kind_enum_impl = []
+http_image_store = ["dep:minreq", "dep:lru"]

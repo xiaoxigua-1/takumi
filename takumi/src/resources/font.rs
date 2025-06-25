@@ -55,7 +55,9 @@ fn guess_font_format(source: &[u8]) -> Result<FontFormat, FontError> {
   }
 
   match &source[0..4] {
+    #[cfg(feature = "woff2")]
     b"wOF2" => Ok(FontFormat::Woff2),
+    #[cfg(feature = "woff")]
     b"wOFF" => Ok(FontFormat::Woff),
     [0x00, 0x01, 0x00, 0x00] => Ok(FontFormat::Ttf),
     b"OTTO" => Ok(FontFormat::Otf),

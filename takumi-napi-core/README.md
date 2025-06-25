@@ -9,9 +9,14 @@ import { writeFile } from "fs/promises";
 
 const render = new Renderer();
 
+const logoUrl = "https://yeecord.com/img/logo.png";
+const logo = await fetch("https://yeecord.com/img/logo.png").then((r) =>
+  r.arrayBuffer()
+);
+
 const node = container({
   children: [
-    image("https://yeecord.com/img/logo.png", {
+    image(logoUrl, {
       width: 128,
       height: 128,
     }),
@@ -24,6 +29,6 @@ const node = container({
 const buffer = await render.renderAsync(node, {
   width: 1200,
   height: 630,
-  format: OutputFormat.WebP
+  format: OutputFormat.WebP,
 });
 ```

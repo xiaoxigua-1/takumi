@@ -1,7 +1,4 @@
-use crate::{
-  ImageStore,
-  core::{FontContext, LocalImageStore},
-};
+use crate::core::{FontContext, PersistentImageStore};
 
 /// The main context for image rendering.
 ///
@@ -14,10 +11,10 @@ pub struct GlobalContext {
   pub draw_debug_border: bool,
   /// The font context for text rendering
   pub font_context: FontContext,
-  /// The image store for caching and retrieving images
-  pub image_store: Box<dyn ImageStore>,
-  /// The image store for local contents
-  pub local_image_store: LocalImageStore,
+  /// The image store for remote contents like http
+  pub remote_image_store: Option<Box<dyn crate::ImageStore>>,
+  /// The image store for persisting contents
+  pub persistent_image_store: PersistentImageStore,
 }
 
 impl Default for GlobalContext {
@@ -26,13 +23,13 @@ impl Default for GlobalContext {
       print_debug_tree: false,
       draw_debug_border: false,
       font_context: FontContext::default(),
-      local_image_store: LocalImageStore::default(),
-      #[cfg(feature = "image_store_impl")]
-      image_store: Box::new(crate::core::DefaultImageStore::new(
+      persistent_image_store: PersistentImageStore::default(),
+      #[cfg(feature = "http_image_store")]
+      remote_image_store: Some(Box::new(crate::HttpImageStore::new(
         std::num::NonZeroUsize::new(100).unwrap(),
-      )),
-      #[cfg(not(feature = "image_store_impl"))]
-      image_store: Box::new(super::NoopImageStore),
+      ))),
+      #[cfg(not(feature = "http_image_store"))]
+      remote_image_store: None,
     }
   }
 }

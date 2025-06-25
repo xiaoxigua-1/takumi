@@ -1,4 +1,4 @@
-import { expect, test, describe } from "bun:test";
+import { describe, expect, test } from "bun:test";
 import { writeFile } from "node:fs/promises";
 import { container, image, percentage, rem, text } from "@takumi-rs/helpers";
 import { Glob } from "bun";
@@ -6,15 +6,19 @@ import { OutputFormat, Renderer } from "../index";
 
 const renderer = new Renderer();
 
-const logo = "https://yeecord.com/img/logo.png";
+const remoteUrl = "https://yeecord.com/img/logo.png";
 const localImagePath = "../assets/images/yeecord.png";
 
+const remoteImage = await fetch(remoteUrl).then((r) => r.arrayBuffer());
+
 const localImage = await Bun.file(localImagePath).arrayBuffer();
-const dataUri = `data:image/png;base64,${Buffer.from(localImage).toString("base64")}`;
+const dataUri = `data:image/png;base64,${Buffer.from(localImage).toString(
+  "base64"
+)}`;
 
 const node = container({
   children: [
-    image(logo, {
+    image(remoteUrl, {
       width: 96,
       height: 96,
       border_radius: percentage(50),
@@ -42,24 +46,24 @@ const node = container({
 });
 
 describe("setup", () => {
-  test("preloadImageAsync", async () => {
-    await renderer.preloadImageAsync(logo);
-  });
-
   test("loadFontsAsync", async () => {
     const glob = new Glob("../assets/fonts/**/*.{woff2,ttf}");
     const files = await Array.fromAsync(glob.scan());
 
     const buffers = await Promise.all(
-      files.map((file) => Bun.file(file).arrayBuffer()),
+      files.map((file) => Bun.file(file).arrayBuffer())
     );
 
     const count = await renderer.loadFontsAsync(buffers);
     expect(count).toBe(files.length);
   });
 
-  test("loadLocalImageAsync", async () => {
-    await renderer.loadLocalImageAsync(localImagePath, localImage);
+  test("putPersistentImageAsync / local", async () => {
+    await renderer.putPersistentImageAsync(localImagePath, localImage);
+  });
+
+  test("putPersistentImageAsync / remote", async () => {
+    await renderer.putPersistentImageAsync(remoteUrl, remoteImage);
   });
 });
 
@@ -72,7 +76,7 @@ describe("renderAsync", () => {
   test("webp", async () => {
     const result = await renderer.renderAsync(node, {
       ...options,
-      format: OutputFormat.WebP
+      format: OutputFormat.WebP,
     });
 
     await writeFile("./test.webp", result);
@@ -95,7 +99,7 @@ describe("renderAsync", () => {
     const result = await renderer.renderAsync(node, {
       ...options,
       format: OutputFormat.Jpeg,
-      quality: 75
+      quality: 75,
     });
 
     await writeFile("./test-75.jpg", result);
@@ -107,15 +111,15 @@ describe("renderAsync", () => {
     const result = await renderer.renderAsync(node, {
       ...options,
       format: OutputFormat.Jpeg,
-      quality: 100
+      quality: 100,
     });
 
     await writeFile("./test-100.jpg", result);
 
     expect(result).toBeInstanceOf(Buffer);
   });
-})
+});
 
 describe("clean up", () => {
   test("clearImageStore", () => renderer.clearImageStore());
-})
+});
