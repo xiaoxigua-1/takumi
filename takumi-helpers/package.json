@@ -22,7 +22,8 @@
     "@types/bun": "catalog:",
     "@types/react": "^19.1.8",
     "bun-plugin-dts": "^0.3.0",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "react": "^19.1.0"
   },
   "exports": {
     "types": "./dist/index.d.ts",
