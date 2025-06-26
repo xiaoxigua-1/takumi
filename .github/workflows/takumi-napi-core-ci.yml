@@ -156,9 +156,8 @@ jobs:
         id: check
         working-directory: takumi-napi-core
         run: |
-          PACKAGE_NAME=$(node -pe "require('./package.json').name")
-          PACKAGE_VERSION=$(node -pe "require('./package.json').version")
-          if npm view "$PACKAGE_NAME@$PACKAGE_VERSION" version 2>/dev/null; then
+          package=$(jq -r '"\(.name)@\(.version)"' package.json)
+          if npm view "$package" version 2>/dev/null; then
             echo "exists=true" >> $GITHUB_OUTPUT
           else
             echo "exists=false" >> $GITHUB_OUTPUT
