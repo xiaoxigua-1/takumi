@@ -52,7 +52,7 @@ jobs:
 
       - name: Build WASM
         working-directory: takumi-wasm
-        run: wasm-pack build --target bundler --out-dir pkg
+        run: wasm-pack build --target web --out-dir pkg
 
       - name: Update package.json name for npm publish
         working-directory: takumi-wasm/pkg
@@ -109,6 +109,12 @@ jobs:
 
       - uses: actions/setup-node@v4
 
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: wasm-package
+          path: takumi-wasm/pkg/package.json
+
       - name: Check if version exists
         id: check
         working-directory: takumi-wasm/pkg
@@ -120,6 +126,7 @@ jobs:
           else
             echo "exists=false" >> $GITHUB_OUTPUT
           fi
+          echo $GITHUB_OUTPUT
 
   publish:
     needs: [build, test, version-check]
