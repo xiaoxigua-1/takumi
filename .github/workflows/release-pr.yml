@@ -100,9 +100,9 @@ jobs:
 
             ## Changes
             - 📦 Bump `takumi` version from v${{ steps.current_versions.outputs.cargo_version }} to v${{ steps.new_version.outputs.new_version }}
-            - 📦 Bump `@takumi-rs/core` version from v${{ steps.current_versions.outputs.npm_version }} to v${{ steps.new_version.outputs.new_version }}
-            - 📦 Bump `@takumi-rs/wasm` version from v${{ steps.current_versions.outputs.npm_version }} to v${{ steps.new_version.outputs.new_version }}
-            - 📦 Bump `@takumi-rs/helpers` version from v${{ steps.current_versions.outputs.npm_version }} to v${{ steps.new_version.outputs.new_version }}
+            - 📦 Bump `@takumi-rs/core` version from v${{ steps.current_versions.outputs.cargo_version }} to v${{ steps.new_version.outputs.new_version }}
+            - 📦 Bump `@takumi-rs/wasm` version from v${{ steps.current_versions.outputs.cargo_version }} to v${{ steps.new_version.outputs.new_version }}
+            - 📦 Bump `@takumi-rs/helpers` version from v${{ steps.current_versions.outputs.cargo_version }} to v${{ steps.new_version.outputs.new_version }}
 
             ${{ steps.changelog.outputs.changelog }}
 
