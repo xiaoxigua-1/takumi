@@ -2,15 +2,12 @@ import { describe, expect, test } from "bun:test";
 import { writeFile } from "node:fs/promises";
 import { container, image, percentage, rem, text } from "@takumi-rs/helpers";
 import { Glob } from "bun";
-import init, {
-  ImageOutputFormat,
-  Options,
-  render,
-  Viewport,
-} from "../pkg/takumi_wasm.js";
+import init, { ImageOutputFormat, Renderer } from "../pkg/takumi_wasm.js";
 
-// Initialize WASM module
 await init();
+
+let renderer: Renderer;
+const fonts = await loadFonts();
 
 const localImagePath = "../assets/images/yeecord.png";
 
@@ -47,44 +44,28 @@ async function loadFonts() {
 }
 
 describe("setup", () => {
-  test("loadFonts", async () => {
-    const fontArrays = await loadFonts();
-    expect(fontArrays.length).toBeGreaterThan(0);
+  test("new Renderer", () => {
+    renderer = new Renderer();
+
+    expect(renderer).toBeDefined();
+  });
+
+  test("loadFont", () => {
+    for (const font of fonts) renderer.loadFont(font);
   });
 });
 
 describe("render", () => {
   test("webp", async () => {
-    const viewport = Viewport.new(1200, 630);
-    const options = new Options(viewport, ImageOutputFormat.WebP);
-    options.fonts = await loadFonts();
-
-    const result = render(node, options);
+    const result = renderer.render(node, 1200, 630, ImageOutputFormat.WebP);
 
     await writeFile("./test.webp", result);
 
     expect(result).toBeInstanceOf(Uint8Array);
   });
 
-  test("webp with debug", async () => {
-    const viewport = Viewport.new(1200, 630);
-    const options = new Options(viewport, ImageOutputFormat.WebP);
-    options.debug = true;
-    options.fonts = await loadFonts();
-
-    const result = render(node, options);
-
-    await writeFile("./test-debug.webp", result);
-
-    expect(result).toBeInstanceOf(Uint8Array);
-  });
-
   test("png", async () => {
-    const viewport = Viewport.new(1200, 630);
-    const options = new Options(viewport, ImageOutputFormat.Png);
-    options.fonts = await loadFonts();
-
-    const result = render(node, options);
+    const result = renderer.render(node, 1200, 630, ImageOutputFormat.Png);
 
     await writeFile("./test.png", result);
 
@@ -92,12 +73,7 @@ describe("render", () => {
   });
 
   test("jpeg 75%", async () => {
-    const viewport = Viewport.new(1200, 630);
-    const options = new Options(viewport, ImageOutputFormat.Jpeg);
-    options.quality = 75;
-    options.fonts = await loadFonts();
-
-    const result = render(node, options);
+    const result = renderer.render(node, 1200, 630, ImageOutputFormat.Jpeg, 75);
 
     await writeFile("./test-75.jpg", result);
 
@@ -105,28 +81,15 @@ describe("render", () => {
   });
 
   test("jpeg 100%", async () => {
-    const viewport = Viewport.new(1200, 630);
-    const options = new Options(viewport, ImageOutputFormat.Jpeg);
-    options.quality = 100;
-    options.fonts = await loadFonts();
-
-    const result = render(node, options);
+    const result = renderer.render(
+      node,
+      1200,
+      630,
+      ImageOutputFormat.Jpeg,
+      100
+    );
 
     await writeFile("./test-100.jpg", result);
-
-    expect(result).toBeInstanceOf(Uint8Array);
-  });
-
-  test("jpeg with debug and quality", async () => {
-    const viewport = Viewport.new(1200, 630);
-    const options = new Options(viewport, ImageOutputFormat.Jpeg);
-    options.debug = true;
-    options.quality = 50;
-    options.fonts = await loadFonts();
-
-    const result = render(node, options);
-
-    await writeFile("./test-debug-50.jpg", result);
 
     expect(result).toBeInstanceOf(Uint8Array);
   });

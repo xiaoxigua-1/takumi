@@ -1,74 +1,99 @@
-use std::io::Cursor;
+use std::{io::Cursor, sync::Arc};
 
 use serde_wasm_bindgen::from_value;
 use takumi::{
-  DefaultNodeKind, GlobalContext, ImageRenderer, Node, Viewport,
+  DefaultNodeKind, GlobalContext, ImageRenderer, ImageStore, Node, Viewport,
+  image::load_from_memory,
   rendering::{ImageOutputFormat, write_image},
 };
 use wasm_bindgen::prelude::*;
 
+#[wasm_bindgen(typescript_custom_section)]
+const TS_APPEND_CONTENT: &'static str = r#"
+export interface AnyNode {
+  type: string;
+  [key: string]: any;
+}
+"#;
+
 #[wasm_bindgen]
-pub struct Options {
-  pub viewport: Viewport,
-  pub debug: Option<bool>,
-  pub format: ImageOutputFormat,
-  pub quality: Option<u8>,
-  fonts: Option<js_sys::Array>,
+extern "C" {
+  #[wasm_bindgen(typescript_type = "AnyNode")]
+  #[derive(Debug)]
+  pub type AnyNode;
 }
 
 #[wasm_bindgen]
-impl Options {
+pub struct Renderer {
+  context: GlobalContext,
+}
+
+#[wasm_bindgen]
+impl Renderer {
   #[wasm_bindgen(constructor)]
-  pub fn new(viewport: Viewport, format: ImageOutputFormat) -> Options {
-    Options {
-      viewport,
-      debug: None,
-      format,
-      quality: None,
-      fonts: None,
+  pub fn new(debug: Option<bool>) -> Renderer {
+    Renderer {
+      context: GlobalContext {
+        draw_debug_border: debug.unwrap_or_default(),
+        ..Default::default()
+      },
     }
   }
 
-  #[wasm_bindgen(getter)]
-  pub fn fonts(&self) -> Option<js_sys::Array> {
-    self.fonts.clone()
+  #[wasm_bindgen(js_name = loadFont)]
+  pub fn load_font(&self, font_data: &[u8]) {
+    self
+      .context
+      .font_context
+      .load_font(font_data.to_vec())
+      .unwrap();
   }
 
-  #[wasm_bindgen(setter)]
-  pub fn set_fonts(&mut self, fonts: Option<js_sys::Array>) {
-    self.fonts = fonts;
-  }
-}
-
-#[wasm_bindgen]
-pub fn render(node: JsValue, options: Options) -> Vec<u8> {
-  let mut node: DefaultNodeKind = from_value(node).unwrap();
-
-  let context = GlobalContext {
-    draw_debug_border: options.debug.unwrap_or_default(),
-    ..Default::default()
-  };
-
-  if let Some(fonts_array) = options.fonts() {
-    for font in fonts_array.iter() {
-      let font_data = font.dyn_into::<js_sys::Uint8Array>().unwrap().to_vec();
-
-      context.font_context.load_font(font_data).unwrap();
-    }
+  #[wasm_bindgen(js_name = putPersistentImage)]
+  pub fn put_persistent_image(&self, src: String, data: &[u8]) {
+    self.context.persistent_image_store.insert(
+      src.to_string(),
+      Arc::new(Ok(load_from_memory(data).unwrap().into())),
+    );
   }
 
-  node.inherit_style_for_children();
-  node.hydrate(&context);
+  #[wasm_bindgen(js_name = clearImageStore)]
+  pub fn clear_image_store(&self) {
+    self.context.persistent_image_store.clear();
+  }
 
-  let mut renderer = ImageRenderer::new(options.viewport);
+  #[wasm_bindgen]
+  pub fn render(
+    &self,
+    node: AnyNode,
+    width: u32,
+    height: u32,
+    format: Option<ImageOutputFormat>,
+    quality: Option<u8>,
+  ) -> Vec<u8> {
+    let node = node.dyn_into().unwrap();
+    let mut node: DefaultNodeKind = from_value(node).unwrap();
 
-  renderer.construct_taffy_tree(node, &context);
-  let image = renderer.draw(&context).unwrap();
+    node.inherit_style_for_children();
+    node.hydrate(&self.context);
 
-  let mut buffer = Vec::new();
-  let mut cursor = Cursor::new(&mut buffer);
+    let viewport = Viewport::new(width, height);
+    let mut renderer = ImageRenderer::new(viewport);
 
-  write_image(&image, &mut cursor, options.format, options.quality).unwrap();
+    renderer.construct_taffy_tree(node, &self.context);
+    let image = renderer.draw(&self.context).unwrap();
 
-  buffer
+    let mut buffer = Vec::new();
+    let mut cursor = Cursor::new(&mut buffer);
+
+    write_image(
+      &image,
+      &mut cursor,
+      format.unwrap_or(ImageOutputFormat::Png),
+      quality,
+    )
+    .unwrap();
+
+    buffer
+  }
 }
