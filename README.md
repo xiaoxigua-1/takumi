@@ -1,32 +1,27 @@
-# takumi
+# Takumi
 
 > 🚧 This project is under development.
 
-High-performance Rust library for generating images with CSS Flexbox-like layouts.
+_Takumi (匠) means "artisan" or "craftsman" in Japanese._
 
-_Takumi (匠) means "artisan" or "craftsman" in Japanese - reflecting the precision and artistry required to craft beautiful images through code._
+A library for generating images using CSS Flexbox layout. Available for Rust, Node.js, and WebAssembly. 
 
-## Crates
+It works by rendering a tree of nodes, like a simplified browser engine that outputs images instead of rendering to a screen.
 
-### [takumi](takumi/)
+Check the [documentation](https://takumi.kane.tw) for more info.
 
-Core image rendering library with layout system.
+## Packages
 
-You can use this crate to create your own image rendering system with custom logic or [custom nodes](example/src/custom_node.rs).
+### Rust Crates
 
-### [takumi-server](takumi-server/)
+- **[`takumi`](takumi/)** - Core library for layout and rendering
+- **[`takumi-server`](takumi-server/)** - HTTP server for image generation
 
-Default implementation of http server for image generation API.
+### JavaScript/TypeScript
 
-### [@takumi-rs/wasm](takumi-wasm/)
-
-### [@takumi-rs/core](takumi-napi-core/)
-
-N-API binding for takumi
-
-### [@takumi-rs/helpers](takumi-helpers/)
-
-TypeScript bindings for the core library.
+- **[`@takumi-rs/core`](takumi-napi-core/)** - N-API bindings for Node.js
+- **[`@takumi-rs/wasm`](takumi-wasm/)** - WebAssembly bindings for browsers
+- **[`@takumi-rs/helpers`](takumi-helpers/)** - TypeScript utilities
 
 ## License
 
