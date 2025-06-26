@@ -5,4 +5,7 @@ export default {
   prerender({ getStaticPaths }) {
     return [...getStaticPaths(), ...source.getPages().map((page) => page.url)];
   },
+  routeDiscovery: {
+    mode: "initial",
+  },
 } satisfies Config;
