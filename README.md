@@ -18,6 +18,8 @@ You can use this crate to create your own image rendering system with custom log
 
 Default implementation of http server for image generation API.
 
+### [@takumi/wasm](takumi-wasm/)
+
 ### [@takumi-rs/core](takumi-napi-core/)
 
 N-API binding for takumi

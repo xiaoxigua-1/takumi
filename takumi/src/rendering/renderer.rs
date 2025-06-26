@@ -40,6 +40,7 @@ struct TaffyContext<Nodes: Node<Nodes>> {
 /// Output format for the rendered image.
 #[derive(Debug, Clone, Copy, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
+#[cfg_attr(feature = "wasm", wasm_bindgen::prelude::wasm_bindgen)]
 pub enum ImageOutputFormat {
   /// WebP format, suitable for web images with good compression.
   WebP,

@@ -12,6 +12,8 @@ rayon = "1.10.0"
 
 [dependencies.takumi]
 path = "../takumi"
+features = ["woff2", "woff", "image_data_uri"]
+default-features = false
 
 [dependencies.napi]
 version = "3.0.0-beta.9"

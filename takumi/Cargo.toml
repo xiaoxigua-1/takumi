@@ -54,6 +54,10 @@ features = ["serde"]
 version = "1"
 features = ["derive"]
 
+[dependencies.wasm-bindgen]
+version = "0.2"
+optional = true
+
 [dependencies.image]
 default-features = false
 version = "0.25"
@@ -71,6 +75,7 @@ required-features = []
 
 [features]
 default = ["woff2", "woff", "image_data_uri", "http_image_store"]
+wasm = ["dep:wasm-bindgen"]
 image_data_uri = ["dep:base64"]
 woff2 = ["dep:woff2-patched", "dep:bytes"]
 woff = ["dep:flate2"]
