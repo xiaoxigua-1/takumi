@@ -1,8 +1,10 @@
 import type { Config } from "@react-router/dev/config";
-import { source } from "./app/source";
+import { source } from "~/source";
 
 export default {
-  ssr: true,
+  future: {
+    unstable_viteEnvironmentApi: true,
+  },
   prerender({ getStaticPaths }) {
     return [...getStaticPaths(), ...source.getPages().map((page) => page.url)];
   },
