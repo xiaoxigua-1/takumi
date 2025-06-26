@@ -58,7 +58,8 @@ jobs:
         working-directory: takumi-wasm/pkg
         run: |
           # Change package name from takumi-wasm to @takumi-rs/wasm
-          jq '.name = "@takumi-rs/wasm"' package.json > temp.json && mv temp.json package.json
+          # Set repository URL for provenance validation
+          jq '.name = "@takumi-rs/wasm" | .repository.url = "git+https://github.com/kane50613/takumi.git"' package.json > temp.json && mv temp.json package.json
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
