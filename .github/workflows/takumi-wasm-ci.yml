@@ -127,7 +127,6 @@ jobs:
           else
             echo "exists=false" >> $GITHUB_OUTPUT
           fi
-          echo $GITHUB_OUTPUT
 
   publish:
     needs: [build, test, version-check]
