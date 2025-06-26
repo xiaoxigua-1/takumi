@@ -10,13 +10,17 @@ import {
   DocsPage,
   DocsTitle,
 } from "fumadocs-ui/page";
-import { source } from "@/source";
+import { source } from "~/source";
 import type { Route } from "./+types/page";
 
-export function meta({}: Route.MetaArgs) {
+export function meta() {
   return [
-    { title: "New React Router App" },
-    { name: "description", content: "Welcome to React Router!" },
+    { title: "Takumi" },
+    {
+      name: "description",
+      content:
+        "Library for generating images using a CSS Flexbox-like layout engine. Supports Rust, Node.js (N-API), and WebAssembly runtimes.",
+    },
   ];
 }
 const compiler = createCompiler({
@@ -47,7 +51,7 @@ export default function Page(props: Route.ComponentProps) {
   return (
     <DocsLayout
       nav={{
-        title: "React Router",
+        title: "Takumi",
       }}
       tree={tree as PageTree.Root}
     >

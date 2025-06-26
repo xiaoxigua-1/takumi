@@ -1,26 +1,28 @@
 import { HomeLayout } from "fumadocs-ui/layouts/home";
 import { Link } from "react-router";
-import type { Route } from "./+types/home";
+import { baseOptions } from "~/layout-config";
 
-export function meta({}: Route.MetaArgs) {
+export function meta() {
   return [
-    { title: "New React Router App" },
-    { name: "description", content: "Welcome to React Router!" },
+    { title: "Takumi" },
+    {
+      name: "description",
+      content:
+        "Library for generating images using a CSS Flexbox-like layout engine. Supports Rust, Node.js (N-API), and WebAssembly runtimes.",
+    },
   ];
 }
 
 export default function Home() {
   return (
-    <HomeLayout
-      className="text-center"
-      nav={{
-        title: "React Router",
-      }}
-    >
+    <HomeLayout className="text-center" {...baseOptions}>
       <div className="py-12">
-        <h1 className="text-xl font-bold mb-2">Fumadocs on React Router.</h1>
-        <p className="text-fd-muted-foreground mb-8">
-          The truly flexible docs framework on React.js.
+        <h1 className="text-5xl font-bold mb-4">
+          Craft Beautiful Images with Code
+        </h1>
+        <p className="text-lg text-fd-muted-foreground max-w-2xl mx-auto mb-8">
+          A library for generating images using a CSS Flexbox-like layout
+          engine. Supports Rust, Node.js (N-API), and WebAssembly runtimes.
         </p>
         <Link
           className="text-sm bg-fd-primary text-fd-primary-foreground rounded-full font-medium px-4 py-2.5"

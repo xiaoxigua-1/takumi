@@ -1,32 +1,27 @@
 ---
-title: Hello World
-description: |
-  Your first `document`
-  You'll love it!
+title: Overview
+description: An overview of the Takumi image generation library.
 ---
 
-Hey there! Fumadocs is the docs framework that also works on React Router!
+# Overview
 
-## Heading
+Welcome to the documentation for Takumi!
 
-Hello World
+Takumi is a library for generating images from code using a CSS Flexbox-like layout engine. It allows you to design and create complex images programmatically with a familiar styling model.
 
-<Cards>
-  <Card title="Learn more about React Router" href="https://reactrouter.com" />
-  <Card title="Learn more about Fumadocs" href="https://fumadocs.vercel.app" />
-</Cards>
+_Takumi (匠) means "artisan" or "craftsman" in Japanese - reflecting the precision and artistry required to craft beautiful images through code._
 
-```ts
-console.log('I love React!');
-```
+At its core, Takumi works by constructing a tree of nodes, similar to the HTML DOM. You then style them with properties inspired by CSS, and then render the entire tree into a final image.
 
-### Heading
+## Cross-Platform by Design
 
-#### Heading
+Takumi is built with Rust and designed for portability. You can use it:
 
-| Head                            | Description                         |
-| ------------------------------- | ----------------------------------- |
-| `hello`                         | Hello World                         |
-| very **important**              | Hey                                 |
-| _Surprisingly_                  | Fumadocs                            |
-| very long text that looks weird | hello world hello world hello world |
+-   **Directly in Rust** for native applications.
+-   **In Node.js** via the `@takumi-rs/core` package (N-API).
+-   **In the browser** via the `@takumi-rs/wasm` package (WebAssembly).
+
+## Where to Start?
+
+-   To start building right away, head to the **Getting Started** guide.
+-   To explore all available features, check out the **API Reference**.

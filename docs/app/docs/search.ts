@@ -1,6 +1,6 @@
 import { structure } from "fumadocs-core/mdx-plugins";
 import { createSearchAPI } from "fumadocs-core/search/server";
-import { source } from "@/source";
+import { source } from "~/source";
 import type { Route } from "./+types/search";
 
 const server = createSearchAPI("advanced", {
@@ -13,6 +13,6 @@ const server = createSearchAPI("advanced", {
   })),
 });
 
-export async function loader({ request }: Route.LoaderArgs) {
+export function loader({ request }: Route.LoaderArgs) {
   return server.GET(request);
 }
