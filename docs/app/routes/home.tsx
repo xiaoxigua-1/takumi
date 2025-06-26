@@ -8,7 +8,7 @@ export function meta() {
     {
       name: "description",
       content:
-        "Library for generating images using a CSS Flexbox-like layout engine. Supports Rust, Node.js (N-API), and WebAssembly runtimes.",
+        "A library for generating images using CSS Flexbox layout. Available for Rust, Node.js, and WebAssembly.",
     },
   ];
 }
