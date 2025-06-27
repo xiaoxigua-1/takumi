@@ -1,6 +1,6 @@
 {
   "name": "takumi-wasm",
-  "private": "true",
+  "private": true,
   "scripts": {
     "test": "vitest"
   },
