@@ -34,7 +34,7 @@ pub fn say_hello_to(name: &str) {
       },
       ..Default::default()
     },
-    text: format!("Hello, {}!", name),
+    text: format!("Hello, {name}!"),
   };
 
   // Create a root container node that will hold the text
