@@ -110,7 +110,7 @@ async fn main() {
   let addr = SocketAddr::from(([0, 0, 0, 0], args.port));
   let listener = TcpListener::bind(addr).await.unwrap();
 
-  println!("Image generator server running on http://{}", addr);
+  println!("Image generator server running on http://{addr}");
 
   // Start the server
   axum::serve(listener, app).await.unwrap();
