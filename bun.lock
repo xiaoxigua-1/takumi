@@ -26,8 +26,8 @@
       "devDependencies": {
         "@react-router/dev": "^7.6.2",
         "@tailwindcss/vite": "^4.1.10",
-        "@takumi-rs/helpers": "workspace:*",
-        "@takumi-rs/wasm": "../takumi-wasm/pkg",
+        "@takumi-rs/helpers": "^0.10.0",
+        "@takumi-rs/wasm": "^0.11.0",
         "@types/node": "24.0.4",
         "@types/react": "^19.1.8",
         "@types/react-dom": "^19.1.6",
@@ -605,6 +605,8 @@
     "@takumi-rs/core": ["@takumi-rs/core@workspace:takumi-napi-core"],
 
     "@takumi-rs/helpers": ["@takumi-rs/helpers@workspace:takumi-helpers"],
+
+    "@takumi-rs/wasm": ["@takumi-rs/wasm@0.11.0", "", {}, "sha512-a5YXXCogOHtfh+ImoMBEwavp9cuYqfLJohbjSvKfDM8FoXfyd2ginmvzihVCeKvErFHeG9Wj0Eshfg/EilciFg=="],
 
     "@tybys/wasm-util": ["@tybys/wasm-util@0.9.0", "", { "dependencies": { "tslib": "^2.4.0" } }, "sha512-6+7nlbMVX/PVDCwaIQ8nTOPveOcFLSt8GcXdx8hD0bt39uWxYT88uXzqTd4fTvqta7oeUJqudepapKNt2DYJFw=="],
 
@@ -1680,7 +1682,7 @@
 
     "cross-spawn/which": ["which@2.0.2", "", { "dependencies": { "isexe": "^2.0.0" }, "bin": { "node-which": "./bin/node-which" } }, "sha512-BLI3Tl1TW3Pvl70l3yq3Y64i+awpwXqsGBYWkkqMtnbXgrMD+yj7rhW0kuEDxzJaYXGjEW5ogapKNMEKNMjibA=="],
 
-    "docs/@takumi-rs/wasm": ["takumi-wasm@file:takumi-wasm/pkg", {}],
+    "docs/@takumi-rs/helpers": ["@takumi-rs/helpers@0.10.0", "", { "peerDependencies": { "typescript": "^5" } }, "sha512-mv9md+4NStT0fjSWW/rMhuKRYvaLZOSpPTaicz4tsyhV1s2Wv6MOTC5sWCItxbVlogK8aaozKP2bPx2OlNo+8A=="],
 
     "editorconfig/minimatch": ["minimatch@9.0.1", "", { "dependencies": { "brace-expansion": "^2.0.1" } }, "sha512-0jWhJpD/MdhPXwPuiRkCbfYfSKp2qnn2eOc279qI7f+osl/l+prKSrvhg157zSYvx/1nmgn2NqdT6k2Z7zSH9w=="],
 
