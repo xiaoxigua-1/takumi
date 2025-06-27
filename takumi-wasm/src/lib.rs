@@ -1,5 +1,6 @@
 use std::{io::Cursor, sync::Arc};
 
+use base64::{Engine, prelude::BASE64_STANDARD};
 use serde_wasm_bindgen::from_value;
 use takumi::{
   DefaultNodeKind, GlobalContext, ImageRenderer, ImageStore, Node, Viewport,
@@ -95,5 +96,24 @@ impl Renderer {
     .unwrap();
 
     buffer
+  }
+
+  #[wasm_bindgen(js_name = "renderAsDataUrl")]
+  pub fn render_as_data_url(
+    &self,
+    node: AnyNode,
+    width: u32,
+    height: u32,
+    format: Option<ImageOutputFormat>,
+    quality: Option<u8>,
+  ) -> String {
+    let buffer = self.render(node, width, height, format, quality);
+    let format = format.unwrap_or(ImageOutputFormat::Png);
+
+    format!(
+      "data:{};base64,{}",
+      format.content_type(),
+      BASE64_STANDARD.encode(buffer)
+    )
   }
 }

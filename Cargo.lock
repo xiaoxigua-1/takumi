@@ -2312,6 +2312,7 @@ dependencies = [
 name = "takumi-wasm"
 version = "0.10.0"
 dependencies = [
+ "base64",
  "js-sys",
  "serde",
  "serde-wasm-bindgen",
