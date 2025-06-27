@@ -1,5 +1,6 @@
 import { HomeLayout } from "fumadocs-ui/layouts/home";
 import { Link } from "react-router";
+import { ImageEditor } from "~/components/image-editor";
 import { baseOptions } from "~/layout-config";
 
 export function meta() {
@@ -16,7 +17,7 @@ export function meta() {
 export default function Home() {
   return (
     <HomeLayout className="text-center" {...baseOptions}>
-      <div className="py-12">
+      <div className="py-12 p-2">
         <h1 className="text-5xl font-bold mb-4">
           Craft Beautiful Images with Code
         </h1>
@@ -30,6 +31,9 @@ export default function Home() {
         >
           Open Docs
         </Link>
+        <div className="py-12 px-4 max-w-7xl mx-auto">
+          <ImageEditor />
+        </div>
       </div>
     </HomeLayout>
   );
