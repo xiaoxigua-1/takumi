@@ -3,6 +3,7 @@
   "workspaces": [
     "takumi-helpers",
     "takumi-napi-core",
+    "takumi-wasm",
     "docs"
   ],
   "devDependencies": {

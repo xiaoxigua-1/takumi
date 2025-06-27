@@ -1,19 +1,24 @@
-import { describe, expect, test } from "bun:test";
-import { writeFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import { container, image, percentage, rem, text } from "@takumi-rs/helpers";
-import { Glob } from "bun";
-import init, { ImageOutputFormat, Renderer } from "../pkg/takumi_wasm.js";
+import { describe, expect, test } from "vitest";
+import { ImageOutputFormat, Renderer } from "../pkg";
 
-await init();
+function getFonts() {
+  const files = Object.keys(
+    import.meta.glob("../../assets/fonts/**/*.{woff2,ttf}"),
+  );
 
+  return Promise.all(files.map((path) => readFile(path.replace("../", ""))));
+}
+
+const fonts = await getFonts();
 let renderer: Renderer;
-const fonts = await loadFonts();
 
 const localImagePath = "../assets/images/yeecord.png";
 
-const localImage = await Bun.file(localImagePath).arrayBuffer();
+const localImage = await readFile(localImagePath);
 const dataUri = `data:image/png;base64,${Buffer.from(localImage).toString(
-  "base64"
+  "base64",
 )}`;
 
 const node = container({
@@ -33,15 +38,6 @@ const node = container({
   width: percentage(100),
   height: percentage(100),
 });
-
-async function loadFonts() {
-  const glob = new Glob("../assets/fonts/**/*.{woff2,ttf}");
-  const files = await Array.fromAsync(glob.scan());
-  const buffers = await Promise.all(
-    files.map((file) => Bun.file(file).arrayBuffer())
-  );
-  return buffers.map((buffer) => new Uint8Array(buffer));
-}
 
 describe("setup", () => {
   test("new Renderer", () => {
@@ -86,7 +82,7 @@ describe("render", () => {
       1200,
       630,
       ImageOutputFormat.Jpeg,
-      100
+      100,
     );
 
     await writeFile("./test-100.jpg", result);
