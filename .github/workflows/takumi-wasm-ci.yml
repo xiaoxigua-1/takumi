@@ -79,7 +79,7 @@ jobs:
           bun-version: latest
 
       - name: Install dependencies
-        run: bun install --frozen-lockfile --filter takumi-wasm --filter takumi-helpers
+        run: bun install --frozen-lockfile --filter ./takumi-wasm --filter ./takumi-helpers
 
       - name: Build helpers
         run: |
