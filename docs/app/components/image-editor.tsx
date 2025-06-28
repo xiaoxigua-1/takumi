@@ -27,10 +27,12 @@ export function ImageEditor() {
         setNode(newNode);
       }
     },
-    [evaluatorUtils],
+    [evaluatorUtils]
   );
 
   useEffect(() => {
+    if (evaluatorUtils) return;
+
     // Dynamic import of code evaluator utilities and Monaco Editor
     void import("../../lib/code-evaluator")
       .then((utils) => {
@@ -43,7 +45,7 @@ export function ImageEditor() {
         setEditor(() => module.default);
         handleEditorChange(defaultCode);
       });
-  }, [handleEditorChange]);
+  }, [handleEditorChange, evaluatorUtils]);
 
   return (
     <div className="grid sm:grid-cols-2 rounded-xl overflow-hidden">
