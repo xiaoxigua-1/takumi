@@ -124,7 +124,7 @@ function configureMonacoEditor() {
 }
 
 // Helper function to generate import edits that properly replace existing imports
-function getImportEdits(currentCode: string, exportName: string): any[] {
+function getImportEdits(currentCode: string, exportName: string) {
   const lines = currentCode.split("\n");
   const importRegex =
     /import\s*\{\s*([^}]+)\s*\}\s*from\s*["']@takumi-rs\/helpers["'];?/;
