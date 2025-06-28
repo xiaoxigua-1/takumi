@@ -1,4 +1,10 @@
-import type { ContainerNode, ImageNode, TextNode, StyleInput } from "./types";
+import type {
+  ColorInput,
+  ContainerNode,
+  ImageNode,
+  StyleInput,
+  TextNode,
+} from "./types";
 
 export function container(props: Omit<ContainerNode, "type">): ContainerNode {
   return {
@@ -59,5 +65,13 @@ export function em(em: number) {
 export function rem(rem: number) {
   return {
     rem,
+  };
+}
+
+export function gradient(from: ColorInput, to: ColorInput, angle = 0) {
+  return {
+    from,
+    to,
+    angle,
   };
 }

@@ -13,7 +13,7 @@ const remoteImage = await fetch(remoteUrl).then((r) => r.arrayBuffer());
 
 const localImage = await Bun.file(localImagePath).arrayBuffer();
 const dataUri = `data:image/png;base64,${Buffer.from(localImage).toString(
-  "base64"
+  "base64",
 )}`;
 
 const node = container({
@@ -51,7 +51,7 @@ describe("setup", () => {
     const files = await Array.fromAsync(glob.scan());
 
     const buffers = await Promise.all(
-      files.map((file) => Bun.file(file).arrayBuffer())
+      files.map((file) => Bun.file(file).arrayBuffer()),
     );
 
     const count = await renderer.loadFontsAsync(buffers);

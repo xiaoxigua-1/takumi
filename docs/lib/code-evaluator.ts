@@ -12,7 +12,7 @@ type ModuleName = keyof typeof availableModules;
 
 function parseNamedImports(
   names: string,
-  module: typeof helpers
+  module: typeof helpers,
 ): Record<string, unknown> {
   const imports: Record<string, unknown> = {};
   const importNames = names.split(",").map((name) => name.trim());
@@ -61,7 +61,7 @@ function configureMonacoEditor() {
   loader.init().then((monaco) => {
     // Create virtual file system models
     const helpersUri = monaco.Uri.parse(
-      "file:///node_modules/@takumi-rs/helpers/index.d.ts"
+      "file:///node_modules/@takumi-rs/helpers/index.d.ts",
     );
 
     // Create @takumi-rs/helpers type definitions
@@ -154,7 +154,7 @@ function getImportEdits(currentCode: string, exportName: string): any[] {
       existingImports.sort(); // Keep imports sorted
 
       const newImportLine = `import { ${existingImports.join(
-        ", "
+        ", ",
       )} } from "@takumi-rs/helpers";`;
 
       return [
@@ -197,7 +197,7 @@ function safeEvaluate(code: string): AnyNode | null {
     // Create a function with limited scope including imports
     const func = new Function(
       ...Object.keys(imports),
-      `"use strict"; return (${codeWithoutImports})`
+      `"use strict"; return (${codeWithoutImports})`,
     );
 
     return func(...Object.values(imports));

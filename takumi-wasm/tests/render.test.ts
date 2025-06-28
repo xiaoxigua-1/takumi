@@ -5,7 +5,7 @@ import { ImageOutputFormat, Renderer } from "../pkg";
 
 function getFonts() {
   const files = Object.keys(
-    import.meta.glob("../../assets/fonts/**/*.{woff2,ttf}")
+    import.meta.glob("../../assets/fonts/**/*.{woff2,ttf}"),
   );
 
   return Promise.all(files.map((path) => readFile(path.replace("../", ""))));
@@ -18,7 +18,7 @@ const localImagePath = "../assets/images/yeecord.png";
 
 const localImage = await readFile(localImagePath);
 const dataUri = `data:image/png;base64,${Buffer.from(localImage).toString(
-  "base64"
+  "base64",
 )}`;
 
 const node = container({
@@ -82,7 +82,7 @@ describe("render", () => {
       1200,
       630,
       ImageOutputFormat.Jpeg,
-      100
+      100,
     );
 
     await writeFile("./test-100.jpg", result);
@@ -100,21 +100,37 @@ describe("renderAsDataUrl", () => {
   });
 
   test("webp format", () => {
-    const result = renderer.renderAsDataUrl(node, 1200, 630, ImageOutputFormat.WebP);
+    const result = renderer.renderAsDataUrl(
+      node,
+      1200,
+      630,
+      ImageOutputFormat.WebP,
+    );
 
     expect(result).toMatch(/^data:image\/webp;base64,/);
     expect(result.length).toBeGreaterThan(100);
   });
 
   test("jpeg format with quality", () => {
-    const result = renderer.renderAsDataUrl(node, 1200, 630, ImageOutputFormat.Jpeg, 75);
+    const result = renderer.renderAsDataUrl(
+      node,
+      1200,
+      630,
+      ImageOutputFormat.Jpeg,
+      75,
+    );
 
     expect(result).toMatch(/^data:image\/jpeg;base64,/);
     expect(result.length).toBeGreaterThan(100);
   });
 
   test("png format explicit", () => {
-    const result = renderer.renderAsDataUrl(node, 1200, 630, ImageOutputFormat.Png);
+    const result = renderer.renderAsDataUrl(
+      node,
+      1200,
+      630,
+      ImageOutputFormat.Png,
+    );
 
     expect(result).toMatch(/^data:image\/png;base64,/);
     expect(result.length).toBeGreaterThan(100);

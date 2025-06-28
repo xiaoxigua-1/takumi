@@ -27,7 +27,7 @@ export function ImageEditor() {
         setNode(newNode);
       }
     },
-    [evaluatorUtils]
+    [evaluatorUtils],
   );
 
   useEffect(() => {
