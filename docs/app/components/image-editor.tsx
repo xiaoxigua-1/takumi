@@ -78,6 +78,15 @@ function MonacoEditor() {
           height="100%"
           language={getLanguageFromPath(sandpack.activeFile)}
           theme="vs-dark"
+          options={{
+            tabSize: 2,
+            minimap: {
+              enabled: false,
+            },
+            stickyScroll: {
+              enabled: false,
+            },
+          }}
           key={sandpack.activeFile}
           defaultValue={code}
           onChange={(value) => updateCode(value || "")}
