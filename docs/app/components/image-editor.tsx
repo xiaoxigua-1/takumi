@@ -1,7 +1,5 @@
 import {
   FileTabs,
-  SandpackCodeEditor,
-  SandpackFileExplorer,
   SandpackLayout,
   SandpackPreview,
   SandpackProvider,
@@ -9,11 +7,11 @@ import {
   useActiveCode,
   useSandpack,
 } from "@codesandbox/sandpack-react";
+import { Editor } from "@monaco-editor/react";
 import { isbot } from "isbot";
 import { useEffect, useState } from "react";
 import index from "~/template/index.js?raw";
 import css from "~/template/styles.css?raw";
-import { Editor } from "@monaco-editor/react";
 
 async function getPackageVersion(name: string) {
   const response = await fetch(`https://registry.npmjs.org/${name}`, {
@@ -59,7 +57,7 @@ export function ImageEditor() {
     >
       <SandpackLayout>
         <MonacoEditor />
-        <SandpackPreview showRefreshButton={false} />
+        <SandpackPreview showRefreshButton={false} style={{ height: "28em" }} />
       </SandpackLayout>
     </SandpackProvider>
   );
@@ -70,9 +68,15 @@ function MonacoEditor() {
   const { sandpack } = useSandpack();
 
   return (
-    <SandpackStack style={{ margin: 0 }}>
+    <SandpackStack style={{ margin: 0, height: "28em" }}>
       <FileTabs />
-      <div style={{ flex: 1, paddingTop: 8, background: "#1e1e1e" }}>
+      <div
+        style={{
+          flex: 1,
+          paddingTop: 8,
+          background: "#1e1e1e",
+        }}
+      >
         <Editor
           width="100%"
           height="100%"
