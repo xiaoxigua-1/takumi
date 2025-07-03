@@ -1,7 +1,9 @@
 import { readFile, writeFile } from "node:fs/promises";
 import { container, image, percentage, rem, text } from "@takumi-rs/helpers";
 import { describe, expect, test } from "vitest";
-import { ImageOutputFormat, Renderer } from "../pkg";
+import init, { ImageOutputFormat, Renderer } from "../pkg";
+
+await init(readFile("./pkg/takumi_wasm_bg.wasm"));
 
 function getFonts() {
   const files = Object.keys(
