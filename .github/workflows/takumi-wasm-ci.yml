@@ -49,7 +49,7 @@ jobs:
 
       - name: Build WASM
         working-directory: takumi-wasm
-        run: wasm-pack build --out-dir pkg
+        run: wasm-pack build --out-dir pkg --target web
 
       - name: Update package.json name for npm publish
         working-directory: takumi-wasm/pkg
