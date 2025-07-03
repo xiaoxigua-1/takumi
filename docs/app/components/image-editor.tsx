@@ -73,7 +73,6 @@ function MonacoEditor() {
       <div
         style={{
           flex: 1,
-          paddingTop: 8,
           background: "#1e1e1e",
         }}
       >
@@ -89,6 +88,9 @@ function MonacoEditor() {
             },
             stickyScroll: {
               enabled: false,
+            },
+            scrollbar: {
+              useShadows: false,
             },
           }}
           key={sandpack.activeFile}
