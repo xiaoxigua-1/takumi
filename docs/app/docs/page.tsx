@@ -10,10 +10,10 @@ import {
   DocsPage,
   DocsTitle,
 } from "fumadocs-ui/page";
+import { Brain, Wrench } from "lucide-react";
 import { baseOptions } from "~/layout-config";
 import { source } from "~/source";
 import type { Route } from "./+types/page";
-import { Brain, Wrench } from "lucide-react";
 
 const components = {
   ...defaultMdxComponents,

@@ -7,8 +7,8 @@ import {
   type VirtualFile,
 } from "fumadocs-core/source";
 import matter from "gray-matter";
-import { createElement } from "react";
 import { icons } from "lucide-react";
+import { createElement } from "react";
 
 const files = Object.entries(
   import.meta.glob<true, "raw">("/content/docs/**/*", {
