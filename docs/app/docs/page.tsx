@@ -21,16 +21,6 @@ const components = {
   Brain,
 };
 
-export function meta() {
-  return [
-    { title: "Takumi" },
-    {
-      name: "description",
-      content:
-        "A library for generating images using CSS Flexbox layout. Available for Rust, Node.js, and WebAssembly.",
-    },
-  ];
-}
 const compiler = createCompiler({
   development: false,
 });
@@ -56,16 +46,15 @@ export default function Page(props: Route.ComponentProps) {
   const { page, compiled, tree } = props.loaderData;
   const { default: Mdx, toc } = executeMdxSync(compiled);
 
+  const title = `${page.data.title} - Takumi`;
+
   return (
-    <DocsLayout
-      {...baseOptions}
-      nav={{
-        title: "Takumi",
-      }}
-      links={[]}
-      tree={tree as PageTree.Root}
-    >
+    <DocsLayout {...baseOptions} links={[]} tree={tree as PageTree.Root}>
       <DocsPage toc={toc}>
+        <title>{title}</title>
+        <meta name="description" content={page.data.description} />
+        <meta name="og:title" content={title} />
+        <meta name="og:description" content={page.data.description} />
         <DocsTitle>{page.data.title}</DocsTitle>
         <DocsDescription>{page.data.description}</DocsDescription>
         <DocsBody>
