@@ -33,9 +33,9 @@ const root = container({
 A text node displays text. Use the `text` function:
 
 ```typescript
-import { text } from "@takumi-rs/helpers";
+import { text } from '@takumi-rs/helpers';
 
-const helloText = text("Hello, Takumi!", {
+const helloText = text('Hello, Takumi!', {
   // extra styling goes here
 });
 ```
@@ -49,14 +49,16 @@ const root = container({
 });
 ```
 
+For details on loading fonts and rendering styled text, see <include>./rendering-text.mdx</include>.
+
 ## Image Nodes
 
 An image node displays an image from a URL or local path. Use the `image` function:
 
 ```typescript
-import { image } from "@takumi-rs/helpers";
+import { image } from '@takumi-rs/helpers';
 
-const logo = image("/logo.png", {
+const logo = image('/logo.png', {
   // extra styling goes here
 });
 ```
@@ -64,15 +66,17 @@ const logo = image("/logo.png", {
 You can combine all node types to build layouts:
 
 ```typescript
-import { container, text, image } from "@takumi-rs/helpers";
+import { container, text, image } from '@takumi-rs/helpers';
 
 const layout = container({
   // extra styling goes here
   children: [
-    image("/logo.png"),
-    text("Welcome to Takumi!"),
+    image('/logo.png'),
+    text('Welcome to Takumi!'),
   ],
 });
 ```
 
-For details on customizing appearance and layout, see [Styling Node](/docs/how-to/styling-node).
+For details on loading and rendering images, see <include>../how-to/load-image.mdx</include>.
+
+For details on customizing appearance and layout, see <include>../how-to/styling-node.mdx</include>.
