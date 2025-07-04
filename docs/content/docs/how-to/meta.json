@@ -1,0 +1,6 @@
+{
+  "title": "How to",
+  "icon": "WrenchIcon",
+  "pages": ["setup", "..."],
+  "defaultOpen": true
+}
