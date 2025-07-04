@@ -1,13 +1,13 @@
 ---
-title: Create Node
-description: Learn how to create container, text, and image nodes using @takumi-rs/helpers
+title: Construct Node
+description: Learn how to construct container, text, and image nodes using @takumi-rs/helpers
 ---
 
-Nodes are the foundation of building layouts with Takumi. The `@takumi-rs/helpers` package provides convenient functions for creating different types of nodes: containers, text, and images.
+Nodes are the foundation of building layouts with Takumi. The `@takumi-rs/helpers` package provides convenient functions for constructing different types of nodes: containers, text, and images.
 
 ## Prerequisites
 
-Make sure you have installed the helpers package:
+Make sure you have installed the `@takumi-rs/helpers` package:
 
 ```bash
 npm install @takumi-rs/helpers
@@ -15,7 +15,7 @@ npm install @takumi-rs/helpers
 
 ## Container Nodes
 
-A container node is used to group other nodes and arrange them in a layout. Use the `container` helper:
+A container node is used to group other nodes and arrange them in a layout. Use the `container` function:
 
 ```typescript
 import { container } from "@takumi-rs/helpers";
@@ -30,7 +30,7 @@ const root = container({
 
 ## Text Nodes
 
-A text node displays text. Use the `text` helper:
+A text node displays text. Use the `text` function:
 
 ```typescript
 import { text } from "@takumi-rs/helpers";
@@ -51,7 +51,7 @@ const root = container({
 
 ## Image Nodes
 
-An image node displays an image from a URL or local path. Use the `image` helper:
+An image node displays an image from a URL or local path. Use the `image` function:
 
 ```typescript
 import { image } from "@takumi-rs/helpers";
@@ -75,4 +75,4 @@ const layout = container({
 });
 ```
 
-For details on customizing appearance and layout, see [How to Style a Node](/docs/how-to/styling-node).
+For details on customizing appearance and layout, see [Styling Node](/docs/how-to/styling-node).
