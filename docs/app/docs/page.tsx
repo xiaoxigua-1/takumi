@@ -10,8 +10,16 @@ import {
   DocsPage,
   DocsTitle,
 } from "fumadocs-ui/page";
+import { baseOptions } from "~/layout-config";
 import { source } from "~/source";
 import type { Route } from "./+types/page";
+import { Brain, Wrench } from "lucide-react";
+
+const components = {
+  ...defaultMdxComponents,
+  Wrench,
+  Brain,
+};
 
 export function meta() {
   return [
@@ -50,16 +58,18 @@ export default function Page(props: Route.ComponentProps) {
 
   return (
     <DocsLayout
+      {...baseOptions}
       nav={{
         title: "Takumi",
       }}
+      links={[]}
       tree={tree as PageTree.Root}
     >
       <DocsPage toc={toc}>
         <DocsTitle>{page.data.title}</DocsTitle>
         <DocsDescription>{page.data.description}</DocsDescription>
         <DocsBody>
-          <Mdx components={defaultMdxComponents} />
+          <Mdx components={components} />
         </DocsBody>
       </DocsPage>
     </DocsLayout>

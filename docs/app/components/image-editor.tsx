@@ -11,7 +11,8 @@ import { Editor } from "@monaco-editor/react";
 import { isbot } from "isbot";
 import { useEffect, useState } from "react";
 import index from "~/template/index.js?raw";
-import css from "~/template/styles.css?raw";
+import renderer from "~/template/shared/renderer.js?raw";
+import css from "~/template/shared/styles.css?raw";
 
 async function getPackageVersion(name: string) {
   const response = await fetch(`https://registry.npmjs.org/${name}`, {
@@ -37,7 +38,7 @@ export function ImageEditor() {
   }, []);
 
   // FIXME: maybe a fixed container to prevent CLS problem, or a button to start this editor?
-  if (!version) return <p>Loading version...</p>;
+  if (!version) return <p>Loading WASM version...</p>;
 
   return (
     <SandpackProvider
@@ -49,8 +50,12 @@ export function ImageEditor() {
       }}
       files={{
         "index.js": index,
-        ".version": version,
-        "styles.css": css,
+        "shared/renderer.js": renderer,
+        "shared/styles.css": css,
+        ".version": {
+          code: version,
+          readOnly: true,
+        },
       }}
       template="vite"
       theme="dark"
@@ -82,6 +87,7 @@ function MonacoEditor() {
           language={getLanguageFromPath(sandpack.activeFile)}
           theme="vs-dark"
           options={{
+            wordWrap: "on",
             tabSize: 2,
             minimap: {
               enabled: false,
