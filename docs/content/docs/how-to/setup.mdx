@@ -149,7 +149,7 @@ For direct browser usage without a bundler, download files locally or use a CDN 
 import { container, text, percentage } from "https://unpkg.com/@takumi-rs/helpers";
 import init, { Renderer } from "https://unpkg.com/@takumi-rs/wasm";
 
-await init(fetch("http://unpkg.com/@takumi-rs/wasm/takumi_wasm_bg.wasm"));
+await init("http://unpkg.com/@takumi-rs/wasm/takumi_wasm_bg.wasm");
 
 const renderer = new Renderer();
 ```
