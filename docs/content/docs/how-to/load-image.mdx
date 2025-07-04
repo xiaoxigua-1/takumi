@@ -9,10 +9,10 @@ The `src` property can be a URL, file path, or a data URI.
 
 To minimize binary size for embedded Takumi versions, certain [features of Takumi](https://docs.rs/crate/takumi/latest/features) are disabled. Alternative solutions may be considered.
 
-| -                | URL | File Path         | Data URI |
+| Type / Package   | URL | File Path         | Data URI |
 |------------------|-----|------------------|----------|
-| `@takumi-rs/core`| ❌  | ❌ (use readFile) | ✅       |
-| `@takumi-rs/wasm`| ❌  | ❌               | ✅       |
+| `@takumi-rs/core`| ❌ (use `fetch`)  | ❌ (use `readFile`) | ✅       |
+| `@takumi-rs/wasm`| ❌ (use `fetch`)  | ❌               | ✅       |
 | `takumi-server`  | ✅  | ❌               | ✅       |
 
 ## How Image Loading Works in `takumi-server`
