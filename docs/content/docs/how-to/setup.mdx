@@ -8,12 +8,12 @@ Takumi is built with Rust and designed for portability. You can use it:
 <Cards>
   <Card
     title="In Node.js/Bun"
-    href="#for-nodejsbun"
+    href="#in-nodejsbun"
     description="Via the @takumi-rs/core package (N-API) for server-side rendering."
   />
   <Card
     title="In the browser"
-    href="#for-webbrowser"
+    href="#in-webbrowser"
     description="Via the @takumi-rs/wasm package (WebAssembly) for client-side generation."
   />
   <Card
@@ -23,7 +23,7 @@ Takumi is built with Rust and designed for portability. You can use it:
   />
   <Card
     title="Directly in Rust"
-    href="#for-rust"
+    href="#directly-in-rust"
     description="For native applications with maximum performance and control."
   />
 </Cards>
@@ -57,7 +57,7 @@ const imageBuffer = render(layout);
 
 ## In Web/Browser
 
-Compiled to WebAssembly for browser compatibility. The WASM binary is downloaded client-side. For server-side rendering, see [For Node.js/Bun](#for-nodejsbun).
+Compiled to WebAssembly for browser compatibility. The WASM binary is downloaded client-side. For server-side rendering, see [In Node.js/Bun](#in-nodejsbun).
 
 Web worker integration is under development. Contributions welcome!
 
@@ -192,6 +192,6 @@ cd takumi
 cargo build --release --bin takumi-server
 ```
 
-## For Rust
+## Directly in Rust
 
 See [takumi in docs.rs](https://docs.rs/takumi/latest/takumi/) for complete documentation.
