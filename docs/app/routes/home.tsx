@@ -5,7 +5,7 @@ import { baseOptions } from "~/layout-config";
 
 export function meta() {
   return [
-    { title: "Takumi" },
+    { title: "Takumi: Craft Beautiful Images with Code" },
     {
       name: "description",
       content:
