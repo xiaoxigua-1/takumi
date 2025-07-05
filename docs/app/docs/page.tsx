@@ -10,19 +10,18 @@ import {
   DocsPage,
   DocsTitle,
 } from "fumadocs-ui/page";
+import { BookOpen, Brain, Wrench } from "lucide-react";
+import { baseOptions } from "~/layout-config";
 import { source } from "~/source";
 import type { Route } from "./+types/page";
 
-export function meta() {
-  return [
-    { title: "Takumi" },
-    {
-      name: "description",
-      content:
-        "A library for generating images using CSS Flexbox layout. Available for Rust, Node.js, and WebAssembly.",
-    },
-  ];
-}
+const components = {
+  ...defaultMdxComponents,
+  BookOpen,
+  Wrench,
+  Brain,
+};
+
 const compiler = createCompiler({
   development: false,
 });
@@ -48,18 +47,19 @@ export default function Page(props: Route.ComponentProps) {
   const { page, compiled, tree } = props.loaderData;
   const { default: Mdx, toc } = executeMdxSync(compiled);
 
+  const title = `${page.data.title} - Takumi`;
+
   return (
-    <DocsLayout
-      nav={{
-        title: "Takumi",
-      }}
-      tree={tree as PageTree.Root}
-    >
+    <DocsLayout {...baseOptions} links={[]} tree={tree as PageTree.Root}>
       <DocsPage toc={toc}>
+        <title>{title}</title>
+        <meta name="description" content={page.data.description} />
+        <meta name="og:title" content={title} />
+        <meta name="og:description" content={page.data.description} />
         <DocsTitle>{page.data.title}</DocsTitle>
         <DocsDescription>{page.data.description}</DocsDescription>
         <DocsBody>
-          <Mdx components={defaultMdxComponents} />
+          <Mdx components={components} />
         </DocsBody>
       </DocsPage>
     </DocsLayout>

@@ -4,9 +4,7 @@ High-performance Rust library for generating images with CSS Flexbox-like layout
 
 ## Usage
 
-Checkout the [minimal example](https://github.com/kane50613/takumi/blob/master/example/src/minimal.rs) for a quick start.
-
-If you want to use it with serde, checkout the default server implementation in [takumi-server](https://github.com/kane50613/takumi/tree/master/takumi-server).
+For detailed documentation, please refer to the [main documentation](https://takumi.kane.tw/docs/platforms/pick-your-platform).
 
 ## Credits
 

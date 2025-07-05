@@ -1,6 +1,6 @@
 # @takumi-rs/helpers
 
-Types and helper functions for [takumi](https://github.com/kane50613/takumi).
+Types and helper functions for [Takumi](https://takumi.kane.tw/docs/platforms/pick-your-platform).
 
 ## Example
 

@@ -3,8 +3,6 @@ title: Overview
 description: An overview of the Takumi image generation library.
 ---
 
-# Overview
-
 Welcome to the documentation for Takumi!
 
 Takumi is a library for generating images from code using a CSS Flexbox-like layout engine. It allows you to design and create complex images programmatically with a familiar styling model.
@@ -13,15 +11,49 @@ _Takumi (匠) means "artisan" or "craftsman" in Japanese - reflecting the precis
 
 At its core, Takumi works by constructing a tree of nodes, similar to the HTML DOM. You then style them with properties inspired by CSS, and then render the entire tree into a final image.
 
-## Cross-Platform by Design
+## Why Takumi
 
-Takumi is built with Rust and designed for portability. You can use it:
+### Flexible Deployment
 
--   **Directly in Rust** for native applications.
--   **In Node.js** via the `@takumi-rs/core` package (N-API).
--   **In the browser** via the `@takumi-rs/wasm` package (WebAssembly).
+- **Cross-Platform Compatibility:** Available for Rust, Node.js (via N-API), and WebAssembly, allowing flexible deployment across various environments.
+- **Pre-built Server:** Deploy a standalone HTTP server for image generation, ideal for microservices or environments requiring a ready-to-use API.
 
-## Where to Start?
+### Powerful Layout & Styling
 
--   To start building right away, head to the **Getting Started** guide.
--   To explore all available features, check out the **API Reference**.
+- **CSS Flexbox-like Layout:** Design and arrange elements using a familiar and powerful layout model, simplifying complex image compositions.
+- **Rich Styling Options:** Apply a wide range of styling properties, including colors, fonts, borders, shadows, and more.
+- **Font Loading:** Easily load and utilize custom fonts for diverse typographic designs.
+
+### Performance & Extensibility
+
+- **High Performance:** Built with Rust, Takumi offers efficient image generation capabilities.
+- **Extensible Node System:** Create custom image elements and extend functionality to suit specific needs.
+
+### Security (for Server)
+
+- **HMAC Verification (Server):** Secure your image generation API with optional HMAC-based request verification.
+
+## Start Here
+
+Looking to dive in quickly? Check out the best places to begin learning how to use Takumi
+
+<Cards>
+  <Card
+    icon={<Wrench/>}
+    title="Pick Your Platform"
+    href="/docs/platforms/pick-your-platform"
+    description="Choose the right platform for integrating Takumi into your project"
+  />
+  <Card
+    icon={<Brain/>}
+    title="Core Concepts"
+    href="/docs/core-concepts"
+    description="Understanding the fundamental concepts of Takumi"
+  />
+  <Card
+    icon={<BookOpen/>}
+    title="How-to Guides"
+    href="/docs/how-to"
+    description="Step-by-step guides"
+  />
+</Cards>

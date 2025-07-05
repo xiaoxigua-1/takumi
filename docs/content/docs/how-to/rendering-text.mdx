@@ -1,0 +1,60 @@
+---
+title: Rendering Text
+description: How to load fonts and render styled text in Takumi
+---
+
+<Callout>
+Before reading this guide, make sure you know how to construct and style text nodes. See [Building Layouts](/docs/how-to/building-layouts) for more details.
+</Callout>
+
+To render styled text in your Takumi layouts, you must load fonts explicitly before rendering.
+
+## Loading Fonts
+
+Takumi requires you to explicitly load fonts before rendering text. This ensures your text appears as expected.
+
+```javascript
+// Load a font from your assets
+const fontResponse = await fetch('/fonts/NotoSans-Regular.ttf');
+const fontData = new Uint8Array(await fontResponse.arrayBuffer());
+renderer.loadFont(fontData);
+
+// Load multiple fonts
+const fontUrls = [
+  '/fonts/NotoSans-Regular.ttf',
+  '/fonts/NotoSans-Bold.ttf',
+  '/fonts/NotoColorEmoji.ttf'
+];
+
+for (const url of fontUrls) {
+  const response = await fetch(url);
+  const data = new Uint8Array(await response.arrayBuffer());
+  renderer.loadFont(data);
+}
+```
+
+> **Note:** The font loader expects a `Uint8Array` of font data. The format is auto-detected, but you can provide a format hint if needed.
+
+## Example: Centered Bold Text
+
+```typescript
+import { container, text } from '@takumi-rs/helpers';
+
+const layout = container({
+  width: 400,
+  height: 200,
+  align_items: 'center',
+  justify_content: 'center',
+  children: [
+    text('Centered Bold', {
+      font_size: 32,
+      color: 0x333333,
+      font_family: 'NotoSans',
+      font_weight: 'bold',
+      text_align: 'center',
+    }),
+  ],
+});
+```
+
+ 

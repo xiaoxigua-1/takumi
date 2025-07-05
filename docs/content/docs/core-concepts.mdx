@@ -1,0 +1,53 @@
+---
+title: Core Concepts
+description: Understanding the fundamental concepts of Takumi
+---
+
+## Node Tree Architecture
+
+Takumi works by constructing a tree of nodes, similar to the HTML DOM. Each node represents an element in your image with its own styling and potential children.
+
+```typescript
+const layout = {
+  type: "container",
+  width: 400,
+  height: 200,
+  children: [
+    {
+      type: "text",
+      text: "Hello World",
+    },
+  ],
+};
+```
+
+## CSS Flexbox Layout
+
+Takumi uses a CSS Flexbox-inspired layout engine. This means you can use familiar concepts like:
+
+- `justify_content` and `align_items` for alignment
+- `flex_direction` for layout direction
+- `gap` for spacing between items
+- `padding` and `margin` for spacing
+
+## Styling System
+
+Takumi's styling system is inspired by CSS but adapted for image generation:
+
+- All dimensions are in pixels by default
+- Colors can be RGB arrays or integers
+- Font loading is explicit and required
+- No cascading - styles are applied directly to nodes
+
+## Cross-Platform Rendering
+
+The same layout definition works across all platforms:
+
+- Rust applications render natively
+- Node.js uses N-API bindings
+- Browsers use WebAssembly
+- HTTP server provides REST API
+
+This ensures consistent results regardless of your deployment target.
+
+

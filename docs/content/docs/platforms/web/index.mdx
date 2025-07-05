@@ -1,0 +1,115 @@
+---
+title: Web (WASM) Integration
+description: Integrate Takumi with WebAssembly (WASM) for client-side image generation.
+---
+
+<Callout>
+Web worker integration is under development. Contributions welcome!
+</Callout>
+
+<Callout type="warn">
+For server-side rendering, consider using the [Node.js/Bun Integration](/docs/platforms/node) for improved performance and compatibility.
+</Callout>
+
+Takumi provides WebAssembly (WASM) bindings for browser compatibility, allowing client-side image generation. The WASM binary is downloaded client-side.
+
+```bash
+npm install @takumi-rs/wasm
+```
+
+## Load the WASM Module
+
+Since WASM files are binary, they need to be loaded and initialized properly. The Takumi WASM package provides an `init` function that takes the URL of the WASM binary.
+
+Different bundlers and frameworks have different ways to handle WASM files. Below are examples for popular setups.
+
+### Vite Setup
+
+```javascript
+import init, { Renderer } from "@takumi-rs/wasm";
+import wasmUrl from "@takumi-rs/wasm/takumi_wasm_bg.wasm?url";
+
+await init(wasmUrl);
+
+const renderer = new Renderer();
+```
+
+### Webpack Setup
+
+To use Takumi WASM with Webpack, you need to configure Webpack to handle `.wasm` files as assets. Add the following to your `webpack.config.js`:
+
+```js
+module.exports = {
+  module: {
+    rules: [
+      {
+        test: /\.wasm$/,
+        type: 'asset/resource',
+        generator: {
+          filename: 'wasm/[name].[hash][ext]'
+        }
+      }
+    ]
+  }
+};
+```
+
+Then, in your code, import the WASM file and initialize the module:
+
+```js
+import init, { Renderer } from '@takumi-rs/wasm';
+import wasmUrl from '@takumi-rs/wasm/takumi_wasm_bg.wasm';
+
+await init(wasmUrl);
+const renderer = new Renderer();
+```
+
+### Next.js Setup
+
+Next.js (with Webpack 5+) also supports importing WASM as assets. You can use the [same Webpack rule as above](#webpack) by customizing your `next.config.js`:
+
+```js
+// next.config.js
+module.exports = {
+  webpack(config) {
+    config.module.rules.push({
+      test: /\.wasm$/,
+      type: 'asset/resource',
+      generator: {
+        filename: 'static/wasm/[name].[hash][ext]'
+      }
+    });
+    return config;
+  },
+};
+```
+
+Then, import and initialize the WASM module in your component or page:
+
+```js
+import init, { Renderer } from '@takumi-rs/wasm';
+import wasmUrl from '@takumi-rs/wasm/takumi_wasm_bg.wasm';
+
+useEffect(() => {
+  (async () => {
+    await init(wasmUrl);
+    const renderer = new Renderer();
+    // ... your code ...
+  })();
+}, []);
+```
+
+### No Bundler Setup
+
+For direct browser usage without a bundler, download files locally or use a CDN like unpkg.
+
+```javascript
+import { container, text, percentage } from "https://unpkg.com/@takumi-rs/helpers";
+import init, { Renderer } from "https://unpkg.com/@takumi-rs/wasm";
+
+await init("http://unpkg.com/@takumi-rs/wasm/takumi_wasm_bg.wasm");
+
+const renderer = new Renderer();
+```
+
+
