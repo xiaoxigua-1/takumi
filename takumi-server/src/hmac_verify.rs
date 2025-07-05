@@ -11,15 +11,15 @@ use sha2::Sha256;
 use crate::{AxumResult, AxumState};
 
 #[derive(Deserialize)]
-pub struct IntegrityQuery {
+pub struct HmacQuery {
   pub hash: String,
   pub timestamp: u64,
   pub payload: Vec<u8>,
 }
 
-pub async fn integrity_check_middleware(
+pub async fn hmac_verify_middleware(
   State(state): AxumState,
-  Query(mut query): Query<IntegrityQuery>,
+  Query(mut query): Query<HmacQuery>,
   request: Request,
   next: Next,
 ) -> AxumResult<Response> {
@@ -39,7 +39,7 @@ pub async fn integrity_check_middleware(
   if result_hex != query.hash {
     return Err((
       StatusCode::BAD_REQUEST,
-      "Integrity check failed".to_string(),
+      "HMAC verification failed".to_string(),
     ));
   }
 

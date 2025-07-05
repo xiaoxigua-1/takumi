@@ -1,8 +1,8 @@
 mod args;
 
 mod generate_image;
-#[cfg(feature = "integrity")]
-mod integrity_check;
+#[cfg(feature = "hmac_verify")]
+mod hmac_verify;
 
 use axum::{Router, extract::State, http::StatusCode, response::Response, routing::get};
 use clap::Parser;
@@ -27,7 +27,7 @@ pub type AxumResult<T = Response> = Result<T, (StatusCode, String)>;
 
 pub struct AxumStateInner {
   pub context: GlobalContext,
-  #[cfg(feature = "integrity")]
+  #[cfg(feature = "hmac_verify")]
   pub hmac_key: Option<Vec<u8>>,
 }
 
@@ -64,7 +64,7 @@ async fn main() {
 
   let state = Arc::new(AxumStateInner {
     context,
-    #[cfg(feature = "integrity")]
+    #[cfg(feature = "hmac_verify")]
     hmac_key: args.hmac_key.map(|key| {
       use sha2::{Digest, Sha256};
 
@@ -78,11 +78,11 @@ async fn main() {
     .route("/image", get(generate_image_handler))
     .with_state(state.clone());
 
-  #[cfg(feature = "integrity")]
+  #[cfg(feature = "hmac_verify")]
   if state.hmac_key.is_some() {
     app = app.layer(axum::middleware::from_fn_with_state(
       state,
-      integrity_check::integrity_check_middleware,
+      hmac_verify::hmac_verify_middleware,
     ));
   }
 

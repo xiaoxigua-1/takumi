@@ -33,7 +33,7 @@ pub struct Args {
   pub font_glob: Option<String>,
 
   /// The HMAC key for integrity checking. Can be any valid UTF-8 string.
-  #[cfg_attr(feature = "integrity", arg(long))]
-  #[cfg(feature = "integrity")]
+  #[cfg_attr(feature = "hmac_verify", arg(long))]
+  #[cfg(feature = "hmac_verify")]
   pub hmac_key: Option<String>,
 }

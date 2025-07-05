@@ -38,5 +38,5 @@ version = "4.5"
 features = ["derive"]
 
 [features]
-default = ["integrity"]
-integrity = ["dep:hmac", "dep:sha2", "dep:hex"]
+default = ["hmac_verify"]
+hmac_verify = ["dep:hmac", "dep:sha2", "dep:hex"]
