@@ -1,73 +1,34 @@
 mod args;
 
-use axum::{
-  Router,
-  extract::{Json, Query, State},
-  http::StatusCode,
-  response::{IntoResponse, Response},
-  routing::post,
-};
+mod generate_image;
+#[cfg(feature = "integrity")]
+mod integrity_check;
+
+use axum::{Router, extract::State, http::StatusCode, response::Response, routing::get};
 use clap::Parser;
+
 use globwalk::glob;
-use serde::Deserialize;
-use std::{fs::read, io::Cursor, net::SocketAddr, sync::Arc};
-use takumi::{
-  DefaultNodeKind, GlobalContext, ImageRenderer, LengthUnit, Node, Viewport,
-  rendering::{ImageOutputFormat, write_image},
-};
-use tokio::{net::TcpListener, task::spawn_blocking};
+use std::{fs::read, net::SocketAddr, sync::Arc};
+use takumi::GlobalContext;
+use tokio::net::TcpListener;
 use tracing::{Level, error, info};
 use tracing_subscriber::fmt;
 
 use mimalloc::MiMalloc;
 
-use crate::args::Args;
+use crate::{args::Args, generate_image::generate_image_handler};
 
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;
 
-#[derive(Deserialize)]
-struct GenerateImageQuery {
-  format: Option<ImageOutputFormat>,
-  quality: Option<u8>,
-}
+pub type AxumState = State<Arc<AxumStateInner>>;
 
-async fn generate_image_handler(
-  Query(query): Query<GenerateImageQuery>,
-  State(context): State<Arc<GlobalContext>>,
-  Json(mut root_node): Json<DefaultNodeKind>,
-) -> Result<Response, StatusCode> {
-  let LengthUnit::Px(width) = root_node.get_style().width else {
-    return Err(StatusCode::BAD_REQUEST);
-  };
+pub type AxumResult<T = Response> = Result<T, (StatusCode, String)>;
 
-  let LengthUnit::Px(height) = root_node.get_style().height else {
-    return Err(StatusCode::BAD_REQUEST);
-  };
-
-  let format = query.format.unwrap_or(ImageOutputFormat::WebP);
-
-  let buffer = spawn_blocking(move || -> Vec<u8> {
-    root_node.inherit_style_for_children();
-    root_node.hydrate(&context);
-
-    let mut renderer = ImageRenderer::new(Viewport::new(width as u32, height as u32));
-
-    renderer.construct_taffy_tree(root_node, &context);
-
-    let image = renderer.draw(&context).unwrap();
-
-    let mut buffer = Vec::new();
-    let mut cursor = Cursor::new(&mut buffer);
-
-    write_image(&image, &mut cursor, format, query.quality).unwrap();
-
-    buffer
-  })
-  .await
-  .unwrap();
-
-  Ok(([("content-type", format.content_type())], buffer).into_response())
+pub struct AxumStateInner {
+  pub context: GlobalContext,
+  #[cfg(feature = "integrity")]
+  pub hmac_key: Option<Vec<u8>>,
 }
 
 #[tokio::main]
@@ -101,17 +62,34 @@ async fn main() {
     }
   }
 
-  // Initialize the router with our image generation endpoint
-  let app = Router::new()
-    .route("/image", post(generate_image_handler))
-    .with_state(Arc::new(context));
+  let state = Arc::new(AxumStateInner {
+    context,
+    #[cfg(feature = "integrity")]
+    hmac_key: args.hmac_key.map(|key| {
+      use sha2::{Digest, Sha256};
 
-  // Bind to all interfaces on port 3000
+      let mut hasher = Sha256::new();
+      hasher.update(key.as_bytes());
+      hasher.finalize().to_vec()
+    }),
+  });
+
+  let mut app = Router::new()
+    .route("/image", get(generate_image_handler))
+    .with_state(state.clone());
+
+  #[cfg(feature = "integrity")]
+  if state.hmac_key.is_some() {
+    app = app.layer(axum::middleware::from_fn_with_state(
+      state,
+      integrity_check::integrity_check_middleware,
+    ));
+  }
+
   let addr = SocketAddr::from(([0, 0, 0, 0], args.port));
   let listener = TcpListener::bind(addr).await.unwrap();
 
   println!("Image generator server running on http://{addr}");
 
-  // Start the server
   axum::serve(listener, app).await.unwrap();
 }

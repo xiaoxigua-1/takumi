@@ -1,0 +1,47 @@
+use axum::{
+  extract::{Query, Request, State},
+  http::StatusCode,
+  middleware::Next,
+  response::Response,
+};
+use hmac::{Hmac, Mac};
+use serde::Deserialize;
+use sha2::Sha256;
+
+use crate::{AxumResult, AxumState};
+
+#[derive(Deserialize)]
+pub struct IntegrityQuery {
+  pub hash: String,
+  pub timestamp: u64,
+  pub payload: Vec<u8>,
+}
+
+pub async fn integrity_check_middleware(
+  State(state): AxumState,
+  Query(mut query): Query<IntegrityQuery>,
+  request: Request,
+  next: Next,
+) -> AxumResult<Response> {
+  let Some(secret) = state.hmac_key.as_ref() else {
+    return Ok(next.run(request).await);
+  };
+
+  query.payload.extend(query.timestamp.to_string().as_bytes());
+
+  let mut mac = Hmac::<Sha256>::new_from_slice(secret).unwrap();
+  mac.update(&query.payload);
+
+  let result = mac.finalize();
+  let result_bytes = result.into_bytes();
+  let result_hex = hex::encode(result_bytes);
+
+  if result_hex != query.hash {
+    return Err((
+      StatusCode::BAD_REQUEST,
+      "Integrity check failed".to_string(),
+    ));
+  }
+
+  Ok(next.run(request).await)
+}

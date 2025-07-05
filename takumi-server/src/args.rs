@@ -11,7 +11,6 @@ pub struct Args {
   /// The port number on which the server will listen.
   ///
   /// Defaults to 3000 if not specified.
-  /// Example: `--port 8080` or `-p 8080`
   #[arg(short, long, default_value_t = 3000)]
   pub port: u16,
 
@@ -19,7 +18,6 @@ pub struct Args {
   ///
   /// When enabled, the server will print the node tree structure
   /// during image generation for debugging purposes.
-  /// Example: `--print-debug-tree` or `-p`
   #[arg(short, long, default_value_t = false)]
   pub print_debug_tree: bool,
 
@@ -27,12 +25,15 @@ pub struct Args {
   ///
   /// When enabled, the server will draw borders around all elements
   /// in the generated image to help with layout debugging.
-  /// Example: `--draw-debug-border` or `-d`
   #[arg(short, long, default_value_t = false)]
   pub draw_debug_border: bool,
 
   /// Glob pattern of font files to load into the server.
-  /// Example: `--fonts assets/*`
   #[arg(short, long)]
   pub font_glob: Option<String>,
+
+  /// The HMAC key for integrity checking. Can be any valid UTF-8 string.
+  #[cfg_attr(feature = "integrity", arg(long))]
+  #[cfg(feature = "integrity")]
+  pub hmac_key: Option<String>,
 }
