@@ -2,15 +2,27 @@
 title: Web (WASM) Integration
 ---
 
-Compiled to WebAssembly for browser compatibility. The WASM binary is downloaded client-side. For server-side rendering, see [In Node.js/Bun](#in-nodejsbun).
-
+<Callout>
 Web worker integration is under development. Contributions welcome!
+</Callout>
+
+<Callout type="warn">
+For server-side rendering, consider using the [Node.js/Bun Integration](/docs/platforms/node) for improved performance and compatibility.
+</Callout>
+
+Takumi provides WebAssembly (WASM) bindings for browser compatibility, allowing client-side image generation. The WASM binary is downloaded client-side.
 
 ```bash
-npm install @takumi-rs/wasm @takumi-rs/helpers
+npm install @takumi-rs/wasm
 ```
 
-#### Vite
+## Load the WASM Module
+
+Since WASM files are binary, they need to be loaded and initialized properly. The Takumi WASM package provides an `init` function that takes the URL of the WASM binary.
+
+Different bundlers and frameworks have different ways to handle WASM files. Below are examples for popular setups.
+
+### Vite Setup
 
 ```javascript
 import init, { Renderer } from "@takumi-rs/wasm";
@@ -21,7 +33,7 @@ await init(wasmUrl);
 const renderer = new Renderer();
 ```
 
-#### Webpack
+### Webpack Setup
 
 To use Takumi WASM with Webpack, you need to configure Webpack to handle `.wasm` files as assets. Add the following to your `webpack.config.js`:
 
@@ -51,7 +63,7 @@ await init(wasmUrl);
 const renderer = new Renderer();
 ```
 
-#### Next.js
+### Next.js Setup
 
 Next.js (with Webpack 5+) also supports importing WASM as assets. You can use the [same Webpack rule as above](#webpack) by customizing your `next.config.js`:
 
@@ -86,7 +98,7 @@ useEffect(() => {
 }, []);
 ```
 
-#### No Bundler
+### No Bundler Setup
 
 For direct browser usage without a bundler, download files locally or use a CDN like unpkg.
 
@@ -99,26 +111,4 @@ await init("http://unpkg.com/@takumi-rs/wasm/takumi_wasm_bg.wasm");
 const renderer = new Renderer();
 ```
 
-### Font Loading
 
-All setups require explicit font loading for text rendering:
-
-```javascript
-// Method 1: Load from your assets
-const fontResponse = await fetch('/fonts/NotoSans-Regular.ttf');
-const fontData = new Uint8Array(await fontResponse.arrayBuffer());
-renderer.loadFont(fontData);
-
-// Method 2: Load multiple fonts
-const fontUrls = [
-  '/fonts/NotoSans-Regular.ttf',
-  '/fonts/NotoSans-Bold.ttf',
-  '/fonts/NotoColorEmoji.ttf'
-];
-
-for (const url of fontUrls) {
-  const response = await fetch(url);
-  const data = new Uint8Array(await response.arrayBuffer());
-  renderer.loadFont(data);
-}
-```
