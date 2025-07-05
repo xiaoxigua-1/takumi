@@ -38,7 +38,7 @@ export function ImageEditor() {
   }, []);
 
   // FIXME: maybe a fixed container to prevent CLS problem, or a button to start this editor?
-  if (!version) return <p>Loading WASM version...</p>;
+  if (!version) return <p>Fetching Latest Takumi version...</p>;
 
   return (
     <SandpackProvider
