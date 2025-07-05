@@ -1,0 +1,28 @@
+---
+title: Node.js Integration
+---
+
+Built with N-API bindings that leverage Node.js's libuv thread pool for optimal performance.
+
+```bash
+npm install @takumi-rs/core @takumi-rs/helpers
+```
+
+```typescript
+import { render } from "@takumi-rs/core";
+import { container, text } from "@takumi-rs/helpers";
+
+const layout = container({
+  width: 400,
+  height: 200,
+  background_color: 0xffffff,
+  children: [
+    text("Hello from Node.js!", {
+      font_size: 24,
+      color: 0x000000,
+    }),
+  ],
+});
+
+const imageBuffer = render(layout);
+```

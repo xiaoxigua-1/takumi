@@ -1,0 +1,29 @@
+---
+title: Pick Your Platform
+---
+
+Takumi is built with Rust and designed for portability. You can use it:
+
+<Cards>
+  <Card
+    title="In Node.js/Bun"
+    href="/docs/platforms/nodejs"
+    description="Via the @takumi-rs/core package (N-API) for server-side rendering."
+  />
+  <Card
+    title="In the browser"
+    href="/docs/platforms/web-browser"
+    description="Via the @takumi-rs/wasm package (WebAssembly) for client-side generation."
+  />
+  <Card
+    title="With pre-built HTTP server"
+    href="/docs/platforms/pre-built-server"
+    description="Host an external server to handle image generation."
+  />
+  </Cards>
+
+## Directly in Rust
+
+For native Rust applications, integrating Takumi directly provides the highest level of performance and fine-grained control, ideal when maximum efficiency and direct access to Takumi's core capabilities are required within a Rust environment.
+
+Refer to the [takumi crate on docs.rs](https://docs.rs/takumi/latest/takumi/) for complete documentation and advanced usage.

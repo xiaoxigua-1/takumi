@@ -1,61 +1,6 @@
 ---
-title: Setup
-description: Learn how to setup and use Takumi for your platform
+title: Web (WASM) Integration
 ---
-
-Takumi is built with Rust and designed for portability. You can use it:
-
-<Cards>
-  <Card
-    title="In Node.js/Bun"
-    href="#in-nodejsbun"
-    description="Via the @takumi-rs/core package (N-API) for server-side rendering."
-  />
-  <Card
-    title="In the browser"
-    href="#in-webbrowser"
-    description="Via the @takumi-rs/wasm package (WebAssembly) for client-side generation."
-  />
-  <Card
-    title="With pre-built HTTP server"
-    href="#with-pre-built-http-server"
-    description="Host an external server to handle image generation."
-  />
-  <Card
-    title="Directly in Rust"
-    href="#directly-in-rust"
-    description="For native applications with maximum performance and control."
-  />
-</Cards>
-
-## In Node.js/Bun
-
-Built with N-API bindings that leverage Node.js's libuv thread pool for optimal performance.
-
-```bash
-npm install @takumi-rs/core @takumi-rs/helpers
-```
-
-```typescript
-import { render } from "@takumi-rs/core";
-import { container, text } from "@takumi-rs/helpers";
-
-const layout = container({
-  width: 400,
-  height: 200,
-  background_color: 0xffffff,
-  children: [
-    text("Hello from Node.js!", {
-      font_size: 24,
-      color: 0x000000,
-    }),
-  ],
-});
-
-const imageBuffer = render(layout);
-```
-
-## In Web/Browser
 
 Compiled to WebAssembly for browser compatibility. The WASM binary is downloaded client-side. For server-side rendering, see [In Node.js/Bun](#in-nodejsbun).
 
@@ -177,21 +122,3 @@ for (const url of fontUrls) {
   renderer.loadFont(data);
 }
 ```
-
-## With Pre-built HTTP Server
-
-Deploy a standalone HTTP server that provides image generation via REST API.
-
-Run `takumi-server --help` for usage instructions.
-
-### Build from Source
-
-```bash
-git clone https://github.com/kane50613/takumi.git
-cd takumi
-cargo build --release --bin takumi-server
-```
-
-## Directly in Rust
-
-See [takumi in docs.rs](https://docs.rs/takumi/latest/takumi/) for complete documentation.

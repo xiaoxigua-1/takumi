@@ -11,6 +11,28 @@ _Takumi (匠) means "artisan" or "craftsman" in Japanese - reflecting the precis
 
 At its core, Takumi works by constructing a tree of nodes, similar to the HTML DOM. You then style them with properties inspired by CSS, and then render the entire tree into a final image.
 
+## Why Takumi
+
+### Flexible Deployment
+
+- **Cross-Platform Compatibility:** Available for Rust, Node.js (via N-API), and WebAssembly, allowing flexible deployment across various environments.
+- **Pre-built Server:** Deploy a standalone HTTP server for image generation, ideal for microservices or environments requiring a ready-to-use API.
+
+### Powerful Layout & Styling
+
+- **CSS Flexbox-like Layout:** Design and arrange elements using a familiar and powerful layout model, simplifying complex image compositions.
+- **Rich Styling Options:** Apply a wide range of styling properties, including colors, fonts, borders, shadows, and more.
+- **Font Loading:** Easily load and utilize custom fonts for diverse typographic designs.
+
+### Performance & Extensibility
+
+- **High Performance:** Built with Rust, Takumi offers efficient image generation capabilities.
+- **Extensible Node System:** Create custom image elements and extend functionality to suit specific needs.
+
+### Security (for Server)
+
+- **HMAC Verification (Server):** Secure your image generation API with optional HMAC-based request verification.
+
 ## Start Here
 
 Looking to dive in quickly? Check out the best places to begin learning how to use Takumi
@@ -19,7 +41,7 @@ Looking to dive in quickly? Check out the best places to begin learning how to u
   <Card
     icon={<Wrench/>}
     title="Setup"
-    href="/docs/how-to/setup"
+    href="/docs/platforms/pick-your-platform"
     description="How to setup and use Takumi for your platform"
   />
   <Card
@@ -27,5 +49,11 @@ Looking to dive in quickly? Check out the best places to begin learning how to u
     title="Core Concepts"
     href="/docs/core-concepts"
     description="Understanding the fundamental concepts of Takumi"
+  />
+  <Card
+    icon={<BookOpen/>}
+    title="How-to Guides"
+    href="/docs/how-to"
+    description="Practical guides for common tasks"
   />
 </Cards>

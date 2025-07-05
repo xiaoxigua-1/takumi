@@ -10,13 +10,14 @@ import {
   DocsPage,
   DocsTitle,
 } from "fumadocs-ui/page";
-import { Brain, Wrench } from "lucide-react";
+import { BookOpen, Brain, Wrench } from "lucide-react";
 import { baseOptions } from "~/layout-config";
 import { source } from "~/source";
 import type { Route } from "./+types/page";
 
 const components = {
   ...defaultMdxComponents,
+  BookOpen,
   Wrench,
   Brain,
 };

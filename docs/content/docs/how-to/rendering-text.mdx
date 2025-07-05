@@ -6,12 +6,8 @@ description: How to load fonts and render styled text in Takumi
 To render styled text in your Takumi layouts, you must load fonts explicitly before rendering.
 
 <Callout>
-Before reading this guide, make sure you know how to construct text nodes, see [how to construct text nodes](/docs/how-to/construct-node) for more details.
+Before reading this guide, make sure you know how to construct and style text nodes. See [Building Layouts](/docs/how-to/building-layouts) for more details.
 </Callout>
-
-## Styling Text
-
-You can use style properties such as `font_size`, `color`, `font_family`, `font_weight`, and `text_align` to control the appearance of your text.
 
 ## Loading Fonts
 
@@ -42,11 +38,26 @@ for (const url of fontUrls) {
 ## Example: Centered Bold Text
 
 ```typescript
-const node = text('Centered Bold', {
-  font_size: 32,
-  color: 0x333333,
-  font_family: 'NotoSans',
-  font_weight: 'bold',
-  text_align: 'center',
+import { container, text } from '@takumi-rs/helpers';
+
+const layout = container({
+  width: 400,
+  height: 200,
+  align_items: 'center',
+  justify_content: 'center',
+  children: [
+    text('Centered Bold', {
+      font_size: 32,
+      color: 0x333333,
+      font_family: 'NotoSans',
+      font_weight: 'bold',
+      text_align: 'center',
+    }),
+  ],
 });
-``` 
+```
+
+## What's Next?
+
+- [Loading Images](/docs/how-to/load-image)
+- [Style Properties Reference](/docs/reference/style) 

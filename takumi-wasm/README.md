@@ -1,3 +1,3 @@
 # @takumi-rs/wasm
 
-Checkout [Setup Documentation](https://takumi.kane.tw/docs/how-to/setup#in-webbrowser) for loading WASM.
+For detailed documentation, please refer to the [Web (WASM) Integration section](https://takumi.kane.tw/docs/platforms/web) in our official documentation.
