@@ -3,24 +3,28 @@ title: Load Image
 description: How to load and render images in Takumi
 ---
 
-## Image Source Compatibility Matrix
-
-The `src` property can be a URL, file path, or a data URI.
-
 <Callout>
 Before reading this guide, make sure you know how to construct and style image nodes. See [Building Layouts](/docs/how-to/building-layouts) for more details.
 </Callout>
 
-## Image Source Compatibility Matrix
+## Persistent Storage
 
-To minimize binary size for embedded Takumi versions, certain [features of Takumi](https://docs.rs/crate/takumi/latest/features) are disabled. Alternative solutions may be considered.
+Takumi provides a persistent storage in every renderer instance. It allows you to load images from files or URLs and cache them for later use. 
 
-| Type / Package   | URL | File Path         | Data URI |
-|------------------|-----|------------------|----------|
-| `@takumi-rs/core`| ❌ (use `fetch`)  | ❌ (use `readFile`) | ✅       |
-| `@takumi-rs/wasm`| ❌ (use `fetch`)  | ❌               | ✅       |
-| `takumi-server`  | ✅  | ❌               | ✅       |
+The storage is basically a key-value store, so you can name your keys with any identifier you like.
 
+This is particularly useful for frequently used images, as it avoids the overhead of fetching them repeatedly.
 
+## Image Source Compatibility
 
+The `src` property of an image node can accept a URL, file path, or a data URI. 
 
+However, support for these sources varies depending on the Takumi package you are using. This is primarily to minimize binary size for embedded Takumi versions, as certain features are disabled by default.
+
+The table below outlines the compatibility for each package:
+
+| Type / Package   | URL (Remote)                               | Persistent Storage                               | Data URI (Base64 Encoded) |
+| :--------------- | :----------------------------------------- | :----------------------------------------------- | :------------------------ |
+| `@takumi-rs/core`| ❌ (Requires manual fetching, then pass as Data URI) | ✅                                               | ✅                        |
+| `@takumi-rs/wasm`| ❌ (Requires manual fetching, then pass as Data URI) | ✅                                               | ✅                        |
+| `takumi-server`  | ✅ (Handles fetching internally)           | ✅                                               | ✅                        |
