@@ -14,7 +14,7 @@ use crate::{AxumResult, AxumState};
 pub struct HmacQuery {
   pub hash: String,
   pub timestamp: u64,
-  pub payload: Vec<u8>,
+  pub payload: String,
 }
 
 pub async fn hmac_verify_middleware(
@@ -27,10 +27,10 @@ pub async fn hmac_verify_middleware(
     return Ok(next.run(request).await);
   };
 
-  query.payload.extend(query.timestamp.to_string().as_bytes());
+  query.payload.push_str(&query.timestamp.to_string());
 
   let mut mac = Hmac::<Sha256>::new_from_slice(secret).unwrap();
-  mac.update(&query.payload);
+  mac.update(query.payload.as_bytes());
 
   let result = mac.finalize();
   let result_bytes = result.into_bytes();

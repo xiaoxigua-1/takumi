@@ -53,11 +53,14 @@ async fn main() {
 
           let file = read(path.path()).unwrap();
 
-          context.font_context.load_font(file).unwrap();
+          if let Err(e) = context.font_context.load_font(file) {
+            error!("Failed to load font {}: {e:?}", path.file_name().display());
+            continue;
+          }
 
           info!("Loaded font: {}", path.file_name().display())
         }
-        Err(e) => error!("Failed to load font: {e}"),
+        Err(e) => error!("Failed to load font: {e:?}"),
       }
     }
   }
@@ -89,7 +92,7 @@ async fn main() {
   let addr = SocketAddr::from(([0, 0, 0, 0], args.port));
   let listener = TcpListener::bind(addr).await.unwrap();
 
-  println!("Image generator server running on http://{addr}");
+  info!("Image generator server running on http://{addr}");
 
   axum::serve(listener, app).await.unwrap();
 }

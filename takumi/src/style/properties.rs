@@ -326,6 +326,18 @@ impl From<FlexWrap> for taffy::style::FlexWrap {
   }
 }
 
+/// Defines how text should be overflowed.
+///
+/// This enum determines how text should be handled when it exceeds the container width.
+#[derive(Debug, Clone, Deserialize, Serialize, Copy, TS, PartialEq)]
+#[serde(rename_all = "kebab-case")]
+pub enum TextOverflow {
+  /// Text is truncated with an ellipsis (…) at the end
+  Ellipsis,
+  /// Text is truncated with no visible indicator
+  Clip,
+}
+
 /// Represents the resolved font style for a text node.
 ///
 /// This struct contains the resolved font style properties after inheriting
@@ -346,6 +358,8 @@ pub struct ResolvedFontStyle {
   pub letter_spacing: Option<f32>,
   /// Text alignment within the element
   pub text_align: Option<Align>,
+  /// How text should be overflowed
+  pub text_overflow: TextOverflow,
   /// Text color for child text elements
   pub color: ColorInput,
 }
@@ -449,6 +463,8 @@ impl Default for Style {
 #[merge(strategy = overwrite_none)]
 #[ts(optional_fields, export)]
 pub struct InheritableStyle {
+  /// How text should be overflowed
+  pub text_overflow: Option<TextOverflow>,
   /// Color of the element's border
   pub border_color: Option<ColorInput>,
   /// Text color for child text elements
@@ -530,6 +546,7 @@ impl Style {
       font_family: self.inheritable_style.font_family.clone(),
       letter_spacing: self.inheritable_style.letter_spacing,
       text_align: self.inheritable_style.text_align.map(Into::into),
+      text_overflow: self.inheritable_style.text_overflow.unwrap_or(TextOverflow::Clip),
     }
   }
 }

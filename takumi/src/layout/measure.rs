@@ -75,14 +75,11 @@ pub fn measure_text(
     (None, None) => None,
   };
 
-  let mut buffer = construct_text_buffer(text, style, context);
-
-  let mut font_system = context.global.font_context.font_system.lock().unwrap();
-
-  buffer.set_size(
-    &mut font_system,
-    width_constraint,
-    height_constraint_with_max_lines,
+  let buffer = construct_text_buffer(
+    text,
+    style,
+    context,
+    Some((width_constraint, height_constraint_with_max_lines)),
   );
 
   let (width, total_lines) = buffer

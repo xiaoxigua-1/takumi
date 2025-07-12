@@ -6,6 +6,7 @@ use axum::{
   response::{IntoResponse, Response},
 };
 use serde::Deserialize;
+use serde_json::from_str;
 use takumi::{
   DefaultNodeKind, ImageRenderer, LengthUnit, Node, Viewport,
   rendering::{ImageOutputFormat, write_image},
@@ -18,14 +19,19 @@ use crate::{AxumResult, AxumState};
 pub struct GenerateImageQuery {
   format: Option<ImageOutputFormat>,
   quality: Option<u8>,
-  payload: DefaultNodeKind,
+  payload: String,
 }
 
 pub async fn generate_image_handler(
   Query(query): Query<GenerateImageQuery>,
   State(state): AxumState,
 ) -> AxumResult<Response> {
-  let mut root_node = query.payload;
+  let mut root_node: DefaultNodeKind = from_str(&query.payload).map_err(|err| {
+    (
+      StatusCode::BAD_REQUEST,
+      format!("Failed to parse node: {err}"),
+    )
+  })?;
 
   let LengthUnit::Px(width) = root_node.get_style().width else {
     return Err((

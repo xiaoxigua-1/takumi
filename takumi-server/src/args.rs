@@ -18,14 +18,14 @@ pub struct Args {
   ///
   /// When enabled, the server will print the node tree structure
   /// during image generation for debugging purposes.
-  #[arg(short, long, default_value_t = false)]
+  #[arg(long, default_value_t = false)]
   pub print_debug_tree: bool,
 
   /// Enables drawing of debug borders around elements.
   ///
   /// When enabled, the server will draw borders around all elements
   /// in the generated image to help with layout debugging.
-  #[arg(short, long, default_value_t = false)]
+  #[arg(long, default_value_t = false)]
   pub draw_debug_border: bool,
 
   /// Glob pattern of font files to load into the server.
