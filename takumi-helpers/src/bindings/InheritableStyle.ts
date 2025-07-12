@@ -4,6 +4,7 @@ import type { FontWeight } from "./FontWeight";
 import type { LengthUnit } from "./LengthUnit";
 import type { SidesValue } from "./SidesValue";
 import type { TextAlign } from "./TextAlign";
+import type { TextOverflow } from "./TextOverflow";
 
 /**
  * Style properties that can be inherited by child elements.
@@ -12,6 +13,10 @@ import type { TextAlign } from "./TextAlign";
  * in the layout hierarchy, such as font settings and colors.
  */
 export type InheritableStyle = { 
+/**
+ * How text should be overflowed
+ */
+text_overflow?: TextOverflow, 
 /**
  * Color of the element's border
  */

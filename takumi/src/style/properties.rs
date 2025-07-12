@@ -546,7 +546,10 @@ impl Style {
       font_family: self.inheritable_style.font_family.clone(),
       letter_spacing: self.inheritable_style.letter_spacing,
       text_align: self.inheritable_style.text_align.map(Into::into),
-      text_overflow: self.inheritable_style.text_overflow.unwrap_or(TextOverflow::Clip),
+      text_overflow: self
+        .inheritable_style
+        .text_overflow
+        .unwrap_or(TextOverflow::Clip),
     }
   }
 }

@@ -12,6 +12,7 @@ import type { ObjectFit } from "./ObjectFit";
 import type { Position } from "./Position";
 import type { SidesValue } from "./SidesValue";
 import type { TextAlign } from "./TextAlign";
+import type { TextOverflow } from "./TextOverflow";
 
 /**
  * Main styling structure that contains all layout and visual properties.
@@ -113,6 +114,10 @@ background_color?: ColorInput,
  * Box shadow for the element
  */
 box_shadow?: BoxShadowInput, 
+/**
+ * How text should be overflowed
+ */
+text_overflow?: TextOverflow, 
 /**
  * Color of the element's border
  */
