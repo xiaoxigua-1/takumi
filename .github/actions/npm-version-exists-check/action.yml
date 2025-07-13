@@ -9,7 +9,6 @@ inputs:
 outputs:
   exists: 
     description: Whether the version exists
-    type: boolean
     value: ${{ steps.check.outputs.exists }}
 
 runs:

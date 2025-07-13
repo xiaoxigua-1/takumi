@@ -233,7 +233,7 @@ jobs:
 
   version-check-napi:
     name: Check version for @takumi-rs/core
-    needs: test-napi
+    if: github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     outputs:
       exists: ${{ steps.check.outputs.exists }}
@@ -318,7 +318,7 @@ jobs:
           if-no-files-found: error
     
   test-wasm:
-    name: Test WASM
+    name: Test @takumi-rs/wasm
     needs: [build-wasm]
     runs-on: ubuntu-latest
     steps:
