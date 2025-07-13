@@ -20,6 +20,9 @@ runs:
       shell: bash
       run: |
         package=$(jq -r '"\(.name)@\(.version)"' package.json)
+
+        echo "Checking if version $package exists"
+
         if npm view "$package" version 2>/dev/null; then
           echo "exists=true" >> $GITHUB_OUTPUT
           else

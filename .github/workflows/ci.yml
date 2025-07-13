@@ -349,6 +349,7 @@ jobs:
 
   version-check-wasm:
     name: Check version for @takumi-rs/wasm
+    needs: build-wasm
     if: github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     outputs:
@@ -357,10 +358,16 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: wasm-package
+          path: takumi-wasm/pkg
+
       - uses: ./.github/actions/npm-version-exists-check
         id: check
         with:
-          working_directory: takumi-wasm
+          working_directory: takumi-wasm/pkg
 
   publish-wasm:
     name: Publish @takumi-rs/wasm
