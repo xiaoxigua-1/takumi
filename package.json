@@ -1,11 +1,17 @@
 {
   "name": "takumi",
-  "workspaces": [
-    "takumi-helpers",
-    "takumi-napi-core",
-    "takumi-wasm",
-    "docs"
-  ],
+  "workspaces": {
+    "packages": [
+      "takumi-helpers",
+      "takumi-napi-core",
+      "takumi-wasm",
+      "docs"
+    ],
+    "catalog": {
+      "@types/bun": "^1.2.18",
+      "typescript": "^5.8.3"
+    }
+  },
   "devDependencies": {
     "@biomejs/biome": "^2.0.6"
   },

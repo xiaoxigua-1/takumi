@@ -1,16 +1,22 @@
+import { describe, expect, test } from "bun:test";
 import { readFile, writeFile } from "node:fs/promises";
+import { join } from "node:path";
 import { container, image, percentage, rem, text } from "@takumi-rs/helpers";
-import { describe, expect, test } from "vitest";
+import { Glob } from "bun";
 import init, { ImageOutputFormat, Renderer } from "../pkg";
 
 await init(readFile("./pkg/takumi_wasm_bg.wasm"));
 
-function getFonts() {
-  const files = Object.keys(
-    import.meta.glob("../../assets/fonts/**/*.{woff2,ttf}"),
-  );
+const fontsGlob = new Glob("**/*.{woff2,ttf}");
 
-  return Promise.all(files.map((path) => readFile(path.replace("../", ""))));
+async function getFonts() {
+  const fonts: Buffer[] = [];
+
+  for await (const file of fontsGlob.scan("../assets/fonts")) {
+    fonts.push(await readFile(join("../assets/fonts", file)));
+  }
+
+  return fonts;
 }
 
 const fonts = await getFonts();

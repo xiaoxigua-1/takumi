@@ -1,0 +1,40 @@
+name: Setup Rust
+description: Setup Rust toolchain, cache, and install cargo-binstall
+
+inputs:
+  binstall:
+    description: Install cargo-binstall
+    required: false
+  targets:
+    description: Targets to install
+    required: false
+  components:
+    description: Components to install
+    required: false
+
+runs:
+  using: composite
+  steps:
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@master
+      with:
+        toolchain: stable
+        components: ${{ inputs.components }}
+        targets: ${{ inputs.targets }}
+
+    - name: Cache Cargo registry
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-
+
+    - name: Install cargo-binstall
+      if: ${{ inputs.binstall }}
+      uses: taiki-e/install-action@v2
+      with:
+        tool: ${{ inputs.binstall }}
