@@ -467,3 +467,9 @@ jobs:
           body: ${{ steps.release_notes.outputs.notes }}
           draft: false
           prerelease: false
+
+  pass-test:
+    name: Pass Test
+    runs-on: ubuntu-latest
+    needs: [test-rust, test-napi, test-wasm]
+    if: always()
