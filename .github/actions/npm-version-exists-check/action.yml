@@ -1,0 +1,32 @@
+name: NPM Version Check
+description: Check if npm version exists for package
+
+inputs:
+  working_directory:
+    description: Directory containing package.json
+    required: true
+
+outputs:
+  exists: 
+    description: Whether the version exists
+    type: boolean
+    value: ${{ steps.check.outputs.exists }}
+
+runs:
+  using: composite
+  steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 2
+
+    - name: Check if version exists
+      id: check
+      working-directory: ${{ inputs.working_directory }}
+      run: |
+        package=$(jq -r '"\(.name)@\(.version)"' package.json)
+        if npm view "$package" version 2>/dev/null; then
+          echo "exists=true" >> $GITHUB_OUTPUT
+          else
+          echo "exists=false" >> $GITHUB_OUTPUT
+        fi
