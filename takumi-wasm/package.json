@@ -1,6 +1,9 @@
 {
   "name": "@takumi-rs/wasm",
   "private": true,
+  "scripts": {
+    "build": "wasm-pack build --out-dir pkg --target web"
+  },
   "devDependencies": {
     "@takumi-rs/helpers": "workspace:*",
     "@types/bun": "catalog:",

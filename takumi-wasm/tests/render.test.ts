@@ -5,7 +5,9 @@ import { container, image, percentage, rem, text } from "@takumi-rs/helpers";
 import { Glob } from "bun";
 import init, { ImageOutputFormat, Renderer } from "../pkg";
 
-await init(readFile("./pkg/takumi_wasm_bg.wasm"));
+await init({
+  module_or_path: readFile("./pkg/takumi_wasm_bg.wasm"),
+});
 
 const fontsGlob = new Glob("**/*.{woff2,ttf}");
 
