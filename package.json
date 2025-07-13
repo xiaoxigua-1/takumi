@@ -12,6 +12,9 @@
       "typescript": "^5.8.3"
     }
   },
+  "scripts": {
+    "lint": "biome ci ."
+  },
   "devDependencies": {
     "@biomejs/biome": "^2.0.6"
   },
