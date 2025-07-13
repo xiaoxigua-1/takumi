@@ -1,4 +1,4 @@
-name: NPM Version Check
+name: NPM Version Exists Check
 description: Check if npm version exists for package
 
 inputs:
@@ -17,6 +17,7 @@ runs:
     - name: Check if version exists
       id: check
       working-directory: ${{ inputs.working_directory }}
+      shell: bash
       run: |
         package=$(jq -r '"\(.name)@\(.version)"' package.json)
         if npm view "$package" version 2>/dev/null; then
