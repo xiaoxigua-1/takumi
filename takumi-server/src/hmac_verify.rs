@@ -19,7 +19,7 @@ pub struct HmacQuery {
 
 pub async fn hmac_verify_middleware(
   State(state): AxumState,
-  Query(mut query): Query<HmacQuery>,
+  Query(query): Query<HmacQuery>,
   request: Request,
   next: Next,
 ) -> AxumResult<Response> {
@@ -27,16 +27,7 @@ pub async fn hmac_verify_middleware(
     return Ok(next.run(request).await);
   };
 
-  query.payload.push_str(&query.timestamp.to_string());
-
-  let mut mac = Hmac::<Sha256>::new_from_slice(secret).unwrap();
-  mac.update(query.payload.as_bytes());
-
-  let result = mac.finalize();
-  let result_bytes = result.into_bytes();
-  let result_hex = hex::encode(result_bytes);
-
-  if result_hex != query.hash {
+  if !verify_payload(&query, secret) {
     return Err((
       StatusCode::BAD_REQUEST,
       "HMAC verification failed".to_string(),
@@ -44,4 +35,33 @@ pub async fn hmac_verify_middleware(
   }
 
   Ok(next.run(request).await)
+}
+
+fn verify_payload(query: &HmacQuery, secret: &[u8]) -> bool {
+  let mut mac = Hmac::<Sha256>::new_from_slice(secret).unwrap();
+  mac.update(query.payload.as_bytes());
+  mac.update(b";");
+  mac.update(query.timestamp.to_string().as_bytes());
+
+  hex::decode(&query.hash)
+    .ok()
+    .and_then(|bytes| mac.verify_slice(&bytes).ok())
+    .is_some()
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn test_verify_payload() {
+    let secret = b"secret";
+    let query = HmacQuery {
+      hash: "d3b19dff7172a21a942ebf543e1a1cc6b39e7b086313bc0c226352c512f36404".to_string(),
+      timestamp: 1672531200,
+      payload: "payload".to_string(),
+    };
+
+    assert!(verify_payload(&query, secret));
+  }
 }

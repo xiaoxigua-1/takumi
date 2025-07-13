@@ -1764,6 +1764,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "query-string-builder"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b4b71ad2010fcd6b911a2efb67fead507f6dd847301c1f77c870499e46b3768c"
+dependencies = [
+ "percent-encoding",
+]
+
+[[package]]
 name = "quick-error"
 version = "2.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2385,11 +2394,13 @@ dependencies = [
  "hex",
  "hmac",
  "mimalloc",
+ "query-string-builder",
  "serde",
  "serde_json",
  "sha2",
  "takumi",
  "tokio",
+ "tower",
  "tracing",
  "tracing-subscriber",
 ]
