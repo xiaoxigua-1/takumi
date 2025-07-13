@@ -6,17 +6,6 @@
 //!
 //! Checkout the [minimal example](https://github.com/kane50613/takumi/blob/master/example/src/minimal.rs) for a quick start.
 //!
-//! ## Module Organization
-//!
-//! The library is organized into the following modules:
-//!
-//! - [`core`] - Core types, traits, and configuration
-//! - [`style`] - CSS-like styling system with colors, units, and properties
-//! - [`layout`] - Node-based layout system with flexbox support
-//! - [`rendering`] - High-performance image rendering and canvas operations
-//! - [`effects`] - Visual effects like borders, shadows, and radius
-//! - [`resources`] - External resource management (fonts, images)
-//!
 //! ## Credits
 //!
 //! - [taffy](https://github.com/DioxusLabs/taffy) for the layout system.
