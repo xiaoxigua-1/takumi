@@ -473,3 +473,4 @@ jobs:
     runs-on: ubuntu-latest
     needs: [test-rust, test-napi, test-wasm]
     if: always()
+    steps: []
