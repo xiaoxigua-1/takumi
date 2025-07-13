@@ -4,6 +4,12 @@ inputs:
   working_directory:
     description: Directory containing package.json
     required: true
+  npm_token:
+    description: NPM token
+    required: true
+  github_token:
+    description: GitHub token
+    required: true
 
 runs:
   using: composite
@@ -16,5 +22,5 @@ runs:
         echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> ~/.npmrc
         npm publish --access public --provenance
       env:
-        NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        NPM_TOKEN: ${{ inputs.npm_token }}
+        GITHUB_TOKEN: ${{ inputs.github_token }}

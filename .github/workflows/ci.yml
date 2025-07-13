@@ -114,6 +114,8 @@ jobs:
         uses: ./.github/actions/publish-npm
         with:
           working_directory: takumi-helpers
+          npm_token: ${{ secrets.NPM_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
 
   build-napi:
     needs: test-rust
@@ -392,6 +394,8 @@ jobs:
         uses: ./.github/actions/publish-npm
         with:
           working_directory: takumi-wasm/pkg
+          npm_token: ${{ secrets.NPM_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
 
   publish-crate:
     name: Publish takumi to crate.io
