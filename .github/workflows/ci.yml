@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+  pull_request: 
+  
+jobs:
+  rust-test:
+    name: Rust Test
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+          - ubuntu-24.04-arm
+          - macos-latest
+          - windows-latest
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Setup Rust
+        uses: ./.github/actions/setup-rust
+        with:
+          binstall: cargo-audit,cargo-llvm-cov
+
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+
+      - name: Run Clippy
+        run: cargo clippy --all-targets --all-features -- -D warnings
+
+      - name: Run tests
+        run: cargo test --all-features --workspace
+
+      - name: Run doc tests
+        run: cargo test --doc --all-features --workspace
+
+      - name: Run security audit
+        run: cargo audit
+
+      - name: Generate coverage report
+        run: cargo llvm-cov --all-features --workspace --lcov --output-path lcov.info
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          files: lcov.info
+          fail_ci_if_error: false
+
+  
