@@ -58,6 +58,7 @@ jobs:
           use_oidc: true
 
   build-helpers:
+    name: Build @takumi-rs/helpers
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
