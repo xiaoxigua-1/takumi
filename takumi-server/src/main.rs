@@ -116,7 +116,7 @@ mod tests {
 
   #[test]
   fn test_create_state() {
-    let state = create_state(Args::parse(), GlobalContext::default());
+    let state = create_state(Args::default(), GlobalContext::default());
     assert!(!state.context.draw_debug_border);
     assert!(!state.context.print_debug_tree);
     #[cfg(feature = "hmac_verify")]
@@ -134,7 +134,7 @@ mod tests {
     use sha2::Sha256;
     use takumi::{ContainerNode, DefaultNodeKind, Style};
 
-    let app = create_app(create_state(Args::parse(), GlobalContext::default()));
+    let app = create_app(create_state(Args::default(), GlobalContext::default()));
 
     let node: DefaultNodeKind = ContainerNode {
       style: Style {
