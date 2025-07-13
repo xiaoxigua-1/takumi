@@ -6,6 +6,7 @@ on:
 env:
   CARGO_TERM_COLOR: always
   CARGO_INCREMENTAL: "0"
+  MACOSX_DEPLOYMENT_TARGET: '10.13'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -123,7 +124,7 @@ jobs:
       fail-fast: false
       matrix:
         settings:
-          - host: macos-latest
+          - host: macos-15
             target: aarch64-apple-darwin
             build: bun run build --target aarch64-apple-darwin
           - host: ubuntu-24.04-arm
