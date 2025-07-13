@@ -346,7 +346,7 @@ jobs:
 
       - name: Test WASM
         working-directory: takumi-wasm
-        run: bun run test
+        run: bun test
 
   version-check-wasm:
     name: Check version for @takumi-rs/wasm

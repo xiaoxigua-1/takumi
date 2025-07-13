@@ -13,8 +13,8 @@
   "devDependencies": {
     "@napi-rs/cli": "3.0.0-alpha.89",
     "@takumi-rs/helpers": "workspace:*",
-    "@types/bun": "^1.2.17",
-    "typescript": "^5.8.3"
+    "@types/bun": "catalog:",
+    "typescript": "catalog:"
   },
   "browser": "browser.js",
   "engines": {
