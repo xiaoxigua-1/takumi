@@ -360,7 +360,7 @@ jobs:
       - uses: ./.github/actions/npm-version-exists-check
         id: check
         with:
-          working_directory: takumi-wasm/pkg
+          working_directory: takumi-wasm
 
   publish-wasm:
     name: Publish @takumi-rs/wasm

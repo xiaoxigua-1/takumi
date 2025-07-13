@@ -1,5 +1,5 @@
 {
-  "name": "takumi-wasm",
+  "name": "@takumi-rs/wasm",
   "private": true,
   "devDependencies": {
     "@takumi-rs/helpers": "workspace:*",
