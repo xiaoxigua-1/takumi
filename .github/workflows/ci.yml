@@ -88,6 +88,9 @@ jobs:
     outputs:
       exists: ${{ steps.check.outputs.exists }}
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - uses: ./.github/actions/npm-version-exists-check
         id: check
         with:
@@ -234,6 +237,9 @@ jobs:
     outputs:
       exists: ${{ steps.check.outputs.exists }}
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - uses: ./.github/actions/npm-version-exists-check
         id: check
         with:
@@ -348,6 +354,9 @@ jobs:
     outputs:
       exists: ${{ steps.check.outputs.exists }}
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - uses: ./.github/actions/npm-version-exists-check
         id: check
         with:

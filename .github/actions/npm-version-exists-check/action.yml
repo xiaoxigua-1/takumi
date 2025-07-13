@@ -15,11 +15,6 @@ outputs:
 runs:
   using: composite
   steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 2
-
     - name: Check if version exists
       id: check
       working-directory: ${{ inputs.working_directory }}
