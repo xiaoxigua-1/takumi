@@ -8,6 +8,8 @@
 
 /// Color management and gradient definitions
 pub mod color;
+/// Macros for style-related code generation
+pub mod macros;
 /// Style properties and CSS-like attributes
 pub mod properties;
 /// Length units and measurement types

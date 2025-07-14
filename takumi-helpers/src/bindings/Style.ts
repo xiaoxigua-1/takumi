@@ -2,6 +2,7 @@
 import type { AlignItems } from "./AlignItems";
 import type { BoxShadowInput } from "./BoxShadowInput";
 import type { ColorInput } from "./ColorInput";
+import type { Display } from "./Display";
 import type { FlexDirection } from "./FlexDirection";
 import type { FlexWrap } from "./FlexWrap";
 import type { FontWeight } from "./FontWeight";
@@ -22,6 +23,10 @@ import type { TextOverflow } from "./TextOverflow";
  * down to child elements.
  */
 export type Style = { 
+/**
+ * Display algorithm to use for the element
+ */
+display: Display, 
 /**
  * Width of the element
  */

@@ -6,12 +6,12 @@
 use cosmic_text::{Align, Weight};
 use merge::{Merge, option::overwrite_none};
 use serde::{Deserialize, Serialize};
-use taffy::{Display, Size, style::Style as TaffyStyle};
+use taffy::{Size, style::Style as TaffyStyle};
 use ts_rs::TS;
 
 use crate::{
-  core::viewport::RenderContext,
-  core::{DEFAULT_FONT_SIZE, DEFAULT_LINE_HEIGHT},
+  core::{DEFAULT_FONT_SIZE, DEFAULT_LINE_HEIGHT, viewport::RenderContext},
+  impl_from_taffy_enum,
   style::{
     ColorInput, Gap, LengthUnit, SidesValue, resolve_length_unit_rect_to_length_percentage,
     resolve_length_unit_rect_to_length_percentage_auto,
@@ -81,15 +81,15 @@ pub enum TextAlign {
   End,
 }
 
-impl From<TextAlign> for Align {
+impl From<TextAlign> for Option<Align> {
   fn from(value: TextAlign) -> Self {
     match value {
-      TextAlign::Left => Align::Left,
-      TextAlign::Right => Align::Right,
-      TextAlign::Center => Align::Center,
-      TextAlign::Justify => Align::Justified,
-      TextAlign::Start => Align::Left, // Start maps to Left for LTR languages
-      TextAlign::End => Align::End,
+      TextAlign::Left => Some(Align::Left),
+      TextAlign::Right => Some(Align::Right),
+      TextAlign::Center => Some(Align::Center),
+      TextAlign::Justify => Some(Align::Justified),
+      TextAlign::End => Some(Align::End),
+      TextAlign::Start => None,
     }
   }
 }
@@ -107,32 +107,16 @@ impl Default for TextAlign {
 #[serde(rename_all = "kebab-case")]
 pub enum Position {
   /// Element is positioned according to the normal flow of the document
-  Static,
-  /// Element is positioned according to the normal flow of the document
   Relative,
   /// Element is positioned relative to its nearest positioned ancestor
   Absolute,
-  /// Element is positioned relative to the initial containing block
-  Fixed,
-  /// Element is positioned based on the user's scroll position
-  Sticky,
 }
+
+impl_from_taffy_enum!(Position, taffy::Position, Relative, Absolute);
 
 impl Default for Position {
   fn default() -> Self {
-    Self::Static
-  }
-}
-
-impl From<Position> for taffy::style::Position {
-  fn from(value: Position) -> Self {
-    match value {
-      Position::Static => taffy::style::Position::Relative,
-      Position::Relative => taffy::style::Position::Relative,
-      Position::Absolute => taffy::style::Position::Absolute,
-      Position::Fixed => taffy::style::Position::Absolute,
-      Position::Sticky => taffy::style::Position::Relative,
-    }
+    Self::Relative
   }
 }
 
@@ -152,20 +136,18 @@ pub enum FlexDirection {
   ColumnReverse,
 }
 
+impl_from_taffy_enum!(
+  FlexDirection,
+  taffy::FlexDirection,
+  Row,
+  Column,
+  RowReverse,
+  ColumnReverse
+);
+
 impl Default for FlexDirection {
   fn default() -> Self {
     Self::Row
-  }
-}
-
-impl From<FlexDirection> for taffy::style::FlexDirection {
-  fn from(value: FlexDirection) -> Self {
-    match value {
-      FlexDirection::Row => taffy::style::FlexDirection::Row,
-      FlexDirection::Column => taffy::style::FlexDirection::Column,
-      FlexDirection::RowReverse => taffy::style::FlexDirection::RowReverse,
-      FlexDirection::ColumnReverse => taffy::style::FlexDirection::ColumnReverse,
-    }
   }
 }
 
@@ -250,20 +232,34 @@ pub enum JustifyContent {
   SpaceEvenly,
 }
 
-impl From<JustifyContent> for taffy::style::JustifyContent {
-  fn from(value: JustifyContent) -> Self {
-    match value {
-      JustifyContent::Start => taffy::style::JustifyContent::Start,
-      JustifyContent::End => taffy::style::JustifyContent::End,
-      JustifyContent::FlexStart => taffy::style::JustifyContent::FlexStart,
-      JustifyContent::FlexEnd => taffy::style::JustifyContent::FlexEnd,
-      JustifyContent::Center => taffy::style::JustifyContent::Center,
-      JustifyContent::SpaceBetween => taffy::style::JustifyContent::SpaceBetween,
-      JustifyContent::SpaceAround => taffy::style::JustifyContent::SpaceAround,
-      JustifyContent::SpaceEvenly => taffy::style::JustifyContent::SpaceEvenly,
-    }
-  }
+impl_from_taffy_enum!(
+  JustifyContent,
+  taffy::JustifyContent,
+  Start,
+  End,
+  FlexStart,
+  FlexEnd,
+  Center,
+  SpaceBetween,
+  SpaceAround,
+  SpaceEvenly
+);
+
+/// This enum determines the layout algorithm used for the children of a node.
+#[derive(Debug, Clone, Deserialize, Serialize, Copy, TS)]
+#[serde(rename_all = "kebab-case")]
+pub enum Display {
+  /// The children will follow the block layout algorithm
+  Block,
+  /// The children will follow the flexbox layout algorithm
+  Flex,
+  /// The children will follow the CSS Grid layout algorithm
+  Grid,
+  /// The node is hidden, and it's children will also be hidden
+  None,
 }
+
+impl_from_taffy_enum!(Display, taffy::Display, Block, Flex, Grid, None);
 
 /// Defines how flex items are aligned along the cross axis.
 ///
@@ -288,19 +284,17 @@ pub enum AlignItems {
   Stretch,
 }
 
-impl From<AlignItems> for taffy::style::AlignItems {
-  fn from(value: AlignItems) -> Self {
-    match value {
-      AlignItems::Start => taffy::style::AlignItems::Start,
-      AlignItems::End => taffy::style::AlignItems::End,
-      AlignItems::FlexStart => taffy::style::AlignItems::FlexStart,
-      AlignItems::FlexEnd => taffy::style::AlignItems::FlexEnd,
-      AlignItems::Center => taffy::style::AlignItems::Center,
-      AlignItems::Baseline => taffy::style::AlignItems::Baseline,
-      AlignItems::Stretch => taffy::style::AlignItems::Stretch,
-    }
-  }
-}
+impl_from_taffy_enum!(
+  AlignItems,
+  taffy::AlignItems,
+  Start,
+  End,
+  FlexStart,
+  FlexEnd,
+  Center,
+  Baseline,
+  Stretch
+);
 
 /// Defines how flex items should wrap.
 ///
@@ -316,15 +310,7 @@ pub enum FlexWrap {
   WrapReverse,
 }
 
-impl From<FlexWrap> for taffy::style::FlexWrap {
-  fn from(value: FlexWrap) -> Self {
-    match value {
-      FlexWrap::NoWrap => taffy::style::FlexWrap::NoWrap,
-      FlexWrap::Wrap => taffy::style::FlexWrap::Wrap,
-      FlexWrap::WrapReverse => taffy::style::FlexWrap::WrapReverse,
-    }
-  }
-}
+impl_from_taffy_enum!(FlexWrap, taffy::FlexWrap, NoWrap, Wrap, WrapReverse);
 
 /// Defines how text should be overflowed.
 ///
@@ -373,6 +359,8 @@ pub struct ResolvedFontStyle {
 #[serde(default)]
 #[ts(export, optional_fields)]
 pub struct Style {
+  /// Display algorithm to use for the element
+  pub display: Display,
   /// Width of the element
   pub width: LengthUnit,
   /// Height of the element
@@ -427,6 +415,7 @@ pub struct Style {
 impl Default for Style {
   fn default() -> Self {
     Self {
+      display: Display::Flex,
       margin: SidesValue::SingleValue(LengthUnit::Px(0.0)),
       width: Default::default(),
       height: Default::default(),
@@ -500,7 +489,7 @@ impl Style {
       padding: resolve_length_unit_rect_to_length_percentage(context, self.padding.into()),
       inset: resolve_length_unit_rect_to_length_percentage_auto(context, self.inset.into()),
       margin: resolve_length_unit_rect_to_length_percentage_auto(context, self.margin.into()),
-      display: Display::Flex,
+      display: self.display.into(),
       flex_direction: self.flex_direction.into(),
       position: self.position.into(),
       justify_content: self.justify_content.map(Into::into),
@@ -545,7 +534,7 @@ impl Style {
       line_clamp: self.inheritable_style.line_clamp,
       font_family: self.inheritable_style.font_family.clone(),
       letter_spacing: self.inheritable_style.letter_spacing,
-      text_align: self.inheritable_style.text_align.map(Into::into),
+      text_align: self.inheritable_style.text_align.and_then(Into::into),
       text_overflow: self
         .inheritable_style
         .text_overflow

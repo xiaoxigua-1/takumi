@@ -5,4 +5,4 @@
  *
  * This enum determines how an element is positioned within its containing element.
  */
-export type Position = "static" | "relative" | "absolute" | "fixed" | "sticky";
+export type Position = "relative" | "absolute";
