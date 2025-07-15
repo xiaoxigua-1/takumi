@@ -4,7 +4,7 @@
 //! utility types for handling measurements and spacing in CSS-like layouts.
 
 use serde::{Deserialize, Serialize};
-use taffy::{Dimension, LengthPercentage, LengthPercentageAuto, Rect, Size};
+use taffy::{CompactLength, Dimension, LengthPercentage, LengthPercentageAuto, Rect, Size};
 use ts_rs::TS;
 
 use crate::core::viewport::RenderContext;
@@ -46,21 +46,34 @@ impl Default for LengthUnit {
 }
 
 impl LengthUnit {
+  /// Converts the length unit to a compact length representation.
+  ///
+  /// This method converts the length unit (either a percentage, pixel, rem, em, vh, vw, or auto)
+  /// into a compact length format that can be used by the layout engine.
+  pub fn to_compact_length(self, context: &RenderContext) -> CompactLength {
+    match self {
+      LengthUnit::Auto => CompactLength::auto(),
+      LengthUnit::Px(value) => CompactLength::length(value),
+      LengthUnit::Percentage(value) => CompactLength::percent(value / 100.0),
+      LengthUnit::Rem(value) => CompactLength::length(value * context.viewport.font_size),
+      LengthUnit::Em(value) => CompactLength::length(value * context.parent_font_size),
+      LengthUnit::Vh(value) => {
+        CompactLength::length(context.viewport.height as f32 * value / 100.0)
+      }
+      LengthUnit::Vw(value) => CompactLength::length(context.viewport.width as f32 * value / 100.0),
+    }
+  }
+
   /// Resolves the length unit to a `LengthPercentage`.
   pub fn resolve_to_length_percentage(self, context: &RenderContext) -> LengthPercentage {
-    match self {
-      LengthUnit::Auto => LengthPercentage::length(0.0),
-      LengthUnit::Px(value) => LengthPercentage::length(value),
-      LengthUnit::Percentage(value) => LengthPercentage::percent(value / 100.0),
-      LengthUnit::Rem(value) => LengthPercentage::length(value * context.viewport.font_size),
-      LengthUnit::Em(value) => LengthPercentage::length(value * context.parent_font_size),
-      LengthUnit::Vh(value) => {
-        LengthPercentage::length(context.viewport.height as f32 * value / 100.0)
-      }
-      LengthUnit::Vw(value) => {
-        LengthPercentage::length(context.viewport.width as f32 * value / 100.0)
-      }
+    let compact_length = self.to_compact_length(context);
+
+    if compact_length.is_auto() {
+      return LengthPercentage::length(0.0);
     }
+
+    // SAFETY: only length/percentage are allowed
+    unsafe { LengthPercentage::from_raw(compact_length) }
   }
 
   /// Resolves the length unit to a pixel value.
@@ -78,32 +91,14 @@ impl LengthUnit {
 
   /// Resolves the length unit to a `LengthPercentageAuto`.
   pub fn resolve_to_length_percentage_auto(self, context: &RenderContext) -> LengthPercentageAuto {
-    match self {
-      LengthUnit::Auto => LengthPercentageAuto::auto(),
-      LengthUnit::Px(value) => LengthPercentageAuto::length(value),
-      LengthUnit::Percentage(value) => LengthPercentageAuto::percent(value / 100.0),
-      LengthUnit::Rem(value) => LengthPercentageAuto::length(value * context.viewport.font_size),
-      LengthUnit::Em(value) => LengthPercentageAuto::length(value * context.parent_font_size),
-      LengthUnit::Vh(value) => {
-        LengthPercentageAuto::length(context.viewport.height as f32 * value / 100.0)
-      }
-      LengthUnit::Vw(value) => {
-        LengthPercentageAuto::length(context.viewport.width as f32 * value / 100.0)
-      }
-    }
+    // SAFETY: only length/percentage/auto are allowed
+    unsafe { LengthPercentageAuto::from_raw(self.to_compact_length(context)) }
   }
 
   /// Resolves the length unit to a `Dimension`.
   pub fn resolve_to_dimension(self, context: &RenderContext) -> Dimension {
-    match self {
-      LengthUnit::Auto => Dimension::auto(),
-      LengthUnit::Px(value) => Dimension::length(value),
-      LengthUnit::Percentage(value) => Dimension::percent(value / 100.0),
-      LengthUnit::Rem(value) => Dimension::length(value * context.viewport.font_size),
-      LengthUnit::Em(value) => Dimension::length(value * context.parent_font_size),
-      LengthUnit::Vh(value) => Dimension::length(context.viewport.height as f32 * value / 100.0),
-      LengthUnit::Vw(value) => Dimension::length(context.viewport.width as f32 * value / 100.0),
-    }
+    // SAFETY: only length/percentage/auto are allowed
+    unsafe { Dimension::from_raw(self.to_compact_length(context)) }
   }
 }
 

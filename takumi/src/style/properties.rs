@@ -6,7 +6,10 @@
 use cosmic_text::{Align, Weight};
 use merge::{Merge, option::overwrite_none};
 use serde::{Deserialize, Serialize};
-use taffy::{Size, style::Style as TaffyStyle};
+use taffy::{
+  CompactLength, MaxTrackSizingFunction, MinTrackSizingFunction, NonRepeatedTrackSizingFunction,
+  Size, Style as TaffyStyle,
+};
 use ts_rs::TS;
 
 use crate::{
@@ -407,6 +410,20 @@ pub struct Style {
   pub background_color: Option<ColorInput>,
   /// Box shadow for the element
   pub box_shadow: Option<BoxShadowInput>,
+  /// Controls the size of implicitly-created grid columns
+  pub grid_auto_columns: Option<Vec<GridTrackSize>>,
+  /// Controls the size of implicitly-created grid rows
+  pub grid_auto_rows: Option<Vec<GridTrackSize>>,
+  /// Controls how auto-placed items are inserted in the grid
+  pub grid_auto_flow: Option<GridAutoFlow>,
+  /// Specifies a grid item's size and location within the grid column
+  pub grid_column: Option<GridLine>,
+  /// Specifies a grid item's size and location within the grid row
+  pub grid_row: Option<GridLine>,
+  /// Defines the line names and track sizing functions of the grid columns
+  pub grid_template_columns: Option<Vec<TrackSizingFunction>>,
+  /// Defines the line names and track sizing functions of the grid rows
+  pub grid_template_rows: Option<Vec<TrackSizingFunction>>,
   /// Inheritable style properties
   #[serde(flatten)]
   pub inheritable_style: InheritableStyle,
@@ -439,10 +456,183 @@ impl Default for Style {
       object_fit: Default::default(),
       background_color: Default::default(),
       box_shadow: Default::default(),
+      grid_auto_columns: None,
+      grid_auto_rows: None,
+      grid_auto_flow: None,
+      grid_column: None,
+      grid_row: None,
+      grid_template_columns: None,
+      grid_template_rows: None,
       inheritable_style: Default::default(),
     }
   }
 }
+
+/// Represents a grid track sizing function with serde support
+#[derive(Debug, Clone, Deserialize, Serialize, TS)]
+#[serde(rename_all = "kebab-case")]
+pub enum GridTrackSize {
+  /// A fraction of the available space
+  Fr(f32),
+  /// The minimum content size of the grid track
+  MinContent,
+  /// The maximum content size of the grid track
+  MaxContent,
+  /// A fixed length
+  #[serde(untagged)]
+  Unit(LengthUnit),
+}
+
+impl Default for GridTrackSize {
+  fn default() -> Self {
+    Self::Unit(LengthUnit::Auto)
+  }
+}
+
+impl GridTrackSize {
+  /// Converts the grid track size to a compact length representation.
+  pub fn to_compact_length(&self, context: &RenderContext) -> CompactLength {
+    match self {
+      GridTrackSize::Fr(fr) => CompactLength::fr(*fr),
+      GridTrackSize::MinContent => CompactLength::min_content(),
+      GridTrackSize::MaxContent => CompactLength::max_content(),
+      GridTrackSize::Unit(unit) => unit.to_compact_length(context),
+    }
+  }
+
+  /// Converts the grid track size to a non-repeated track sizing function.
+  pub fn to_min_max(&self, context: &RenderContext) -> NonRepeatedTrackSizingFunction {
+    let compact_length = self.to_compact_length(context);
+
+    // SAFETY: The compact length is a valid track sizing function.
+    unsafe {
+      NonRepeatedTrackSizingFunction {
+        min: MinTrackSizingFunction::from_raw(compact_length),
+        max: MaxTrackSizingFunction::from_raw(compact_length),
+      }
+    }
+  }
+}
+
+/// Represents a grid line placement with serde support
+#[derive(Debug, Clone, Deserialize, Serialize, TS, Default)]
+pub struct GridLine {
+  /// The start line placement
+  pub start: Option<GridPlacement>,
+  /// The end line placement
+  pub end: Option<GridPlacement>,
+}
+
+impl From<GridLine> for taffy::Line<taffy::GridPlacement> {
+  fn from(line: GridLine) -> Self {
+    Self {
+      start: line.start.unwrap_or_default().into(),
+      end: line.end.unwrap_or_default().into(),
+    }
+  }
+}
+
+/// Represents a grid placement with serde support
+#[derive(Debug, Clone, Deserialize, Serialize, TS, Default)]
+#[serde(untagged)]
+pub enum GridPlacement {
+  /// Auto placement
+  #[default]
+  Auto,
+  /// Line index (1-based)
+  Line(i16),
+  /// Span count
+  Span(u16),
+  /// Named grid area
+  Named(String),
+}
+
+// Note: GridPlacement has a custom conversion due to its complex nature
+impl From<GridPlacement> for taffy::GridPlacement {
+  fn from(placement: GridPlacement) -> Self {
+    match placement {
+      GridPlacement::Auto => taffy::GridPlacement::Auto,
+      GridPlacement::Line(line) => taffy::GridPlacement::Line(line.into()),
+      GridPlacement::Span(span) => taffy::GridPlacement::Span(span),
+      GridPlacement::Named(_) => taffy::GridPlacement::Auto,
+    }
+  }
+}
+
+/// Represents a grid track repetition pattern
+#[derive(Debug, Clone, Deserialize, Serialize, TS, Copy)]
+#[serde(rename_all = "kebab-case")]
+pub enum GridTrackRepetition {
+  /// Automatically fills the available space with as many tracks as possible
+  AutoFill,
+  /// Automatically fits as many tracks as possible while maintaining minimum size
+  AutoFit,
+  /// Specifies an exact number of track repetitions
+  #[serde(untagged)]
+  Count(u16),
+}
+
+impl From<GridTrackRepetition> for taffy::GridTrackRepetition {
+  fn from(repetition: GridTrackRepetition) -> Self {
+    match repetition {
+      GridTrackRepetition::AutoFill => taffy::GridTrackRepetition::AutoFill,
+      GridTrackRepetition::AutoFit => taffy::GridTrackRepetition::AutoFit,
+      GridTrackRepetition::Count(count) => taffy::GridTrackRepetition::Count(count),
+    }
+  }
+}
+
+/// Represents a track sizing function
+#[derive(Debug, Clone, Deserialize, Serialize, TS)]
+#[serde(rename_all = "kebab-case")]
+pub enum TrackSizingFunction {
+  /// A single non-repeated track
+  Single(GridTrackSize),
+  /// Automatically generate grid tracks to fit the available space using the specified definite track lengths
+  /// Only valid if every track in template (not just the repetition) has a fixed size.
+  Repeat(GridTrackRepetition, Vec<GridTrackSize>),
+}
+
+impl TrackSizingFunction {
+  fn to_taffy(&self, context: &RenderContext) -> taffy::TrackSizingFunction {
+    match self {
+      Self::Single(track_size) => {
+        taffy::TrackSizingFunction::Single(track_size.to_min_max(context))
+      }
+      Self::Repeat(repetition, track_sizes) => taffy::TrackSizingFunction::Repeat(
+        (*repetition).into(),
+        track_sizes
+          .iter()
+          .map(|size| size.to_min_max(context))
+          .collect(),
+      ),
+    }
+  }
+}
+
+/// Represents the grid auto flow with serde support
+#[derive(Debug, Clone, Copy, Deserialize, Serialize, TS, Default)]
+#[serde(rename_all = "kebab-case")]
+pub enum GridAutoFlow {
+  /// Place items by filling each row in turn
+  #[default]
+  Row,
+  /// Place items by filling each column in turn
+  Column,
+  /// Place items by filling each row in turn, using dense packing
+  RowDense,
+  /// Place items by filling each column in turn, using dense packing
+  ColumnDense,
+}
+
+impl_from_taffy_enum!(
+  GridAutoFlow,
+  taffy::style::GridAutoFlow,
+  Row,
+  Column,
+  RowDense,
+  ColumnDense
+);
 
 /// Style properties that can be inherited by child elements.
 ///
@@ -507,6 +697,31 @@ impl Style {
         width: self.max_width.resolve_to_dimension(context),
         height: self.max_height.resolve_to_dimension(context),
       },
+      // Convert grid properties to Taffy types using only public API
+      grid_auto_columns: self.grid_auto_columns.as_ref().map_or_else(Vec::new, |v| {
+        v.iter().map(|s| s.to_min_max(context)).collect()
+      }),
+      grid_auto_rows: self.grid_auto_rows.as_ref().map_or_else(Vec::new, |v| {
+        v.iter().map(|s| s.to_min_max(context)).collect()
+      }),
+      grid_auto_flow: self.grid_auto_flow.unwrap_or_default().into(),
+      grid_column: self
+        .grid_column
+        .as_ref()
+        .map_or_else(Default::default, |line| line.clone().into()),
+      grid_row: self
+        .grid_row
+        .as_ref()
+        .map_or_else(Default::default, |line| line.clone().into()),
+      grid_template_columns: self
+        .grid_template_columns
+        .as_ref()
+        .map_or_else(Vec::new, |v| {
+          v.iter().map(|s| s.to_taffy(context)).collect()
+        }),
+      grid_template_rows: self.grid_template_rows.as_ref().map_or_else(Vec::new, |v| {
+        v.iter().map(|s| s.to_taffy(context)).collect()
+      }),
       aspect_ratio: self.aspect_ratio,
       ..Default::default()
     }

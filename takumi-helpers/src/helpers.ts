@@ -68,6 +68,12 @@ export function rem(rem: number) {
   };
 }
 
+export function fr(fr: number) {
+  return {
+    fr,
+  };
+}
+
 export function gradient(from: ColorInput, to: ColorInput, angle = 0) {
   return {
     from,

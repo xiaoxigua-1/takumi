@@ -7,6 +7,9 @@ import type { FlexDirection } from "./FlexDirection";
 import type { FlexWrap } from "./FlexWrap";
 import type { FontWeight } from "./FontWeight";
 import type { Gap } from "./Gap";
+import type { GridAutoFlow } from "./GridAutoFlow";
+import type { GridLine } from "./GridLine";
+import type { GridTrackSize } from "./GridTrackSize";
 import type { JustifyContent } from "./JustifyContent";
 import type { LengthUnit } from "./LengthUnit";
 import type { ObjectFit } from "./ObjectFit";
@@ -14,6 +17,7 @@ import type { Position } from "./Position";
 import type { SidesValue } from "./SidesValue";
 import type { TextAlign } from "./TextAlign";
 import type { TextOverflow } from "./TextOverflow";
+import type { TrackSizingFunction } from "./TrackSizingFunction";
 
 /**
  * Main styling structure that contains all layout and visual properties.
@@ -119,6 +123,34 @@ background_color?: ColorInput,
  * Box shadow for the element
  */
 box_shadow?: BoxShadowInput, 
+/**
+ * Controls the size of implicitly-created grid columns
+ */
+grid_auto_columns?: Array<GridTrackSize>, 
+/**
+ * Controls the size of implicitly-created grid rows
+ */
+grid_auto_rows?: Array<GridTrackSize>, 
+/**
+ * Controls how auto-placed items are inserted in the grid
+ */
+grid_auto_flow?: GridAutoFlow, 
+/**
+ * Specifies a grid item's size and location within the grid column
+ */
+grid_column?: GridLine, 
+/**
+ * Specifies a grid item's size and location within the grid row
+ */
+grid_row?: GridLine, 
+/**
+ * Defines the line names and track sizing functions of the grid columns
+ */
+grid_template_columns?: Array<TrackSizingFunction>, 
+/**
+ * Defines the line names and track sizing functions of the grid rows
+ */
+grid_template_rows?: Array<TrackSizingFunction>, 
 /**
  * How text should be overflowed
  */
