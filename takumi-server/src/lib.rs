@@ -4,8 +4,7 @@ use axum::{Router, extract::State, http::StatusCode, response::Response, routing
 use globwalk::glob;
 use takumi::GlobalContext;
 use tokio::net::TcpListener;
-use tracing::{Level, error, info};
-use tracing_subscriber::fmt;
+use tracing::{error, info};
 
 pub use crate::{args::Args, generate_image::*};
 
@@ -56,8 +55,6 @@ pub fn create_app(state: AxumState) -> Router {
 }
 
 pub async fn run_server(args: Args, context: GlobalContext) {
-  fmt().with_max_level(Level::INFO).init();
-
   if let Some(font_glob) = args.font_glob.as_ref() {
     for font in glob(font_glob).unwrap() {
       match font {
