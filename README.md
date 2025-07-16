@@ -1,5 +1,7 @@
 # Takumi
 
+[![CodeFactor](https://www.codefactor.io/repository/github/kane50613/takumi/badge)](https://www.codefactor.io/repository/github/kane50613/takumi)
+
 > 🚧 This project is under development.
 
 _Takumi (匠) means "artisan" or "craftsman" in Japanese._
