@@ -1,6 +1,5 @@
 import { HomeLayout } from "fumadocs-ui/layouts/home";
 import { Link } from "react-router";
-import { ImageEditor } from "~/components/image-editor";
 import { baseOptions } from "~/layout-config";
 
 export function meta() {
@@ -25,14 +24,13 @@ export default function Home() {
           A library for generating images using a CSS Flexbox-like layout
           engine. Supports Rust, Node.js (N-API), and WebAssembly runtimes.
         </p>
-        <Link
-          className="text-sm bg-fd-primary text-fd-primary-foreground rounded-full font-medium px-4 py-2.5"
-          to="/docs"
-        >
-          Open Docs
-        </Link>
-        <div className="py-12 px-4 max-w-7xl mx-auto">
-          <ImageEditor />
+        <div className="flex justify-center gap-4 mb-8">
+          <Link
+            className="text-sm bg-fd-primary text-fd-primary-foreground rounded-full font-medium px-4 py-2.5"
+            to="/docs"
+          >
+            Open Docs
+          </Link>
         </div>
       </div>
     </HomeLayout>
