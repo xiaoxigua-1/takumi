@@ -107,7 +107,7 @@ impl LengthUnit {
 /// This enum allows for flexible specification of values like padding, margin,
 /// or border sizes using either a single value for all sides, separate values
 /// for vertical/horizontal axes, or individual values for each side.
-#[derive(Debug, Clone, Copy, Deserialize, Serialize, TS)]
+#[derive(Debug, Clone, Copy, Deserialize, Serialize, TS, PartialEq)]
 #[serde(untagged)]
 pub enum SidesValue<T> {
   /// Same value for all four sides
@@ -153,7 +153,7 @@ impl<T: Copy, F: Copy + Default + Into<T>> From<SidesValue<F>> for Rect<T> {
 ///
 /// Can be either a single value applied to both axes, or separate values
 /// for horizontal and vertical spacing.
-#[derive(Debug, Clone, Copy, Deserialize, Serialize, TS)]
+#[derive(Debug, Clone, Copy, Deserialize, Serialize, TS, PartialEq)]
 #[serde(untagged)]
 pub enum Gap {
   /// Same gap value for both horizontal and vertical spacing

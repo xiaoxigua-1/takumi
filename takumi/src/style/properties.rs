@@ -25,7 +25,7 @@ use crate::{
 ///
 /// This wraps a u16 value that corresponds to CSS font-weight values
 /// (e.g., 100 for thin, 400 for normal, 700 for bold, 900 for black).
-#[derive(Debug, Copy, Clone, Deserialize, Serialize, TS)]
+#[derive(Debug, Copy, Clone, Deserialize, Serialize, TS, PartialEq)]
 pub struct FontWeight(pub u16);
 
 impl Default for FontWeight {
@@ -43,7 +43,7 @@ impl From<FontWeight> for Weight {
 /// Defines how an image should be resized to fit its container.
 ///
 /// Similar to CSS object-fit property.
-#[derive(Debug, Clone, Deserialize, Serialize, Copy, TS)]
+#[derive(Debug, Clone, Deserialize, Serialize, Copy, TS, PartialEq)]
 #[serde(rename_all = "kebab-case")]
 pub enum ObjectFit {
   /// Scale the image to fit within the container while preserving aspect ratio
@@ -67,7 +67,7 @@ impl Default for ObjectFit {
 /// Text alignment options for text rendering.
 ///
 /// Corresponds to CSS text-align property values.
-#[derive(Debug, Clone, Deserialize, Serialize, Copy, TS)]
+#[derive(Debug, Clone, Deserialize, Serialize, Copy, TS, PartialEq)]
 #[serde(rename_all = "kebab-case")]
 pub enum TextAlign {
   /// Align text to the left edge
@@ -106,7 +106,7 @@ impl Default for TextAlign {
 /// Defines the positioning method for an element.
 ///
 /// This enum determines how an element is positioned within its containing element.
-#[derive(Debug, Clone, Deserialize, Serialize, Copy, TS)]
+#[derive(Debug, Clone, Deserialize, Serialize, Copy, TS, PartialEq)]
 #[serde(rename_all = "kebab-case")]
 pub enum Position {
   /// Element is positioned according to the normal flow of the document
@@ -126,7 +126,7 @@ impl Default for Position {
 /// Defines the direction of flex items within a flex container.
 ///
 /// This enum determines how flex items are laid out along the main axis.
-#[derive(Debug, Clone, Deserialize, Serialize, Copy, TS)]
+#[derive(Debug, Clone, Deserialize, Serialize, Copy, TS, PartialEq)]
 #[serde(rename_all = "kebab-case")]
 pub enum FlexDirection {
   /// Items are laid out horizontally from left to right
@@ -158,7 +158,7 @@ impl Default for FlexDirection {
 ///
 /// This struct contains the properties for a box shadow, including color,
 /// offset, blur radius, spread radius, and inset flag.
-#[derive(Debug, Clone, Deserialize, Serialize, TS)]
+#[derive(Debug, Clone, Deserialize, Serialize, TS, PartialEq)]
 pub struct BoxShadow {
   /// Color of the box shadow
   pub color: ColorInput,
@@ -201,7 +201,7 @@ pub(crate) struct BoxShadowResolved {
 ///
 /// This enum allows for flexible specification of box shadows, including
 /// a single shadow or multiple shadows.
-#[derive(Debug, Clone, Deserialize, Serialize, TS)]
+#[derive(Debug, Clone, Deserialize, Serialize, TS, PartialEq)]
 #[serde(untagged)]
 pub enum BoxShadowInput {
   /// A single box shadow
@@ -214,7 +214,7 @@ pub enum BoxShadowInput {
 ///
 /// This enum determines how space is distributed between and around flex items
 /// along the main axis of the flex container.
-#[derive(Debug, Clone, Deserialize, Serialize, Copy, TS)]
+#[derive(Debug, Clone, Deserialize, Serialize, Copy, TS, PartialEq)]
 #[serde(rename_all = "kebab-case")]
 pub enum JustifyContent {
   /// Items are packed toward the start of the writing-mode direction
@@ -249,7 +249,7 @@ impl_from_taffy_enum!(
 );
 
 /// This enum determines the layout algorithm used for the children of a node.
-#[derive(Debug, Clone, Deserialize, Serialize, Copy, TS)]
+#[derive(Debug, Clone, Deserialize, Serialize, Copy, TS, PartialEq)]
 #[serde(rename_all = "kebab-case")]
 pub enum Display {
   /// The children will follow the block layout algorithm
@@ -268,7 +268,7 @@ impl_from_taffy_enum!(Display, taffy::Display, Block, Flex, Grid, None);
 ///
 /// This enum determines how flex items are aligned within the flex container
 /// along the cross axis (perpendicular to the main axis).
-#[derive(Debug, Clone, Deserialize, Serialize, Copy, TS)]
+#[derive(Debug, Clone, Deserialize, Serialize, Copy, TS, PartialEq)]
 #[serde(rename_all = "kebab-case")]
 pub enum AlignItems {
   /// Items are aligned to the start of the writing-mode direction
@@ -302,7 +302,7 @@ impl_from_taffy_enum!(
 /// Defines how flex items should wrap.
 ///
 /// This enum determines how flex items should wrap within the flex container.
-#[derive(Debug, Clone, Deserialize, Serialize, Copy, TS)]
+#[derive(Debug, Clone, Deserialize, Serialize, Copy, TS, PartialEq)]
 #[serde(rename_all = "kebab-case")]
 pub enum FlexWrap {
   /// Flex items will not wrap and will shrink to fit within the container
@@ -434,6 +434,7 @@ impl Default for Style {
     Self {
       display: Display::Flex,
       margin: SidesValue::SingleValue(LengthUnit::Px(0.0)),
+      padding: SidesValue::SingleValue(LengthUnit::Px(0.0)),
       width: Default::default(),
       height: Default::default(),
       max_width: Default::default(),
@@ -441,7 +442,6 @@ impl Default for Style {
       min_width: Default::default(),
       min_height: Default::default(),
       aspect_ratio: None,
-      padding: Default::default(),
       inset: Default::default(),
       flex_direction: Default::default(),
       justify_content: Default::default(),
@@ -452,7 +452,7 @@ impl Default for Style {
       flex_shrink: 1.0,
       flex_basis: Default::default(),
       flex_wrap: FlexWrap::NoWrap,
-      border_width: Default::default(),
+      border_width: SidesValue::SingleValue(LengthUnit::Px(0.0)),
       object_fit: Default::default(),
       background_color: Default::default(),
       box_shadow: Default::default(),
@@ -469,7 +469,7 @@ impl Default for Style {
 }
 
 /// Represents a grid track sizing function with serde support
-#[derive(Debug, Clone, Deserialize, Serialize, TS)]
+#[derive(Debug, Clone, Deserialize, Serialize, TS, PartialEq)]
 #[serde(rename_all = "kebab-case")]
 pub enum GridTrackSize {
   /// A fraction of the available space
@@ -515,7 +515,7 @@ impl GridTrackSize {
 }
 
 /// Represents a grid line placement with serde support
-#[derive(Debug, Clone, Deserialize, Serialize, TS, Default)]
+#[derive(Debug, Clone, Deserialize, Serialize, TS, Default, PartialEq)]
 pub struct GridLine {
   /// The start line placement
   pub start: Option<GridPlacement>,
@@ -533,7 +533,7 @@ impl From<GridLine> for taffy::Line<taffy::GridPlacement> {
 }
 
 /// Represents a grid placement with serde support
-#[derive(Debug, Clone, Deserialize, Serialize, TS, Default)]
+#[derive(Debug, Clone, Deserialize, Serialize, TS, Default, PartialEq)]
 #[serde(untagged)]
 pub enum GridPlacement {
   /// Auto placement
@@ -560,7 +560,7 @@ impl From<GridPlacement> for taffy::GridPlacement {
 }
 
 /// Represents a grid track repetition pattern
-#[derive(Debug, Clone, Deserialize, Serialize, TS, Copy)]
+#[derive(Debug, Clone, Deserialize, Serialize, TS, Copy, PartialEq)]
 #[serde(rename_all = "kebab-case")]
 pub enum GridTrackRepetition {
   /// Automatically fills the available space with as many tracks as possible
@@ -583,7 +583,7 @@ impl From<GridTrackRepetition> for taffy::GridTrackRepetition {
 }
 
 /// Represents a track sizing function
-#[derive(Debug, Clone, Deserialize, Serialize, TS)]
+#[derive(Debug, Clone, Deserialize, Serialize, TS, PartialEq)]
 #[serde(rename_all = "kebab-case")]
 pub enum TrackSizingFunction {
   /// A single non-repeated track
@@ -611,7 +611,7 @@ impl TrackSizingFunction {
 }
 
 /// Represents the grid auto flow with serde support
-#[derive(Debug, Clone, Copy, Deserialize, Serialize, TS, Default)]
+#[derive(Debug, Clone, Copy, Deserialize, Serialize, TS, Default, PartialEq)]
 #[serde(rename_all = "kebab-case")]
 pub enum GridAutoFlow {
   /// Place items by filling each row in turn

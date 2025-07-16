@@ -2,44 +2,80 @@ use taffy::{AvailableSpace, geometry::Size};
 
 use crate::{core::RenderContext, rendering::construct_text_buffer, style::ResolvedFontStyle};
 
-/// Measures the size of an image based on available space and known dimensions.
-///
-/// This function handles aspect ratio preservation and respects both explicit
-/// dimensions and available space constraints.
+/// Measures the size of image based on known dimensions and available space.
 pub fn measure_image(
   image_size: Size<f32>,
   known_dimensions: Size<Option<f32>>,
   available_space: Size<AvailableSpace>,
 ) -> Size<f32> {
-  let source_aspect_ratio = image_size.width / image_size.height;
+  let mut width = known_dimensions.width;
+  let mut height = known_dimensions.height;
 
-  let hint_width = known_dimensions.width.or({
-    if let AvailableSpace::Definite(available_width) = available_space.width {
-      Some(available_width)
-    } else {
-      None
+  // If both dimensions are specified, use them directly
+  if let Some(width) = width
+    && let Some(height) = height
+  {
+    return Size { width, height };
+  }
+
+  // If only one dimension is specified, calculate the other maintaining aspect ratio
+  let aspect_ratio = if image_size.height != 0.0 {
+    image_size.width / image_size.height
+  } else {
+    1.0
+  };
+
+  if width.is_some() && height.is_none() {
+    height = Some(width.unwrap() / aspect_ratio);
+  } else if height.is_some() && width.is_none() {
+    width = Some(height.unwrap() * aspect_ratio);
+  }
+
+  // If neither dimension is specified, use intrinsic size but constrain to available space
+  if width.is_none() && height.is_none() {
+    width = Some(image_size.width);
+    height = Some(image_size.height);
+  }
+
+  let mut final_width = width.unwrap();
+  let mut final_height = height.unwrap();
+
+  // Constrain to available space
+  match available_space.width {
+    AvailableSpace::Definite(max_width) => {
+      if final_width > max_width {
+        final_width = max_width;
+        final_height = final_width / aspect_ratio;
+      }
     }
-  });
-
-  let hint_height = known_dimensions.height.or({
-    if let AvailableSpace::Definite(available_height) = available_space.height {
-      Some(available_height)
-    } else {
-      None
+    AvailableSpace::MinContent | AvailableSpace::MaxContent => {
+      // Use intrinsic size for min/max content
     }
-  });
+  }
 
-  match (hint_width, hint_height) {
-    (Some(width), Some(height)) => Size { width, height },
-    (Some(width), None) => Size {
-      width,
-      height: (width / source_aspect_ratio).ceil(),
-    },
-    (None, Some(height)) => Size {
-      width: (height * source_aspect_ratio).ceil(),
-      height,
-    },
-    (None, None) => image_size,
+  match available_space.height {
+    AvailableSpace::Definite(max_height) => {
+      if final_height > max_height {
+        final_height = max_height;
+        final_width = final_height * aspect_ratio;
+
+        // Re-check width constraint after height adjustment
+        if let AvailableSpace::Definite(max_width) = available_space.width {
+          if final_width > max_width {
+            final_width = max_width;
+            final_height = final_width / aspect_ratio;
+          }
+        }
+      }
+    }
+    AvailableSpace::MinContent | AvailableSpace::MaxContent => {
+      // Use intrinsic size for min/max content
+    }
+  }
+
+  Size {
+    width: final_width,
+    height: final_height,
   }
 }
 
@@ -54,6 +90,16 @@ pub fn measure_text(
   known_dimensions: Size<Option<f32>>,
   available_space: Size<AvailableSpace>,
 ) -> Size<f32> {
+  if text.trim().is_empty()
+    || known_dimensions.width == Some(0.0)
+    || known_dimensions.height == Some(0.0)
+  {
+    return Size {
+      width: 0.0,
+      height: 0.0,
+    };
+  }
+
   let width_constraint = known_dimensions.width.or(match available_space.width {
     AvailableSpace::MinContent => Some(0.0),
     AvailableSpace::MaxContent => None,

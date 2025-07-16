@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
 /// Represents a color input that can be either a color or a gradient.
-#[derive(Debug, Clone, Deserialize, Serialize, TS)]
+#[derive(Debug, Clone, Deserialize, Serialize, TS, PartialEq)]
 #[serde(untagged)]
 pub enum ColorInput {
   /// A single color
@@ -42,7 +42,7 @@ impl ColorInput {
 }
 
 /// Represents a gradient with color steps and an angle for directional gradients.
-#[derive(Debug, Clone, Deserialize, Serialize, TS)]
+#[derive(Debug, Clone, Deserialize, Serialize, TS, PartialEq)]
 pub struct Gradient {
   /// The color stops that make up the gradient
   pub stops: Vec<Color>,
@@ -127,7 +127,7 @@ impl Gradient {
 /// - `Rgb`: RGB color with 8-bit components (r, g, b)
 /// - `Rgba`: RGBA color with 8-bit RGB components and 32-bit float alpha (r, g, b, a)
 /// - `RgbInt`: Single 32-bit integer containing RGB values
-#[derive(Debug, Clone, Deserialize, Copy, Serialize, TS)]
+#[derive(Debug, Clone, Deserialize, Copy, Serialize, TS, PartialEq)]
 #[serde(untagged)]
 pub enum Color {
   /// RGB color with 8-bit components
