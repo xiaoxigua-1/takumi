@@ -5,12 +5,22 @@ import type {
   ReactElement,
   ReactNode,
 } from "react";
-import { isValidElement } from "react";
 import { container, image, text } from "../helpers";
 import type { Node } from "../types";
 import { parseStyle } from "./style-parser";
 
 type Nodes = Node | Nodes[];
+
+const REACT_ELEMENT_TYPE = Symbol.for("react.transitional.element");
+
+function isValidElement(object: unknown): object is ReactElement {
+  return (
+    typeof object === "object" &&
+    object !== null &&
+    "$$typeof" in object &&
+    object.$$typeof === REACT_ELEMENT_TYPE
+  );
+}
 
 function flattenNodes(nodes: Nodes[]): Node[] {
   const result: Node[] = [];
