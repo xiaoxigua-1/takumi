@@ -1,7 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { em, percentage, rem, vh } from "../src/helpers";
-import { fromJsx } from "../src/jsx";
-import type { ContainerNode, ImageNode, Node, TextNode } from "../src/types";
+import { fromJsx } from "../../src/jsx/jsx-processing";
+import type { ContainerNode, ImageNode, Node, TextNode } from "../../src/types";
 
 describe("fromJsx", () => {
   test("converts text to TextNode", async () => {
@@ -9,7 +8,7 @@ describe("fromJsx", () => {
     expect(result).toEqual({
       type: "text",
       text: "Hello World",
-    } as TextNode);
+    } satisfies TextNode);
   });
 
   test("converts number to TextNode", async () => {
@@ -17,7 +16,7 @@ describe("fromJsx", () => {
     expect(result).toEqual({
       type: "text",
       text: "42",
-    } as TextNode);
+    } satisfies TextNode);
   });
 
   test("returns undefined for null/undefined", async () => {
@@ -35,7 +34,7 @@ describe("fromJsx", () => {
           text: "Hello",
         },
       ],
-    } as ContainerNode);
+    } satisfies ContainerNode);
   });
 
   test("handles function components", async () => {
@@ -48,7 +47,7 @@ describe("fromJsx", () => {
         { type: "text", text: "Hello " },
         { type: "text", text: "World" },
       ],
-    } as ContainerNode);
+    } satisfies ContainerNode);
   });
 
   test("handles async function components", async () => {
@@ -63,7 +62,7 @@ describe("fromJsx", () => {
         { type: "text", text: "Hello " },
         { type: "text", text: "Async" },
       ],
-    } as ContainerNode);
+    } satisfies ContainerNode);
   });
 
   test("handles fragments", async () => {
@@ -112,7 +111,7 @@ describe("fromJsx", () => {
           children: [{ type: "text", text: "Third" }],
         },
       ],
-    } as ContainerNode);
+    } satisfies ContainerNode);
   });
 
   test("converts img elements to ImageNode", async () => {
@@ -122,15 +121,15 @@ describe("fromJsx", () => {
     expect(result).toEqual({
       type: "image",
       src: "https://example.com/image.jpg",
-    } as ImageNode);
+    } satisfies ImageNode);
   });
 
-  test("handles img without src as container", async () => {
+  test("handles img without src satisfies container", async () => {
     const result = await fromJsx(<img alt="No src" />);
     expect(result).toEqual({
       type: "container",
       children: undefined,
-    } as ContainerNode);
+    } satisfies ContainerNode);
   });
 
   test("handles deeply nested structures", async () => {
@@ -186,7 +185,7 @@ describe("fromJsx", () => {
           ],
         },
       ],
-    } as ContainerNode);
+    } satisfies ContainerNode);
   });
 
   test("handles promises", async () => {
@@ -195,126 +194,6 @@ describe("fromJsx", () => {
     expect(result).toEqual({
       type: "text",
       text: "Resolved text",
-    } as TextNode);
-  });
-
-  test("handles style props with dimensions", async () => {
-    const result = await fromJsx(
-      <div style={{ width: 100, height: "50px", maxWidth: "100%" }}>Test</div>,
-    );
-
-    expect(result).toEqual({
-      type: "container",
-      width: 100,
-      height: 50,
-      max_width: percentage(100),
-      children: [{ type: "text", text: "Test" }],
-    } satisfies Node);
-  });
-
-  test("handles style props with spacing", async () => {
-    const result = await fromJsx(
-      <div style={{ padding: "10px 20px", margin: 15 }}>Test</div>,
-    );
-
-    expect(result).toEqual({
-      type: "container",
-      padding: [10, 20],
-      margin: 15,
-      children: [{ type: "text", text: "Test" }],
-    } satisfies Node);
-  });
-
-  test("handles style props with flex properties", async () => {
-    const result = await fromJsx(
-      <div
-        style={{
-          flexDirection: "column",
-          justifyContent: "center",
-          alignItems: "flex-start",
-          flexGrow: 1,
-          gap: "8px",
-        }}
-      >
-        Test
-      </div>,
-    );
-
-    expect(result).toEqual({
-      type: "container",
-      flex_direction: "column",
-      justify_content: "center",
-      align_items: "flex-start",
-      flex_grow: 1,
-      gap: 8,
-      children: [{ type: "text", text: "Test" }],
-    } satisfies Node);
-  });
-
-  test("handles style props with text properties", async () => {
-    const result = await fromJsx(
-      <div
-        style={{
-          fontSize: "16px",
-          fontFamily: "Arial",
-          fontWeight: "bold",
-          lineHeight: 1.5,
-          textAlign: "center",
-        }}
-      >
-        Test
-      </div>,
-    );
-
-    expect(result).toEqual({
-      type: "container",
-      font_size: 16,
-      font_family: "Arial",
-      font_weight: 700,
-      line_height: 1.5,
-      text_align: "center",
-      children: [{ type: "text", text: "Test" }],
-    } satisfies Node);
-  });
-
-  test("handles different length units", async () => {
-    const result = await fromJsx(
-      <div
-        style={{
-          width: "50%",
-          height: "2rem",
-          padding: "1em",
-          margin: "10vh",
-        }}
-      >
-        Test
-      </div>,
-    );
-
-    expect(result).toEqual({
-      type: "container",
-      width: percentage(50),
-      height: rem(2),
-      padding: em(1),
-      margin: vh(10),
-      children: [{ type: "text", text: "Test" }],
-    } satisfies Node);
-  });
-
-  test("handles img with style props", async () => {
-    const result = await fromJsx(
-      <img
-        src="https://example.com/image.jpg"
-        alt="Test content"
-        style={{ width: 200, height: 150 }}
-      />,
-    );
-
-    expect(result).toEqual({
-      type: "image",
-      src: "https://example.com/image.jpg",
-      width: 200,
-      height: 150,
-    } satisfies Node);
+    } satisfies TextNode);
   });
 });

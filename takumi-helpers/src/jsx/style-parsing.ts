@@ -1,6 +1,6 @@
 import type { Property } from "csstype";
 import type { CSSProperties } from "react";
-import { parseColor } from "./color-parsing";
+import { em, fr, percentage, rem, vh, vw } from "../helpers";
 import type {
   BoxShadow,
   Display,
@@ -14,20 +14,13 @@ import type {
   SidesValue,
   TextOverflow,
   TrackSizingFunction,
-} from "./types";
-import { em, percentage, rem, vh, vw } from "./helpers";
+} from "../types";
+import { parseColor } from "./color-parsing";
 
-export function parseLengthUnit(
-  value: Property.Width | number,
-): LengthUnit | undefined {
+export function parseLengthUnit(value: Property.Width | number): LengthUnit {
   if (typeof value === "number") return value;
 
-  if (
-    value === "auto" ||
-    value === "min-content" ||
-    value === "max-content" ||
-    value === "fit-content"
-  )
+  if (value === "auto" || value === "min-content" || value === "max-content")
     return value as LengthUnit;
 
   const match = value.match(/^(-?[\d.]+)(.*)$/);
@@ -58,7 +51,7 @@ export function parseLengthUnit(
 
 export function parseSideLengthUnits(
   value: string | number,
-): SidesValue<LengthUnit> | undefined {
+): SidesValue<LengthUnit> {
   if (typeof value === "number") {
     return parseLengthUnit(value);
   }
@@ -116,12 +109,10 @@ export function parseInset(
   return [top ?? 0, right ?? 0, bottom ?? 0, left ?? 0] as const;
 }
 
-export function parseAspectRatio(
-  aspectRatio: Property.AspectRatio,
-): number | undefined {
+export function parseAspectRatio(aspectRatio: Property.AspectRatio): number {
   if (typeof aspectRatio === "number") return aspectRatio;
 
-  if (aspectRatio.includes("/")) {
+  if (typeof aspectRatio === "string" && aspectRatio.includes("/")) {
     const [numerator, denominator] = aspectRatio
       .split("/")
       .map(Number.parseFloat);
@@ -141,42 +132,46 @@ export function parseAspectRatio(
     return numerator / denominator;
   }
 
-  return Number.parseFloat(aspectRatio);
+  if (typeof aspectRatio === "string") {
+    return Number.parseFloat(aspectRatio);
+  }
+
+  throw new Error(`Invalid aspect ratio: ${aspectRatio}`);
 }
 
-export function parseDisplay(display: Property.Display): Display | undefined {
+export function parseDisplay(display: Property.Display): Display {
   switch (display) {
     case "block":
     case "flex":
     case "grid":
+    case "none":
       return display as Display;
-    default: {
-      console.warn(`Invalid display value: ${display}, fallback to undefined.`);
-    }
+    default:
+      console.warn(`Invalid display value: ${display}, fallback to 'block'.`);
+      return "block" as Display;
   }
 }
 
-export function parsePosition(
-  position: Property.Position,
-): Position | undefined {
+export function parsePosition(position: Property.Position): Position {
   switch (position) {
-    case "static":
     case "relative":
     case "absolute":
       return position as Position;
-    default: {
+    case "static":
+      return "relative" as Position;
+    default:
       console.warn(
-        `Invalid position value: ${position}, fallback to undefined.`,
+        `Invalid position value: ${position}, fallback to 'relative'.`,
       );
-    }
+      return "relative" as Position;
   }
 }
 
-export function parseBoxShadow(
-  source: Property.BoxShadow,
-): BoxShadow | undefined {
+export function parseBoxShadow(source: Property.BoxShadow): BoxShadow {
   const parts = source.trim().split(/\s+/);
-  if (parts.length < 2) return;
+  if (parts.length < 2) {
+    throw new Error(`Invalid box-shadow: ${source}`);
+  }
 
   let inset = false;
   let colorPart = "black";
@@ -199,7 +194,9 @@ export function parseBoxShadow(
     }
   }
 
-  if (lengthValues.length < 2 || lengthValues.length > 4) return;
+  if (lengthValues.length < 2 || lengthValues.length > 4) {
+    throw new Error(`Invalid box-shadow format: ${source}`);
+  }
 
   const [
     offsetX = "0px",
@@ -220,18 +217,16 @@ export function parseBoxShadow(
       inset,
     };
   } catch {
-    return;
+    throw new Error(`Invalid box-shadow color: ${colorPart}`);
   }
 }
 
-export function parseGridTrackSize(
-  trackSize: string,
-): GridTrackSize[] | undefined {
+export function parseGridTrackSize(trackSize: string): GridTrackSize[] {
   const parts = trackSize.trim().split(/\s+/);
   return parts.map((part) => {
     if (part.endsWith("fr")) {
       const frValue = Number.parseFloat(part.slice(0, -2));
-      if (Number.isNaN(frValue)) return 0;
+      if (Number.isNaN(frValue)) return { fr: 0 };
       return { fr: frValue };
     }
     return parseLengthUnit(part) ?? 0;
@@ -240,7 +235,7 @@ export function parseGridTrackSize(
 
 export function parseGridAutoFlow(
   autoFlow: Property.GridAutoFlow,
-): GridAutoFlow | undefined {
+): GridAutoFlow {
   switch (autoFlow) {
     case "row":
     case "column":
@@ -249,23 +244,26 @@ export function parseGridAutoFlow(
       return autoFlow.replace(" ", "-") as GridAutoFlow;
     default:
       console.warn(
-        `Invalid grid-auto-flow value: ${autoFlow}, fallback to undefined.`,
+        `Invalid grid-auto-flow value: ${autoFlow}, fallback to 'row'.`,
       );
-      return;
+      return "row" as GridAutoFlow;
   }
 }
 
 export function parseGridLine(gridLine: string): GridLine {
   if (gridLine.startsWith("span ")) {
     const spanValue = Number.parseInt(gridLine.slice(5));
-    return Number.isNaN(spanValue)
-      ? undefined
-      : { start: spanValue, end: null };
+    if (Number.isNaN(spanValue)) {
+      throw new Error(`Invalid span value: ${gridLine}`);
+    }
+    return { start: spanValue, end: null };
   }
 
   if (gridLine.includes("/")) {
     const parts = gridLine.split("/");
-    if (parts.length !== 2) return;
+    if (parts.length !== 2) {
+      throw new Error(`Invalid grid line format: ${gridLine}`);
+    }
 
     const [startStr = "", endStr = ""] = parts.map((s) => s.trim());
     const start =
@@ -280,17 +278,22 @@ export function parseGridLine(gridLine: string): GridLine {
   }
 
   const lineNumber = Number.parseInt(gridLine);
-  return Number.isNaN(lineNumber)
-    ? { start: gridLine, end: null }
-    : { start: lineNumber, end: null };
+  if (Number.isNaN(lineNumber)) {
+    return { start: gridLine, end: null };
+  }
+  return { start: lineNumber, end: null };
 }
 
 export function parseTrackSizingFunction(
   trackFunction: string,
-): TrackSizingFunction[] | undefined {
+): TrackSizingFunction[] {
   const repeatMatch = trackFunction.match(/repeat\(([^,]+),\s*(.+)\)/);
   if (repeatMatch) {
-    return parseRepeatFunction(repeatMatch);
+    const result = parseRepeatFunction(repeatMatch);
+    if (!result) {
+      throw new Error(`Invalid repeat function: ${trackFunction}`);
+    }
+    return result;
   }
 
   return parseSimpleTrackSizes(trackFunction);
@@ -340,22 +343,20 @@ function parseSimpleTrackSizes(trackFunction: string): TrackSizingFunction[] {
 
 export function parseTextOverflow(
   textOverflow: Property.TextOverflow,
-): TextOverflow | undefined {
+): TextOverflow {
   switch (textOverflow) {
     case "ellipsis":
     case "clip":
       return textOverflow as TextOverflow;
     default:
       console.warn(
-        `Invalid text-overflow value: ${textOverflow}, fallback to undefined.`,
+        `Invalid text-overflow value: ${textOverflow}, fallback to 'clip'.`,
       );
-      return;
+      return "clip" as TextOverflow;
   }
 }
 
-export function parseFontWeight(
-  fontWeight: Property.FontWeight,
-): FontWeight | undefined {
+export function parseFontWeight(fontWeight: Property.FontWeight): FontWeight {
   if (typeof fontWeight === "number") {
     return Math.max(1, Math.min(1000, fontWeight));
   }
@@ -379,7 +380,63 @@ export function parseFontWeight(
     }
   }
 
-  console.warn(
-    `Invalid font-weight value: ${fontWeight}, fallback to undefined.`,
-  );
+  console.warn(`Invalid font-weight value: ${fontWeight}, fallback to 400.`);
+  return 400;
+}
+
+export function parseGridAutoRows(
+  value: string | number | GridTrackSize[],
+): GridTrackSize[] {
+  if (typeof value === "string") {
+    return parseGridTrackSize(value);
+  }
+  if (Array.isArray(value)) {
+    return value as GridTrackSize[];
+  }
+  return typeof value === "number"
+    ? ([value] as GridTrackSize[])
+    : ([fr(1)] as GridTrackSize[]);
+}
+
+export function parseGridRow(value: string | number): GridLine {
+  if (typeof value === "string") {
+    return parseGridLine(value);
+  }
+  if (typeof value === "number") {
+    return { start: value, end: null };
+  }
+  return value;
+}
+
+export function parseGridTemplateColumns(
+  value: string | number | TrackSizingFunction[],
+): TrackSizingFunction[] {
+  if (typeof value === "string") {
+    return parseTrackSizingFunction(value);
+  }
+  if (Array.isArray(value)) {
+    return value as TrackSizingFunction[];
+  }
+  return typeof value === "number"
+    ? ([{ single: value }] as TrackSizingFunction[])
+    : ([{ single: 0 }] as TrackSizingFunction[]);
+}
+
+export function parseGridTemplateRows(
+  value: string | number | TrackSizingFunction[],
+): TrackSizingFunction[] {
+  if (typeof value === "string") {
+    return parseTrackSizingFunction(value);
+  }
+  if (Array.isArray(value)) {
+    return value as TrackSizingFunction[];
+  }
+  return typeof value === "number"
+    ? ([{ single: value }] as TrackSizingFunction[])
+    : ([{ single: 0 }] as TrackSizingFunction[]);
+}
+
+export function parseLineClamp(value: string | number): number {
+  if (value === "none") return 0;
+  return Number(value);
 }

@@ -1,4 +1,18 @@
 import type { CSSProperties } from "react";
+import type {
+  AlignItems,
+  JsxParsedStyle,
+  JustifyContent,
+  Style,
+  TextOverflow,
+} from "../types";
+import {
+  type CamelToSnakeCase,
+  camelToSnakeCase,
+  type RemoveGlobalsAndPrefixed,
+  removeGlobalValues,
+  type SnakeToCamelCase,
+} from "../utils";
 import { parseColor } from "./color-parsing";
 import {
   parseAspectRatio,
@@ -6,26 +20,16 @@ import {
   parseDisplay,
   parseFontWeight,
   parseGridAutoFlow,
-  parseGridLine,
+  parseGridAutoRows,
+  parseGridRow,
+  parseGridTemplateColumns,
+  parseGridTemplateRows,
   parseInset,
   parseLengthUnit,
+  parseLineClamp,
   parsePosition,
   parseSideLengthUnits,
 } from "./style-parsing";
-import type {
-  AlignItems,
-  JsxParsedStyle,
-  JustifyContent,
-  Style,
-  TextOverflow,
-} from "./types";
-import {
-  camelToSnakeCase,
-  type CamelToSnakeCase,
-  type RemoveGlobalsAndPrefixed,
-  removeGlobalValues,
-  type SnakeToCamelCase,
-} from "./utils";
 
 const SKIP_PARSING_SYMBOL = Symbol("skip-parsing");
 
@@ -70,17 +74,13 @@ const PROPERTY_PARSERS: {
   backgroundColor: parseColor,
   boxShadow: parseBoxShadow,
   objectFit: SKIP_PARSING_SYMBOL,
-  gridAutoColumns: (v) => {
-    if (typeof v === "number") return [v] as const;
-
-    return v.split(" ").map(parseGridLine);
-  },
-  gridAutoRows: (v) => v,
+  gridAutoColumns: parseGridAutoRows,
+  gridAutoRows: parseGridAutoRows,
   gridAutoFlow: parseGridAutoFlow,
-  gridColumn: (v) => v,
-  gridRow: (v) => v,
-  gridTemplateColumns: (v) => v,
-  gridTemplateRows: (v) => v,
+  gridColumn: parseGridRow,
+  gridRow: parseGridRow,
+  gridTemplateColumns: parseGridTemplateColumns,
+  gridTemplateRows: parseGridTemplateRows,
   textOverflow: (v) => v as TextOverflow,
   borderColor: parseColor,
   color: parseColor,
@@ -88,11 +88,7 @@ const PROPERTY_PARSERS: {
   fontFamily: SKIP_PARSING_SYMBOL,
   lineHeight: parseLengthUnit,
   fontWeight: parseFontWeight,
-  lineClamp: (v) => {
-    if (v === "none") return;
-
-    return v as number;
-  },
+  lineClamp: parseLineClamp,
   borderRadius: (v) => parseSideLengthUnits(v),
   textAlign(value) {
     if (value === "match-parent") {
@@ -101,10 +97,10 @@ const PROPERTY_PARSERS: {
         value,
       );
     }
-
     return value;
   },
   letterSpacing: parseLengthUnit,
+  inset: (v) => parseSideLengthUnits(v),
 };
 
 type StyleKey = SnakeToCamelCase<keyof Style>;
@@ -133,17 +129,14 @@ function processCssProp<K extends keyof CSSProperties>(
   const styleKey = camelToSnakeCase(cssProp) as keyof Style;
 
   if (parser === SKIP_PARSING_SYMBOL) {
-    // @ts-expect-error: Typescript is not smart enough to figure out which style field referring to
-    style[styleKey] = cleanValue;
+    (style as Record<string, unknown>)[styleKey as string] = cleanValue;
     return;
   }
 
   try {
-    // @ts-expect-error: Function union can't retrieve the correct type for prop
-    const parsedValue = parser(cleanValue);
+    const parsedValue = (parser as (value: unknown) => unknown)(cleanValue);
     if (parsedValue != null && parsedValue !== undefined) {
-      // @ts-expect-error: Typescript is not smart enough to figure out which style field referring to
-      style[styleKey] = parsedValue;
+      (style as Record<string, unknown>)[styleKey as string] = parsedValue;
     }
   } catch (error) {
     console.warn(`Failed to parse ${cssProp}:`, error);

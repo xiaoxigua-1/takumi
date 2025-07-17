@@ -6,9 +6,9 @@ import type {
   ReactNode,
 } from "react";
 import { isValidElement } from "react";
-import { container, image, text } from "./helpers";
+import { container, image, text } from "../helpers";
+import type { Node } from "../types";
 import { parseStyle } from "./style-parser";
-import type { Node } from "./types";
 
 type Nodes = Node | Nodes[];
 
