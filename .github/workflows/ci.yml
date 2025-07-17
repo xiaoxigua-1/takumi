@@ -89,6 +89,7 @@ jobs:
         run: bun install --frozen-lockfile --filter ./takumi-helpers
       
       - name: Test
+        working-directory: takumi-helpers
         run: bun test
 
       - name: Build helpers
