@@ -80,6 +80,14 @@ flex_direction: FlexDirection,
  */
 justify_content?: JustifyContent, 
 /**
+ * How flex items are aligned along the cross axis when there's extra space
+ */
+align_content?: JustifyContent, 
+/**
+ * How grid items are aligned along the inline (row) axis
+ */
+justify_items?: AlignItems, 
+/**
  * How flex items are aligned along the cross axis
  */
 align_items?: AlignItems, 
@@ -88,7 +96,7 @@ align_items?: AlignItems,
  */
 flex_wrap: FlexWrap, 
 /**
- * The initial size of the flex item
+ * The initial size of the flex item before growing or shrinking
  */
 flex_basis: LengthUnit, 
 /**
@@ -96,19 +104,19 @@ flex_basis: LengthUnit,
  */
 position: Position, 
 /**
- * Spacing between flex items
+ * Spacing between flex items or grid tracks
  */
 gap: Gap, 
 /**
- * How much the element should grow relative to other flex items
+ * How much the element should grow relative to other flex items (0.0 = no growth)
  */
 flex_grow: number, 
 /**
- * How much the element should shrink relative to other flex items
+ * How much the element should shrink relative to other flex items (0.0 = no shrinking)
  */
 flex_shrink: number, 
 /**
- * Width of the element's border
+ * Width of the element's border on each side
  */
 border_width: SidesValue<LengthUnit>, 
 /**
@@ -195,4 +203,4 @@ text_align?: TextAlign,
  * Letter spacing for text rendering
  * Value is measured in EM units
  */
-letter_spacing?: number, };
+letter_spacing?: LengthUnit, };

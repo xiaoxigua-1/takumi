@@ -235,8 +235,11 @@ fn test_style_line_height() {
 #[test]
 fn test_style_letter_spacing() {
   let mut style = Style::default();
-  style.inheritable_style.letter_spacing = Some(1.0);
-  assert_eq!(style.inheritable_style.letter_spacing, Some(1.0));
+  style.inheritable_style.letter_spacing = Some(LengthUnit::Em(1.0));
+  assert_eq!(
+    style.inheritable_style.letter_spacing,
+    Some(LengthUnit::Em(1.0))
+  );
 }
 
 #[test]
@@ -351,10 +354,10 @@ fn test_inheritable_style_line_height() {
 #[test]
 fn test_inheritable_style_letter_spacing() {
   let style = InheritableStyle {
-    letter_spacing: Some(1.0),
+    letter_spacing: Some(LengthUnit::Em(1.0)),
     ..Default::default()
   };
-  assert_eq!(style.letter_spacing, Some(1.0));
+  assert_eq!(style.letter_spacing, Some(LengthUnit::Em(1.0)));
 }
 
 #[test]

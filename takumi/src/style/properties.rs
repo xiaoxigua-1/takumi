@@ -188,12 +188,22 @@ impl BoxShadow {
   }
 }
 
+/// Represents a resolved box shadow with concrete pixel values.
+///
+/// This struct contains the final computed values for a box shadow
+/// after resolving relative units to absolute pixels.
 pub(crate) struct BoxShadowResolved {
+  /// Color of the box shadow
   pub color: ColorInput,
+  /// Horizontal offset in pixels
   pub offset_x: f32,
+  /// Vertical offset in pixels
   pub offset_y: f32,
+  /// Blur radius in pixels
   pub blur_radius: f32,
+  /// Spread radius in pixels
   pub spread_radius: f32,
+  /// Whether the shadow is inset (inside the element)
   pub inset: bool,
 }
 
@@ -217,22 +227,33 @@ pub enum BoxShadowInput {
 #[derive(Debug, Clone, Deserialize, Serialize, Copy, TS, PartialEq)]
 #[serde(rename_all = "kebab-case")]
 pub enum JustifyContent {
-  /// Items are packed toward the start of the writing-mode direction
+  /// Items are packed toward the start of the axis
   Start,
-  /// Items are packed toward the end of the writing-mode direction
+  /// Items are packed toward the end of the axis
   End,
-  /// Items are packed toward the start of the flex-direction
+  /// Items are packed towards the flex-relative start of the axis.
+  ///
+  /// For flex containers with flex_direction RowReverse or ColumnReverse this is equivalent
+  /// to End. In all other cases it is equivalent to Start.
   FlexStart,
-  /// Items are packed toward the end of the flex-direction
+  /// Items are packed towards the flex-relative end of the axis.
+  ///
+  /// For flex containers with flex_direction RowReverse or ColumnReverse this is equivalent
+  /// to Start. In all other cases it is equivalent to End.
   FlexEnd,
-  /// Items are centered along the main axis
+  /// Items are centered around the middle of the axis
   Center,
-  /// Items are evenly distributed with the first item at the start and last at the end
+  /// Items are stretched to fill the container
+  Stretch,
+  /// The first and last items are aligned flush with the edges of the container (no gap)
+  /// The gap between items is distributed evenly.
   SpaceBetween,
-  /// Items are evenly distributed with equal space around them
-  SpaceAround,
-  /// Items are evenly distributed with equal space between them
+  /// The gap between the first and last items is exactly THE SAME as the gap between items.
+  /// The gaps are distributed evenly
   SpaceEvenly,
+  /// The gap between the first and last items is exactly HALF the gap between items.
+  /// The gaps are distributed evenly in proportion to these ratios.
+  SpaceAround,
 }
 
 impl_from_taffy_enum!(
@@ -243,6 +264,7 @@ impl_from_taffy_enum!(
   FlexStart,
   FlexEnd,
   Center,
+  Stretch,
   SpaceBetween,
   SpaceAround,
   SpaceEvenly
@@ -306,6 +328,7 @@ impl_from_taffy_enum!(
 #[serde(rename_all = "kebab-case")]
 pub enum FlexWrap {
   /// Flex items will not wrap and will shrink to fit within the container
+  #[serde(rename = "nowrap")]
   NoWrap,
   /// Flex items will wrap to the next line when they exceed the container width
   Wrap,
@@ -388,21 +411,25 @@ pub struct Style {
   pub flex_direction: FlexDirection,
   /// How flex items are aligned along the main axis
   pub justify_content: Option<JustifyContent>,
+  /// How flex items are aligned along the cross axis when there's extra space
+  pub align_content: Option<JustifyContent>,
+  /// How grid items are aligned along the inline (row) axis
+  pub justify_items: Option<AlignItems>,
   /// How flex items are aligned along the cross axis
   pub align_items: Option<AlignItems>,
   /// How flex items should wrap
   pub flex_wrap: FlexWrap,
-  /// The initial size of the flex item
+  /// The initial size of the flex item before growing or shrinking
   pub flex_basis: LengthUnit,
   /// Positioning method (relative, absolute, etc.)
   pub position: Position,
-  /// Spacing between flex items
+  /// Spacing between flex items or grid tracks
   pub gap: Gap,
-  /// How much the element should grow relative to other flex items
+  /// How much the element should grow relative to other flex items (0.0 = no growth)
   pub flex_grow: f32,
-  /// How much the element should shrink relative to other flex items
+  /// How much the element should shrink relative to other flex items (0.0 = no shrinking)
   pub flex_shrink: f32,
-  /// Width of the element's border
+  /// Width of the element's border on each side
   pub border_width: SidesValue<LengthUnit>,
   /// How images should be fitted within their container
   pub object_fit: ObjectFit,
@@ -424,7 +451,7 @@ pub struct Style {
   pub grid_template_columns: Option<Vec<TrackSizingFunction>>,
   /// Defines the line names and track sizing functions of the grid rows
   pub grid_template_rows: Option<Vec<TrackSizingFunction>>,
-  /// Inheritable style properties
+  /// Inheritable style properties that cascade to child elements
   #[serde(flatten)]
   pub inheritable_style: InheritableStyle,
 }
@@ -445,6 +472,8 @@ impl Default for Style {
       inset: Default::default(),
       flex_direction: Default::default(),
       justify_content: Default::default(),
+      align_content: Default::default(),
+      justify_items: Default::default(),
       align_items: Default::default(),
       position: Default::default(),
       gap: Default::default(),
@@ -474,10 +503,6 @@ impl Default for Style {
 pub enum GridTrackSize {
   /// A fraction of the available space
   Fr(f32),
-  /// The minimum content size of the grid track
-  MinContent,
-  /// The maximum content size of the grid track
-  MaxContent,
   /// A fixed length
   #[serde(untagged)]
   Unit(LengthUnit),
@@ -494,8 +519,6 @@ impl GridTrackSize {
   pub fn to_compact_length(&self, context: &RenderContext) -> CompactLength {
     match self {
       GridTrackSize::Fr(fr) => CompactLength::fr(*fr),
-      GridTrackSize::MinContent => CompactLength::min_content(),
-      GridTrackSize::MaxContent => CompactLength::max_content(),
       GridTrackSize::Unit(unit) => unit.to_compact_length(context),
     }
   }
@@ -534,15 +557,17 @@ impl From<GridLine> for taffy::Line<taffy::GridPlacement> {
 
 /// Represents a grid placement with serde support
 #[derive(Debug, Clone, Deserialize, Serialize, TS, Default, PartialEq)]
-#[serde(untagged)]
+#[serde(rename_all = "kebab-case")]
 pub enum GridPlacement {
   /// Auto placement
   #[default]
   Auto,
-  /// Line index (1-based)
-  Line(i16),
   /// Span count
   Span(u16),
+  /// Line index (1-based)
+  #[serde(untagged)]
+  Line(i16),
+  #[serde(untagged)]
   /// Named grid area
   Named(String),
 }
@@ -594,6 +619,15 @@ pub enum TrackSizingFunction {
 }
 
 impl TrackSizingFunction {
+  /// Converts this track sizing function to a Taffy-compatible format.
+  ///
+  /// # Arguments
+  ///
+  /// * `context` - The render context containing viewport information for unit resolution
+  ///
+  /// # Returns
+  ///
+  /// A `taffy::TrackSizingFunction` that can be used with the Taffy layout engine
   fn to_taffy(&self, context: &RenderContext) -> taffy::TrackSizingFunction {
     match self {
       Self::Single(track_size) => {
@@ -664,11 +698,20 @@ pub struct InheritableStyle {
   pub text_align: Option<TextAlign>,
   /// Letter spacing for text rendering
   /// Value is measured in EM units
-  pub letter_spacing: Option<f32>,
+  pub letter_spacing: Option<LengthUnit>,
 }
 
 impl Style {
   /// Resolves the style to a `TaffyStyle`.
+  /// Converts this style to a Taffy-compatible style for layout calculations.
+  ///
+  /// # Arguments
+  ///
+  /// * `context` - The render context containing viewport information for unit resolution
+  ///
+  /// # Returns
+  ///
+  /// A `TaffyStyle` that can be used with the Taffy layout engine
   pub fn resolve_to_taffy_style(&self, context: &RenderContext) -> TaffyStyle {
     TaffyStyle {
       size: Size {
@@ -683,6 +726,8 @@ impl Style {
       flex_direction: self.flex_direction.into(),
       position: self.position.into(),
       justify_content: self.justify_content.map(Into::into),
+      align_content: self.align_content.map(Into::into),
+      justify_items: self.justify_items.map(Into::into),
       flex_grow: self.flex_grow,
       align_items: self.align_items.map(Into::into),
       gap: self.gap.resolve_to_size(context),
@@ -728,6 +773,18 @@ impl Style {
   }
 
   /// Resolves the style to a `ResolvedFontStyle`.
+  /// Resolves inheritable style properties to concrete values for text rendering.
+  ///
+  /// This method combines the element's inheritable styles with default values
+  /// to produce a complete font style specification.
+  ///
+  /// # Arguments
+  ///
+  /// * `context` - The render context containing viewport information for unit resolution
+  ///
+  /// # Returns
+  ///
+  /// A `ResolvedFontStyle` with all font-related properties resolved to concrete values
   pub fn resolve_to_font_style(&self, context: &RenderContext) -> ResolvedFontStyle {
     ResolvedFontStyle {
       color: self.inheritable_style.color.clone().unwrap_or_default(),
@@ -748,7 +805,10 @@ impl Style {
         .into(),
       line_clamp: self.inheritable_style.line_clamp,
       font_family: self.inheritable_style.font_family.clone(),
-      letter_spacing: self.inheritable_style.letter_spacing,
+      letter_spacing: self
+        .inheritable_style
+        .letter_spacing
+        .map(|spacing| spacing.resolve_to_px(context) / context.parent_font_size),
       text_align: self.inheritable_style.text_align.and_then(Into::into),
       text_overflow: self
         .inheritable_style

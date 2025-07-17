@@ -14,10 +14,14 @@ use crate::core::viewport::RenderContext;
 /// This corresponds to CSS values that can be specified as pixels, percentages,
 /// or the 'auto' keyword for automatic sizing.
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Copy, TS)]
-#[serde(rename_all = "camelCase")]
+#[serde(rename_all = "kebab-case")]
 pub enum LengthUnit {
   /// Automatic sizing based on content
   Auto,
+  /// Minimum content size
+  MinContent,
+  /// Maximum content size
+  MaxContent,
   /// Percentage value relative to parent container (0-100)
   Percentage(f32),
   /// Rem value relative to the root font size
@@ -53,6 +57,8 @@ impl LengthUnit {
   pub fn to_compact_length(self, context: &RenderContext) -> CompactLength {
     match self {
       LengthUnit::Auto => CompactLength::auto(),
+      LengthUnit::MinContent => CompactLength::min_content(),
+      LengthUnit::MaxContent => CompactLength::max_content(),
       LengthUnit::Px(value) => CompactLength::length(value),
       LengthUnit::Percentage(value) => CompactLength::percent(value / 100.0),
       LengthUnit::Rem(value) => CompactLength::length(value * context.viewport.font_size),
@@ -79,7 +85,7 @@ impl LengthUnit {
   /// Resolves the length unit to a pixel value.
   pub fn resolve_to_px(self, context: &RenderContext) -> f32 {
     match self {
-      LengthUnit::Auto => 0.0,
+      LengthUnit::Auto | LengthUnit::MinContent | LengthUnit::MaxContent => 0.0,
       LengthUnit::Px(value) => value,
       LengthUnit::Percentage(value) => value * context.parent_font_size / 100.0,
       LengthUnit::Rem(value) => value * context.viewport.font_size,

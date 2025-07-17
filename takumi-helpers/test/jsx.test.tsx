@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { em, percentage, rem, vh } from "../src/helpers";
 import { fromJsx } from "../src/jsx";
-import type { ContainerNode, ImageNode, TextNode } from "../src/types";
+import type { ContainerNode, ImageNode, Node, TextNode } from "../src/types";
 
 describe("fromJsx", () => {
   test("converts text to TextNode", async () => {
@@ -83,7 +83,7 @@ describe("fromJsx", () => {
         type: "container",
         children: [{ type: "text", text: "Second" }],
       },
-    ]);
+    ] satisfies Node[]);
   });
 
   test("handles arrays", async () => {
@@ -209,7 +209,7 @@ describe("fromJsx", () => {
       height: 50,
       max_width: percentage(100),
       children: [{ type: "text", text: "Test" }],
-    });
+    } satisfies Node);
   });
 
   test("handles style props with spacing", async () => {
@@ -219,10 +219,10 @@ describe("fromJsx", () => {
 
     expect(result).toEqual({
       type: "container",
-      padding: { top: 10, right: 20, bottom: 10, left: 20 },
-      margin: { top: 15, right: 15, bottom: 15, left: 15 },
+      padding: [10, 20],
+      margin: 15,
       children: [{ type: "text", text: "Test" }],
-    });
+    } satisfies Node);
   });
 
   test("handles style props with flex properties", async () => {
@@ -248,7 +248,7 @@ describe("fromJsx", () => {
       flex_grow: 1,
       gap: 8,
       children: [{ type: "text", text: "Test" }],
-    });
+    } satisfies Node);
   });
 
   test("handles style props with text properties", async () => {
@@ -270,11 +270,11 @@ describe("fromJsx", () => {
       type: "container",
       font_size: 16,
       font_family: "Arial",
-      font_weight: "bold",
+      font_weight: 700,
       line_height: 1.5,
       text_align: "center",
       children: [{ type: "text", text: "Test" }],
-    });
+    } satisfies Node);
   });
 
   test("handles different length units", async () => {
@@ -295,10 +295,10 @@ describe("fromJsx", () => {
       type: "container",
       width: percentage(50),
       height: rem(2),
-      padding: { top: em(1), right: em(1), bottom: em(1), left: em(1) },
-      margin: { top: vh(10), right: vh(10), bottom: vh(10), left: vh(10) },
+      padding: em(1),
+      margin: vh(10),
       children: [{ type: "text", text: "Test" }],
-    });
+    } satisfies Node);
   });
 
   test("handles img with style props", async () => {
@@ -315,6 +315,6 @@ describe("fromJsx", () => {
       src: "https://example.com/image.jpg",
       width: 200,
       height: 150,
-    });
+    } satisfies Node);
   });
 });

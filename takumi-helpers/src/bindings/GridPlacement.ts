@@ -3,4 +3,4 @@
 /**
  * Represents a grid placement with serde support
  */
-export type GridPlacement = null | number | number | string;
+export type GridPlacement = "auto" | { "span": number } | number | string;
