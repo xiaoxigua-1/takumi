@@ -5,4 +5,4 @@
  *
  * This enum determines how flex items should wrap within the flex container.
  */
-export type FlexWrap = "no-wrap" | "wrap" | "wrap-reverse";
+export type FlexWrap = "nowrap" | "wrap" | "wrap-reverse";

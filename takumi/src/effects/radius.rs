@@ -49,13 +49,8 @@ fn resolve_border_radius_from_percentage_css(
   reference_size: f32,
 ) -> f32 {
   match radius {
-    LengthUnit::Px(value) => value,
     LengthUnit::Percentage(value) => value * reference_size / 100.0,
-    LengthUnit::Auto => 0.0,
-    LengthUnit::Rem(value) => value * context.parent_font_size,
-    LengthUnit::Em(value) => value * context.parent_font_size,
-    LengthUnit::Vh(value) => value * context.viewport.height as f32 / 100.0,
-    LengthUnit::Vw(value) => value * context.viewport.width as f32 / 100.0,
+    rest => rest.resolve_to_px(context),
   }
 }
 

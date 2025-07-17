@@ -57,4 +57,4 @@ text_align?: TextAlign,
  * Letter spacing for text rendering
  * Value is measured in EM units
  */
-letter_spacing?: number, };
+letter_spacing?: LengthUnit, };

@@ -2,7 +2,7 @@ import type {
   ColorInput,
   ContainerNode,
   ImageNode,
-  StyleInput,
+  PartialStyle,
   TextNode,
 } from "./types";
 
@@ -13,7 +13,7 @@ export function container(props: Omit<ContainerNode, "type">): ContainerNode {
   };
 }
 
-export function text(text: string, style?: StyleInput): TextNode {
+export function text(text: string, style?: PartialStyle): TextNode {
   return {
     ...style,
     type: "text",
@@ -21,7 +21,7 @@ export function text(text: string, style?: StyleInput): TextNode {
   };
 }
 
-export function image(src: string, style?: StyleInput): ImageNode {
+export function image(src: string, style?: PartialStyle): ImageNode {
   return {
     ...style,
     type: "image",
@@ -29,7 +29,7 @@ export function image(src: string, style?: StyleInput): ImageNode {
   };
 }
 
-export function style(style: StyleInput) {
+export function style(style: PartialStyle) {
   return style;
 }
 
