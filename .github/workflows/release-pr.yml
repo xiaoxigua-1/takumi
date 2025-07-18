@@ -129,6 +129,9 @@ jobs:
           git fetch origin release/v${{ steps.new_version.outputs.new_version }}
           git checkout release/v${{ steps.new_version.outputs.new_version }}
           
+          # Fetch latest tags from remote
+          git fetch --tags --force
+          
           # Check if tag already exists and handle accordingly
           TAG_NAME="v${{ steps.new_version.outputs.new_version }}"
           
@@ -140,7 +143,7 @@ jobs:
             if [ "$CURRENT_COMMIT" != "$TAG_COMMIT" ]; then
               echo "Tag points to different commit, force updating..."
               git tag -f "$TAG_NAME" -m "Release $TAG_NAME"
-              git push origin "$TAG_NAME" --force-with-lease
+              git push origin "$TAG_NAME" --force
             else
               echo "Tag already points to current commit, no action needed"
             fi
