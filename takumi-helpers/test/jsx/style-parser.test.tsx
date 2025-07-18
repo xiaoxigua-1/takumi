@@ -9,7 +9,7 @@ describe("style-parser", () => {
       <div style={{ width: 100, height: "50px", maxWidth: "100%" }}>Test</div>,
     );
 
-    expect(result).toEqual({
+    expect(result[0]).toEqual({
       type: "container",
       width: 100,
       height: 50,
@@ -23,7 +23,7 @@ describe("style-parser", () => {
       <div style={{ padding: "10px 20px", margin: 15 }}>Test</div>,
     );
 
-    expect(result).toEqual({
+    expect(result[0]).toEqual({
       type: "container",
       padding: [10, 20],
       margin: 15,
@@ -46,7 +46,7 @@ describe("style-parser", () => {
       </div>,
     );
 
-    expect(result).toEqual({
+    expect(result[0]).toEqual({
       type: "container",
       flex_direction: "column",
       justify_content: "center",
@@ -72,7 +72,7 @@ describe("style-parser", () => {
       </div>,
     );
 
-    expect(result).toEqual({
+    expect(result[0]).toEqual({
       type: "container",
       font_size: 16,
       font_family: "Arial",
@@ -97,7 +97,7 @@ describe("style-parser", () => {
       </div>,
     );
 
-    expect(result).toEqual({
+    expect(result[0]).toEqual({
       type: "container",
       width: percentage(50),
       height: rem(2),
@@ -116,7 +116,7 @@ describe("style-parser", () => {
       />,
     );
 
-    expect(result).toEqual({
+    expect(result[0]).toEqual({
       type: "image",
       src: "https://example.com/image.jpg",
       width: 200,
@@ -130,7 +130,7 @@ describe("style-parser", () => {
         <div style={{ backgroundColor: "#ff0000" }}>Test</div>,
       );
 
-      expect(result).toEqual({
+      expect(result[0]).toEqual({
         type: "container",
         background_color: 16711680,
         children: [{ type: "text", text: "Test" }],
@@ -142,7 +142,7 @@ describe("style-parser", () => {
         <div style={{ borderColor: "rgb(0, 255, 0)" }}>Test</div>,
       );
 
-      expect(result).toEqual({
+      expect(result[0]).toEqual({
         type: "container",
         border_color: [0, 255, 0],
         children: [{ type: "text", text: "Test" }],
@@ -154,7 +154,7 @@ describe("style-parser", () => {
         <div style={{ color: "rgba(0, 0, 255, 0.5)" }}>Test</div>,
       );
 
-      expect(result).toEqual({
+      expect(result[0]).toEqual({
         type: "container",
         color: [0, 0, 255, 0.5],
         children: [{ type: "text", text: "Test" }],
@@ -168,7 +168,7 @@ describe("style-parser", () => {
         <div style={{ borderWidth: "2px" }}>Test</div>,
       );
 
-      expect(result).toEqual({
+      expect(result[0]).toEqual({
         type: "container",
         border_width: 2,
         children: [{ type: "text", text: "Test" }],
@@ -180,7 +180,7 @@ describe("style-parser", () => {
         <div style={{ borderWidth: "1px 2px 3px 4px" }}>Test</div>,
       );
 
-      expect(result).toEqual({
+      expect(result[0]).toEqual({
         type: "container",
         border_width: [1, 2, 3, 4],
         children: [{ type: "text", text: "Test" }],
@@ -192,7 +192,7 @@ describe("style-parser", () => {
         <div style={{ borderRadius: "8px" }}>Test</div>,
       );
 
-      expect(result).toEqual({
+      expect(result[0]).toEqual({
         type: "container",
         border_radius: 8,
         children: [{ type: "text", text: "Test" }],
@@ -204,7 +204,7 @@ describe("style-parser", () => {
         <div style={{ borderRadius: "4px 8px 12px 16px" }}>Test</div>,
       );
 
-      expect(result).toEqual({
+      expect(result[0]).toEqual({
         type: "container",
         border_radius: [4, 8, 12, 16],
         children: [{ type: "text", text: "Test" }],
@@ -218,41 +218,41 @@ describe("style-parser", () => {
         <div style={{ position: "absolute" }}>Test</div>,
       );
 
-      expect(result).toEqual({
+      expect(result[0]).toEqual({
         type: "container",
         position: "absolute",
         children: [{ type: "text", text: "Test" }],
       } satisfies ContainerNode);
     });
-
+  
     test("handles position relative", async () => {
       const result = await fromJsx(
         <div style={{ position: "relative" }}>Test</div>,
       );
-
-      expect(result).toEqual({
+  
+      expect(result[0]).toEqual({
         type: "container",
         position: "relative",
         children: [{ type: "text", text: "Test" }],
       } satisfies ContainerNode);
     });
-
+  
     test("handles inset with single value", async () => {
       const result = await fromJsx(<div style={{ inset: "10px" }}>Test</div>);
-
-      expect(result).toEqual({
+  
+      expect(result[0]).toEqual({
         type: "container",
         inset: 10,
         children: [{ type: "text", text: "Test" }],
       } satisfies ContainerNode);
     });
-
+  
     test("handles inset with multiple values", async () => {
       const result = await fromJsx(
         <div style={{ inset: "10px 20px 30px 40px" }}>Test</div>,
       );
-
-      expect(result).toEqual({
+  
+      expect(result[0]).toEqual({
         type: "container",
         inset: [10, 20, 30, 40],
         children: [{ type: "text", text: "Test" }],
@@ -266,101 +266,101 @@ describe("style-parser", () => {
         <div style={{ gridAutoColumns: "100px" }}>Test</div>,
       );
 
-      expect(result).toEqual({
+      expect(result[0]).toEqual({
         type: "container",
         grid_auto_columns: [100],
         children: [{ type: "text", text: "Test" }],
       } satisfies ContainerNode);
     });
-
+  
     test("handles grid auto columns with fr unit", async () => {
       const result = await fromJsx(
         <div style={{ gridAutoColumns: "1fr" }}>Test</div>,
       );
-
-      expect(result).toEqual({
+  
+      expect(result[0]).toEqual({
         type: "container",
         grid_auto_columns: [{ fr: 1 }],
         children: [{ type: "text", text: "Test" }],
       } satisfies ContainerNode);
     });
-
+  
     test("handles grid auto rows", async () => {
       const result = await fromJsx(
         <div style={{ gridAutoRows: "50px" }}>Test</div>,
       );
-
-      expect(result).toEqual({
+  
+      expect(result[0]).toEqual({
         type: "container",
         grid_auto_rows: [50],
         children: [{ type: "text", text: "Test" }],
       } satisfies ContainerNode);
     });
-
+  
     test("handles grid auto flow", async () => {
       const result = await fromJsx(
         <div style={{ gridAutoFlow: "column" }}>Test</div>,
       );
-
-      expect(result).toEqual({
+  
+      expect(result[0]).toEqual({
         type: "container",
         grid_auto_flow: "column",
         children: [{ type: "text", text: "Test" }],
       } satisfies ContainerNode);
     });
-
+  
     test("handles grid column with string", async () => {
       const result = await fromJsx(
         <div style={{ gridColumn: "1 / 3" }}>Test</div>,
       );
-
-      expect(result).toEqual({
+  
+      expect(result[0]).toEqual({
         type: "container",
         grid_column: { start: 1, end: 3 },
         children: [{ type: "text", text: "Test" }],
       } satisfies ContainerNode);
     });
-
+  
     test("handles grid column with number", async () => {
       const result = await fromJsx(<div style={{ gridColumn: 2 }}>Test</div>);
-
-      expect(result).toEqual({
+  
+      expect(result[0]).toEqual({
         type: "container",
         grid_column: { start: 2, end: null },
         children: [{ type: "text", text: "Test" }],
       } satisfies ContainerNode);
     });
-
+  
     test("handles grid row with string", async () => {
       const result = await fromJsx(
         <div style={{ gridRow: "2 / 4" }}>Test</div>,
       );
-
-      expect(result).toEqual({
+  
+      expect(result[0]).toEqual({
         type: "container",
         grid_row: { start: 2, end: 4 },
         children: [{ type: "text", text: "Test" }],
       } satisfies ContainerNode);
     });
-
+  
     test("handles grid template columns", async () => {
       const result = await fromJsx(
         <div style={{ gridTemplateColumns: "100px 1fr" }}>Test</div>,
       );
-
-      expect(result).toEqual({
+  
+      expect(result[0]).toEqual({
         type: "container",
         grid_template_columns: [{ single: 100 }, { single: { fr: 1 } }],
         children: [{ type: "text", text: "Test" }],
       } satisfies ContainerNode);
     });
-
+  
     test("handles grid template rows", async () => {
       const result = await fromJsx(
         <div style={{ gridTemplateRows: "50px 2fr" }}>Test</div>,
       );
-
-      expect(result).toEqual({
+  
+      expect(result[0]).toEqual({
         type: "container",
         grid_template_rows: [{ single: 50 }, { single: { fr: 2 } }],
         children: [{ type: "text", text: "Test" }],
@@ -372,7 +372,7 @@ describe("style-parser", () => {
     test("handles line clamp", async () => {
       const result = await fromJsx(<div style={{ lineClamp: 3 }}>Test</div>);
 
-      expect(result).toEqual({
+      expect(result[0]).toEqual({
         type: "container",
         line_clamp: 3,
         children: [{ type: "text", text: "Test" }],
@@ -384,7 +384,7 @@ describe("style-parser", () => {
         <div style={{ lineClamp: "none" }}>Test</div>,
       );
 
-      expect(result).toEqual({
+      expect(result[0]).toEqual({
         type: "container",
         line_clamp: 0,
         children: [{ type: "text", text: "Test" }],
@@ -396,7 +396,7 @@ describe("style-parser", () => {
         <div style={{ textOverflow: "ellipsis" }}>Test</div>,
       );
 
-      expect(result).toEqual({
+      expect(result[0]).toEqual({
         type: "container",
         text_overflow: "ellipsis",
         children: [{ type: "text", text: "Test" }],
@@ -408,7 +408,7 @@ describe("style-parser", () => {
         <div style={{ letterSpacing: "0.1em" }}>Test</div>,
       );
 
-      expect(result).toEqual({
+      expect(result[0]).toEqual({
         type: "container",
         letter_spacing: { em: 0.1 },
         children: [{ type: "text", text: "Test" }],
@@ -422,7 +422,7 @@ describe("style-parser", () => {
         <div style={{ flexBasis: "100px" }}>Test</div>,
       );
 
-      expect(result).toEqual({
+      expect(result[0]).toEqual({
         type: "container",
         flex_basis: 100,
         children: [{ type: "text", text: "Test" }],
@@ -432,7 +432,7 @@ describe("style-parser", () => {
     test("handles flex shrink", async () => {
       const result = await fromJsx(<div style={{ flexShrink: 0.5 }}>Test</div>);
 
-      expect(result).toEqual({
+      expect(result[0]).toEqual({
         type: "container",
         flex_shrink: 0.5,
         children: [{ type: "text", text: "Test" }],
@@ -444,7 +444,7 @@ describe("style-parser", () => {
         <div style={{ flexWrap: "wrap" }}>Test</div>,
       );
 
-      expect(result).toEqual({
+      expect(result[0]).toEqual({
         type: "container",
         flex_wrap: "wrap",
         children: [{ type: "text", text: "Test" }],
@@ -456,7 +456,7 @@ describe("style-parser", () => {
         <div style={{ alignContent: "space-between" }}>Test</div>,
       );
 
-      expect(result).toEqual({
+      expect(result[0]).toEqual({
         type: "container",
         align_content: "space-between",
         children: [{ type: "text", text: "Test" }],
@@ -468,7 +468,7 @@ describe("style-parser", () => {
         <div style={{ justifyItems: "center" }}>Test</div>,
       );
 
-      expect(result).toEqual({
+      expect(result[0]).toEqual({
         type: "container",
         justify_items: "center",
         children: [{ type: "text", text: "Test" }],
@@ -482,7 +482,7 @@ describe("style-parser", () => {
         <div style={{ minWidth: "100px" }}>Test</div>,
       );
 
-      expect(result).toEqual({
+      expect(result[0]).toEqual({
         type: "container",
         min_width: 100,
         children: [{ type: "text", text: "Test" }],
@@ -494,7 +494,7 @@ describe("style-parser", () => {
         <div style={{ minHeight: "50px" }}>Test</div>,
       );
 
-      expect(result).toEqual({
+      expect(result[0]).toEqual({
         type: "container",
         min_height: 50,
         children: [{ type: "text", text: "Test" }],
@@ -506,7 +506,7 @@ describe("style-parser", () => {
         <div style={{ maxHeight: "200px" }}>Test</div>,
       );
 
-      expect(result).toEqual({
+      expect(result[0]).toEqual({
         type: "container",
         max_height: 200,
         children: [{ type: "text", text: "Test" }],
@@ -518,7 +518,7 @@ describe("style-parser", () => {
         <div style={{ aspectRatio: 16 / 9 }}>Test</div>,
       );
 
-      expect(result).toEqual({
+      expect(result[0]).toEqual({
         type: "container",
         aspect_ratio: 16 / 9,
         children: [{ type: "text", text: "Test" }],
@@ -536,7 +536,7 @@ describe("style-parser", () => {
         />,
       );
 
-      expect(result).toEqual({
+      expect(result[0]).toEqual({
         type: "image",
         src: "https://example.com/image.jpg",
         width: 200,
@@ -552,7 +552,7 @@ describe("style-parser", () => {
         <div style={{ backgroundColor: "invalid-color" }}>Test</div>,
       );
 
-      expect(result).toEqual({
+      expect(result[0]).toEqual({
         type: "container",
         children: [{ type: "text", text: "Test" }],
       } satisfies ContainerNode);
@@ -563,7 +563,7 @@ describe("style-parser", () => {
         <div style={{ boxShadow: "invalid-shadow" }}>Test</div>,
       );
 
-      expect(result).toEqual({
+      expect(result[0]).toEqual({
         type: "container",
         children: [{ type: "text", text: "Test" }],
       } satisfies ContainerNode);
@@ -583,7 +583,7 @@ describe("style-parser", () => {
         </div>,
       );
 
-      expect(result).toEqual({
+      expect(result[0]).toEqual({
         type: "container",
         border_width: 0,
         border_radius: 0,
@@ -615,7 +615,7 @@ describe("style-parser", () => {
         </div>,
       );
 
-      expect(result).toEqual({
+      expect(result[0]).toEqual({
         type: "container",
         background_color: 16777215,
         border_color: 0,

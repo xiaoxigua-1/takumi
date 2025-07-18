@@ -455,12 +455,9 @@ jobs:
           version=$(jq -r '.version' takumi-helpers/package.json)
           echo "version=$version" >> $GITHUB_OUTPUT
 
-      - name: Create and push tag
+      - name: Skip tag creation (moved to release-pr.yml)
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git tag v${{ steps.get_version.outputs.version }} -m "Release v${{ steps.get_version.outputs.version }}"
-          git push origin v${{ steps.get_version.outputs.version }}
+          echo "Tag creation has been moved to release-pr.yml workflow"
 
       - name: Generate release notes
         id: release_notes

@@ -16,6 +16,10 @@ on:
 env:
   CARGO_TERM_COLOR: always
 
+permissions:
+  contents: write
+  pull-requests: write
+
 jobs:
   create-pr:
     name: Create Release PR
@@ -110,7 +114,38 @@ jobs:
             - [ ] Version numbers updated correctly
             - [ ] Changelog looks accurate
             - [ ] All tests pass
+            - [ ] Tag v${{ steps.new_version.outputs.new_version }} has been created and pushed
 
             After merging, the release will be created automatically.
           branch: release/v${{ steps.new_version.outputs.new_version }}
           delete-branch: true
+
+      - name: Create and push tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Ensure we're on the latest commit of the release branch
+          git fetch origin release/v${{ steps.new_version.outputs.new_version }}
+          git checkout release/v${{ steps.new_version.outputs.new_version }}
+          
+          # Check if tag already exists and handle accordingly
+          TAG_NAME="v${{ steps.new_version.outputs.new_version }}"
+          
+          if git rev-parse "$TAG_NAME" >/dev/null 2>&1; then
+            echo "Tag $TAG_NAME already exists, checking if it points to current commit..."
+            CURRENT_COMMIT=$(git rev-parse HEAD)
+            TAG_COMMIT=$(git rev-parse "$TAG_NAME^{}")
+            
+            if [ "$CURRENT_COMMIT" != "$TAG_COMMIT" ]; then
+              echo "Tag points to different commit, force updating..."
+              git tag -f "$TAG_NAME" -m "Release $TAG_NAME"
+              git push origin "$TAG_NAME" --force-with-lease
+            else
+              echo "Tag already points to current commit, no action needed"
+            fi
+          else
+            echo "Creating new tag $TAG_NAME..."
+            git tag "$TAG_NAME" -m "Release $TAG_NAME"
+            git push origin "$TAG_NAME"
+          fi
