@@ -224,34 +224,34 @@ describe("style-parser", () => {
         children: [{ type: "text", text: "Test" }],
       } satisfies ContainerNode);
     });
-  
+
     test("handles position relative", async () => {
       const result = await fromJsx(
         <div style={{ position: "relative" }}>Test</div>,
       );
-  
+
       expect(result[0]).toEqual({
         type: "container",
         position: "relative",
         children: [{ type: "text", text: "Test" }],
       } satisfies ContainerNode);
     });
-  
+
     test("handles inset with single value", async () => {
       const result = await fromJsx(<div style={{ inset: "10px" }}>Test</div>);
-  
+
       expect(result[0]).toEqual({
         type: "container",
         inset: 10,
         children: [{ type: "text", text: "Test" }],
       } satisfies ContainerNode);
     });
-  
+
     test("handles inset with multiple values", async () => {
       const result = await fromJsx(
         <div style={{ inset: "10px 20px 30px 40px" }}>Test</div>,
       );
-  
+
       expect(result[0]).toEqual({
         type: "container",
         inset: [10, 20, 30, 40],
@@ -272,94 +272,94 @@ describe("style-parser", () => {
         children: [{ type: "text", text: "Test" }],
       } satisfies ContainerNode);
     });
-  
+
     test("handles grid auto columns with fr unit", async () => {
       const result = await fromJsx(
         <div style={{ gridAutoColumns: "1fr" }}>Test</div>,
       );
-  
+
       expect(result[0]).toEqual({
         type: "container",
         grid_auto_columns: [{ fr: 1 }],
         children: [{ type: "text", text: "Test" }],
       } satisfies ContainerNode);
     });
-  
+
     test("handles grid auto rows", async () => {
       const result = await fromJsx(
         <div style={{ gridAutoRows: "50px" }}>Test</div>,
       );
-  
+
       expect(result[0]).toEqual({
         type: "container",
         grid_auto_rows: [50],
         children: [{ type: "text", text: "Test" }],
       } satisfies ContainerNode);
     });
-  
+
     test("handles grid auto flow", async () => {
       const result = await fromJsx(
         <div style={{ gridAutoFlow: "column" }}>Test</div>,
       );
-  
+
       expect(result[0]).toEqual({
         type: "container",
         grid_auto_flow: "column",
         children: [{ type: "text", text: "Test" }],
       } satisfies ContainerNode);
     });
-  
+
     test("handles grid column with string", async () => {
       const result = await fromJsx(
         <div style={{ gridColumn: "1 / 3" }}>Test</div>,
       );
-  
+
       expect(result[0]).toEqual({
         type: "container",
         grid_column: { start: 1, end: 3 },
         children: [{ type: "text", text: "Test" }],
       } satisfies ContainerNode);
     });
-  
+
     test("handles grid column with number", async () => {
       const result = await fromJsx(<div style={{ gridColumn: 2 }}>Test</div>);
-  
+
       expect(result[0]).toEqual({
         type: "container",
         grid_column: { start: 2, end: null },
         children: [{ type: "text", text: "Test" }],
       } satisfies ContainerNode);
     });
-  
+
     test("handles grid row with string", async () => {
       const result = await fromJsx(
         <div style={{ gridRow: "2 / 4" }}>Test</div>,
       );
-  
+
       expect(result[0]).toEqual({
         type: "container",
         grid_row: { start: 2, end: 4 },
         children: [{ type: "text", text: "Test" }],
       } satisfies ContainerNode);
     });
-  
+
     test("handles grid template columns", async () => {
       const result = await fromJsx(
         <div style={{ gridTemplateColumns: "100px 1fr" }}>Test</div>,
       );
-  
+
       expect(result[0]).toEqual({
         type: "container",
         grid_template_columns: [{ single: 100 }, { single: { fr: 1 } }],
         children: [{ type: "text", text: "Test" }],
       } satisfies ContainerNode);
     });
-  
+
     test("handles grid template rows", async () => {
       const result = await fromJsx(
         <div style={{ gridTemplateRows: "50px 2fr" }}>Test</div>,
       );
-  
+
       expect(result[0]).toEqual({
         type: "container",
         grid_template_rows: [{ single: 50 }, { single: { fr: 2 } }],

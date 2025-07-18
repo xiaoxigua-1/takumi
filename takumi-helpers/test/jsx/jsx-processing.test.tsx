@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
+import { container } from "../../src/helpers";
 import { fromJsx } from "../../src/jsx/jsx-processing";
 import type { ContainerNode, ImageNode, Node, TextNode } from "../../src/types";
-import { container } from "../../src/helpers";
 
 describe("fromJsx", () => {
   test("converts text to TextNode", async () => {
