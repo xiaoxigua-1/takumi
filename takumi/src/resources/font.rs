@@ -8,7 +8,7 @@ pub enum FontError {
   Woff2(woff2_patched::decode::DecodeError),
   /// Error during woff parsing
   #[cfg(feature = "woff")]
-  Woff,
+  Woff(crate::resources::woff::WoffError),
   /// Unsupported Font Format
   UnsupportedFormat,
 }
@@ -45,7 +45,7 @@ pub fn load_font(source: Vec<u8>, format_hint: Option<FontFormat>) -> Result<Vec
       woff2_patched::convert_woff2_to_ttf(&mut bytes).map_err(FontError::Woff2)
     }
     #[cfg(feature = "woff")]
-    FontFormat::Woff => decompress_woff(source),
+    FontFormat::Woff => crate::resources::woff::decompress_woff(&source).map_err(FontError::Woff),
   }
 }
 
@@ -63,31 +63,4 @@ fn guess_font_format(source: &[u8]) -> Result<FontFormat, FontError> {
     b"OTTO" => Ok(FontFormat::Otf),
     _ => Err(FontError::UnsupportedFormat),
   }
-}
-
-#[cfg(feature = "woff")]
-fn decompress_woff(data: Vec<u8>) -> Result<Vec<u8>, FontError> {
-  if data.len() < 44 {
-    return Err(FontError::UnsupportedFormat);
-  }
-
-  // WOFF header parsing (simplified)
-  let compressed_size = u32::from_be_bytes([data[8], data[9], data[10], data[11]]) as usize;
-
-  let decompressed_size = u32::from_be_bytes([data[12], data[13], data[14], data[15]]) as usize;
-
-  // Skip WOFF header (44 bytes) and decompress
-  let compressed_data = &data[44..44 + compressed_size];
-
-  // Use flate2 for zlib decompression
-  use flate2::read::ZlibDecoder;
-  use std::io::Read;
-
-  let mut decoder = ZlibDecoder::new(compressed_data);
-  let mut decompressed = Vec::with_capacity(decompressed_size);
-  decoder
-    .read_to_end(&mut decompressed)
-    .map_err(FontError::Io)?;
-
-  Ok(decompressed)
 }
