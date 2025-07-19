@@ -4,7 +4,7 @@
     "": {
       "name": "takumi",
       "devDependencies": {
-        "@biomejs/biome": "^2.1.1",
+        "@biomejs/biome": "^2.1.2",
       },
     },
     "docs": {
@@ -56,7 +56,7 @@
       "name": "@takumi-rs/core",
       "version": "0.14.2",
       "devDependencies": {
-        "@napi-rs/cli": "3.0.0-alpha.94",
+        "@napi-rs/cli": "3.0.0",
         "@takumi-rs/helpers": "workspace:*",
         "@types/bun": "catalog:",
         "typescript": "catalog:",
@@ -339,7 +339,7 @@
 
     "@monaco-editor/react": ["@monaco-editor/react@4.7.0", "", { "dependencies": { "@monaco-editor/loader": "^1.5.0" }, "peerDependencies": { "monaco-editor": ">= 0.25.0 < 1", "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0", "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0" } }, "sha512-cyzXQCtO47ydzxpQtCGSQGOC8Gk3ZUeBXFAxD+CWXYFo5OqZyZUonFl0DwUlTyAfRHntBfw2p3w4s9R6oe1eCA=="],
 
-    "@napi-rs/cli": ["@napi-rs/cli@3.0.0-alpha.94", "", { "dependencies": { "@inquirer/prompts": "^7.4.0", "@napi-rs/cross-toolchain": "^0.0.19", "@napi-rs/wasm-tools": "^0.0.3", "@octokit/rest": "^22.0.0", "clipanion": "^4.0.0-rc.4", "colorette": "^2.0.20", "debug": "^4.4.0", "emnapi": "^1.4.0", "find-up": "^7.0.0", "js-yaml": "^4.1.0", "lodash-es": "^4.17.21", "semver": "^7.7.1", "typanion": "^3.14.0", "wasm-sjlj": "^1.0.6" }, "peerDependencies": { "@emnapi/runtime": "^1.1.0" }, "optionalPeers": ["@emnapi/runtime"], "bin": { "napi": "./dist/cli.js", "napi-raw": "./cli.mjs" } }, "sha512-q/BsqtSCcpT5WNe2xYHW4vjcTfagQ1trYJV2FumLmO3mKkMc9NLCR0Q6bwD+ublidCXsGT2lDDaf/ZgxTTcGjg=="],
+    "@napi-rs/cli": ["@napi-rs/cli@3.0.0", "", { "dependencies": { "@inquirer/prompts": "^7.4.0", "@napi-rs/cross-toolchain": "^0.0.19", "@napi-rs/wasm-tools": "^0.0.3", "@octokit/rest": "^22.0.0", "clipanion": "^4.0.0-rc.4", "colorette": "^2.0.20", "debug": "^4.4.0", "emnapi": "^1.4.0", "find-up": "^7.0.0", "js-yaml": "^4.1.0", "lodash-es": "^4.17.21", "semver": "^7.7.1", "typanion": "^3.14.0", "wasm-sjlj": "^1.0.6" }, "peerDependencies": { "@emnapi/runtime": "^1.1.0" }, "optionalPeers": ["@emnapi/runtime"], "bin": { "napi": "./dist/cli.js", "napi-raw": "./cli.mjs" } }, "sha512-V4xSbP4AnS+1POtAGVRhCt0erOTEyLAsZ2+MJOcI1NXCwgsKZGjp8cf/UmVo8e2jUE8tTkyxvnIPCqzVkT3RjQ=="],
 
     "@napi-rs/cross-toolchain": ["@napi-rs/cross-toolchain@0.0.19", "", { "dependencies": { "@napi-rs/lzma": "^1.4.1", "@napi-rs/tar": "^0.1.4", "debug": "^4.4.0" }, "peerDependencies": { "@napi-rs/cross-toolchain-arm64-target-aarch64": "^0.0.19", "@napi-rs/cross-toolchain-arm64-target-armv7": "^0.0.19", "@napi-rs/cross-toolchain-arm64-target-x86_64": "^0.0.19", "@napi-rs/cross-toolchain-x64-target-aarch64": "^0.0.19", "@napi-rs/cross-toolchain-x64-target-armv7": "^0.0.19", "@napi-rs/cross-toolchain-x64-target-x86_64": "^0.0.19" }, "optionalPeers": ["@napi-rs/cross-toolchain-arm64-target-aarch64", "@napi-rs/cross-toolchain-arm64-target-armv7", "@napi-rs/cross-toolchain-arm64-target-x86_64", "@napi-rs/cross-toolchain-x64-target-aarch64", "@napi-rs/cross-toolchain-x64-target-armv7", "@napi-rs/cross-toolchain-x64-target-x86_64"] }, "sha512-StHXqYANdTaMFqJJ3JXHqKQMylOzOJPcrOCd9Nt2NIGfvfaXK3SzpmNfkJimkOAYfTsfpfuRERsML0bUZCpHBQ=="],
 
