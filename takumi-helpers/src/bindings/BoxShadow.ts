@@ -26,10 +26,10 @@ offset_y: LengthUnit,
  */
 blur_radius: LengthUnit, 
 /**
- * Spread radius of the box shadow
+ * Spread radius of the box shadow (can be negative)
  */
 spread_radius: LengthUnit, 
 /**
- * Whether the shadow is inset (inside the element)
+ * Whether the shadow is inset (inside the element) or outset (outside the element)
  */
 inset: boolean, };

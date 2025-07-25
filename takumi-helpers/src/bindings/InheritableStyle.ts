@@ -46,7 +46,7 @@ font_weight?: FontWeight,
  */
 line_clamp?: number, 
 /**
- * Corner radius for rounded borders in pixels
+ * Corner radius for rounded borders
  */
 border_radius?: SidesValue<LengthUnit>, 
 /**
@@ -54,7 +54,7 @@ border_radius?: SidesValue<LengthUnit>,
  */
 text_align?: TextAlign, 
 /**
- * Letter spacing for text rendering
- * Value is measured in EM units
+ * Additional spacing between characters in text
+ * Positive values increase spacing, negative values decrease spacing
  */
 letter_spacing?: LengthUnit, };

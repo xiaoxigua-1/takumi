@@ -23,8 +23,10 @@ use crate::{
 
 /// Represents font weight as a numeric value.
 ///
-/// This wraps a u16 value that corresponds to CSS font-weight values
-/// (e.g., 100 for thin, 400 for normal, 700 for bold, 900 for black).
+/// This wraps a u16 value that corresponds to CSS font-weight values.
+/// Common values include 100 (thin), 200 (extra light), 300 (light),
+/// 400 (normal), 500 (medium), 600 (semi bold), 700 (bold),
+/// 800 (extra bold), 900 (black).
 #[derive(Debug, Copy, Clone, Deserialize, Serialize, TS, PartialEq)]
 pub struct FontWeight(pub u16);
 
@@ -46,15 +48,15 @@ impl From<FontWeight> for Weight {
 #[derive(Debug, Clone, Deserialize, Serialize, Copy, TS, PartialEq)]
 #[serde(rename_all = "kebab-case")]
 pub enum ObjectFit {
-  /// Scale the image to fit within the container while preserving aspect ratio
+  /// The replaced content is scaled to maintain its aspect ratio while fitting within the element's content box
   Contain,
-  /// Scale the image to cover the entire container while preserving aspect ratio
+  /// The replaced content is sized to maintain its aspect ratio while filling the element's entire content box
   Cover,
-  /// Fill the container with the image, potentially distorting it
+  /// The replaced content is sized to fill the element's content box exactly, without maintaining aspect ratio
   Fill,
-  /// Scale the image down to fit within the container while preserving aspect ratio, but never scale up
+  /// The content is sized as if none or contain were specified, whichever would result in a smaller concrete object size
   ScaleDown,
-  /// Don't resize the image, display it at its natural size
+  /// The replaced content is not resized and maintains its intrinsic dimensions
   None,
 }
 
@@ -70,17 +72,17 @@ impl Default for ObjectFit {
 #[derive(Debug, Clone, Deserialize, Serialize, Copy, TS, PartialEq)]
 #[serde(rename_all = "kebab-case")]
 pub enum TextAlign {
-  /// Align text to the left edge
+  /// Aligns inline content to the left edge of the line box
   Left,
-  /// Align text to the right edge
+  /// Aligns inline content to the right edge of the line box
   Right,
-  /// Center align text
+  /// Centers inline content within the line box
   Center,
-  /// Justify text to both edges
+  /// Expands inline content to fill the entire line box
   Justify,
-  /// Align text to the start (language-dependent)
+  /// Aligns inline content to the start edge of the line box (language-dependent)
   Start,
-  /// Align text to the end (language-dependent)
+  /// Aligns inline content to the end edge of the line box (language-dependent)
   End,
 }
 
@@ -109,9 +111,11 @@ impl Default for TextAlign {
 #[derive(Debug, Clone, Deserialize, Serialize, Copy, TS, PartialEq)]
 #[serde(rename_all = "kebab-case")]
 pub enum Position {
-  /// Element is positioned according to the normal flow of the document
+  /// The element is positioned according to the normal flow of the document.
+  /// Offsets (top, right, bottom, left) have no effect.
   Relative,
-  /// Element is positioned relative to its nearest positioned ancestor
+  /// The element is removed from the normal document flow and positioned relative to its nearest positioned ancestor.
+  /// Offsets (top, right, bottom, left) specify the distance from the ancestor.
   Absolute,
 }
 
@@ -129,13 +133,13 @@ impl Default for Position {
 #[derive(Debug, Clone, Deserialize, Serialize, Copy, TS, PartialEq)]
 #[serde(rename_all = "kebab-case")]
 pub enum FlexDirection {
-  /// Items are laid out horizontally from left to right
+  /// Items are laid out in the same direction as the text direction (left-to-right for English)
   Row,
-  /// Items are laid out vertically from top to bottom
+  /// Items are laid out perpendicular to the text direction (top-to-bottom)
   Column,
-  /// Items are laid out horizontally from right to left
+  /// Items are laid out in the opposite direction to the text direction (right-to-left for English)
   RowReverse,
-  /// Items are laid out vertically from bottom to top
+  /// Items are laid out opposite to the column direction (bottom-to-top)
   ColumnReverse,
 }
 
@@ -168,9 +172,9 @@ pub struct BoxShadow {
   pub offset_y: LengthUnit,
   /// Blur radius of the box shadow (must be non-negative)
   pub blur_radius: LengthUnit,
-  /// Spread radius of the box shadow
+  /// Spread radius of the box shadow (can be negative)
   pub spread_radius: LengthUnit,
-  /// Whether the shadow is inset (inside the element)
+  /// Whether the shadow is inset (inside the element) or outset (outside the element)
   #[serde(default)]
   pub inset: bool,
 }
@@ -227,32 +231,30 @@ pub enum BoxShadowInput {
 #[derive(Debug, Clone, Deserialize, Serialize, Copy, TS, PartialEq)]
 #[serde(rename_all = "kebab-case")]
 pub enum JustifyContent {
-  /// Items are packed toward the start of the axis
+  /// Items are packed toward the start of the line.
   Start,
-  /// Items are packed toward the end of the axis
+  /// Items are packed toward the end of the line.
   End,
-  /// Items are packed towards the flex-relative start of the axis.
-  ///
-  /// For flex containers with flex_direction RowReverse or ColumnReverse this is equivalent
+  /// Items are packed toward the flex container's main-start side.
+  /// For flex containers with flex_direction RowReverse or ColumnReverse, this is equivalent
   /// to End. In all other cases it is equivalent to Start.
   FlexStart,
-  /// Items are packed towards the flex-relative end of the axis.
-  ///
-  /// For flex containers with flex_direction RowReverse or ColumnReverse this is equivalent
+  /// Items are packed toward the flex container's main-end side.
+  /// For flex containers with flex_direction RowReverse or ColumnReverse, this is equivalent
   /// to Start. In all other cases it is equivalent to End.
   FlexEnd,
-  /// Items are centered around the middle of the axis
+  /// Items are packed toward the center of the line.
   Center,
-  /// Items are stretched to fill the container
+  /// Items are stretched to fill the container (only applies to flex containers)
   Stretch,
-  /// The first and last items are aligned flush with the edges of the container (no gap)
-  /// The gap between items is distributed evenly.
+  /// Items are evenly distributed in the line; first item is on the start line,
+  /// last item on the end line.
   SpaceBetween,
-  /// The gap between the first and last items is exactly THE SAME as the gap between items.
-  /// The gaps are distributed evenly
+  /// Items are evenly distributed in the line with equal space around them.
   SpaceEvenly,
-  /// The gap between the first and last items is exactly HALF the gap between items.
-  /// The gaps are distributed evenly in proportion to these ratios.
+  /// Items are evenly distributed in the line; first item is on the start line,
+  /// last item on the end line, and the space between items is twice the space
+  /// between the start/end items and the container edges.
   SpaceAround,
 }
 
@@ -274,13 +276,13 @@ impl_from_taffy_enum!(
 #[derive(Debug, Clone, Deserialize, Serialize, Copy, TS, PartialEq)]
 #[serde(rename_all = "kebab-case")]
 pub enum Display {
-  /// The children will follow the block layout algorithm
+  /// The element generates a block-level box and its children follow the block layout algorithm
   Block,
-  /// The children will follow the flexbox layout algorithm
+  /// The element generates a flex container and its children follow the flexbox layout algorithm
   Flex,
-  /// The children will follow the CSS Grid layout algorithm
+  /// The element generates a grid container and its children follow the CSS Grid layout algorithm
   Grid,
-  /// The node is hidden, and it's children will also be hidden
+  /// The element and its children are not rendered at all
   None,
 }
 
@@ -293,19 +295,19 @@ impl_from_taffy_enum!(Display, taffy::Display, Block, Flex, Grid, None);
 #[derive(Debug, Clone, Deserialize, Serialize, Copy, TS, PartialEq)]
 #[serde(rename_all = "kebab-case")]
 pub enum AlignItems {
-  /// Items are aligned to the start of the writing-mode direction
+  /// Items are aligned to the start of the line in the cross axis
   Start,
-  /// Items are aligned to the end of the writing-mode direction
+  /// Items are aligned to the end of the line in the cross axis
   End,
-  /// Items are aligned to the start of the cross axis
+  /// Items are aligned to the flex container's cross-start side
   FlexStart,
-  /// Items are aligned to the end of the cross axis
+  /// Items are aligned to the flex container's cross-end side
   FlexEnd,
-  /// Items are centered along the cross axis
+  /// Items are centered in the cross axis
   Center,
-  /// Items are aligned such that their baselines align
+  /// Items are aligned so that their baselines align
   Baseline,
-  /// Items are stretched to fill the container along the cross axis
+  /// Items are stretched to fill the container in the cross axis
   Stretch,
 }
 
@@ -327,12 +329,12 @@ impl_from_taffy_enum!(
 #[derive(Debug, Clone, Deserialize, Serialize, Copy, TS, PartialEq)]
 #[serde(rename_all = "kebab-case")]
 pub enum FlexWrap {
-  /// Flex items will not wrap and will shrink to fit within the container
+  /// Flex items will all be displayed in a single line, shrinking as needed
   #[serde(rename = "nowrap")]
   NoWrap,
-  /// Flex items will wrap to the next line when they exceed the container width
+  /// Flex items will wrap onto multiple lines, with new lines stacking in the flex direction
   Wrap,
-  /// Flex items will wrap to the previous line when they exceed the container width
+  /// Flex items will wrap onto multiple lines, with new lines stacking in the reverse flex direction
   WrapReverse,
 }
 
@@ -344,21 +346,21 @@ impl_from_taffy_enum!(FlexWrap, taffy::FlexWrap, NoWrap, Wrap, WrapReverse);
 #[derive(Debug, Clone, Deserialize, Serialize, Copy, TS, PartialEq)]
 #[serde(rename_all = "kebab-case")]
 pub enum TextOverflow {
-  /// Text is truncated with an ellipsis (…) at the end
+  /// Text is truncated with an ellipsis (…) at the end when it overflows
   Ellipsis,
-  /// Text is truncated with no visible indicator
+  /// Text is simply clipped at the overflow edge with no visual indication
   Clip,
 }
 
 /// Represents the resolved font style for a text node.
 ///
 /// This struct contains the resolved font style properties after inheriting
-/// from parent elements.
+/// from parent elements and converting relative units to absolute values.
 #[derive(Debug, Clone)]
 pub struct ResolvedFontStyle {
   /// Font size in pixels for text rendering
   pub font_size: f32,
-  /// Line height multiplier for text spacing
+  /// Line height as an absolute value in pixels
   pub line_height: f32,
   /// Font weight for text rendering
   pub font_weight: Weight,
@@ -366,7 +368,7 @@ pub struct ResolvedFontStyle {
   pub line_clamp: Option<u32>,
   /// Font family name for text rendering
   pub font_family: Option<String>,
-  /// Letter spacing for text rendering
+  /// Letter spacing for text rendering in em units (relative to font size)
   pub letter_spacing: Option<f32>,
   /// Text alignment within the element
   pub text_align: Option<Align>,
@@ -399,43 +401,47 @@ pub struct Style {
   pub min_width: LengthUnit,
   /// Min height of the element
   pub min_height: LengthUnit,
-  /// Aspect ratio of the element
+  /// Aspect ratio of the element (width/height)
   pub aspect_ratio: Option<f32>,
-  /// Internal spacing around the element's content
+  /// Internal spacing around the element's content (top, right, bottom, left)
   pub padding: SidesValue<LengthUnit>,
-  /// External spacing around the element
+  /// External spacing around the element (top, right, bottom, left)
   pub margin: SidesValue<LengthUnit>,
-  /// Positioning offset from the element's normal position
+  /// Positioning offsets (top, right, bottom, left) from the element's normal position
   pub inset: SidesValue<LengthUnit>,
   /// Direction of flex layout (row or column)
   pub flex_direction: FlexDirection,
-  /// How flex items are aligned along the main axis
+  /// How a single grid item is aligned along the inline (row) axis, overriding the container's justify-items value
+  pub justify_self: Option<AlignItems>,
+  /// How items are aligned along the main axis
   pub justify_content: Option<JustifyContent>,
-  /// How flex items are aligned along the cross axis when there's extra space
+  /// How lines are aligned within the flex container when there's extra space in the cross axis
   pub align_content: Option<JustifyContent>,
-  /// How grid items are aligned along the inline (row) axis
+  /// How grid items are aligned along the inline (row) axis within their grid areas
   pub justify_items: Option<AlignItems>,
-  /// How flex items are aligned along the cross axis
+  /// How items are aligned along the cross axis
   pub align_items: Option<AlignItems>,
+  /// How a single item is aligned along the cross axis, overriding the container's align-items value
+  pub align_self: Option<AlignItems>,
   /// How flex items should wrap
   pub flex_wrap: FlexWrap,
-  /// The initial size of the flex item before growing or shrinking
+  /// The initial main size of the flex item before growing or shrinking
   pub flex_basis: LengthUnit,
   /// Positioning method (relative, absolute, etc.)
   pub position: Position,
-  /// Spacing between flex items or grid tracks
+  /// Spacing between rows and columns in flex or grid layouts
   pub gap: Gap,
-  /// How much the element should grow relative to other flex items (0.0 = no growth)
+  /// How much the flex item should grow relative to other flex items when positive free space is distributed
   pub flex_grow: f32,
-  /// How much the element should shrink relative to other flex items (0.0 = no shrinking)
+  /// How much the flex item should shrink relative to other flex items when negative free space is distributed
   pub flex_shrink: f32,
-  /// Width of the element's border on each side
+  /// Width of the element's border on each side (top, right, bottom, left)
   pub border_width: SidesValue<LengthUnit>,
   /// How images should be fitted within their container
   pub object_fit: ObjectFit,
-  /// Element's background color
+  /// Background color of the element
   pub background_color: Option<ColorInput>,
-  /// Box shadow for the element
+  /// Box shadow effect for the element
   pub box_shadow: Option<BoxShadowInput>,
   /// Controls the size of implicitly-created grid columns
   pub grid_auto_columns: Option<Vec<GridTrackSize>>,
@@ -473,8 +479,10 @@ impl Default for Style {
       flex_direction: Default::default(),
       justify_content: Default::default(),
       align_content: Default::default(),
+      justify_self: Default::default(),
       justify_items: Default::default(),
       align_items: Default::default(),
+      align_self: Default::default(),
       position: Default::default(),
       gap: Default::default(),
       flex_grow: 0.0,
@@ -648,14 +656,14 @@ impl TrackSizingFunction {
 #[derive(Debug, Clone, Copy, Deserialize, Serialize, TS, Default, PartialEq)]
 #[serde(rename_all = "kebab-case")]
 pub enum GridAutoFlow {
-  /// Place items by filling each row in turn
+  /// Places grid items by filling each row in turn, adding new rows as needed
   #[default]
   Row,
-  /// Place items by filling each column in turn
+  /// Places grid items by filling each column in turn, adding new columns as needed
   Column,
-  /// Place items by filling each row in turn, using dense packing
+  /// Places grid items by filling each row in turn, using dense packing to fill gaps
   RowDense,
-  /// Place items by filling each column in turn, using dense packing
+  /// Places grid items by filling each column in turn, using dense packing to fill gaps
   ColumnDense,
 }
 
@@ -692,12 +700,12 @@ pub struct InheritableStyle {
   pub font_weight: Option<FontWeight>,
   /// Maximum number of lines for text before truncation
   pub line_clamp: Option<u32>,
-  /// Corner radius for rounded borders in pixels
+  /// Corner radius for rounded borders
   pub border_radius: Option<SidesValue<LengthUnit>>,
   /// Text alignment within the element
   pub text_align: Option<TextAlign>,
-  /// Letter spacing for text rendering
-  /// Value is measured in EM units
+  /// Additional spacing between characters in text
+  /// Positive values increase spacing, negative values decrease spacing
   pub letter_spacing: Option<LengthUnit>,
 }
 
@@ -768,6 +776,8 @@ impl Style {
         v.iter().map(|s| s.to_taffy(context)).collect()
       }),
       aspect_ratio: self.aspect_ratio,
+      align_self: self.align_self.map(Into::into),
+      justify_self: self.justify_self.map(Into::into),
       ..Default::default()
     }
   }

@@ -56,19 +56,19 @@ min_width: LengthUnit,
  */
 min_height: LengthUnit, 
 /**
- * Aspect ratio of the element
+ * Aspect ratio of the element (width/height)
  */
 aspect_ratio?: number, 
 /**
- * Internal spacing around the element's content
+ * Internal spacing around the element's content (top, right, bottom, left)
  */
 padding: SidesValue<LengthUnit>, 
 /**
- * External spacing around the element
+ * External spacing around the element (top, right, bottom, left)
  */
 margin: SidesValue<LengthUnit>, 
 /**
- * Positioning offset from the element's normal position
+ * Positioning offsets (top, right, bottom, left) from the element's normal position
  */
 inset: SidesValue<LengthUnit>, 
 /**
@@ -76,27 +76,35 @@ inset: SidesValue<LengthUnit>,
  */
 flex_direction: FlexDirection, 
 /**
- * How flex items are aligned along the main axis
+ * How a single grid item is aligned along the inline (row) axis, overriding the container's justify-items value
+ */
+justify_self?: AlignItems, 
+/**
+ * How items are aligned along the main axis
  */
 justify_content?: JustifyContent, 
 /**
- * How flex items are aligned along the cross axis when there's extra space
+ * How lines are aligned within the flex container when there's extra space in the cross axis
  */
 align_content?: JustifyContent, 
 /**
- * How grid items are aligned along the inline (row) axis
+ * How grid items are aligned along the inline (row) axis within their grid areas
  */
 justify_items?: AlignItems, 
 /**
- * How flex items are aligned along the cross axis
+ * How items are aligned along the cross axis
  */
 align_items?: AlignItems, 
+/**
+ * How a single item is aligned along the cross axis, overriding the container's align-items value
+ */
+align_self?: AlignItems, 
 /**
  * How flex items should wrap
  */
 flex_wrap: FlexWrap, 
 /**
- * The initial size of the flex item before growing or shrinking
+ * The initial main size of the flex item before growing or shrinking
  */
 flex_basis: LengthUnit, 
 /**
@@ -104,19 +112,19 @@ flex_basis: LengthUnit,
  */
 position: Position, 
 /**
- * Spacing between flex items or grid tracks
+ * Spacing between rows and columns in flex or grid layouts
  */
 gap: Gap, 
 /**
- * How much the element should grow relative to other flex items (0.0 = no growth)
+ * How much the flex item should grow relative to other flex items when positive free space is distributed
  */
 flex_grow: number, 
 /**
- * How much the element should shrink relative to other flex items (0.0 = no shrinking)
+ * How much the flex item should shrink relative to other flex items when negative free space is distributed
  */
 flex_shrink: number, 
 /**
- * Width of the element's border on each side
+ * Width of the element's border on each side (top, right, bottom, left)
  */
 border_width: SidesValue<LengthUnit>, 
 /**
@@ -124,11 +132,11 @@ border_width: SidesValue<LengthUnit>,
  */
 object_fit: ObjectFit, 
 /**
- * Element's background color
+ * Background color of the element
  */
 background_color?: ColorInput, 
 /**
- * Box shadow for the element
+ * Box shadow effect for the element
  */
 box_shadow?: BoxShadowInput, 
 /**
@@ -192,7 +200,7 @@ font_weight?: FontWeight,
  */
 line_clamp?: number, 
 /**
- * Corner radius for rounded borders in pixels
+ * Corner radius for rounded borders
  */
 border_radius?: SidesValue<LengthUnit>, 
 /**
@@ -200,7 +208,7 @@ border_radius?: SidesValue<LengthUnit>,
  */
 text_align?: TextAlign, 
 /**
- * Letter spacing for text rendering
- * Value is measured in EM units
+ * Additional spacing between characters in text
+ * Positive values increase spacing, negative values decrease spacing
  */
 letter_spacing?: LengthUnit, };

@@ -3,7 +3,9 @@
 /**
  * Represents font weight as a numeric value.
  *
- * This wraps a u16 value that corresponds to CSS font-weight values
- * (e.g., 100 for thin, 400 for normal, 700 for bold, 900 for black).
+ * This wraps a u16 value that corresponds to CSS font-weight values.
+ * Common values include 100 (thin), 200 (extra light), 300 (light),
+ * 400 (normal), 500 (medium), 600 (semi bold), 700 (bold),
+ * 800 (extra bold), 900 (black).
  */
 export type FontWeight = number;
