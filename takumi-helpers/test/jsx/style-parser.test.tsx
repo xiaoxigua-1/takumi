@@ -4,7 +4,7 @@ import { fromJsx } from "../../src/jsx/jsx-processing";
 import type { ContainerNode, ImageNode } from "../../src/types";
 
 describe("style-parser", () => {
-  test("handles style props with dimensions", async () => {
+  test("handles dimensions in style props", async () => {
     const result = await fromJsx(
       <div style={{ width: 100, height: "50px", maxWidth: "100%" }}>Test</div>,
     );
@@ -18,7 +18,7 @@ describe("style-parser", () => {
     } satisfies ContainerNode);
   });
 
-  test("handles style props with spacing", async () => {
+  test("handles spacing in style props", async () => {
     const result = await fromJsx(
       <div style={{ padding: "10px 20px", margin: 15 }}>Test</div>,
     );
@@ -31,7 +31,7 @@ describe("style-parser", () => {
     } satisfies ContainerNode);
   });
 
-  test("handles style props with flex properties", async () => {
+  test("handles flex properties in style props", async () => {
     const result = await fromJsx(
       <div
         style={{
@@ -57,7 +57,7 @@ describe("style-parser", () => {
     } satisfies ContainerNode);
   });
 
-  test("handles style props with text properties", async () => {
+  test("handles text properties in style props", async () => {
     const result = await fromJsx(
       <div
         style={{
@@ -83,7 +83,7 @@ describe("style-parser", () => {
     } satisfies ContainerNode);
   });
 
-  test("handles different length units", async () => {
+  test("handles different length units in style props", async () => {
     const result = await fromJsx(
       <div
         style={{
@@ -107,7 +107,7 @@ describe("style-parser", () => {
     } satisfies ContainerNode);
   });
 
-  test("handles img with style props", async () => {
+  test("handles style props on img elements", async () => {
     const result = await fromJsx(
       <img
         src="https://example.com/image.jpg"
@@ -125,7 +125,7 @@ describe("style-parser", () => {
   });
 
   describe("colors", () => {
-    test("handles background color", async () => {
+    test("handles background color in style props", async () => {
       const result = await fromJsx(
         <div style={{ backgroundColor: "#ff0000" }}>Test</div>,
       );
@@ -137,7 +137,7 @@ describe("style-parser", () => {
       } satisfies ContainerNode);
     });
 
-    test("handles border color", async () => {
+    test("handles border color in style props", async () => {
       const result = await fromJsx(
         <div style={{ borderColor: "rgb(0, 255, 0)" }}>Test</div>,
       );
@@ -149,7 +149,7 @@ describe("style-parser", () => {
       } satisfies ContainerNode);
     });
 
-    test("handles text color", async () => {
+    test("handles text color in style props", async () => {
       const result = await fromJsx(
         <div style={{ color: "rgba(0, 0, 255, 0.5)" }}>Test</div>,
       );
@@ -163,7 +163,7 @@ describe("style-parser", () => {
   });
 
   describe("borders", () => {
-    test("handles border width", async () => {
+    test("handles border width in style props", async () => {
       const result = await fromJsx(
         <div style={{ borderWidth: "2px" }}>Test</div>,
       );
@@ -175,7 +175,7 @@ describe("style-parser", () => {
       } satisfies ContainerNode);
     });
 
-    test("handles border width with multiple values", async () => {
+    test("handles multiple border width values in style props", async () => {
       const result = await fromJsx(
         <div style={{ borderWidth: "1px 2px 3px 4px" }}>Test</div>,
       );
@@ -187,7 +187,7 @@ describe("style-parser", () => {
       } satisfies ContainerNode);
     });
 
-    test("handles border radius", async () => {
+    test("handles border radius in style props", async () => {
       const result = await fromJsx(
         <div style={{ borderRadius: "8px" }}>Test</div>,
       );
@@ -199,7 +199,7 @@ describe("style-parser", () => {
       } satisfies ContainerNode);
     });
 
-    test("handles border radius with multiple values", async () => {
+    test("handles multiple border radius values in style props", async () => {
       const result = await fromJsx(
         <div style={{ borderRadius: "4px 8px 12px 16px" }}>Test</div>,
       );
@@ -213,7 +213,7 @@ describe("style-parser", () => {
   });
 
   describe("positioning", () => {
-    test("handles position absolute", async () => {
+    test("handles absolute positioning in style props", async () => {
       const result = await fromJsx(
         <div style={{ position: "absolute" }}>Test</div>,
       );
@@ -225,7 +225,7 @@ describe("style-parser", () => {
       } satisfies ContainerNode);
     });
 
-    test("handles position relative", async () => {
+    test("handles relative positioning in style props", async () => {
       const result = await fromJsx(
         <div style={{ position: "relative" }}>Test</div>,
       );
@@ -237,7 +237,7 @@ describe("style-parser", () => {
       } satisfies ContainerNode);
     });
 
-    test("handles inset with single value", async () => {
+    test("handles single inset value in style props", async () => {
       const result = await fromJsx(<div style={{ inset: "10px" }}>Test</div>);
 
       expect(result[0]).toEqual({
@@ -247,7 +247,7 @@ describe("style-parser", () => {
       } satisfies ContainerNode);
     });
 
-    test("handles inset with multiple values", async () => {
+    test("handles multiple inset values in style props", async () => {
       const result = await fromJsx(
         <div style={{ inset: "10px 20px 30px 40px" }}>Test</div>,
       );
@@ -258,10 +258,70 @@ describe("style-parser", () => {
         children: [{ type: "text", text: "Test" }],
       } satisfies ContainerNode);
     });
+
+    test("individual inset values has higher priority over global inset", async () => {
+      const result = await fromJsx(
+        <div style={{ inset: "10px", top: "20px", left: "30px" }}>Test</div>,
+      );
+
+      expect(result[0]).toEqual({
+        type: "container",
+        inset: [20, 10, 10, 30],
+        children: [{ type: "text", text: "Test" }],
+      } satisfies ContainerNode);
+    });
+
+    test("individual inset values has higher priority over global inset", async () => {
+      const result = await fromJsx(
+        <div
+          style={{
+            inset: "10px 20px 30px 40px",
+            top: "50px",
+            right: "60px",
+            bottom: "70px",
+            left: "80px",
+          }}
+        >
+          Test
+        </div>,
+      );
+
+      expect(result[0]).toEqual({
+        type: "container",
+        inset: [50, 60, 70, 80],
+        children: [{ type: "text", text: "Test" }],
+      } satisfies ContainerNode);
+    });
+  });
+
+  describe("spacing priority", () => {
+    test("paddingTop overrides general padding", async () => {
+      const result = await fromJsx(
+        <div style={{ padding: "10px", paddingTop: "20px" }}>Test</div>,
+      );
+
+      expect(result[0]).toEqual({
+        type: "container",
+        padding: [20, 10, 10, 10],
+        children: [{ type: "text", text: "Test" }],
+      } satisfies ContainerNode);
+    });
+
+    test("marginLeft overrides general margin", async () => {
+      const result = await fromJsx(
+        <div style={{ margin: "15px", marginLeft: "25px" }}>Test</div>,
+      );
+
+      expect(result[0]).toEqual({
+        type: "container",
+        margin: [15, 15, 15, 25],
+        children: [{ type: "text", text: "Test" }],
+      } satisfies ContainerNode);
+    });
   });
 
   describe("grid system", () => {
-    test("handles grid auto columns", async () => {
+    test("handles grid auto columns in style props", async () => {
       const result = await fromJsx(
         <div style={{ gridAutoColumns: "100px" }}>Test</div>,
       );
@@ -273,7 +333,7 @@ describe("style-parser", () => {
       } satisfies ContainerNode);
     });
 
-    test("handles grid auto columns with fr unit", async () => {
+    test("handles grid auto columns with fr units in style props", async () => {
       const result = await fromJsx(
         <div style={{ gridAutoColumns: "1fr" }}>Test</div>,
       );
@@ -285,7 +345,7 @@ describe("style-parser", () => {
       } satisfies ContainerNode);
     });
 
-    test("handles grid auto rows", async () => {
+    test("handles grid auto rows in style props", async () => {
       const result = await fromJsx(
         <div style={{ gridAutoRows: "50px" }}>Test</div>,
       );
@@ -297,7 +357,7 @@ describe("style-parser", () => {
       } satisfies ContainerNode);
     });
 
-    test("handles grid auto flow", async () => {
+    test("handles grid auto flow in style props", async () => {
       const result = await fromJsx(
         <div style={{ gridAutoFlow: "column" }}>Test</div>,
       );
@@ -309,7 +369,7 @@ describe("style-parser", () => {
       } satisfies ContainerNode);
     });
 
-    test("handles grid column with string", async () => {
+    test("handles grid column with string values in style props", async () => {
       const result = await fromJsx(
         <div style={{ gridColumn: "1 / 3" }}>Test</div>,
       );
@@ -321,7 +381,7 @@ describe("style-parser", () => {
       } satisfies ContainerNode);
     });
 
-    test("handles grid column with number", async () => {
+    test("handles grid column with numeric values in style props", async () => {
       const result = await fromJsx(<div style={{ gridColumn: 2 }}>Test</div>);
 
       expect(result[0]).toEqual({
@@ -331,7 +391,7 @@ describe("style-parser", () => {
       } satisfies ContainerNode);
     });
 
-    test("handles grid row with string", async () => {
+    test("handles grid row with string values in style props", async () => {
       const result = await fromJsx(
         <div style={{ gridRow: "2 / 4" }}>Test</div>,
       );
@@ -343,7 +403,7 @@ describe("style-parser", () => {
       } satisfies ContainerNode);
     });
 
-    test("handles grid template columns", async () => {
+    test("handles grid template columns in style props", async () => {
       const result = await fromJsx(
         <div style={{ gridTemplateColumns: "100px 1fr" }}>Test</div>,
       );
@@ -355,7 +415,7 @@ describe("style-parser", () => {
       } satisfies ContainerNode);
     });
 
-    test("handles grid template rows", async () => {
+    test("handles grid template rows in style props", async () => {
       const result = await fromJsx(
         <div style={{ gridTemplateRows: "50px 2fr" }}>Test</div>,
       );
@@ -369,7 +429,7 @@ describe("style-parser", () => {
   });
 
   describe("typography", () => {
-    test("handles line clamp", async () => {
+    test("handles line clamp in style props", async () => {
       const result = await fromJsx(<div style={{ lineClamp: 3 }}>Test</div>);
 
       expect(result[0]).toEqual({
@@ -379,7 +439,7 @@ describe("style-parser", () => {
       } satisfies ContainerNode);
     });
 
-    test("handles line clamp none", async () => {
+    test("handles line clamp none in style props", async () => {
       const result = await fromJsx(
         <div style={{ lineClamp: "none" }}>Test</div>,
       );
@@ -391,7 +451,7 @@ describe("style-parser", () => {
       } satisfies ContainerNode);
     });
 
-    test("handles text overflow", async () => {
+    test("handles text overflow in style props", async () => {
       const result = await fromJsx(
         <div style={{ textOverflow: "ellipsis" }}>Test</div>,
       );
@@ -403,7 +463,7 @@ describe("style-parser", () => {
       } satisfies ContainerNode);
     });
 
-    test("handles letter spacing", async () => {
+    test("handles letter spacing in style props", async () => {
       const result = await fromJsx(
         <div style={{ letterSpacing: "0.1em" }}>Test</div>,
       );
@@ -417,7 +477,7 @@ describe("style-parser", () => {
   });
 
   describe("flexbox", () => {
-    test("handles flex basis", async () => {
+    test("handles flex basis in style props", async () => {
       const result = await fromJsx(
         <div style={{ flexBasis: "100px" }}>Test</div>,
       );
@@ -429,7 +489,7 @@ describe("style-parser", () => {
       } satisfies ContainerNode);
     });
 
-    test("handles flex shrink", async () => {
+    test("handles flex shrink in style props", async () => {
       const result = await fromJsx(<div style={{ flexShrink: 0.5 }}>Test</div>);
 
       expect(result[0]).toEqual({
@@ -439,7 +499,7 @@ describe("style-parser", () => {
       } satisfies ContainerNode);
     });
 
-    test("handles flex wrap", async () => {
+    test("handles flex wrap in style props", async () => {
       const result = await fromJsx(
         <div style={{ flexWrap: "wrap" }}>Test</div>,
       );
@@ -451,7 +511,7 @@ describe("style-parser", () => {
       } satisfies ContainerNode);
     });
 
-    test("handles align content", async () => {
+    test("handles align content in style props", async () => {
       const result = await fromJsx(
         <div style={{ alignContent: "space-between" }}>Test</div>,
       );
@@ -463,7 +523,7 @@ describe("style-parser", () => {
       } satisfies ContainerNode);
     });
 
-    test("handles justify items", async () => {
+    test("handles justify items in style props", async () => {
       const result = await fromJsx(
         <div style={{ justifyItems: "center" }}>Test</div>,
       );
@@ -477,7 +537,7 @@ describe("style-parser", () => {
   });
 
   describe("sizing", () => {
-    test("handles min width", async () => {
+    test("handles min width in style props", async () => {
       const result = await fromJsx(
         <div style={{ minWidth: "100px" }}>Test</div>,
       );
@@ -489,7 +549,7 @@ describe("style-parser", () => {
       } satisfies ContainerNode);
     });
 
-    test("handles min height", async () => {
+    test("handles min height in style props", async () => {
       const result = await fromJsx(
         <div style={{ minHeight: "50px" }}>Test</div>,
       );
@@ -501,7 +561,7 @@ describe("style-parser", () => {
       } satisfies ContainerNode);
     });
 
-    test("handles max height", async () => {
+    test("handles max height in style props", async () => {
       const result = await fromJsx(
         <div style={{ maxHeight: "200px" }}>Test</div>,
       );
@@ -513,7 +573,7 @@ describe("style-parser", () => {
       } satisfies ContainerNode);
     });
 
-    test("handles aspect ratio", async () => {
+    test("handles aspect ratio in style props", async () => {
       const result = await fromJsx(
         <div style={{ aspectRatio: 16 / 9 }}>Test</div>,
       );
@@ -527,7 +587,7 @@ describe("style-parser", () => {
   });
 
   describe("visual effects", () => {
-    test("handles object fit", async () => {
+    test("handles object fit in style props", async () => {
       const result = await fromJsx(
         <img
           src="https://example.com/image.jpg"
@@ -547,7 +607,7 @@ describe("style-parser", () => {
   });
 
   describe("edge cases and error handling", () => {
-    test("handles invalid color values gracefully", async () => {
+    test("handles invalid color values gracefully in style props", async () => {
       const result = await fromJsx(
         <div style={{ backgroundColor: "invalid-color" }}>Test</div>,
       );
@@ -558,7 +618,7 @@ describe("style-parser", () => {
       } satisfies ContainerNode);
     });
 
-    test("handles invalid box shadow gracefully", async () => {
+    test("handles invalid box shadow gracefully in style props", async () => {
       const result = await fromJsx(
         <div style={{ boxShadow: "invalid-shadow" }}>Test</div>,
       );
@@ -569,7 +629,7 @@ describe("style-parser", () => {
       } satisfies ContainerNode);
     });
 
-    test("handles zero values correctly", async () => {
+    test("handles zero values correctly in style props", async () => {
       const result = await fromJsx(
         <div
           style={{
@@ -593,7 +653,7 @@ describe("style-parser", () => {
       } satisfies ContainerNode);
     });
 
-    test("handles combined properties", async () => {
+    test("handles combined properties in style props", async () => {
       const result = await fromJsx(
         <div
           style={{

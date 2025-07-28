@@ -74,7 +74,7 @@ export function parseSideLengthUnits(
     units[1] !== undefined &&
     units[2] !== undefined
   ) {
-    // top, left/right, bottom
+    // top, left/right, bottom - expand to 4 values
     return [units[0], units[1], units[2], units[1]];
   }
 
@@ -83,30 +83,102 @@ export function parseSideLengthUnits(
   );
 }
 
+function parseBaseSides(baseValue: string | number): {
+  top: LengthUnit;
+  right: LengthUnit;
+  bottom: LengthUnit;
+  left: LengthUnit;
+} {
+  const baseValues = parseSideLengthUnits(baseValue);
+  if (typeof baseValues === "number") {
+    // Single value for all sides
+    return {
+      top: baseValues,
+      right: baseValues,
+      bottom: baseValues,
+      left: baseValues,
+    };
+  }
+
+  if (Array.isArray(baseValues)) {
+    if (baseValues.length === 2) {
+      // top/bottom, left/right
+      return {
+        top: baseValues[0],
+        right: baseValues[1],
+        bottom: baseValues[0],
+        left: baseValues[1],
+      };
+    }
+    if (baseValues.length === 4) {
+      // top, right, bottom, left (including expanded 3-value form)
+      return {
+        top: baseValues[0],
+        right: baseValues[1],
+        bottom: baseValues[2],
+        left: baseValues[3],
+      };
+    }
+  }
+  // Default to 0 for all sides
+  return { top: 0, right: 0, bottom: 0, left: 0 };
+}
+
 export function parseInset(
   source: CSSProperties,
 ): SidesValue<LengthUnit> | undefined {
-  if (source.inset !== undefined) return parseSideLengthUnits(source.inset);
-
-  const top =
-    source.top !== undefined ? parseLengthUnit(source.top) : undefined;
-  const right =
-    source.right !== undefined ? parseLengthUnit(source.right) : undefined;
-  const bottom =
-    source.bottom !== undefined ? parseLengthUnit(source.bottom) : undefined;
-  const left =
-    source.left !== undefined ? parseLengthUnit(source.left) : undefined;
-
+  // If no inset or individual position properties, return undefined
   if (
-    top === undefined &&
-    right === undefined &&
-    bottom === undefined &&
-    left === undefined
+    source.inset === undefined &&
+    source.top === undefined &&
+    source.right === undefined &&
+    source.bottom === undefined &&
+    source.left === undefined
   ) {
-    return;
+    return undefined;
   }
 
-  return [top ?? 0, right ?? 0, bottom ?? 0, left ?? 0] as const;
+  // Start with inset values or default to 0
+  let topValue: LengthUnit = 0;
+  let rightValue: LengthUnit = 0;
+  let bottomValue: LengthUnit = 0;
+  let leftValue: LengthUnit = 0;
+
+  if (source.inset !== undefined) {
+    const baseValue = source.inset;
+    if (baseValue !== undefined) {
+      const baseSides = parseBaseSides(baseValue);
+      topValue = baseSides.top;
+      rightValue = baseSides.right;
+      bottomValue = baseSides.bottom;
+      leftValue = baseSides.left;
+    }
+  }
+
+  // Override with individual position properties if they exist
+  if (source.top !== undefined) {
+    topValue = parseLengthUnit(source.top);
+  }
+  if (source.right !== undefined) {
+    rightValue = parseLengthUnit(source.right);
+  }
+  if (source.bottom !== undefined) {
+    bottomValue = parseLengthUnit(source.bottom);
+  }
+  if (source.left !== undefined) {
+    leftValue = parseLengthUnit(source.left);
+  }
+
+  // If all values are the same, return a single value
+  if (
+    topValue === rightValue &&
+    rightValue === bottomValue &&
+    bottomValue === leftValue
+  ) {
+    return topValue;
+  }
+
+  return [topValue, rightValue, bottomValue, leftValue];
 }
 
 export function parseAspectRatio(aspectRatio: Property.AspectRatio): number {
