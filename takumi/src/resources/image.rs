@@ -14,8 +14,6 @@ pub type ImageState = Result<RgbaImage, ImageError>;
 /// or if there was an error during the process.
 #[derive(Debug)]
 pub enum ImageError {
-  /// The image has been successfully loaded and decoded
-  Fetched(RgbaImage),
   /// An error occurred while fetching the image from the network
   NetworkError,
   /// An error occurred while decoding the image data
