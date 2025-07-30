@@ -18,7 +18,7 @@ features = ["derive"]
 
 [dependencies.takumi]
 path = "../takumi"
-features = ["wasm", "woff2", "woff", "image_data_uri"]
+features = ["wasm", "woff2", "woff", "image_data_uri", "svg"]
 default-features = false
 
 [package.metadata.wasm-pack.profile.release]

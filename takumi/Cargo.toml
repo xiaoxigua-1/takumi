@@ -64,6 +64,11 @@ default-features = false
 version = "0.25"
 features = ["jpeg", "png", "webp"]
 
+[dependencies.resvg]
+version = "0.45"
+default-features = false
+optional = true
+
 [target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies.criterion]
 version = "0.7"
 features = ["html_reports"]
@@ -75,9 +80,10 @@ harness = false
 required-features = []
 
 [features]
-default = ["woff2", "woff", "image_data_uri", "http_image_store"]
+default = ["woff2", "woff", "image_data_uri", "http_image_store", "svg"]
 wasm = ["dep:wasm-bindgen"]
 image_data_uri = ["dep:base64"]
+svg = ["dep:resvg"]
 woff2 = ["dep:woff2-patched", "dep:bytes"]
 woff = ["dep:flate2"]
 http_image_store = ["dep:minreq", "dep:lru"]

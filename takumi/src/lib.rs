@@ -44,13 +44,13 @@ pub mod effects;
 pub mod resources;
 
 // Re-export commonly used types from each module
-pub use core::{GlobalContext, ImageStore, RenderContext, Viewport};
+pub use core::{Error, GlobalContext, ImageStore, RenderContext, Viewport};
 pub use effects::BorderRadius;
 pub use layout::{
   ContainerNode, DefaultNodeKind, ImageNode, Node, TextNode, measure_image, measure_text,
 };
 pub use rendering::{FastBlendImage, ImageRenderer};
-pub use resources::{FontError, ImageState};
+pub use resources::{FontError, ImageResult, ImageSource, ImageError};
 pub use style::{
   AlignItems, BoxShadow, BoxShadowInput, Color, ColorInput, FlexDirection, FlexWrap, FontWeight,
   Gap, Gradient, InheritableStyle, JustifyContent, LengthUnit, ObjectFit, Position,

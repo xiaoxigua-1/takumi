@@ -13,7 +13,7 @@ use crate::{
   core::{GlobalContext, RenderContext},
   layout::{measure_image, trait_node::Node},
   rendering::{FastBlendImage, draw_image},
-  resources::ImageState,
+  resources::{ImageError, ImageResult, ImageSource},
   style::Style,
 };
 
@@ -30,7 +30,7 @@ pub struct ImageNode {
   pub src: String,
   /// The cached image state (not serialized)
   #[serde(skip)]
-  pub image: Arc<OnceLock<Arc<ImageState>>>,
+  pub image: Arc<OnceLock<ImageSource>>,
 }
 
 impl<Nodes: Node<Nodes>> Node<Nodes> for ImageNode {
@@ -46,38 +46,12 @@ impl<Nodes: Node<Nodes>> Node<Nodes> for ImageNode {
     self.image.get().is_none()
   }
 
-  fn hydrate(&self, context: &GlobalContext) {
-    if is_data_uri(&self.src) {
-      #[cfg(feature = "image_data_uri")]
-      {
-        let img = parse_data_uri_image(&self.src);
-        return self.image.set(Arc::new(img)).unwrap();
-      }
-      #[cfg(not(feature = "image_data_uri"))]
-      {
-        return self
-          .image
-          .set(Arc::new(Err(crate::ImageError::DataUriParseNotSupported)))
-          .unwrap();
-      }
-    }
+  fn hydrate(&self, context: &GlobalContext) -> Result<(), crate::Error> {
+    let image = resolve_image(&self.src, context)?;
 
-    if let Some(img) = context.persistent_image_store.get(&self.src) {
-      return self.image.set(img).unwrap();
-    }
+    self.image.set(image).unwrap();
 
-    let Some(remote_store) = context.remote_image_store.as_ref() else {
-      return;
-    };
-
-    if let Some(img) = remote_store.get(&self.src) {
-      return self.image.set(img).unwrap();
-    }
-
-    let img = Arc::new(remote_store.fetch(&self.src));
-
-    remote_store.insert(self.src.clone(), img.clone());
-    self.image.set(img).unwrap();
+    Ok(())
   }
 
   fn measure(
@@ -86,24 +60,17 @@ impl<Nodes: Node<Nodes>> Node<Nodes> for ImageNode {
     available_space: Size<AvailableSpace>,
     known_dimensions: Size<Option<f32>>,
   ) -> Size<f32> {
-    let Ok(image) = self.image.get().unwrap().as_ref() else {
+    let Some(image) = self.image.get() else {
       return Size::ZERO;
     };
 
-    let (width, height) = image.dimensions();
+    let (width, height) = image.size();
 
-    measure_image(
-      Size {
-        width: width as f32,
-        height: height as f32,
-      },
-      known_dimensions,
-      available_space,
-    )
+    measure_image(Size { width, height }, known_dimensions, available_space)
   }
 
   fn draw_content(&self, context: &RenderContext, canvas: &mut FastBlendImage, layout: Layout) {
-    let Ok(image) = self.image.get().unwrap().as_ref() else {
+    let Some(image) = self.image.get() else {
       return;
     };
 
@@ -117,8 +84,12 @@ fn is_data_uri(src: &str) -> bool {
   src.starts_with(DATA_URI_PREFIX)
 }
 
+fn is_svg(src: &str) -> bool {
+  src.starts_with("<svg") && src.contains("xmlns=\"http://www.w3.org/2000/svg\"")
+}
+
 #[cfg(feature = "image_data_uri")]
-fn parse_data_uri_image(src: &str) -> ImageState {
+fn parse_data_uri_image(src: &str) -> ImageResult {
   use base64::{Engine as _, engine::general_purpose};
 
   use crate::resources::ImageError;
@@ -138,5 +109,51 @@ fn parse_data_uri_image(src: &str) -> ImageState {
 
   let img = image::load_from_memory(&image_bytes).map_err(ImageError::DecodeError)?;
 
-  Ok(img.to_rgba8())
+  Ok(img.into_rgba8().into())
+}
+
+fn resolve_image(src: &str, context: &GlobalContext) -> ImageResult {
+  if is_data_uri(src) {
+    #[cfg(feature = "image_data_uri")]
+    {
+      return parse_data_uri_image(src);
+    }
+    #[cfg(not(feature = "image_data_uri"))]
+    {
+      return Err(ImageError::DataUriParseNotSupported);
+    }
+  }
+
+  if is_svg(src) {
+    #[cfg(feature = "svg")]
+    {
+      use resvg::usvg::{Options, Tree};
+
+      let svg_tree =
+        Tree::from_str(src, &Options::default()).map_err(ImageError::SvgParseError)?;
+
+      return Ok(ImageSource::Svg(Box::new(svg_tree)));
+    }
+    #[cfg(not(feature = "svg"))]
+    {
+      return Err(ImageError::SvgParseNotSupported);
+    }
+  }
+
+  if let Some(img) = context.persistent_image_store.get(src) {
+    return Ok(img);
+  }
+
+  let Some(remote_store) = context.remote_image_store.as_ref() else {
+    return Err(ImageError::RemoteStoreNotAvailable);
+  };
+
+  if let Some(img) = remote_store.get(src) {
+    return Ok(img);
+  }
+
+  let img = remote_store.fetch(src)?;
+
+  remote_store.insert(src.to_string(), img.clone());
+  Ok(img)
 }

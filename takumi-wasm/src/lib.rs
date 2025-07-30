@@ -1,4 +1,4 @@
-use std::{io::Cursor, sync::Arc};
+use std::io::Cursor;
 
 use base64::{Engine, prelude::BASE64_STANDARD};
 use serde_wasm_bindgen::from_value;
@@ -6,6 +6,7 @@ use takumi::{
   DefaultNodeKind, GlobalContext, ImageRenderer, ImageStore, Node, Viewport,
   image::load_from_memory,
   rendering::{ImageOutputFormat, write_image},
+  resources::ImageSource,
 };
 use wasm_bindgen::prelude::*;
 
@@ -50,7 +51,7 @@ impl Renderer {
   pub fn put_persistent_image(&self, src: String, data: &[u8]) {
     self.context.persistent_image_store.insert(
       src.to_string(),
-      Arc::new(Ok(load_from_memory(data).unwrap().into())),
+      ImageSource::Bitmap(load_from_memory(data).unwrap().into_rgba8()),
     );
   }
 
@@ -67,18 +68,22 @@ impl Renderer {
     height: u32,
     format: Option<ImageOutputFormat>,
     quality: Option<u8>,
-  ) -> Vec<u8> {
+  ) -> Result<Vec<u8>, JsError> {
     let node = node.dyn_into().unwrap();
     let mut node: DefaultNodeKind = from_value(node).unwrap();
 
     node.inherit_style_for_children();
-    node.hydrate(&self.context);
+    node
+      .hydrate(&self.context)
+      .map_err(|err| JsError::new(&format!("Failed to hydrate node: {err:?}")))?;
 
     let viewport = Viewport::new(width, height);
     let mut renderer = ImageRenderer::new(viewport);
 
     renderer.construct_taffy_tree(node, &self.context);
-    let image = renderer.draw(&self.context).unwrap();
+    let image = renderer
+      .draw(&self.context)
+      .map_err(|err| JsError::new(&format!("Failed to render image: {err}")))?;
 
     let mut buffer = Vec::new();
     let mut cursor = Cursor::new(&mut buffer);
@@ -91,7 +96,7 @@ impl Renderer {
     )
     .unwrap();
 
-    buffer
+    Ok(buffer)
   }
 
   #[wasm_bindgen(js_name = "renderAsDataUrl")]
@@ -102,14 +107,14 @@ impl Renderer {
     height: u32,
     format: Option<ImageOutputFormat>,
     quality: Option<u8>,
-  ) -> String {
-    let buffer = self.render(node, width, height, format, quality);
+  ) -> Result<String, JsError> {
+    let buffer = self.render(node, width, height, format, quality)?;
     let format = format.unwrap_or(ImageOutputFormat::Png);
 
-    format!(
+    Ok(format!(
       "data:{};base64,{}",
       format.content_type(),
       BASE64_STANDARD.encode(buffer)
-    )
+    ))
   }
 }

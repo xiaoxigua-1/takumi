@@ -51,7 +51,12 @@ pub async fn generate_image_handler(
 
   let buffer = spawn_blocking(move || -> AxumResult<Vec<u8>> {
     root_node.inherit_style_for_children();
-    root_node.hydrate(&state.context);
+    root_node.hydrate(&state.context).map_err(|err| {
+      (
+        StatusCode::INTERNAL_SERVER_ERROR,
+        format!("Failed to hydrate node: {err:?}"),
+      )
+    })?;
 
     let mut renderer = ImageRenderer::new(Viewport::new(width as u32, height as u32));
 

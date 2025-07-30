@@ -67,7 +67,9 @@ pub trait Node<N: Node<N>>: Send + Sync + Debug + Clone {
   ///
   /// This method is called for nodes that return true from `should_hydrate()`
   /// to load external resources before rendering.
-  fn hydrate(&self, _context: &GlobalContext) {}
+  fn hydrate(&self, _context: &GlobalContext) -> Result<(), crate::Error> {
+    Ok(())
+  }
 
   /// Measures the intrinsic size of the node.
   ///

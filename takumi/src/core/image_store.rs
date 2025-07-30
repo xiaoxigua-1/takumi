@@ -1,9 +1,6 @@
-use std::{
-  collections::HashMap,
-  sync::{Arc, RwLock},
-};
+use std::{collections::HashMap, sync::RwLock};
 
-use crate::resources::ImageState;
+use crate::resources::{ImageResult, ImageSource};
 
 /// A trait for storing and retrieving images in an image rendering system.
 ///
@@ -13,23 +10,23 @@ use crate::resources::ImageState;
 /// # Example
 /// ```rust
 /// use std::sync::Arc;
-/// use takumi::{ImageStore, ImageState};
+/// use takumi::{ImageStore, ImageResult, ImageSource};
 ///
 /// struct MyImageStore {
 ///   // http client and image store hashmap
 /// }
 ///
 /// impl ImageStore for MyImageStore {
-///     fn get(&self, key: &str) -> Option<Arc<ImageState>> {
+///     fn get(&self, key: &str) -> Option<ImageSource> {
 ///         // Implement image retrieval
 ///         None
 ///     }
 ///
-///     fn insert(&self, key: String, value: Arc<ImageState>) {
+///     fn insert(&self, key: String, value: ImageSource) {
 ///         // Implement image storage
 ///     }
 ///
-///     fn fetch(&self, key: &str) -> ImageState {
+///     fn fetch(&self, key: &str) -> ImageResult {
 ///         // Implement async image fetching
 ///         unimplemented!()
 ///     }
@@ -47,13 +44,13 @@ use crate::resources::ImageState;
 /// ```
 pub trait ImageStore: Send + Sync {
   /// Retrieves an image from the store by its key.
-  fn get(&self, key: &str) -> Option<Arc<ImageState>>;
+  fn get(&self, key: &str) -> Option<ImageSource>;
 
   /// Stores an image in the store with the given key.
-  fn insert(&self, key: String, value: Arc<ImageState>);
+  fn insert(&self, key: String, value: ImageSource);
 
   /// Asynchronously fetches an image from a remote source and stores it.
-  fn fetch(&self, key: &str) -> ImageState;
+  fn fetch(&self, key: &str) -> ImageResult;
 
   /// Clear stored image data
   fn clear(&self);
@@ -64,18 +61,18 @@ pub trait ImageStore: Send + Sync {
 
 /// Implementation for storing persistent images, calls to `fetch` function would panic.
 #[derive(Default)]
-pub struct PersistentImageStore(RwLock<HashMap<String, Arc<ImageState>>>);
+pub struct PersistentImageStore(RwLock<HashMap<String, ImageSource>>);
 
 impl ImageStore for PersistentImageStore {
-  fn get(&self, key: &str) -> Option<Arc<ImageState>> {
+  fn get(&self, key: &str) -> Option<ImageSource> {
     self.0.read().unwrap().get(key).cloned()
   }
 
-  fn insert(&self, key: String, value: Arc<ImageState>) {
+  fn insert(&self, key: String, value: ImageSource) {
     self.0.write().unwrap().insert(key, value);
   }
 
-  fn fetch(&self, _key: &str) -> ImageState {
+  fn fetch(&self, _key: &str) -> ImageResult {
     unreachable!()
   }
 

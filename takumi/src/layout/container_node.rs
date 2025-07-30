@@ -47,16 +47,16 @@ impl<Nodes: Node<Nodes>> Node<Nodes> for ContainerNode<Nodes> {
       .unwrap_or(false)
   }
 
-  fn hydrate(&self, context: &GlobalContext) {
+  fn hydrate(&self, context: &GlobalContext) -> Result<(), crate::Error> {
     let Some(children) = &self.children else {
-      return;
+      return Ok(());
     };
 
     children
       .iter()
       .filter(|child| child.should_hydrate())
       .par_bridge()
-      .for_each(|child| child.hydrate(context));
+      .try_for_each(|child| child.hydrate(context))
   }
 
   fn inherit_style_for_children(&mut self) {

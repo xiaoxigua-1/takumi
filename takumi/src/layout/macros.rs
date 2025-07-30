@@ -63,7 +63,7 @@ macro_rules! impl_node_enum {
         }
       }
 
-      fn hydrate(&self, context: &$crate::core::GlobalContext) {
+      fn hydrate(&self, context: &$crate::core::GlobalContext) -> Result<(), $crate::Error> {
         match self {
           $( $name::$variant(inner) => <_ as $crate::layout::Node<$name>>::hydrate(inner, context), )*
         }

@@ -22,7 +22,9 @@ impl<'ctx> Task for RenderTask<'ctx> {
     let mut node = self.node.take().unwrap();
 
     node.inherit_style_for_children();
-    node.hydrate(self.context);
+    node
+      .hydrate(self.context)
+      .map_err(|e| napi::Error::from_reason(format!("Failed to hydrate node: {e:?}")))?;
 
     let mut render = ImageRenderer::new(self.viewport);
 

@@ -1,9 +1,8 @@
-use std::sync::Arc;
-
 use napi::Task;
 use takumi::{
   GlobalContext, ImageStore,
   image::{RgbaImage, load_from_memory},
+  resources::ImageSource,
 };
 
 pub struct PutPersistentImageTask<'ctx> {
@@ -22,7 +21,7 @@ impl<'ctx> Task for PutPersistentImageTask<'ctx> {
     self
       .context
       .persistent_image_store
-      .insert(self.src.take().unwrap(), Arc::new(Ok(image)));
+      .insert(self.src.take().unwrap(), ImageSource::Bitmap(image));
 
     Ok(())
   }
