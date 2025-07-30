@@ -1,16 +1,17 @@
 # Takumi
 
-[![CodeFactor](https://www.codefactor.io/repository/github/kane50613/takumi/badge)](https://www.codefactor.io/repository/github/kane50613/takumi)
-
 > 🚧 This project is under development.
 
 _Takumi (匠) means "artisan" or "craftsman" in Japanese._
 
-A library for generating images using CSS Flexbox layout. Available for Rust, Node.js, and WebAssembly.
+For newcomers, check out the [Overview](https://takumi.kane.tw/docs/) and the [Pick Your Platform](https://takumi.kane.tw/docs/platforms/pick-your-platform) guide.
 
-It works by rendering a tree of nodes, like a simplified browser engine that outputs images instead of rendering to a screen.
+## Why choose Takumi?
 
-To get started, check out the [Overview](https://takumi.kane.tw/docs/) and the [Pick Your Platform](https://takumi.kane.tw/docs/platforms/pick-your-platform) guide.
+- Runs everywhere. Node.js, Web, Embedded in Rust, pre-built http server.
+- Takes your existing JSX components and drop it in. It just works.
+- WOFF2 font support. Trims your bundle size.
+- PNG, JPEG, WebP output support.
 
 ## License
 
