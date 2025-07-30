@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { container } from "../../src/helpers";
 import { fromJsx } from "../../src/jsx/jsx-processing";
 import type { ContainerNode, ImageNode, Node, TextNode } from "../../src/types";
+import { renderToString } from "react-dom/server";
 
 describe("fromJsx", () => {
   test("converts text to TextNode", async () => {
@@ -139,14 +140,10 @@ describe("fromJsx", () => {
     ]);
   });
 
-  test("handles img without src satisfies container", async () => {
-    const result = await fromJsx(<img alt="No src" />);
-    expect(result).toEqual([
-      {
-        type: "container",
-        children: [],
-      } satisfies ContainerNode,
-    ]);
+  test("handles img without src satisfies container", () => {
+    expect(fromJsx(<img alt="No src" />)).rejects.toThrowError(
+      "Image element must have a 'src' prop.",
+    );
   });
 
   test("handles deeply nested structures", async () => {
@@ -316,5 +313,43 @@ describe("fromJsx", () => {
         },
       ],
     } satisfies ContainerNode);
+  });
+
+  test("handles svg elements", async () => {
+    const component = (
+      <svg
+        width="60"
+        height="60"
+        viewBox="0 0 180 180"
+        filter="url(#logo-shadow)"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <title>Logo</title>
+        <circle cx="90" cy="90" r="86" fill="url(#logo-iconGradient)" />
+        <defs>
+          <filter id="logo-shadow" colorInterpolationFilters="sRGB">
+            <feDropShadow
+              dx="0"
+              dy="0"
+              stdDeviation="4"
+              floodColor="white"
+              floodOpacity="1"
+            />
+          </filter>
+          <linearGradient id="logo-iconGradient" gradientTransform="rotate(45)">
+            <stop offset="45%" stopColor="black" />
+            <stop offset="100%" stopColor="white" />
+          </linearGradient>
+        </defs>
+      </svg>
+    );
+
+    const result = await fromJsx(component);
+    expect(result).toEqual([
+      {
+        type: "image",
+        src: renderToString(component),
+      },
+    ]);
   });
 });

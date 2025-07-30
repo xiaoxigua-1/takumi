@@ -51,6 +51,9 @@
         "react": "^19.1.0",
         "typescript": "catalog:",
       },
+      "peerDependencies": {
+        "react-dom": "^19",
+      },
     },
     "takumi-napi-core": {
       "name": "@takumi-rs/core",

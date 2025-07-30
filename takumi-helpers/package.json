@@ -17,6 +17,9 @@
     "react": "^19.1.0",
     "typescript": "catalog:"
   },
+  "peerDependencies": {
+    "react-dom": "^19"
+  },
   "exports": {
     "types": "./dist/index.d.ts",
     "default": "./dist/index.js"

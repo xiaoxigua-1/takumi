@@ -1,13 +1,16 @@
-import type {
-  ComponentProps,
-  CSSProperties,
-  JSX,
-  ReactElement,
-  ReactNode,
+import {
+  cloneElement,
+  type ComponentProps,
+  type CSSProperties,
+  type JSX,
+  type ReactElement,
+  type ReactNode,
 } from "react";
+import { renderToString } from "react-dom/server";
 import { container, image, text } from "../helpers";
 import type { Node } from "../types";
 import { parseStyle } from "./style-parser";
+import { parseLengthUnit } from "./style-parsing";
 
 const REACT_ELEMENT_TYPE = Symbol.for("react.transitional.element");
 
@@ -51,8 +54,12 @@ async function processReactElement(element: ReactElement): Promise<Node[]> {
     return children || [];
   }
 
-  if (isHtmlElement(element, "img") && element.props.src) {
-    return [image(element.props.src, parseStyle(element.props.style))];
+  if (isHtmlElement(element, "img")) {
+    return createImageElement(element);
+  }
+
+  if (isHtmlElement(element, "svg")) {
+    return [createSvgElement(element)];
   }
 
   const children = await collectChildren(element);
@@ -64,6 +71,38 @@ async function processReactElement(element: ReactElement): Promise<Node[]> {
       ...parseStyle(style),
     }),
   ];
+}
+
+function createImageElement(element: ReactElement<ComponentProps<"img">>) {
+  if (!element.props.src) {
+    throw new Error("Image element must have a 'src' prop.");
+  }
+
+  const width = element.props.style?.width ?? element.props.width;
+  const height = element.props.style?.height ?? element.props.height;
+
+  return [
+    image(element.props.src, {
+      ...parseStyle(element.props.style),
+      width: width ? parseLengthUnit(width) : undefined,
+      height: height ? parseLengthUnit(height) : undefined,
+    }),
+  ];
+}
+
+function createSvgElement(element: ReactElement<ComponentProps<"svg">>) {
+  return image(
+    renderToString(
+      cloneElement(
+        element,
+        {
+          xmlns: "http://www.w3.org/2000/svg",
+          ...element.props,
+        },
+        element.props.children,
+      ),
+    ),
+  );
 }
 
 function extractStyleFromProps(props: unknown): CSSProperties | undefined {
