@@ -129,8 +129,7 @@ fn resolve_image(src: &str, context: &GlobalContext) -> ImageResult {
     {
       use resvg::usvg::{Options, Tree};
 
-      let svg_tree =
-        Tree::from_str(src, &Options::default()).map_err(ImageError::SvgParseError)?;
+      let svg_tree = Tree::from_str(src, &Options::default()).map_err(ImageError::SvgParseError)?;
 
       return Ok(ImageSource::Svg(Box::new(svg_tree)));
     }
