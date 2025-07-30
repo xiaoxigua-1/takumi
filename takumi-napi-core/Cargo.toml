@@ -1,6 +1,6 @@
 [package]
 name = "takumi-napi-core"
-version = "0.16.0"
+version = "0.15.1"
 edition = "2024"
 license = "MIT"
 
@@ -12,7 +12,7 @@ rayon = "1.10"
 
 [dependencies.takumi]
 path = "../takumi"
-features = ["woff2", "woff", "image_data_uri"]
+features = ["woff2", "woff", "image_data_uri", "svg"]
 default-features = false
 
 [dependencies.napi]
