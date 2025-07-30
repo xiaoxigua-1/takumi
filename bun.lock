@@ -52,7 +52,7 @@
         "typescript": "catalog:",
       },
       "peerDependencies": {
-        "react-dom": "^19",
+        "react-dom": "^19.1.1",
       },
     },
     "takumi-napi-core": {
