@@ -9,8 +9,8 @@ For newcomers, check out the [Overview](https://takumi.kane.tw/docs/) and the [P
 ## Why building another satori alternative?
 
 - All in one. No need to output SVG then have [resvg-js](https://github.com/thx/resvg-js) rendering it again to output PNG.
-- Minimal binary size targets to run everywhere. Node.js, Web, Embedded in Rust, pre-built http server.
-- Takes your existing JSX components and drop it in. It should just works.
+- Minimal binary size targets to run everywhere. Node.js, web, embedded in Rust, pre-built http server.
+- Takes your existing JSX components and drops them in. It should just work.
 - WOFF2 font support. Trims your bundle size.
 - PNG, JPEG, WebP output support.
 
