@@ -169,6 +169,9 @@ describe("fromJsx", () => {
           {
             type: "container",
             children: [{ type: "text", text: "Title" }],
+            font_size: { em: 2 },
+            font_weight: 700,
+            margin: [{ em: 0.67 }, 0],
           },
           {
             type: "container",
@@ -180,9 +183,11 @@ describe("fromJsx", () => {
                   {
                     type: "container",
                     children: [{ type: "text", text: "bold" }],
+                    font_weight: 700,
                   },
                   { type: "text", text: " text" },
                 ],
+                margin: [{ em: 1 }, 0],
               },
               {
                 type: "container",
@@ -291,6 +296,9 @@ describe("fromJsx", () => {
             {
               type: "container",
               children: [{ type: "text", text: "Welcome" }],
+              font_size: { em: 2 },
+              font_weight: 700,
+              margin: [{ em: 0.67 }, 0],
             },
             {
               type: "container",
@@ -308,6 +316,8 @@ describe("fromJsx", () => {
             {
               type: "image",
               src: "https://example.com/logo.png",
+              width: undefined,
+              height: undefined,
             },
           ],
         },

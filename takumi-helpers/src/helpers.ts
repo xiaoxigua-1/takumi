@@ -81,3 +81,7 @@ export function gradient(from: ColorInput, to: ColorInput, angle = 0) {
     angle,
   };
 }
+
+export function rgba(r: number, g: number, b: number, a = 1): ColorInput {
+  return [r, g, b, a];
+}

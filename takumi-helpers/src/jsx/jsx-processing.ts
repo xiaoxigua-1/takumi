@@ -11,6 +11,7 @@ import { container, image, text } from "../helpers";
 import type { Node } from "../types";
 import { parseStyle } from "./style-parser";
 import { parseLengthUnit } from "./style-parsing";
+import { stylePresets } from "./style-presets";
 
 const REACT_ELEMENT_TYPE = Symbol.for("react.transitional.element");
 
@@ -68,6 +69,7 @@ async function processReactElement(element: ReactElement): Promise<Node[]> {
   return [
     container({
       children,
+      ...stylePresets[element.type as keyof JSX.IntrinsicElements],
       ...parseStyle(style),
     }),
   ];
