@@ -13,3 +13,4 @@ For detailed documentation, please refer to the [main documentation](https://tak
 - [cosmic-text](https://github.com/kornelski/cosmic-text) for the text rendering.
 - [woff2-patched](https://github.com/zimond/woff2-rs) for the font processing.
 - [ts-rs](https://github.com/AlephAlpha/ts-rs) for the type-safe serialization.
+- [resvg](https://github.com/linebender/resvg) for SVG parsing and rendering.
