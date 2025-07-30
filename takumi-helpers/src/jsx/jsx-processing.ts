@@ -1,7 +1,7 @@
 import {
-  cloneElement,
   type ComponentProps,
   type CSSProperties,
+  cloneElement,
   type JSX,
   type ReactElement,
   type ReactNode,

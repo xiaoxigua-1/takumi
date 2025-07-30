@@ -1,8 +1,8 @@
 import { describe, expect, test } from "bun:test";
+import { renderToString } from "react-dom/server";
 import { container } from "../../src/helpers";
 import { fromJsx } from "../../src/jsx/jsx-processing";
 import type { ContainerNode, ImageNode, Node, TextNode } from "../../src/types";
-import { renderToString } from "react-dom/server";
 
 describe("fromJsx", () => {
   test("converts text to TextNode", async () => {
