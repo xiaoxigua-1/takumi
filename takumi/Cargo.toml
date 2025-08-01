@@ -7,7 +7,6 @@ description = "High-performance Rust library for generating images with CSS Flex
 keywords = ["image", "css", "flexbox", "layout", "rendering"]
 repository = "https://github.com/kane50613/takumi"
 readme = "README.md"
-exclude = ["benches/**/*"]
 rust-version = "1.85.1"
 
 [dependencies]
@@ -69,16 +68,6 @@ version = "0.45"
 default-features = false
 optional = true
 
-[target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies.criterion]
-version = "0.7"
-features = ["html_reports"]
-default-features = false
-
-[[bench]]
-name = "takumi"
-harness = false
-required-features = []
-
 [features]
 default = ["woff2", "woff", "image_data_uri", "http_image_store", "svg"]
 wasm = ["dep:wasm-bindgen"]
@@ -87,3 +76,4 @@ svg = ["dep:resvg"]
 woff2 = ["dep:woff2-patched", "dep:bytes"]
 woff = ["dep:flate2"]
 http_image_store = ["dep:minreq", "dep:lru"]
+test_update_fixtures = []

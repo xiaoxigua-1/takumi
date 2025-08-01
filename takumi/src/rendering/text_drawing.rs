@@ -27,7 +27,7 @@ pub fn draw_text(
   let content_box = layout.content_box_size();
 
   let start_x = layout.content_box_x();
-  let start_y = layout.content_box_y() + style.font_size * ((style.line_height - 1.0) / 2.0);
+  let start_y = layout.content_box_y();
 
   let buffer = construct_text_buffer(
     text,
@@ -149,7 +149,7 @@ pub(crate) fn construct_text_buffer(
   context: &RenderContext,
   size: Option<(Option<f32>, Option<f32>)>,
 ) -> Buffer {
-  let metrics = Metrics::relative(font_style.font_size, font_style.line_height);
+  let metrics = Metrics::new(font_style.font_size, font_style.line_height);
   let mut buffer = Buffer::new_empty(metrics);
 
   let mut attrs = Attrs::new().weight(font_style.font_weight);

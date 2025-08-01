@@ -113,10 +113,8 @@ pub fn measure_text(
   });
 
   let height_constraint_with_max_lines = match (style.line_clamp, height_constraint) {
-    (Some(max_lines), Some(height)) => {
-      Some((max_lines as f32 * style.line_height * style.font_size).min(height))
-    }
-    (Some(max_lines), None) => Some(max_lines as f32 * style.line_height * style.font_size),
+    (Some(max_lines), Some(height)) => Some((max_lines as f32 * style.line_height).min(height)),
+    (Some(max_lines), None) => Some(max_lines as f32 * style.line_height),
     (None, Some(height)) => Some(height),
     (None, None) => None,
   };
@@ -128,15 +126,15 @@ pub fn measure_text(
     Some((width_constraint, height_constraint_with_max_lines)),
   );
 
-  let (width, total_lines) = buffer
-    .layout_runs()
-    .fold((0.0, 0usize), |(width, total_lines), run| {
-      (run.line_w.max(width), total_lines + 1)
-    });
-  let height = total_lines as f32 * buffer.metrics().line_height;
+  let (max_run_width, total_lines) = buffer.layout_runs().fold((0.0, 0usize), |(w, lines), run| {
+    (run.line_w.max(w), lines + 1)
+  });
+
+  let measured_height = total_lines as f32 * buffer.metrics().line_height;
 
   taffy::Size {
-    width: width.ceil(),
-    height: height.ceil(),
+    // Ceiling to avoid sub-pixel getting cutoff
+    width: max_run_width.ceil(),
+    height: measured_height.ceil(),
   }
 }

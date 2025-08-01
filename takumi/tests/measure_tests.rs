@@ -4,15 +4,12 @@ use cosmic_text::Weight;
 use taffy::{AvailableSpace, geometry::Size};
 use takumi::{
   Color,
-  core::{GlobalContext, RenderContext},
+  core::{DEFAULT_FONT_SIZE, DEFAULT_LINE_HEIGHT_SCALER, GlobalContext, RenderContext},
   style::ResolvedFontStyle,
 };
 
 const NOTO_SANS_REGULAR_BUFFER: &[u8] =
   include_bytes!("../../assets/fonts/noto-sans/NotoSans-Regular.ttf");
-
-const FONT_SIZE: f32 = 16.0;
-const LINE_HEIGHT: f32 = 1.2;
 
 // Viewport dimensions
 const VIEWPORT_WIDTH: u32 = 800;
@@ -41,11 +38,11 @@ static SHARED_GLOBAL_CONTEXT: LazyLock<GlobalContext> = LazyLock::new(|| {
 fn create_test_context() -> RenderContext<'static> {
   RenderContext {
     global: &SHARED_GLOBAL_CONTEXT,
-    parent_font_size: FONT_SIZE,
+    parent_font_size: DEFAULT_FONT_SIZE,
     viewport: takumi::Viewport {
       width: VIEWPORT_WIDTH,
       height: VIEWPORT_HEIGHT,
-      font_size: FONT_SIZE,
+      font_size: DEFAULT_FONT_SIZE,
     },
   }
 }
@@ -53,8 +50,8 @@ fn create_test_context() -> RenderContext<'static> {
 // Helper function to create a basic ResolvedFontStyle for testing
 fn create_test_font_style() -> ResolvedFontStyle {
   ResolvedFontStyle {
-    font_size: FONT_SIZE,
-    line_height: LINE_HEIGHT,
+    font_size: DEFAULT_FONT_SIZE,
+    line_height: DEFAULT_FONT_SIZE * DEFAULT_LINE_HEIGHT_SCALER,
     font_weight: Weight::NORMAL,
     line_clamp: None,
     font_family: Some(FONT_FAMILY_NOTO_SANS.to_string()),
@@ -288,8 +285,10 @@ mod measure_text_tests {
     );
 
     assert!(result.width > 0.0);
-    assert!(result.height > 0.0);
-    assert_eq!(result.height, (FONT_SIZE * LINE_HEIGHT).ceil());
+    assert_eq!(
+      result.height,
+      (DEFAULT_FONT_SIZE * DEFAULT_LINE_HEIGHT_SCALER).ceil()
+    );
   }
 
   #[test]
@@ -303,7 +302,9 @@ mod measure_text_tests {
     );
 
     assert!(result.width <= 200.0);
-    assert!(result.height > (FONT_SIZE * LINE_HEIGHT).ceil()); // Should be multiple lines
+    assert!(result.height >= 2.0 * DEFAULT_FONT_SIZE * DEFAULT_LINE_HEIGHT_SCALER);
+    // Have to allow one pixel tolerance due to rounding
+    assert!((result.height % (DEFAULT_FONT_SIZE * DEFAULT_LINE_HEIGHT_SCALER)).floor() == 0.0);
   }
 
   #[test]
@@ -320,7 +321,7 @@ mod measure_text_tests {
       AvailableSpace::MaxContent,
     );
 
-    let expected_height = (2.0 * style.line_height * style.font_size).ceil();
+    let expected_height = (2.0 * style.line_height).ceil();
     assert_eq!(result.height, expected_height);
   }
 
@@ -349,7 +350,10 @@ mod measure_text_tests {
     );
 
     assert!(result.width > 0.0);
-    assert_eq!(result.height, (FONT_SIZE * LINE_HEIGHT).ceil());
+    assert_eq!(
+      result.height,
+      (DEFAULT_FONT_SIZE * DEFAULT_LINE_HEIGHT_SCALER).ceil()
+    );
   }
 
   #[test]
@@ -366,7 +370,7 @@ mod measure_text_tests {
       AvailableSpace::MaxContent,
     );
 
-    let expected_height = (3.0 * style.line_height * style.font_size).ceil();
+    let expected_height = (3.0 * style.line_height).ceil();
     assert_eq!(result.height, expected_height);
   }
 
@@ -404,6 +408,7 @@ mod measure_text_tests {
   fn test_measure_text_with_different_font_size() {
     let mut style = create_test_font_style();
     style.font_size = 24.0;
+    style.line_height = 24.0 * DEFAULT_LINE_HEIGHT_SCALER;
 
     let result = measure_text_with_style(
       "Large font text",
@@ -415,13 +420,13 @@ mod measure_text_tests {
     );
 
     assert!(result.width > 0.0);
-    assert_eq!(result.height, 29.0); // 24 * 1.2 = 28.8, ceil to 29
+    assert_eq!(result.height, style.line_height.ceil());
   }
 
   #[test]
   fn test_measure_text_with_different_line_height() {
     let mut style = create_test_font_style();
-    style.line_height = 1.5;
+    style.line_height = DEFAULT_FONT_SIZE * 1.5;
 
     let result = measure_text_with_style(
       "Text with increased line height",
@@ -433,7 +438,7 @@ mod measure_text_tests {
     );
 
     assert!(result.width > 0.0);
-    assert_eq!(result.height, 24.0); // 16 * 1.5 = 24
+    assert_eq!(result.height, style.line_height);
   }
 
   #[test]

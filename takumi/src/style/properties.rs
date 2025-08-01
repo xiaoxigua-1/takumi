@@ -13,7 +13,7 @@ use taffy::{
 use ts_rs::TS;
 
 use crate::{
-  core::{DEFAULT_FONT_SIZE, DEFAULT_LINE_HEIGHT, viewport::RenderContext},
+  core::{DEFAULT_FONT_SIZE, DEFAULT_LINE_HEIGHT_SCALER, viewport::RenderContext},
   impl_from_taffy_enum,
   style::{
     ColorInput, Gap, LengthUnit, SidesValue, resolve_length_unit_rect_to_length_percentage,
@@ -796,18 +796,22 @@ impl Style {
   ///
   /// A `ResolvedFontStyle` with all font-related properties resolved to concrete values
   pub fn resolve_to_font_style(&self, context: &RenderContext) -> ResolvedFontStyle {
+    let font_size = self
+      .inheritable_style
+      .font_size
+      .map(|f| f.resolve_to_px(context))
+      .unwrap_or(DEFAULT_FONT_SIZE);
+
+    let line_height = self
+      .inheritable_style
+      .line_height
+      .map(|f| f.resolve_to_px(context))
+      .unwrap_or_else(|| font_size * DEFAULT_LINE_HEIGHT_SCALER);
+
     ResolvedFontStyle {
       color: self.inheritable_style.color.clone().unwrap_or_default(),
-      font_size: self
-        .inheritable_style
-        .font_size
-        .map(|f| f.resolve_to_px(context))
-        .unwrap_or(DEFAULT_FONT_SIZE),
-      line_height: self
-        .inheritable_style
-        .line_height
-        .map(|f| f.resolve_to_px(context))
-        .unwrap_or(DEFAULT_LINE_HEIGHT),
+      font_size,
+      line_height,
       font_weight: self
         .inheritable_style
         .font_weight
