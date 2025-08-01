@@ -51,11 +51,7 @@ pub use layout::{
 };
 pub use rendering::{FastBlendImage, ImageRenderer};
 pub use resources::{FontError, ImageError, ImageResult, ImageSource};
-pub use style::{
-  AlignItems, BoxShadow, BoxShadowInput, Color, ColorInput, FlexDirection, FlexWrap, FontWeight,
-  Gap, Gradient, InheritableStyle, JustifyContent, LengthUnit, ObjectFit, Position,
-  ResolvedFontStyle, SidesValue, Style, TextAlign,
-};
+pub use style::*;
 
 #[cfg(feature = "http_image_store")]
 pub use core::HttpImageStore;

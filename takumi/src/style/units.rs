@@ -124,6 +124,12 @@ pub enum SidesValue<T> {
   AllSides(T, T, T, T),
 }
 
+impl<T> From<T> for SidesValue<T> {
+  fn from(value: T) -> Self {
+    Self::SingleValue(value)
+  }
+}
+
 impl<T: Default> Default for SidesValue<T> {
   fn default() -> Self {
     Self::SingleValue(T::default())
