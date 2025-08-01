@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use takumi::{ImageNode, LengthUnit::Px, ObjectFit, Style};
+use takumi::{ImageNode, LengthUnit::Percentage, ObjectFit, Style};
 
 mod test_utils;
 use test_utils::run_style_width_test;
@@ -9,8 +9,8 @@ use test_utils::run_style_width_test;
 fn test_style_object_fit_cover() {
   let image = ImageNode {
     style: Style {
-      width: Px(100.0),
-      height: Px(100.0),
+      width: Percentage(100.0),
+      height: Percentage(100.0),
       object_fit: ObjectFit::Cover,
       ..Default::default()
     },
