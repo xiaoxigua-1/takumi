@@ -100,14 +100,12 @@ pub fn measure_text(
     };
   }
 
-  // Width constraint: if no explicit width, clamp to definite available width, otherwise unconstrained
   let width_constraint = known_dimensions.width.or(match available_space.width {
     AvailableSpace::MinContent => Some(0.0),
     AvailableSpace::MaxContent => None,
     AvailableSpace::Definite(width) => Some(width),
   });
 
-  // Height constraint: treat MaxContent as unconstrained, otherwise use definite/explicit when present
   let height_constraint = known_dimensions.height.or(match available_space.height {
     AvailableSpace::MinContent => Some(0.0),
     AvailableSpace::MaxContent => None,
@@ -121,7 +119,6 @@ pub fn measure_text(
     (None, None) => None,
   };
 
-  // Build text buffer with constraints
   let buffer = construct_text_buffer(
     text,
     style,
@@ -129,8 +126,6 @@ pub fn measure_text(
     Some((width_constraint, height_constraint_with_max_lines)),
   );
 
-  // Determine measured width as the max of line widths and the provided width constraint (if any).
-  // This avoids returning a width smaller than the constrained layout, which can cause overflow at draw time.
   let (max_run_width, total_lines) = buffer.layout_runs().fold((0.0, 0usize), |(w, lines), run| {
     (run.line_w.max(w), lines + 1)
   });
