@@ -20,7 +20,7 @@ fn fixtures_text_basic() {
 
   run_style_width_test(
     DefaultNodeKind::Text(text),
-    "tests/fixtures/fixtures_text_basic.png",
+    "tests/fixtures/text_basic.png",
   );
 }
 
@@ -40,7 +40,7 @@ fn fixtures_text_typography_regular_24px() {
 
   run_style_width_test(
     text.into(),
-    "tests/fixtures/fixtures_text_typography_regular_24px.png",
+    "tests/fixtures/text_typography_regular_24px.png",
   );
 }
 
@@ -61,7 +61,7 @@ fn fixtures_text_typography_medium_weight_500() {
 
   run_style_width_test(
     text.into(),
-    "tests/fixtures/fixtures_text_typography_medium_weight_500.png",
+    "tests/fixtures/text_typography_medium_weight_500.png",
   );
 }
 
@@ -82,7 +82,7 @@ fn fixtures_text_typography_line_height_40px() {
 
   run_style_width_test(
     text.into(),
-    "tests/fixtures/fixtures_text_typography_line_height_40px.png",
+    "tests/fixtures/text_typography_line_height_40px.png",
   );
 }
 
@@ -103,7 +103,7 @@ fn fixtures_text_typography_letter_spacing_2px() {
 
   run_style_width_test(
     text.into(),
-    "tests/fixtures/fixtures_text_typography_letter_spacing_2px.png",
+    "tests/fixtures/text_typography_letter_spacing_2px.png",
   );
 }
 
@@ -123,7 +123,7 @@ fn fixtures_text_align_start() {
     text: "Start aligned".to_string(),
   };
 
-  run_style_width_test(text.into(), "tests/fixtures/fixtures_text_align_start.png");
+  run_style_width_test(text.into(), "tests/fixtures/text_align_start.png");
 }
 
 #[test]
@@ -142,7 +142,7 @@ fn fixtures_text_align_center() {
     text: "Center aligned".to_string(),
   };
 
-  run_style_width_test(text.into(), "tests/fixtures/fixtures_text_align_center.png");
+  run_style_width_test(text.into(), "tests/fixtures/text_align_center.png");
 }
 
 #[test]
@@ -161,7 +161,7 @@ fn fixtures_text_align_right() {
     text: "Right aligned".to_string(),
   };
 
-  run_style_width_test(text.into(), "tests/fixtures/fixtures_text_align_right.png");
+  run_style_width_test(text.into(), "tests/fixtures/text_align_right.png");
 }
 
 #[test]
@@ -185,7 +185,7 @@ Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliqu
     text: long_text.to_string(),
   };
 
-  run_style_width_test(text.into(), "tests/fixtures/fixtures_text_justify_clip.png");
+  run_style_width_test(text.into(), "tests/fixtures/text_justify_clip.png");
 }
 
 #[test]
@@ -211,6 +211,6 @@ Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliqu
 
   run_style_width_test(
     text.into(),
-    "tests/fixtures/fixtures_text_ellipsis_line_clamp_2.png",
+    "tests/fixtures/text_ellipsis_line_clamp_2.png",
   );
 }

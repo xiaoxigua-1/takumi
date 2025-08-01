@@ -302,9 +302,9 @@ mod measure_text_tests {
     );
 
     assert!(result.width <= 200.0);
-    assert!(result.height > DEFAULT_FONT_SIZE * DEFAULT_LINE_HEIGHT_SCALER);
+    assert!(result.height >= 2.0 * DEFAULT_FONT_SIZE * DEFAULT_LINE_HEIGHT_SCALER);
     // Have to allow one pixel tolerance due to rounding
-    assert!(result.height % (DEFAULT_FONT_SIZE * DEFAULT_LINE_HEIGHT_SCALER) < 1.0);
+    assert!((result.height % (DEFAULT_FONT_SIZE * DEFAULT_LINE_HEIGHT_SCALER)).floor() == 0.0);
   }
 
   #[test]
