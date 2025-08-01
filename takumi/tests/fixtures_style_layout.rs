@@ -1,7 +1,7 @@
 use takumi::{
-  Color, ContainerNode, Display, FlexDirection, GridTrackSize,
+  Color, ContainerNode, Display, FlexDirection, Gap, GridTrackSize, InheritableStyle,
   LengthUnit::{Percentage, Px},
-  Style, TrackSizingFunction, InheritableStyle, Gap,
+  Style, TrackSizingFunction,
 };
 
 mod test_utils;
@@ -118,10 +118,7 @@ fn test_style_flex_direction() {
     ]),
   };
 
-  run_style_width_test(
-    container.into(),
-    "tests/fixtures/style_flex_direction.png",
-  );
+  run_style_width_test(container.into(), "tests/fixtures/style_flex_direction.png");
 }
 
 #[test]

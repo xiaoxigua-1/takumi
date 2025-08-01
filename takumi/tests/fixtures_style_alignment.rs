@@ -1,6 +1,5 @@
 use takumi::{
-  AlignItems, Color, ContainerNode, Display, InheritableStyle,
-  JustifyContent,
+  AlignItems, Color, ContainerNode, Display, InheritableStyle, JustifyContent,
   LengthUnit::{Percentage, Px},
   Style,
 };

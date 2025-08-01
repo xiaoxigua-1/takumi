@@ -18,10 +18,7 @@ fn test_style_object_fit_contain() {
     image: Arc::default(),
   };
 
-  run_style_width_test(
-    image.into(),
-    "tests/fixtures/style_object_fit_contain.png",
-  );
+  run_style_width_test(image.into(), "tests/fixtures/style_object_fit_contain.png");
 }
 
 #[test]
