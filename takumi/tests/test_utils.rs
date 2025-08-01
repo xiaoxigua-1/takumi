@@ -16,6 +16,16 @@ fn create_test_context() -> GlobalContext {
   );
 
   context
+    .font_context
+    .load_font(include_bytes!("../../assets/fonts/noto-sans/NotoSans-Regular.ttf").to_vec())
+    .unwrap();
+
+  context
+    .font_context
+    .load_font(include_bytes!("../../assets/fonts/noto-sans/NotoSans-Medium.ttf").to_vec())
+    .unwrap();
+
+  context
 }
 
 fn create_test_renderer() -> ImageRenderer<DefaultNodeKind> {

@@ -7,7 +7,7 @@
 pub const DEFAULT_FONT_SIZE: f32 = 16.0;
 
 /// The default line height multiplier.
-pub const DEFAULT_LINE_HEIGHT: f32 = 1.2;
+pub const DEFAULT_LINE_HEIGHT_SCALER: f32 = 1.2;
 
 /// The viewport for the image renderer.
 #[derive(Debug, Clone, Copy)]

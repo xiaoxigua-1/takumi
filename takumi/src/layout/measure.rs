@@ -100,12 +100,14 @@ pub fn measure_text(
     };
   }
 
+  // Width constraint: if no explicit width, clamp to definite available width, otherwise unconstrained
   let width_constraint = known_dimensions.width.or(match available_space.width {
     AvailableSpace::MinContent => Some(0.0),
     AvailableSpace::MaxContent => None,
     AvailableSpace::Definite(width) => Some(width),
   });
 
+  // Height constraint: treat MaxContent as unconstrained, otherwise use definite/explicit when present
   let height_constraint = known_dimensions.height.or(match available_space.height {
     AvailableSpace::MinContent => Some(0.0),
     AvailableSpace::MaxContent => None,
@@ -113,14 +115,13 @@ pub fn measure_text(
   });
 
   let height_constraint_with_max_lines = match (style.line_clamp, height_constraint) {
-    (Some(max_lines), Some(height)) => {
-      Some((max_lines as f32 * style.line_height * style.font_size).min(height))
-    }
-    (Some(max_lines), None) => Some(max_lines as f32 * style.line_height * style.font_size),
+    (Some(max_lines), Some(height)) => Some((max_lines as f32 * style.line_height).min(height)),
+    (Some(max_lines), None) => Some(max_lines as f32 * style.line_height),
     (None, Some(height)) => Some(height),
     (None, None) => None,
   };
 
+  // Build text buffer with constraints
   let buffer = construct_text_buffer(
     text,
     style,
@@ -128,15 +129,17 @@ pub fn measure_text(
     Some((width_constraint, height_constraint_with_max_lines)),
   );
 
-  let (width, total_lines) = buffer
-    .layout_runs()
-    .fold((0.0, 0usize), |(width, total_lines), run| {
-      (run.line_w.max(width), total_lines + 1)
-    });
-  let height = total_lines as f32 * buffer.metrics().line_height;
+  // Determine measured width as the max of line widths and the provided width constraint (if any).
+  // This avoids returning a width smaller than the constrained layout, which can cause overflow at draw time.
+  let (max_run_width, total_lines) = buffer.layout_runs().fold((0.0, 0usize), |(w, lines), run| {
+    (run.line_w.max(w), lines + 1)
+  });
+
+  let measured_height = total_lines as f32 * buffer.metrics().line_height;
 
   taffy::Size {
-    width: width.ceil(),
-    height: height.ceil(),
+    // Ceiling to avoid sub-pixel getting cutoff
+    width: max_run_width.ceil(),
+    height: measured_height.ceil(),
   }
 }
