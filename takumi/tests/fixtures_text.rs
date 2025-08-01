@@ -18,10 +18,7 @@ fn fixtures_text_basic() {
     text: "The quick brown fox jumps over the lazy dog 12345".to_string(),
   };
 
-  run_style_width_test(
-    DefaultNodeKind::Text(text),
-    "tests/fixtures/text_basic.png",
-  );
+  run_style_width_test(DefaultNodeKind::Text(text), "tests/fixtures/text_basic.png");
 }
 
 #[test]
@@ -209,8 +206,5 @@ Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliqu
     text: long_text.to_string(),
   };
 
-  run_style_width_test(
-    text.into(),
-    "tests/fixtures/text_ellipsis_line_clamp_2.png",
-  );
+  run_style_width_test(text.into(), "tests/fixtures/text_ellipsis_line_clamp_2.png");
 }
