@@ -1,4 +1,5 @@
 import type {
+  Color,
   ColorInput,
   ContainerNode,
   ImageNode,
@@ -82,6 +83,6 @@ export function gradient(from: ColorInput, to: ColorInput, angle = 0) {
   };
 }
 
-export function rgba(r: number, g: number, b: number, a = 1): ColorInput {
+export function rgba(r: number, g: number, b: number, a = 1): Color {
   return [r, g, b, a];
 }
