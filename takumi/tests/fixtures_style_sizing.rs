@@ -9,7 +9,7 @@ fn test_style_width() {
     style: Style {
       width: Percentage(100.0),
       height: Percentage(100.0),
-      background_color: Some(Color::Rgb(255, 255, 255).into()),
+      background_color: Some(Color::Rgb(255, 255, 255)),
       ..Default::default()
     },
     children: None,
@@ -24,7 +24,7 @@ fn test_style_height() {
     style: Style {
       width: Percentage(100.0),
       height: Percentage(100.0),
-      background_color: Some(Color::Rgb(255, 255, 255).into()),
+      background_color: Some(Color::Rgb(255, 255, 255)),
       ..Default::default()
     },
     children: None,
@@ -40,7 +40,7 @@ fn test_style_min_width() {
       min_width: takumi::LengthUnit::Px(50.0),
       width: Percentage(100.0),
       height: Percentage(100.0),
-      background_color: Some(Color::Rgb(255, 255, 255).into()),
+      background_color: Some(Color::Rgb(255, 255, 255)),
       ..Default::default()
     },
     children: None,
@@ -56,7 +56,7 @@ fn test_style_min_height() {
       min_height: takumi::LengthUnit::Px(50.0),
       height: Percentage(100.0),
       width: Percentage(100.0),
-      background_color: Some(Color::Rgb(255, 255, 255).into()),
+      background_color: Some(Color::Rgb(255, 255, 255)),
       ..Default::default()
     },
     children: None,
@@ -72,7 +72,7 @@ fn test_style_max_width() {
       max_width: takumi::LengthUnit::Px(100.0),
       width: Percentage(100.0),
       height: Percentage(100.0),
-      background_color: Some(Color::Rgb(255, 255, 255).into()),
+      background_color: Some(Color::Rgb(255, 255, 255)),
       ..Default::default()
     },
     children: None,
@@ -88,7 +88,7 @@ fn test_style_max_height() {
       max_height: takumi::LengthUnit::Px(100.0),
       height: Percentage(100.0),
       width: Percentage(100.0),
-      background_color: Some(Color::Rgb(255, 255, 255).into()),
+      background_color: Some(Color::Rgb(255, 255, 255)),
       ..Default::default()
     },
     children: None,

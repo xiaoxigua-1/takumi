@@ -86,9 +86,9 @@ macro_rules! impl_node_enum {
         }
       }
 
-      fn draw_background(&self, context: &$crate::core::RenderContext, canvas: &mut $crate::rendering::FastBlendImage, layout: $crate::taffy::Layout) {
+      fn draw_background_color(&self, context: &$crate::core::RenderContext, canvas: &mut $crate::rendering::FastBlendImage, layout: $crate::taffy::Layout) {
         match self {
-          $( $name::$variant(inner) => <_ as $crate::layout::Node<$name>>::draw_background(inner, context, canvas, layout), )*
+          $( $name::$variant(inner) => <_ as $crate::layout::Node<$name>>::draw_background_color(inner, context, canvas, layout), )*
         }
       }
 

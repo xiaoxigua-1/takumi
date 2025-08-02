@@ -13,7 +13,7 @@ fn test_style_background_color() {
     style: Style {
       width: Percentage(100.0),
       height: Percentage(100.0),
-      background_color: Some(Color::Rgb(255, 0, 0).into()), // Red background
+      background_color: Some(Color::Rgb(255, 0, 0)), // Red background
       ..Default::default()
     },
     children: None,
@@ -31,7 +31,7 @@ fn test_style_border_radius() {
     style: Style {
       width: Percentage(100.0),
       height: Percentage(100.0),
-      background_color: Some(Color::Rgb(255, 0, 0).into()), // Red background to show rounded corners
+      background_color: Some(Color::Rgb(255, 0, 0)), // Red background to show rounded corners
       inheritable_style: InheritableStyle {
         border_radius: Some(SidesValue::SingleValue(Px(20.0))), // Uniform rounded corners of 20px
         ..Default::default()
@@ -50,7 +50,7 @@ fn test_style_border_width() {
     style: Style {
       width: Percentage(100.0),
       height: Percentage(100.0),
-      background_color: Some(Color::Rgb(255, 255, 255).into()),
+      background_color: Some(Color::Rgb(255, 255, 255)),
       border_width: Px(10.0).into(),
       inheritable_style: InheritableStyle {
         border_color: Some(Color::Rgb(255, 0, 0).into()),
@@ -70,7 +70,7 @@ fn test_style_box_shadow() {
     style: Style {
       width: Percentage(100.0),
       height: Percentage(100.0),
-      background_color: Some(Color::Rgb(0, 0, 255).into()), // Blue background to serve as container
+      background_color: Some(Color::Rgb(0, 0, 255)), // Blue background to serve as container
       ..Default::default()
     },
     children: Some(vec![
@@ -78,7 +78,7 @@ fn test_style_box_shadow() {
         style: Style {
           width: Px(100.0),
           height: Px(100.0),
-          background_color: Some(Color::Rgb(255, 0, 0).into()), // Red child to show box shadow effect
+          background_color: Some(Color::Rgb(255, 0, 0)), // Red child to show box shadow effect
           box_shadow: Some(BoxShadowInput::Single(BoxShadow {
             color: Color::Rgba(0, 0, 0, 0.5).into(), // Semi-transparent black shadow
             offset_x: Px(5.0),
@@ -104,7 +104,7 @@ fn test_style_position() {
     style: Style {
       width: Percentage(100.0),
       height: Percentage(100.0),
-      background_color: Some(Color::Rgb(0, 0, 255).into()), // Blue background to serve as container
+      background_color: Some(Color::Rgb(0, 0, 255)), // Blue background to serve as container
       ..Default::default()
     },
     children: Some(vec![
@@ -114,7 +114,7 @@ fn test_style_position() {
           height: Px(100.0),
           position: Position::Absolute, // Test the position property
           inset: Px(20.0).into(),       // Position with inset properties
-          background_color: Some(Color::Rgb(255, 0, 0).into()), // Red child to make it visible
+          background_color: Some(Color::Rgb(255, 0, 0)), // Red child to make it visible
           inheritable_style: InheritableStyle {
             ..Default::default()
           },

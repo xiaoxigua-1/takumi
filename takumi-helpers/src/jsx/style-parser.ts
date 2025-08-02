@@ -16,6 +16,7 @@ import {
   type SnakeToCamelCase,
 } from "../utils";
 import { parseColor } from "./color-parsing";
+import { parseLinearGradient } from "./linear-gradient-parsing";
 import {
   parseAspectRatio,
   parseBoxShadow,
@@ -76,6 +77,7 @@ const PROPERTY_PARSERS: {
   flexShrink: (v) => Number(v),
   borderWidth: parseSideLengthUnits,
   backgroundColor: parseColor,
+  backgroundImage: parseLinearGradient,
   boxShadow: parseBoxShadow,
   objectFit: SKIP_PARSING_SYMBOL,
   imageRendering: parseImageRendering,

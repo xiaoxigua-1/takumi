@@ -15,7 +15,7 @@ fn test_style_align_items() {
       height: Percentage(100.0),
       display: Display::Flex,
       align_items: Some(AlignItems::Center),
-      background_color: Some(Color::Rgb(0, 0, 255).into()), // Blue background as container
+      background_color: Some(Color::Rgb(0, 0, 255)), // Blue background as container
       ..Default::default()
     },
     children: Some(vec![
@@ -23,7 +23,7 @@ fn test_style_align_items() {
         style: Style {
           width: Px(50.0),
           height: Px(50.0),
-          background_color: Some(Color::Rgb(255, 0, 0).into()), // Red child
+          background_color: Some(Color::Rgb(255, 0, 0)), // Red child
           inheritable_style: InheritableStyle {
             ..Default::default()
           },
@@ -36,7 +36,7 @@ fn test_style_align_items() {
         style: Style {
           width: Px(50.0),
           height: Px(50.0),
-          background_color: Some(Color::Rgb(0, 255, 0).into()), // Green child
+          background_color: Some(Color::Rgb(0, 255, 0)), // Green child
           inheritable_style: InheritableStyle {
             ..Default::default()
           },
@@ -49,7 +49,7 @@ fn test_style_align_items() {
         style: Style {
           width: Px(50.0),
           height: Px(50.0),
-          background_color: Some(Color::Rgb(255, 255, 0).into()), // Yellow child
+          background_color: Some(Color::Rgb(255, 255, 0)), // Yellow child
           inheritable_style: InheritableStyle {
             ..Default::default()
           },
@@ -72,7 +72,7 @@ fn test_style_justify_content() {
       height: Percentage(100.0),
       display: Display::Flex,
       justify_content: Some(JustifyContent::Center),
-      background_color: Some(Color::Rgb(0, 0, 255).into()), // Blue background to show container
+      background_color: Some(Color::Rgb(0, 0, 255)), // Blue background to show container
       ..Default::default()
     },
     children: Some(vec![
@@ -80,7 +80,7 @@ fn test_style_justify_content() {
         style: Style {
           width: Px(50.0),
           height: Px(50.0),
-          background_color: Some(Color::Rgb(255, 0, 0).into()), // Red child
+          background_color: Some(Color::Rgb(255, 0, 0)), // Red child
           inheritable_style: InheritableStyle {
             ..Default::default()
           },
@@ -93,7 +93,7 @@ fn test_style_justify_content() {
         style: Style {
           width: Px(50.0),
           height: Px(50.0),
-          background_color: Some(Color::Rgb(0, 255, 0).into()), // Green child
+          background_color: Some(Color::Rgb(0, 255, 0)), // Green child
           inheritable_style: InheritableStyle {
             ..Default::default()
           },
@@ -106,7 +106,7 @@ fn test_style_justify_content() {
         style: Style {
           width: Px(50.0),
           height: Px(50.0),
-          background_color: Some(Color::Rgb(255, 255, 0).into()), // Yellow child
+          background_color: Some(Color::Rgb(255, 255, 0)), // Yellow child
           inheritable_style: InheritableStyle {
             ..Default::default()
           },

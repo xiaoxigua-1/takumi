@@ -89,56 +89,30 @@ impl ColorAt for Gradient {
       return self.stops[0].color;
     }
 
-    // For a horizontal gradient (angle 0), map x-coordinate directly
-    // For other angles, use projection method
-    let normalized_position = if self.angle == 0.0 && width > 0.0 {
-      // Simple horizontal gradient mapping
-      (x as f32) / (width - 1.0)
-    } else if self.angle == 180.0 && width > 0.0 {
-      // Simple horizontal gradient mapping (reversed)
-      1.0 - (x as f32) / (width - 1.0)
-    } else if self.angle == 90.0 && height > 0.0 {
-      // Simple vertical gradient mapping
-      (y as f32) / (height - 1.0)
-    } else if self.angle == 270.0 && height > 0.0 {
-      // Simple vertical gradient mapping (reversed)
-      1.0 - (y as f32) / (height - 1.0)
+    // CSS semantics (MDN): 0deg = to top (bottom→top), angles increase clockwise
+    // Implement using CSS direction vector like the provided reference: dir = (sinθ, -cosθ)
+    let css_rad = self.angle.to_radians();
+    let dir_x = css_rad.sin();
+    let dir_y = -css_rad.cos();
+
+    // Center of the surface
+    let center_x = width / 2.0;
+    let center_y = height / 2.0;
+
+    // Compute normalization factor as max extent along direction, matching the shared snippet:
+    // max_extent = (W*|dir_x| + H*|dir_y|)/2
+    let max_extent = ((width * dir_x.abs()) + (height * dir_y.abs())) / 2.0;
+
+    let normalized_position = if max_extent <= 0.0 {
+      0.0
     } else {
-      // Convert angle to standard mathematical convention (0° = along positive x-axis)
-      let angle_rad = self.angle.to_radians();
-      let cos_angle = angle_rad.cos();
-      let sin_angle = angle_rad.sin();
+      // Project current point onto CSS direction
+      let dx = x as f32 - center_x;
+      let dy = y as f32 - center_y;
+      let projection = dx * dir_x + dy * dir_y;
 
-      // Calculate relative position from center
-      let center_x = width / 2.0;
-      let center_y = height / 2.0;
-      let relative_x = x as f32 - center_x;
-      let relative_y = y as f32 - center_y;
-
-      // Project the relative position onto the gradient direction vector
-      let projection = relative_x * cos_angle + relative_y * sin_angle;
-
-      // Determine the maximum projection distance based on angle and dimensions
-      let max_projection = {
-        // Calculate projections of the corners relative to center
-        let corners = [
-          (-center_x, -center_y),                // Top-left
-          (width - center_x, -center_y),         // Top-right
-          (-center_x, height - center_y),        // Bottom-left
-          (width - center_x, height - center_y), // Bottom-right
-        ];
-
-        let projections: Vec<f32> = corners
-          .iter()
-          .map(|(dx, dy)| dx * cos_angle + dy * sin_angle)
-          .collect();
-
-        let max_proj = projections.iter().fold(0.0f32, |a, &b| a.max(b.abs()));
-        max_proj.max(1.0) // Ensure we don't divide by zero
-      };
-
-      // Normalize projection to [0, 1] range
-      (projection / max_projection + 1.0) / 2.0
+      // Normalize to [0,1] so t increases in the CSS angle direction
+      (projection / max_extent + 1.0) / 2.0
     };
 
     let clamped_position = normalized_position.clamp(0.0, 1.0);
@@ -344,8 +318,8 @@ mod tests {
     };
 
     // Test exact positions
-    assert_eq!(gradient.at(100.0, 100.0, 0, 50), Color::Rgb(255, 0, 0));
-    assert_eq!(gradient.at(100.0, 100.0, 99, 50), Color::Rgb(0, 0, 255));
+    assert_eq!(gradient.at(100.0, 100.0, 0, 50), Color::Rgb(0, 255, 0));
+    assert_eq!(gradient.at(100.0, 100.0, 99, 50), Color::Rgb(0, 255, 0));
   }
 
   #[test]
@@ -365,7 +339,7 @@ mod tests {
           position: 0.8,
         },
       ],
-      angle: 0.0,
+      angle: 90.0,
     };
 
     // Test that positions are respected

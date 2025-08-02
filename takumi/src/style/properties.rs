@@ -14,10 +14,11 @@ use taffy::{
 use ts_rs::TS;
 
 use crate::{
+  Gradient,
   core::{DEFAULT_FONT_SIZE, DEFAULT_LINE_HEIGHT_SCALER, viewport::RenderContext},
   impl_from_taffy_enum,
   style::{
-    ColorInput, Gap, LengthUnit, SidesValue, resolve_length_unit_rect_to_length_percentage,
+    Color, ColorInput, Gap, LengthUnit, SidesValue, resolve_length_unit_rect_to_length_percentage,
     resolve_length_unit_rect_to_length_percentage_auto,
   },
 };
@@ -454,8 +455,10 @@ pub struct Style {
   pub border_width: SidesValue<LengthUnit>,
   /// How images should be fitted within their container
   pub object_fit: ObjectFit,
-  /// Background color of the element
-  pub background_color: Option<ColorInput>,
+  /// Background gradient(s)
+  pub background_image: Option<Gradient>,
+  /// Background color for the element
+  pub background_color: Option<Color>,
   /// Box shadow effect for the element
   pub box_shadow: Option<BoxShadowInput>,
   /// Controls the size of implicitly-created grid columns
@@ -506,8 +509,9 @@ impl Default for Style {
       flex_wrap: FlexWrap::NoWrap,
       border_width: SidesValue::SingleValue(LengthUnit::Px(0.0)),
       object_fit: Default::default(),
-      background_color: Default::default(),
       box_shadow: Default::default(),
+      background_color: None,
+      background_image: None,
       grid_auto_columns: None,
       grid_auto_rows: None,
       grid_auto_flow: None,

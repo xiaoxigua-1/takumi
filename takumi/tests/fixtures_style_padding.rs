@@ -13,7 +13,7 @@ fn test_style_padding() {
     style: Style {
       width: Percentage(100.0),
       height: Percentage(100.0),
-      background_color: Some(Color::Rgb(0, 0, 255).into()), // Blue background to show padding
+      background_color: Some(Color::Rgb(0, 0, 255)), // Blue background to show padding
       padding: SidesValue::SingleValue(Px(20.0)),           // Uniform padding of 20px
       ..Default::default()
     },
@@ -22,7 +22,7 @@ fn test_style_padding() {
         style: Style {
           width: Percentage(100.0),
           height: Percentage(100.0),
-          background_color: Some(Color::Rgb(255, 0, 0).into()), // Red child to show padding effect
+          background_color: Some(Color::Rgb(255, 0, 0)), // Red child to show padding effect
           inheritable_style: InheritableStyle {
             ..Default::default()
           },

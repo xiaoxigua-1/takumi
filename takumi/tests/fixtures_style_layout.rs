@@ -15,7 +15,7 @@ fn test_style_flex_basis() {
       height: Percentage(100.0),
       display: Display::Flex,
       flex_direction: FlexDirection::Row,
-      background_color: Some(Color::Rgb(0, 0, 255).into()), // Blue background to show container
+      background_color: Some(Color::Rgb(0, 0, 255)), // Blue background to show container
       ..Default::default()
     },
     children: Some(vec![
@@ -23,7 +23,7 @@ fn test_style_flex_basis() {
         style: Style {
           flex_basis: Px(100.0), // Set flex basis to 100px
           height: Px(50.0),
-          background_color: Some(Color::Rgb(255, 0, 0).into()), // Red child
+          background_color: Some(Color::Rgb(255, 0, 0)), // Red child
           inheritable_style: InheritableStyle {
             ..Default::default()
           },
@@ -36,7 +36,7 @@ fn test_style_flex_basis() {
         style: Style {
           flex_basis: Px(100.0), // Set flex basis to 100px
           height: Px(50.0),
-          background_color: Some(Color::Rgb(0, 255, 0).into()), // Green child
+          background_color: Some(Color::Rgb(0, 255, 0)), // Green child
           inheritable_style: InheritableStyle {
             ..Default::default()
           },
@@ -49,7 +49,7 @@ fn test_style_flex_basis() {
         style: Style {
           flex_basis: Px(100.0), // Set flex basis to 100px
           height: Px(50.0),
-          background_color: Some(Color::Rgb(255, 255, 0).into()), // Yellow child
+          background_color: Some(Color::Rgb(255, 255, 0)), // Yellow child
           inheritable_style: InheritableStyle {
             ..Default::default()
           },
@@ -72,7 +72,7 @@ fn test_style_flex_direction() {
       height: Percentage(100.0),
       display: Display::Flex,
       flex_direction: FlexDirection::Column,
-      background_color: Some(Color::Rgb(0, 0, 255).into()), // Blue background to show container
+      background_color: Some(Color::Rgb(0, 0, 255)), // Blue background to show container
       ..Default::default()
     },
     children: Some(vec![
@@ -80,7 +80,7 @@ fn test_style_flex_direction() {
         style: Style {
           width: Px(50.0),
           height: Px(50.0),
-          background_color: Some(Color::Rgb(255, 0, 0).into()), // Red child
+          background_color: Some(Color::Rgb(255, 0, 0)), // Red child
           inheritable_style: InheritableStyle {
             ..Default::default()
           },
@@ -93,7 +93,7 @@ fn test_style_flex_direction() {
         style: Style {
           width: Px(50.0),
           height: Px(50.0),
-          background_color: Some(Color::Rgb(0, 255, 0).into()), // Green child
+          background_color: Some(Color::Rgb(0, 255, 0)), // Green child
           inheritable_style: InheritableStyle {
             ..Default::default()
           },
@@ -106,7 +106,7 @@ fn test_style_flex_direction() {
         style: Style {
           width: Px(50.0),
           height: Px(50.0),
-          background_color: Some(Color::Rgb(255, 255, 0).into()), // Yellow child
+          background_color: Some(Color::Rgb(255, 255, 0)), // Yellow child
           inheritable_style: InheritableStyle {
             ..Default::default()
           },
@@ -129,7 +129,7 @@ fn test_style_gap() {
       height: Percentage(100.0),
       display: Display::Flex, // Enable flexbox layout to demonstrate gap
       gap: Gap::Array(Px(20.0), Px(20.0)), // Create spacing between children
-      background_color: Some(Color::Rgb(0, 0, 255).into()), // Blue background to show container
+      background_color: Some(Color::Rgb(0, 0, 255)), // Blue background to show container
       ..Default::default()
     },
     children: Some(vec![
@@ -138,7 +138,7 @@ fn test_style_gap() {
         style: Style {
           width: Px(50.0),                                      // Fixed width
           height: Px(50.0),                                     // Fixed height
-          background_color: Some(Color::Rgb(255, 0, 0).into()), // Red child
+          background_color: Some(Color::Rgb(255, 0, 0)), // Red child
           inheritable_style: InheritableStyle {
             ..Default::default()
           },
@@ -152,7 +152,7 @@ fn test_style_gap() {
         style: Style {
           width: Px(50.0),                                      // Fixed width
           height: Px(50.0),                                     // Fixed height
-          background_color: Some(Color::Rgb(0, 255, 0).into()), // Green child
+          background_color: Some(Color::Rgb(0, 255, 0)), // Green child
           inheritable_style: InheritableStyle {
             ..Default::default()
           },
@@ -166,7 +166,7 @@ fn test_style_gap() {
         style: Style {
           width: Px(50.0),                                        // Fixed width
           height: Px(50.0),                                       // Fixed height
-          background_color: Some(Color::Rgb(255, 255, 0).into()), // Yellow child
+          background_color: Some(Color::Rgb(255, 255, 0)), // Yellow child
           inheritable_style: InheritableStyle {
             ..Default::default()
           },
@@ -192,13 +192,13 @@ fn test_style_grid_template_columns() {
         TrackSizingFunction::Single(GridTrackSize::Unit(Px(50.0))),
         TrackSizingFunction::Single(GridTrackSize::Unit(Px(100.0))),
       ]),
-      background_color: Some(Color::Rgb(0, 0, 255).into()), // Blue background
+      background_color: Some(Color::Rgb(0, 0, 255)), // Blue background
       ..Default::default()
     },
     children: Some(vec![
       ContainerNode {
         style: Style {
-          background_color: Some(Color::Rgb(255, 0, 0).into()), // Red
+          background_color: Some(Color::Rgb(255, 0, 0)), // Red
           ..Default::default()
         },
         children: None,
@@ -206,7 +206,7 @@ fn test_style_grid_template_columns() {
       .into(),
       ContainerNode {
         style: Style {
-          background_color: Some(Color::Rgb(0, 255, 0).into()), // Green
+          background_color: Some(Color::Rgb(0, 255, 0)), // Green
           ..Default::default()
         },
         children: None,
@@ -232,13 +232,13 @@ fn test_style_grid_template_rows() {
         TrackSizingFunction::Single(GridTrackSize::Unit(Px(50.0))),
         TrackSizingFunction::Single(GridTrackSize::Unit(Px(100.0))),
       ]),
-      background_color: Some(Color::Rgb(0, 0, 255).into()), // Blue background
+      background_color: Some(Color::Rgb(0, 0, 255)), // Blue background
       ..Default::default()
     },
     children: Some(vec![
       ContainerNode {
         style: Style {
-          background_color: Some(Color::Rgb(255, 0, 0).into()), // Red
+          background_color: Some(Color::Rgb(255, 0, 0)), // Red
           ..Default::default()
         },
         children: None,
@@ -246,7 +246,7 @@ fn test_style_grid_template_rows() {
       .into(),
       ContainerNode {
         style: Style {
-          background_color: Some(Color::Rgb(0, 255, 0).into()), // Green
+          background_color: Some(Color::Rgb(0, 255, 0)), // Green
           ..Default::default()
         },
         children: None,

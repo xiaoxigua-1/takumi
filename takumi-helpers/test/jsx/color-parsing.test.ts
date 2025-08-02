@@ -14,18 +14,18 @@ describe("color-parsing", () => {
     expect(parseColor("#ff0000ff")).toEqual([255, 0, 0, 1]);
     expect(parseColor("#00ff0080")).toEqual([0, 255, 0, 0.5019607843137255]);
     expect(parseColor("#0000ff00")).toEqual([0, 0, 255, 0]);
+    expect(parseColor("#ff00")).toEqual([255, 255, 0, 0]);
   });
 
   test("parses rgb colors correctly", () => {
-    expect(parseColor("rgb(255, 0, 0)")).toEqual([255, 0, 0]);
-    expect(parseColor("rgb(0, 255, 0)")).toEqual([0, 255, 0]);
-    expect(parseColor("rgb(0, 0, 255)")).toEqual([0, 0, 255]);
-    expect(parseColor("rgb(128, 128, 128)")).toEqual([128, 128, 128]);
+    expect(parseColor("rgb(255, 0, 0)")).toEqual(0xff0000);
+    expect(parseColor("rgb(0, 255, 0)")).toEqual(0x00ff00);
+    expect(parseColor("rgb(0, 0, 255)")).toEqual(0x0000ff);
+    expect(parseColor("rgb(128, 128, 128)")).toEqual(0x808080);
   });
 
   test("throws error for invalid hex colors", () => {
     expect(() => parseColor("#ff")).toThrow("Invalid hex color: #ff");
-    expect(() => parseColor("#ff00")).toThrow("Invalid hex color: #ff00");
     expect(() => parseColor("#ff000")).toThrow("Invalid hex color: #ff000");
     expect(() => parseColor("#ff0000000")).toThrow(
       "Invalid hex color: #ff0000000",
@@ -55,47 +55,47 @@ describe("color-parsing", () => {
 
   test("throws error for invalid rgb colors", () => {
     expect(() => parseColor("rgb(255, 0)")).toThrow(
-      "Invalid RGB color: rgb(255, 0)",
+      "Invalid rgb color: rgb(255, 0)",
     );
     expect(() => parseColor("rgb(255, 0, 0, 0.5)")).toThrow(
-      "Invalid RGB color: rgb(255, 0, 0, 0.5)",
+      "Invalid rgb color: rgb(255, 0, 0, 0.5)",
     );
     expect(() => parseColor("rgb(255, 0, 0, 0.5, 0.2)")).toThrow(
-      "Invalid RGB color: rgb(255, 0, 0, 0.5, 0.2)",
+      "Invalid rgb color: rgb(255, 0, 0, 0.5, 0.2)",
     );
   });
 
   test("throws error for invalid rgba colors", () => {
     expect(() => parseColor("rgba(255, 0)")).toThrow(
-      "Invalid RGB color: rgba(255, 0)",
+      "Invalid rgba color: rgba(255, 0)",
     );
     expect(() => parseColor("rgba(255, 0, 0)")).toThrow(
-      "Invalid RGB color: rgba(255, 0, 0)",
+      "Invalid rgba color: rgba(255, 0, 0)",
     );
     expect(() => parseColor("rgba(255, 0, 0, 0.5, 0.2)")).toThrow(
-      "Invalid RGB color: rgba(255, 0, 0, 0.5, 0.2)",
+      "Invalid rgba color: rgba(255, 0, 0, 0.5, 0.2)",
     );
     expect(() => parseColor("rgba(255, 0, 0, 1.5)")).toThrow(
-      "Invalid RGB color: rgba(255, 0, 0, 1.5)",
+      "Invalid rgba color: rgba(255, 0, 0, 1.5)",
     );
     expect(() => parseColor("rgba(255, 0, 0, -0.1)")).toThrow(
-      "Invalid RGB color: rgba(255, 0, 0, -0.1)",
+      "Invalid rgba color: rgba(255, 0, 0, -0.1)",
     );
     expect(() => parseColor("rgba(256, 0, 0, 0.5)")).toThrow(
-      "Invalid RGB color: rgba(256, 0, 0, 0.5)",
+      "Invalid rgba color: rgba(256, 0, 0, 0.5)",
     );
     expect(() => parseColor("rgba(-1, 0, 0, 0.5)")).toThrow(
-      "Invalid RGB color: rgba(-1, 0, 0, 0.5)",
+      "Invalid rgba color: rgba(-1, 0, 0, 0.5)",
     );
   });
 
   test("throws error for unsupported color formats", () => {
-    expect(() => parseColor("red")).toThrow("Invalid RGB color: red");
+    expect(() => parseColor("red")).toThrow("Invalid color: red");
     expect(() => parseColor("hsl(0, 100%, 50%)")).toThrow(
-      "Invalid RGB color: hsl(0, 100%, 50%)",
+      "Invalid color: hsl(0, 100%, 50%)",
     );
     expect(() => parseColor("linear-gradient(red, blue)")).toThrow(
-      "Invalid RGB color: linear-gradient(red, blue)",
+      "Invalid color: linear-gradient(red, blue)",
     );
   });
 });

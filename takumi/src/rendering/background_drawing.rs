@@ -46,7 +46,7 @@ pub fn create_image_from_color_input(color: &ColorInput, width: u32, height: u32
 }
 
 /// Draws a solid color background on the canvas.
-pub fn draw_background_color(
+pub fn draw_background(
   color: &ColorInput,
   radius: Option<BorderRadius>,
   canvas: &mut FastBlendImage,
@@ -56,8 +56,7 @@ pub fn draw_background_color(
     .of_size(layout.size.width as u32, layout.size.height as u32);
 
   let Some(radius) = radius else {
-    draw_filled_rect_from_color_input(canvas, rect, color);
-    return;
+    return draw_filled_rect_from_color_input(canvas, rect, color);
   };
 
   let mut image = create_image_from_color_input(color, rect.width(), rect.height());

@@ -144,7 +144,7 @@ describe("style-parser", () => {
 
       expect(result[0]).toEqual({
         type: "container",
-        border_color: [0, 255, 0],
+        border_color: 0x00ff00,
         children: [{ type: "text", text: "Test" }],
       } satisfies ContainerNode);
     });

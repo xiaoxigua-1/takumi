@@ -12,7 +12,7 @@ use test_utils::run_style_width_test;
 fn fixtures_text_basic() {
   let text = TextNode {
     style: Style {
-      background_color: Some(Color::Rgb(240, 240, 240).into()),
+      background_color: Some(Color::Rgb(240, 240, 240)),
       ..Default::default()
     },
     text: "The quick brown fox jumps over the lazy dog 12345".to_string(),
@@ -25,7 +25,7 @@ fn fixtures_text_basic() {
 fn fixtures_text_typography_regular_24px() {
   let text = TextNode {
     style: Style {
-      background_color: Some(Color::Rgb(240, 240, 240).into()),
+      background_color: Some(Color::Rgb(240, 240, 240)),
       inheritable_style: InheritableStyle {
         font_size: Some(Px(24.0)),
         ..Default::default()
@@ -45,7 +45,7 @@ fn fixtures_text_typography_regular_24px() {
 fn fixtures_text_typography_medium_weight_500() {
   let text = TextNode {
     style: Style {
-      background_color: Some(Color::Rgb(240, 240, 240).into()),
+      background_color: Some(Color::Rgb(240, 240, 240)),
       inheritable_style: InheritableStyle {
         font_size: Some(Px(24.0)),
         font_weight: Some(FontWeight(500)),
@@ -66,7 +66,7 @@ fn fixtures_text_typography_medium_weight_500() {
 fn fixtures_text_typography_line_height_40px() {
   let text = TextNode {
     style: Style {
-      background_color: Some(Color::Rgb(240, 240, 240).into()),
+      background_color: Some(Color::Rgb(240, 240, 240)),
       inheritable_style: InheritableStyle {
         font_size: Some(Px(24.0)),
         line_height: Some(Px(40.0)),
@@ -87,7 +87,7 @@ fn fixtures_text_typography_line_height_40px() {
 fn fixtures_text_typography_letter_spacing_2px() {
   let text = TextNode {
     style: Style {
-      background_color: Some(Color::Rgb(240, 240, 240).into()),
+      background_color: Some(Color::Rgb(240, 240, 240)),
       inheritable_style: InheritableStyle {
         font_size: Some(Px(24.0)),
         letter_spacing: Some(Px(2.0)),
@@ -108,7 +108,7 @@ fn fixtures_text_typography_letter_spacing_2px() {
 fn fixtures_text_align_start() {
   let text = TextNode {
     style: Style {
-      background_color: Some(Color::Rgb(240, 240, 240).into()),
+      background_color: Some(Color::Rgb(240, 240, 240)),
       width: Percentage(100.0),
       inheritable_style: InheritableStyle {
         font_size: Some(Px(24.0)),
@@ -127,7 +127,7 @@ fn fixtures_text_align_start() {
 fn fixtures_text_align_center() {
   let text = TextNode {
     style: Style {
-      background_color: Some(Color::Rgb(240, 240, 240).into()),
+      background_color: Some(Color::Rgb(240, 240, 240)),
       width: Percentage(100.0),
       inheritable_style: InheritableStyle {
         font_size: Some(Px(24.0)),
@@ -146,7 +146,7 @@ fn fixtures_text_align_center() {
 fn fixtures_text_align_right() {
   let text = TextNode {
     style: Style {
-      background_color: Some(Color::Rgb(240, 240, 240).into()),
+      background_color: Some(Color::Rgb(240, 240, 240)),
       width: Percentage(100.0),
       inheritable_style: InheritableStyle {
         font_size: Some(Px(24.0)),
@@ -169,7 +169,7 @@ Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliqu
 
   let text = TextNode {
     style: Style {
-      background_color: Some(Color::Rgb(240, 240, 240).into()),
+      background_color: Some(Color::Rgb(240, 240, 240)),
       inheritable_style: InheritableStyle {
         font_size: Some(Px(18.0)),
         line_height: Some(Px(26.0)),
@@ -193,7 +193,7 @@ Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliqu
 
   let text = TextNode {
     style: Style {
-      background_color: Some(Color::Rgb(240, 240, 240).into()),
+      background_color: Some(Color::Rgb(240, 240, 240)),
       inheritable_style: InheritableStyle {
         font_size: Some(Px(18.0)),
         line_height: Some(Px(24.0)),

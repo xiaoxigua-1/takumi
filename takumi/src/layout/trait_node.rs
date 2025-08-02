@@ -8,9 +8,10 @@ use std::fmt::Debug;
 use taffy::{AvailableSpace, Layout, Size};
 
 use crate::{
+  ColorInput,
   core::{GlobalContext, RenderContext},
   effects::{BorderRadius, draw_box_shadow},
-  rendering::{FastBlendImage, draw_background_color},
+  rendering::{FastBlendImage, draw_background},
   style::Style,
 };
 
@@ -86,7 +87,8 @@ pub trait Node<N: Node<N>>: Send + Sync + Debug + Clone {
 
   /// Draws the node onto the canvas using the computed layout.
   fn draw_on_canvas(&self, context: &RenderContext, canvas: &mut FastBlendImage, layout: Layout) {
-    self.draw_background(context, canvas, layout);
+    self.draw_background_color(context, canvas, layout);
+    self.draw_background_image(context, canvas, layout);
     self.draw_border(context, canvas, layout);
     self.draw_content(context, canvas, layout);
     self.draw_box_shadow(context, canvas, layout);
@@ -105,8 +107,13 @@ pub trait Node<N: Node<N>>: Send + Sync + Debug + Clone {
     }
   }
 
-  /// Draws the background of the node.
-  fn draw_background(&self, context: &RenderContext, canvas: &mut FastBlendImage, layout: Layout) {
+  /// Draws the background color of the node.
+  fn draw_background_color(
+    &self,
+    context: &RenderContext,
+    canvas: &mut FastBlendImage,
+    layout: Layout,
+  ) {
     if let Some(background_color) = &self.get_style().background_color {
       let radius = self
         .get_style()
@@ -114,7 +121,35 @@ pub trait Node<N: Node<N>>: Send + Sync + Debug + Clone {
         .border_radius
         .map(|radius| BorderRadius::from_layout(context, &layout, radius.into()));
 
-      draw_background_color(background_color, radius, canvas, layout);
+      draw_background(
+        &ColorInput::Color(*background_color),
+        radius,
+        canvas,
+        layout,
+      );
+    }
+  }
+
+  /// Draws the background image(s) of the node.
+  fn draw_background_image(
+    &self,
+    context: &RenderContext,
+    canvas: &mut FastBlendImage,
+    layout: Layout,
+  ) {
+    if let Some(background_image) = &self.get_style().background_image {
+      let radius = self
+        .get_style()
+        .inheritable_style
+        .border_radius
+        .map(|radius| BorderRadius::from_layout(context, &layout, radius.into()));
+
+      draw_background(
+        &ColorInput::Gradient(background_image.clone()),
+        radius,
+        canvas,
+        layout,
+      );
     }
   }
 
