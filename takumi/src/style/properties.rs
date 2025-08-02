@@ -3,7 +3,7 @@
 //! This module contains CSS-like properties including layout properties,
 //! typography settings, positioning, and visual effects.
 
-use cosmic_text::{Align, Weight};
+use cosmic_text::{Align, FamilyOwned, Weight};
 use merge::{Merge, option::overwrite_none};
 use serde::{Deserialize, Serialize};
 use taffy::{
@@ -352,6 +352,40 @@ pub enum TextOverflow {
   Clip,
 }
 
+/// Represents a font family for text rendering.
+/// Use only the family name (no style suffixes like "Bold", "Italic", "Regular").
+/// Multi-word names are allowed (e.g., "Noto Sans") and should be provided as-is without quotes.
+#[derive(Debug, Clone, Deserialize, Serialize, TS, PartialEq)]
+#[serde(rename_all = "kebab-case")]
+pub enum FontFamily {
+  /// CSS 'sans-serif' generic family
+  SansSerif,
+  /// CSS 'serif' generic family
+  Serif,
+  /// CSS 'monospace' generic family
+  Monospace,
+  /// CSS 'cursive' generic family
+  Cursive,
+  /// CSS 'fantasy' generic family
+  Fantasy,
+  /// A specific font family name, no suffixes like "Bold", "Italic", etc.
+  #[serde(untagged)]
+  Custom(String),
+}
+
+impl From<FontFamily> for FamilyOwned {
+  fn from(family: FontFamily) -> Self {
+    match family {
+      FontFamily::SansSerif => FamilyOwned::SansSerif,
+      FontFamily::Serif => FamilyOwned::Serif,
+      FontFamily::Monospace => FamilyOwned::Monospace,
+      FontFamily::Cursive => FamilyOwned::Cursive,
+      FontFamily::Fantasy => FamilyOwned::Fantasy,
+      FontFamily::Custom(name) => FamilyOwned::Name(name.into()),
+    }
+  }
+}
+
 /// Represents the resolved font style for a text node.
 ///
 /// This struct contains the resolved font style properties after inheriting
@@ -367,7 +401,7 @@ pub struct ResolvedFontStyle {
   /// Maximum number of lines for text before truncation
   pub line_clamp: Option<u32>,
   /// Font family name for text rendering
-  pub font_family: Option<String>,
+  pub font_family: Option<FamilyOwned>,
   /// Letter spacing for text rendering in em units (relative to font size)
   pub letter_spacing: Option<f32>,
   /// Text alignment within the element
@@ -693,7 +727,7 @@ pub struct InheritableStyle {
   /// Font size in pixels for text rendering
   pub font_size: Option<LengthUnit>,
   /// Font family name for text rendering
-  pub font_family: Option<String>,
+  pub font_family: Option<FontFamily>,
   /// Line height multiplier for text spacing
   pub line_height: Option<LengthUnit>,
   /// Font weight for text rendering
@@ -818,7 +852,7 @@ impl Style {
         .unwrap_or_default()
         .into(),
       line_clamp: self.inheritable_style.line_clamp,
-      font_family: self.inheritable_style.font_family.clone(),
+      font_family: self.inheritable_style.font_family.clone().map(Into::into),
       letter_spacing: self
         .inheritable_style
         .letter_spacing

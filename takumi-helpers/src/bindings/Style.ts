@@ -5,6 +5,7 @@ import type { ColorInput } from "./ColorInput";
 import type { Display } from "./Display";
 import type { FlexDirection } from "./FlexDirection";
 import type { FlexWrap } from "./FlexWrap";
+import type { FontFamily } from "./FontFamily";
 import type { FontWeight } from "./FontWeight";
 import type { Gap } from "./Gap";
 import type { GridAutoFlow } from "./GridAutoFlow";
@@ -186,7 +187,7 @@ font_size?: LengthUnit,
 /**
  * Font family name for text rendering
  */
-font_family?: string, 
+font_family?: FontFamily, 
 /**
  * Line height multiplier for text spacing
  */

@@ -3,7 +3,7 @@ use std::sync::LazyLock;
 use cosmic_text::Weight;
 use taffy::{AvailableSpace, geometry::Size};
 use takumi::{
-  Color,
+  Color, FontFamily,
   core::{DEFAULT_FONT_SIZE, DEFAULT_LINE_HEIGHT_SCALER, GlobalContext, RenderContext},
   style::ResolvedFontStyle,
 };
@@ -54,7 +54,7 @@ fn create_test_font_style() -> ResolvedFontStyle {
     line_height: DEFAULT_FONT_SIZE * DEFAULT_LINE_HEIGHT_SCALER,
     font_weight: Weight::NORMAL,
     line_clamp: None,
-    font_family: Some(FONT_FAMILY_NOTO_SANS.to_string()),
+    font_family: Some(FontFamily::Custom(FONT_FAMILY_NOTO_SANS.to_string()).into()),
     letter_spacing: Some(LETTER_SPACING_0),
     text_align: Some(cosmic_text::Align::Left),
     text_overflow: takumi::style::TextOverflow::Clip,

@@ -1,4 +1,4 @@
-use cosmic_text::{Attrs, Buffer, Color, Family, Metrics, Shaping};
+use cosmic_text::{Attrs, Buffer, Color, Metrics, Shaping};
 use image::Rgba;
 use imageproc::drawing::Canvas;
 use taffy::{Layout, Size};
@@ -155,7 +155,7 @@ pub(crate) fn construct_text_buffer(
   let mut attrs = Attrs::new().weight(font_style.font_weight);
 
   if let Some(font_family) = font_style.font_family.as_ref() {
-    attrs = attrs.family(Family::Name(font_family));
+    attrs = attrs.family(font_family.as_family());
   }
 
   if let Some(letter_spacing) = font_style.letter_spacing {
