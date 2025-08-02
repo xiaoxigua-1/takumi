@@ -48,6 +48,7 @@ jobs:
         with:
           binstall: cargo-audit,cargo-llvm-cov
           components: rustfmt,clippy
+          stage: test
 
       - name: Check formatting
         run: cargo fmt --all -- --check
@@ -176,6 +177,7 @@ jobs:
         uses: ./.github/actions/setup-rust
         with:
           targets: ${{ matrix.settings.target }}
+          stage: build
 
       - name: Install cargo-zigbuild
         if: ${{ contains(matrix.settings.target, 'musl') }}
@@ -317,6 +319,9 @@ jobs:
 
       - name: Setup Rust
         uses: ./.github/actions/setup-rust
+        with:
+          targets: wasm32-unknown-unknown
+          stage: build
 
       - name: Install wasm-pack
         run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
@@ -431,6 +436,8 @@ jobs:
 
       - name: Setup Rust
         uses: ./.github/actions/setup-rust
+        with:
+          stage: publish
 
       - name: Publish to crates.io
         run: cargo publish -p takumi
