@@ -16,11 +16,10 @@ export function camelToSnakeCase(str: string) {
 
 const prefixes = ["-moz-", "-webkit-", "-o-", "-ms-"] as const;
 
-type StripPrefix<T> = T extends `${(typeof prefixes)[number]}${infer Rest}`
-  ? Rest
-  : T;
-
-export type RemoveGlobalsAndPrefixed<T> = Exclude<StripPrefix<T>, Globals>;
+export type RemoveGlobalsAndPrefixed<T> = Exclude<
+  T,
+  Globals | `${(typeof prefixes)[number]}${string}`
+>;
 
 export function removeGlobalValues<T>(
   source: T,
@@ -29,21 +28,15 @@ export function removeGlobalValues<T>(
     return source as RemoveGlobalsAndPrefixed<T>;
   }
 
-  if (isGlobalValue(source)) {
+  if (isGlobalValue(source) || isPrefixed(source)) {
     return;
   }
 
-  if (source[0] === "-") {
-    for (const prefix of prefixes) {
-      if (source.startsWith(prefix)) {
-        return source.slice(prefix.length) as RemoveGlobalsAndPrefixed<T>;
-      }
-    }
-
-    throw new Error(`Unsupported prefix in value: ${source}`);
-  }
-
   return source as RemoveGlobalsAndPrefixed<T>;
+}
+
+function isPrefixed(value: string) {
+  return prefixes.some((prefix) => value.startsWith(prefix));
 }
 
 export function isGlobalValue(value: string): value is Globals {

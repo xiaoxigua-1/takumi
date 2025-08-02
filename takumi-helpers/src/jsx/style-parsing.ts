@@ -9,6 +9,7 @@ import type {
   GridLine,
   GridTrackRepetition,
   GridTrackSize,
+  ImageScalingAlgorithm,
   LengthUnit,
   Position,
   SidesValue,
@@ -511,4 +512,21 @@ export function parseGridTemplateRows(
 export function parseLineClamp(value: string | number): number {
   if (value === "none") return 0;
   return Number(value);
+}
+
+export function parseImageRendering(
+  value: Property.ImageRendering,
+): ImageScalingAlgorithm | undefined {
+  switch (value) {
+    case "auto":
+    case "pixelated":
+      return value;
+    case "crisp-edges":
+      return "pixelated";
+    default:
+      console.warn(
+        `Invalid image-rendering value: ${value}, fallback to 'auto'.`,
+      );
+      return "auto";
+  }
 }
