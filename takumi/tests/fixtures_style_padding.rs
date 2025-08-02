@@ -14,7 +14,7 @@ fn test_style_padding() {
       width: Percentage(100.0),
       height: Percentage(100.0),
       background_color: Some(Color::Rgb(0, 0, 255)), // Blue background to show padding
-      padding: SidesValue::SingleValue(Px(20.0)),           // Uniform padding of 20px
+      padding: SidesValue::SingleValue(Px(20.0)),    // Uniform padding of 20px
       ..Default::default()
     },
     children: Some(vec![

@@ -136,8 +136,8 @@ fn test_style_gap() {
       // First child
       ContainerNode {
         style: Style {
-          width: Px(50.0),                                      // Fixed width
-          height: Px(50.0),                                     // Fixed height
+          width: Px(50.0),                               // Fixed width
+          height: Px(50.0),                              // Fixed height
           background_color: Some(Color::Rgb(255, 0, 0)), // Red child
           inheritable_style: InheritableStyle {
             ..Default::default()
@@ -150,8 +150,8 @@ fn test_style_gap() {
       // Second child
       ContainerNode {
         style: Style {
-          width: Px(50.0),                                      // Fixed width
-          height: Px(50.0),                                     // Fixed height
+          width: Px(50.0),                               // Fixed width
+          height: Px(50.0),                              // Fixed height
           background_color: Some(Color::Rgb(0, 255, 0)), // Green child
           inheritable_style: InheritableStyle {
             ..Default::default()
@@ -164,8 +164,8 @@ fn test_style_gap() {
       // Third child
       ContainerNode {
         style: Style {
-          width: Px(50.0),                                        // Fixed width
-          height: Px(50.0),                                       // Fixed height
+          width: Px(50.0),                                 // Fixed width
+          height: Px(50.0),                                // Fixed height
           background_color: Some(Color::Rgb(255, 255, 0)), // Yellow child
           inheritable_style: InheritableStyle {
             ..Default::default()
