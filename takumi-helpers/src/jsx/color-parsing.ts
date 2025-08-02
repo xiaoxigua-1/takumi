@@ -19,7 +19,7 @@ function parseHexColor(color: string): Color {
     const g = (parsed >> 8) & 0xf;
     const b = (parsed >> 4) & 0xf;
     const a = parsed & 0xf;
-    return [r << 4 | r, g << 4 | g, b << 4 | b, a / 15] as Color;
+    return [(r << 4) | r, (g << 4) | g, (b << 4) | b, a / 15];
   }
 
   if (color.length === 7) {
@@ -32,7 +32,7 @@ function parseHexColor(color: string): Color {
       (parsed >> 16) & 0xff, // Green
       (parsed >> 8) & 0xff, // Blue
       (parsed & 0xff) / 0xff, // Alpha
-    ] as Color;
+    ];
   }
 
   throw new Error(`Invalid hex color: ${color}`);
@@ -48,7 +48,7 @@ function parseRgbColor(color: string): Color {
     throw new Error(`Invalid rgb color: ${color}`);
   }
 
-  return Number.parseInt(args.join(""), 16) as Color;
+  return Number.parseInt(args.join(""), 16);
 }
 
 function parseRgbaColor(color: string): Color {
