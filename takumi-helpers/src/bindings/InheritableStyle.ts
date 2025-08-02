@@ -2,6 +2,7 @@
 import type { ColorInput } from "./ColorInput";
 import type { FontFamily } from "./FontFamily";
 import type { FontWeight } from "./FontWeight";
+import type { ImageScalingAlgorithm } from "./ImageScalingAlgorithm";
 import type { LengthUnit } from "./LengthUnit";
 import type { SidesValue } from "./SidesValue";
 import type { TextAlign } from "./TextAlign";
@@ -58,4 +59,9 @@ text_align?: TextAlign,
  * Additional spacing between characters in text
  * Positive values increase spacing, negative values decrease spacing
  */
-letter_spacing?: LengthUnit, };
+letter_spacing?: LengthUnit, 
+/**
+ * Controls how images are scaled when rendered
+ * This property determines the algorithm used for image scaling
+ */
+image_rendering?: ImageScalingAlgorithm, };

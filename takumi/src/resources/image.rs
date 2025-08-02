@@ -38,9 +38,14 @@ impl ImageSource {
   }
 
   /// Render the image source to an RGBA image with the specified dimensions.
-  pub fn render_to_rgba_image(&self, width: u32, height: u32) -> RgbaImage {
+  pub fn render_to_rgba_image(
+    &self,
+    width: u32,
+    height: u32,
+    filter_type: FilterType,
+  ) -> RgbaImage {
     match self {
-      ImageSource::Bitmap(bitmap) => resize(bitmap, width, height, FilterType::Lanczos3),
+      ImageSource::Bitmap(bitmap) => resize(bitmap, width, height, filter_type),
       #[cfg(feature = "svg")]
       ImageSource::Svg(svg) => {
         use resvg::{tiny_skia::Pixmap, usvg::Transform};

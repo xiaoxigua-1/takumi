@@ -5,4 +5,4 @@
  *
  * Similar to CSS object-fit property.
  */
-export type ObjectFit = "contain" | "cover" | "fill" | "scale-down" | "none";
+export type ObjectFit = "fill" | "contain" | "cover" | "scale-down" | "none";

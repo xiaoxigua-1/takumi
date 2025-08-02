@@ -4,6 +4,7 @@
 //! typography settings, positioning, and visual effects.
 
 use cosmic_text::{Align, FamilyOwned, Weight};
+use image::imageops::FilterType;
 use merge::{Merge, option::overwrite_none};
 use serde::{Deserialize, Serialize};
 use taffy::{
@@ -45,31 +46,26 @@ impl From<FontWeight> for Weight {
 /// Defines how an image should be resized to fit its container.
 ///
 /// Similar to CSS object-fit property.
-#[derive(Debug, Clone, Deserialize, Serialize, Copy, TS, PartialEq)]
+#[derive(Debug, Clone, Deserialize, Serialize, Copy, TS, PartialEq, Default)]
 #[serde(rename_all = "kebab-case")]
 pub enum ObjectFit {
+  /// The replaced content is sized to fill the element's content box exactly, without maintaining aspect ratio
+  #[default]
+  Fill,
   /// The replaced content is scaled to maintain its aspect ratio while fitting within the element's content box
   Contain,
   /// The replaced content is sized to maintain its aspect ratio while filling the element's entire content box
   Cover,
-  /// The replaced content is sized to fill the element's content box exactly, without maintaining aspect ratio
-  Fill,
   /// The content is sized as if none or contain were specified, whichever would result in a smaller concrete object size
   ScaleDown,
   /// The replaced content is not resized and maintains its intrinsic dimensions
   None,
 }
 
-impl Default for ObjectFit {
-  fn default() -> Self {
-    Self::Fill
-  }
-}
-
 /// Text alignment options for text rendering.
 ///
 /// Corresponds to CSS text-align property values.
-#[derive(Debug, Clone, Deserialize, Serialize, Copy, TS, PartialEq)]
+#[derive(Default, Debug, Clone, Deserialize, Serialize, Copy, TS, PartialEq)]
 #[serde(rename_all = "kebab-case")]
 pub enum TextAlign {
   /// Aligns inline content to the left edge of the line box
@@ -81,6 +77,7 @@ pub enum TextAlign {
   /// Expands inline content to fill the entire line box
   Justify,
   /// Aligns inline content to the start edge of the line box (language-dependent)
+  #[default]
   Start,
   /// Aligns inline content to the end edge of the line box (language-dependent)
   End,
@@ -99,20 +96,15 @@ impl From<TextAlign> for Option<Align> {
   }
 }
 
-impl Default for TextAlign {
-  fn default() -> Self {
-    Self::Start
-  }
-}
-
 /// Defines the positioning method for an element.
 ///
 /// This enum determines how an element is positioned within its containing element.
-#[derive(Debug, Clone, Deserialize, Serialize, Copy, TS, PartialEq)]
+#[derive(Default, Debug, Clone, Deserialize, Serialize, Copy, TS, PartialEq)]
 #[serde(rename_all = "kebab-case")]
 pub enum Position {
   /// The element is positioned according to the normal flow of the document.
   /// Offsets (top, right, bottom, left) have no effect.
+  #[default]
   Relative,
   /// The element is removed from the normal document flow and positioned relative to its nearest positioned ancestor.
   /// Offsets (top, right, bottom, left) specify the distance from the ancestor.
@@ -121,19 +113,14 @@ pub enum Position {
 
 impl_from_taffy_enum!(Position, taffy::Position, Relative, Absolute);
 
-impl Default for Position {
-  fn default() -> Self {
-    Self::Relative
-  }
-}
-
 /// Defines the direction of flex items within a flex container.
 ///
 /// This enum determines how flex items are laid out along the main axis.
-#[derive(Debug, Clone, Deserialize, Serialize, Copy, TS, PartialEq)]
+#[derive(Default, Debug, Clone, Deserialize, Serialize, Copy, TS, PartialEq)]
 #[serde(rename_all = "kebab-case")]
 pub enum FlexDirection {
   /// Items are laid out in the same direction as the text direction (left-to-right for English)
+  #[default]
   Row,
   /// Items are laid out perpendicular to the text direction (top-to-bottom)
   Column,
@@ -151,12 +138,6 @@ impl_from_taffy_enum!(
   RowReverse,
   ColumnReverse
 );
-
-impl Default for FlexDirection {
-  fn default() -> Self {
-    Self::Row
-  }
-}
 
 /// Defines a box shadow for an element.
 ///
@@ -710,6 +691,32 @@ impl_from_taffy_enum!(
   ColumnDense
 );
 
+/// Defines how images should be scaled when rendered.
+#[derive(Default, Debug, Clone, Copy, Deserialize, Serialize, TS, PartialEq)]
+#[serde(rename_all = "kebab-case")]
+pub enum ImageScalingAlgorithm {
+  /// The image is scaled using Catmull-Rom interpolation.
+  /// This is balanced for speed and quality.
+  #[default]
+  Auto,
+  /// The image is scaled using Lanczos3 resampling.
+  /// This provides high-quality scaling but may be slower.
+  Smooth,
+  /// The image is scaled using nearest neighbor interpolation,
+  /// which is suitable for pixel art or images where sharp edges are desired.
+  Pixelated,
+}
+
+impl From<ImageScalingAlgorithm> for FilterType {
+  fn from(algorithm: ImageScalingAlgorithm) -> Self {
+    match algorithm {
+      ImageScalingAlgorithm::Auto => FilterType::CatmullRom,
+      ImageScalingAlgorithm::Smooth => FilterType::Lanczos3,
+      ImageScalingAlgorithm::Pixelated => FilterType::Nearest,
+    }
+  }
+}
+
 /// Style properties that can be inherited by child elements.
 ///
 /// These properties are typically passed down from parent to child elements
@@ -741,6 +748,9 @@ pub struct InheritableStyle {
   /// Additional spacing between characters in text
   /// Positive values increase spacing, negative values decrease spacing
   pub letter_spacing: Option<LengthUnit>,
+  /// Controls how images are scaled when rendered
+  /// This property determines the algorithm used for image scaling
+  pub image_rendering: Option<ImageScalingAlgorithm>,
 }
 
 impl Style {

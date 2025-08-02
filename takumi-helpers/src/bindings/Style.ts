@@ -11,6 +11,7 @@ import type { Gap } from "./Gap";
 import type { GridAutoFlow } from "./GridAutoFlow";
 import type { GridLine } from "./GridLine";
 import type { GridTrackSize } from "./GridTrackSize";
+import type { ImageScalingAlgorithm } from "./ImageScalingAlgorithm";
 import type { JustifyContent } from "./JustifyContent";
 import type { LengthUnit } from "./LengthUnit";
 import type { ObjectFit } from "./ObjectFit";
@@ -212,4 +213,9 @@ text_align?: TextAlign,
  * Additional spacing between characters in text
  * Positive values increase spacing, negative values decrease spacing
  */
-letter_spacing?: LengthUnit, };
+letter_spacing?: LengthUnit, 
+/**
+ * Controls how images are scaled when rendered
+ * This property determines the algorithm used for image scaling
+ */
+image_rendering?: ImageScalingAlgorithm, };
