@@ -5,7 +5,7 @@ members = [
   "takumi-server",
   "takumi-napi-core",
   "takumi-wasm",
-  "example",
+  "example/rust",
 ]
 
 [profile.release]
