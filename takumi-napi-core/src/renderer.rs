@@ -1,6 +1,9 @@
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
-use takumi::{GlobalContext, ImageStore, Viewport, rendering::ImageOutputFormat};
+use takumi::{
+  GlobalContext, ImageSource, ImageStore, Viewport, image::load_from_memory,
+  rendering::ImageOutputFormat,
+};
 
 use crate::{
   load_font_task::LoadFontTask, put_persistent_image_task::PutPersistentImageTask,
@@ -37,9 +40,17 @@ impl From<OutputFormat> for ImageOutputFormat {
 }
 
 #[napi(object)]
+pub struct PersistentImage<'ctx> {
+  pub src: String,
+  pub data: ArrayBuffer<'ctx>,
+}
+
+#[napi(object)]
 #[derive(Default)]
-pub struct ConstructRendererOptions {
+pub struct ConstructRendererOptions<'ctx> {
   pub debug: Option<bool>,
+  pub persistent_images: Option<Vec<PersistentImage<'ctx>>>,
+  pub fonts: Option<Vec<ArrayBuffer<'ctx>>>,
 }
 
 #[napi]
@@ -48,10 +59,29 @@ impl Renderer {
   pub fn new(options: Option<ConstructRendererOptions>) -> Self {
     let options = options.unwrap_or_default();
 
-    Self(GlobalContext {
+    let renderer = Self(GlobalContext {
       draw_debug_border: options.debug.unwrap_or_default(),
       ..Default::default()
-    })
+    });
+
+    if let Some(images) = options.persistent_images {
+      for image in images {
+        let loaded = load_from_memory(&image.data).unwrap();
+
+        renderer
+          .0
+          .persistent_image_store
+          .insert(image.src, ImageSource::Bitmap(loaded.into_rgba8()));
+      }
+    }
+
+    if let Some(fonts) = options.fonts {
+      for font in fonts {
+        renderer.0.font_context.load_font(font.to_vec()).unwrap();
+      }
+    }
+
+    renderer
   }
 
   #[napi(ts_return_type = "Promise<void>")]

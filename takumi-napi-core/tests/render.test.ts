@@ -45,6 +45,27 @@ const node = container({
   height: percentage(100),
 });
 
+test("Renderer initialization with fonts and images", async () => {
+  const font = await Bun.file(
+    "../assets/fonts/noto-sans/NotoSansTC-Bold.woff",
+  ).arrayBuffer();
+
+  new Renderer({
+    fonts: [font],
+    persistentImages: [
+      {
+        src: remoteUrl,
+        data: remoteImage,
+      },
+      {
+        src: localImagePath,
+        data: localImage,
+      },
+    ],
+    debug: true,
+  });
+});
+
 describe("setup", () => {
   test("loadFontsAsync", async () => {
     const glob = new Glob("../assets/fonts/**/*.{woff2,ttf}");
