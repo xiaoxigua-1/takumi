@@ -9,16 +9,15 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const name = url.searchParams.get("name") || "World";
 
-  return new Response(
-    await renderer.renderAsync(createComponent(name), {
-      width: 1200,
-      height: 630,
-      format: "WebP" as OutputFormat.WebP, // when `isolatedModules` is enabled, you need to use the enum value directly
-    }),
-    {
-      headers: {
-        "Content-Type": "image/webp",
-      },
+  const buffer = await renderer.renderAsync(createComponent(name), {
+    width: 1200,
+    height: 630,
+    format: "WebP" as OutputFormat.WebP, // when `isolatedModules` is enabled, you need to use the enum value directly
+  });
+
+  return new Response(buffer as BodyInit, {
+    headers: {
+      "Content-Type": "image/webp",
     },
-  );
+  });
 }
