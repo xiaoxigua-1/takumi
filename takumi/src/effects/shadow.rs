@@ -27,31 +27,58 @@ fn apply_fast_blur(image: &mut RgbaImage, radius: f32) {
   *image = fast_blur(image, sigma);
 }
 
-/// Draws box shadows for an element.
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+/// Indicates which subset of box-shadows should be rendered for this pass.
+pub enum BoxShadowRenderPhase {
+  /// Render outer shadows (equivalent to `inset: false`)
+  Outset,
+  /// Render inner shadows (equivalent to `inset: true`)
+  Inset,
+}
+
+/// Draws box shadows for an element, filtered by render phase (outset vs inset).
 pub fn draw_box_shadow(
   context: &RenderContext,
   box_shadow_input: &BoxShadowInput,
   border_radius: Option<BorderRadius>,
   canvas: &mut FastBlendImage,
   layout: Layout,
+  phase: BoxShadowRenderPhase,
 ) {
   match box_shadow_input {
     BoxShadowInput::Single(shadow) => {
-      let shadow = shadow.clone().resolve(context);
+      let resolved = shadow.clone().resolve(context);
 
-      let draw = draw_single_box_shadow(&shadow, border_radius, layout);
+      let matches_phase = match phase {
+        BoxShadowRenderPhase::Outset => !resolved.inset,
+        BoxShadowRenderPhase::Inset => resolved.inset,
+      };
 
-      canvas.overlay_image(
-        &draw.image,
-        (layout.location.x + draw.offset.x) as u32,
-        (layout.location.y + draw.offset.y) as u32,
-      );
+      if matches_phase {
+        let draw = draw_single_box_shadow(&resolved, border_radius, layout);
+
+        canvas.overlay_image(
+          &draw.image,
+          (layout.location.x + draw.offset.x) as u32,
+          (layout.location.y + draw.offset.y) as u32,
+        );
+      }
     }
     BoxShadowInput::Multiple(shadows) => {
-      let images = shadows.par_iter().rev().map(|shadow| {
-        let shadow = shadow.clone().resolve(context);
+      // Preserve existing stacking order (reverse iteration) while filtering by phase.
+      let images = shadows.par_iter().rev().filter_map(|shadow| {
+        let resolved = shadow.clone().resolve(context);
 
-        draw_single_box_shadow(&shadow, border_radius, layout)
+        let matches_phase = match phase {
+          BoxShadowRenderPhase::Outset => !resolved.inset,
+          BoxShadowRenderPhase::Inset => resolved.inset,
+        };
+
+        if matches_phase {
+          Some(draw_single_box_shadow(&resolved, border_radius, layout))
+        } else {
+          None
+        }
       });
 
       for draw in images.collect::<Vec<_>>() {
@@ -151,19 +178,6 @@ fn draw_outset_shadow(
   }
 
   if shadow.blur_radius <= 0.0 {
-    remove_inner_section(
-      &mut spread_image,
-      Point {
-        x: (shadow.spread_radius - shadow.offset_x) as i32,
-        y: (shadow.spread_radius - shadow.offset_y) as i32,
-      },
-      Size {
-        width: layout.size.width as u32,
-        height: layout.size.height as u32,
-      },
-      border_radius,
-    );
-
     return spread_image;
   }
 
@@ -182,19 +196,6 @@ fn draw_outset_shadow(
   );
 
   apply_fast_blur(&mut blur_image, shadow.blur_radius);
-
-  remove_inner_section(
-    &mut blur_image,
-    Point {
-      x: (shadow.blur_radius + shadow.spread_radius - shadow.offset_x) as i32,
-      y: (shadow.blur_radius + shadow.spread_radius - shadow.offset_y) as i32,
-    },
-    Size {
-      width: layout.size.width as u32,
-      height: layout.size.height as u32,
-    },
-    border_radius,
-  );
 
   blur_image
 }

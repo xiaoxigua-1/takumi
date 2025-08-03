@@ -10,7 +10,7 @@ use taffy::{AvailableSpace, Layout, Size};
 use crate::{
   ColorInput,
   core::{GlobalContext, RenderContext},
-  effects::{BorderRadius, draw_box_shadow},
+  effects::{BorderRadius, BoxShadowRenderPhase, draw_box_shadow},
   rendering::{FastBlendImage, draw_background},
   style::Style,
 };
@@ -87,15 +87,21 @@ pub trait Node<N: Node<N>>: Send + Sync + Debug + Clone {
 
   /// Draws the node onto the canvas using the computed layout.
   fn draw_on_canvas(&self, context: &RenderContext, canvas: &mut FastBlendImage, layout: Layout) {
+    self.draw_outset_box_shadow(context, canvas, layout);
     self.draw_background_color(context, canvas, layout);
     self.draw_background_image(context, canvas, layout);
+    self.draw_inset_box_shadow(context, canvas, layout);
     self.draw_border(context, canvas, layout);
     self.draw_content(context, canvas, layout);
-    self.draw_box_shadow(context, canvas, layout);
   }
 
-  /// Draws the box shadow of the node.
-  fn draw_box_shadow(&self, context: &RenderContext, canvas: &mut FastBlendImage, layout: Layout) {
+  /// Draws the outset box shadow of the node.
+  fn draw_outset_box_shadow(
+    &self,
+    context: &RenderContext,
+    canvas: &mut FastBlendImage,
+    layout: Layout,
+  ) {
     if let Some(box_shadow) = &self.get_style().box_shadow {
       let border_radius = self
         .get_style()
@@ -103,7 +109,39 @@ pub trait Node<N: Node<N>>: Send + Sync + Debug + Clone {
         .border_radius
         .map(|radius| BorderRadius::from_layout(context, &layout, radius.into()));
 
-      draw_box_shadow(context, box_shadow, border_radius, canvas, layout);
+      draw_box_shadow(
+        context,
+        box_shadow,
+        border_radius,
+        canvas,
+        layout,
+        BoxShadowRenderPhase::Outset,
+      );
+    }
+  }
+
+  /// Draws the inset box shadow of the node.
+  fn draw_inset_box_shadow(
+    &self,
+    context: &RenderContext,
+    canvas: &mut FastBlendImage,
+    layout: Layout,
+  ) {
+    if let Some(box_shadow) = &self.get_style().box_shadow {
+      let border_radius = self
+        .get_style()
+        .inheritable_style
+        .border_radius
+        .map(|radius| BorderRadius::from_layout(context, &layout, radius.into()));
+
+      draw_box_shadow(
+        context,
+        box_shadow,
+        border_radius,
+        canvas,
+        layout,
+        BoxShadowRenderPhase::Inset,
+      );
     }
   }
 

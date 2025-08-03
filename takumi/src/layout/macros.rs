@@ -104,9 +104,15 @@ macro_rules! impl_node_enum {
         }
       }
 
-      fn draw_box_shadow(&self, context: &$crate::core::RenderContext, canvas: &mut $crate::rendering::FastBlendImage, layout: $crate::taffy::Layout) {
+      fn draw_outset_box_shadow(&self, context: &$crate::core::RenderContext, canvas: &mut $crate::rendering::FastBlendImage, layout: $crate::taffy::Layout) {
         match self {
-          $( $name::$variant(inner) => <_ as $crate::layout::Node<$name>>::draw_box_shadow(inner, context, canvas, layout), )*
+          $( $name::$variant(inner) => <_ as $crate::layout::Node<$name>>::draw_outset_box_shadow(inner, context, canvas, layout), )*
+        }
+      }
+
+      fn draw_inset_box_shadow(&self, context: &$crate::core::RenderContext, canvas: &mut $crate::rendering::FastBlendImage, layout: $crate::taffy::Layout) {
+        match self {
+          $( $name::$variant(inner) => <_ as $crate::layout::Node<$name>>::draw_inset_box_shadow(inner, context, canvas, layout), )*
         }
       }
     }
