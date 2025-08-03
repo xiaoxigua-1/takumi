@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies.takumi]
-path = "../takumi"
+path = "../../takumi"
 
 [dependencies.serde]
 version = "1"

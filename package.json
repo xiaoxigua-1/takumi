@@ -5,7 +5,8 @@
       "takumi-helpers",
       "takumi-napi-core",
       "takumi-wasm",
-      "docs"
+      "docs",
+      "example/nextjs"
     ],
     "catalog": {
       "@types/bun": "^1.2.19",
