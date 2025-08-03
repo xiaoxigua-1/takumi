@@ -42,7 +42,7 @@
     },
     "takumi-helpers": {
       "name": "@takumi-rs/helpers",
-      "version": "0.20.1",
+      "version": "0.20.2",
       "devDependencies": {
         "@types/bun": "catalog:",
         "@types/react": "^19.1.8",
@@ -61,7 +61,7 @@
     },
     "takumi-napi-core": {
       "name": "@takumi-rs/core",
-      "version": "0.20.1",
+      "version": "0.20.2",
       "devDependencies": {
         "@napi-rs/cli": "3.0.4",
         "@takumi-rs/helpers": "workspace:*",
