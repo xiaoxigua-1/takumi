@@ -1,6 +1,6 @@
+import { readFile } from "node:fs/promises";
 import { Renderer } from "@takumi-rs/core";
 import { container, percentage, rem, rgba, text } from "@takumi-rs/helpers";
-import { readFile } from "fs/promises";
 
 const regular = await readFile(
   "../../assets/fonts/noto-sans/NotoSans-Regular.ttf",
