@@ -19,7 +19,12 @@
     "typescript": "catalog:"
   },
   "peerDependencies": {
-    "react-dom": "^19.1.1"
+    "react-dom": "^19.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react-dom": {
+      "optional": true
+    }
   },
   "exports": {
     "types": "./dist/index.d.ts",
