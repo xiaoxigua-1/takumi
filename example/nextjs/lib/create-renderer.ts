@@ -45,7 +45,6 @@ export function createComponent(name: string) {
       },
     ],
     background_color: rgba(255, 255, 255, 0.18),
-
     gap: rem(2),
     padding: [0, rem(12)],
     justify_content: "center",
