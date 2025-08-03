@@ -89,6 +89,11 @@ describe("color-parsing", () => {
     );
   });
 
+  test("supports transparent keyword", () => {
+    expect(parseColor("transparent")).toEqual([0, 0, 0, 0]);
+    expect(() => parseColor("Transparent")).not.toThrow(); // case-insensitive check handled in parser
+    expect(parseColor("Transparent")).toEqual([0, 0, 0, 0]);
+  });
   test("throws error for unsupported color formats", () => {
     expect(() => parseColor("red")).toThrow("Invalid color: red");
     expect(() => parseColor("hsl(0, 100%, 50%)")).toThrow(

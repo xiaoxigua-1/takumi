@@ -92,5 +92,10 @@ export function parseColor(color: string): Color {
     return parseRgbaColor(color);
   }
 
+  // Support CSS 'transparent' keyword -> rgba(0,0,0,0)
+  if (color.toLowerCase() === "transparent") {
+    return [0, 0, 0, 0];
+  }
+
   throw new Error(`Invalid color: ${color}`);
 }
