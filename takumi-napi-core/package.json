@@ -11,7 +11,7 @@
   },
   "main": "index.js",
   "devDependencies": {
-    "@napi-rs/cli": "3.0.0",
+    "@napi-rs/cli": "3.0.4",
     "@takumi-rs/helpers": "workspace:*",
     "@types/bun": "catalog:",
     "typescript": "catalog:"
