@@ -192,9 +192,12 @@ jobs:
 
       - name: Patch causes logging
         run: |
-          # Replace "{ cause: loadErrors }" with serialized JSON errors
-          # Because Vercel build prints [Array], which is very useful for debugging :)
-          sed -i 's/{ cause: loadErrors }/\\{ cause: JSON.stringify(loadErrors, (k, v) => v instanceof Error ? ((p = Object.getOwnPropertyNames(v)).reduce((o, n) => (o[n] = v[n], o), {})) : v, 2) \\}/' takumi-napi-core/index.js
+          # Replace { cause: loadErrors } with a JSON stringified version of loadErrors
+          # This is to avoid runtime printing as `[Array]`
+          awk '{
+            gsub(/\{ cause: loadErrors \}/, "{ cause: JSON.stringify(loadErrors, (k, v) => v instanceof Error ? (Object.getOwnPropertyNames(v).reduce((o, n) => (o[n] = v[n], o), {})) : v, 2) }");
+            print;
+          }' takumi-napi-core/index.js > takumi-napi-core/index.js.tmp && mv takumi-napi-core/index.js.tmp takumi-napi-core/index.js
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
