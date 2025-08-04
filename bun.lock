@@ -70,7 +70,7 @@
     },
     "takumi-helpers": {
       "name": "@takumi-rs/helpers",
-      "version": "0.22.1",
+      "version": "0.23.0",
       "devDependencies": {
         "@types/bun": "catalog:",
         "@types/react": "^19.1.8",
@@ -89,7 +89,7 @@
     },
     "takumi-napi-core": {
       "name": "@takumi-rs/core",
-      "version": "0.22.1",
+      "version": "0.23.0",
       "devDependencies": {
         "@napi-rs/cli": "3.0.4",
         "@takumi-rs/helpers": "workspace:*",
@@ -99,7 +99,7 @@
     },
     "takumi-wasm": {
       "name": "@takumi-rs/wasm",
-      "version": "0.22.1",
+      "version": "0.23.0",
       "devDependencies": {
         "@takumi-rs/helpers": "workspace:*",
         "@types/bun": "catalog:",
