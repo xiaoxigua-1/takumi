@@ -24,7 +24,10 @@
       "types": "./pkg/takumi_wasm.d.ts",
       "default": "./pkg/takumi_wasm.js"
     },
-    "./takumi_wasm_bg.wasm": "./pkg/takumi_wasm_bg.wasm"
+    "./takumi_wasm_bg.wasm": {
+      "types": "./pkg/takumi_wasm_bg.d.ts",
+      "default": "./pkg/takumi_wasm_bg.wasm"
+    }
   },
   "files": [
     "README.md",
