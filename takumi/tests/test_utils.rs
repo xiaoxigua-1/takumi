@@ -1,7 +1,6 @@
 use std::{fs::read, path::Path};
 
 use image::{ColorType::Rgba8, load_from_memory, save_buffer};
-use imageproc::assert_pixels_eq;
 use takumi::{DefaultNodeKind, GlobalContext, ImageRenderer, ImageStore, Node, Viewport};
 
 fn create_test_context() -> GlobalContext {
@@ -32,6 +31,18 @@ fn create_test_renderer() -> ImageRenderer<DefaultNodeKind> {
   ImageRenderer::new(Viewport::new(1200, 630))
 }
 
+fn assert_pixels_eq(
+  fixture_image: image::RgbaImage,
+  image: image::RgbaImage,
+) {
+  assert_eq!(fixture_image.dimensions(), image.dimensions());
+
+  for (x, y, pixel) in fixture_image.enumerate_pixels() {
+    let other_pixel = image.get_pixel(x, y);
+    assert_eq!(pixel, other_pixel, "Pixel mismatch at ({x}, {y})");
+  }
+}
+
 /// Helper function to run style width tests
 pub fn run_style_width_test(mut node: DefaultNodeKind, fixture_path: &str) {
   let context = create_test_context();
@@ -60,5 +71,5 @@ pub fn run_style_width_test(mut node: DefaultNodeKind, fixture_path: &str) {
   let fixture = read(path).unwrap();
   let fixture_image = load_from_memory(&fixture).unwrap().into_rgba8();
 
-  assert_pixels_eq!(fixture_image, image);
+  assert_pixels_eq(fixture_image, image);
 }

@@ -1,6 +1,5 @@
 use image::RgbaImage;
-use imageproc::{drawing::draw_filled_rect_mut, rect::Rect};
-use taffy::Layout;
+use taffy::{Layout, Point, Size};
 
 use crate::{
   effects::{BorderRadius, apply_border_radius_antialiased},
@@ -11,17 +10,24 @@ use crate::{
 /// Draws a filled rectangle on the canvas from a color input.
 pub fn draw_filled_rect_from_color_input(
   canvas: &mut FastBlendImage,
-  rect: Rect,
+  size: Size<f32>,
+  offset: Point<f32>,
   color: &ColorInput,
 ) {
   match color {
     ColorInput::Color(color) => {
-      draw_filled_rect_mut(canvas, rect, (*color).into());
+      let rgba = (*color).into();
+
+      for y in (offset.y as u32)..(size.height + offset.y) as u32 {
+        for x in (offset.x as u32)..(size.width + offset.x) as u32 {
+          canvas.draw_pixel(x, y, rgba);
+        }
+      }
     }
     ColorInput::Gradient(gradient) => {
-      let gradient_image = create_gradient_image(gradient, rect.width(), rect.height());
+      let gradient_image = create_gradient_image(gradient, size.width as u32, size.height as u32);
 
-      canvas.overlay_image(&gradient_image, rect.left() as u32, rect.top() as u32);
+      canvas.overlay_image(&gradient_image, offset.x as u32, offset.y as u32);
     }
   }
 }
@@ -52,14 +58,12 @@ pub fn draw_background(
   canvas: &mut FastBlendImage,
   layout: Layout,
 ) {
-  let rect = Rect::at(layout.location.x as i32, layout.location.y as i32)
-    .of_size(layout.size.width as u32, layout.size.height as u32);
-
   let Some(radius) = radius else {
-    return draw_filled_rect_from_color_input(canvas, rect, color);
+    return draw_filled_rect_from_color_input(canvas, layout.size, layout.location, color);
   };
 
-  let mut image = create_image_from_color_input(color, rect.width(), rect.height());
+  let mut image =
+    create_image_from_color_input(color, layout.size.width as u32, layout.size.height as u32);
 
   apply_border_radius_antialiased(&mut image, radius);
 

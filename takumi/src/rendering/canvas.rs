@@ -4,7 +4,6 @@
 //! fast image blending and pixel manipulation operations.
 
 use image::{Pixel, Rgba, RgbaImage};
-use imageproc::drawing::Canvas;
 use rayon::prelude::*;
 
 /// A performance-optimized implementation of image blending operations.
@@ -15,18 +14,9 @@ use rayon::prelude::*;
 /// Based on the implementation from [imageproc's Blend](https://docs.rs/imageproc/latest/imageproc/drawing/struct.Blend.html).
 pub struct FastBlendImage(pub RgbaImage);
 
-impl Canvas for FastBlendImage {
-  type Pixel = Rgba<u8>;
-
-  fn dimensions(&self) -> (u32, u32) {
-    self.0.dimensions()
-  }
-
-  fn get_pixel(&self, x: u32, y: u32) -> Self::Pixel {
-    *self.0.get_pixel(x, y)
-  }
-
-  fn draw_pixel(&mut self, x: u32, y: u32, color: Self::Pixel) {
+impl FastBlendImage {
+  /// Draws a pixel onto the canvas with color alpha blending.
+  pub fn draw_pixel(&mut self, x: u32, y: u32, color: Rgba<u8>) {
     if color.0[3] == 0 {
       return;
     }

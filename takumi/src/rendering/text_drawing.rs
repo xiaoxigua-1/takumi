@@ -1,6 +1,5 @@
 use cosmic_text::{Attrs, Buffer, Color, Metrics, Shaping};
 use image::Rgba;
-use imageproc::drawing::Canvas;
 use taffy::{Layout, Size};
 
 use crate::{

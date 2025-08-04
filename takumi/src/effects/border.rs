@@ -1,5 +1,4 @@
 use image::{Rgba, RgbaImage};
-use imageproc::rect::Rect;
 use taffy::{Layout, Point, Size};
 
 use crate::core::RenderContext;
@@ -64,8 +63,14 @@ fn draw_rectangular_border(canvas: &mut FastBlendImage, border: BorderProperties
   if border.width.top > 0.0 {
     draw_filled_rect_from_color_input(
       canvas,
-      Rect::at(border.offset.x as i32, border.offset.y as i32)
-        .of_size(border.size.width as u32, border.width.top as u32),
+      Size {
+        width: border.size.width,
+        height: border.width.top,
+      },
+      Point {
+        x: border.offset.x,
+        y: border.offset.y,
+      },
       &border.color,
     );
   }
@@ -74,11 +79,14 @@ fn draw_rectangular_border(canvas: &mut FastBlendImage, border: BorderProperties
   if border.width.bottom > 0.0 {
     draw_filled_rect_from_color_input(
       canvas,
-      Rect::at(
-        border.offset.x as i32,
-        border.offset.y as i32 + border.size.height as i32 - border.width.bottom as i32,
-      )
-      .of_size(border.size.width as u32, border.width.bottom as u32),
+      Size {
+        width: border.size.width,
+        height: border.width.bottom,
+      },
+      Point {
+        x: border.offset.x,
+        y: border.offset.y + border.size.height - border.width.bottom,
+      },
       &border.color,
     );
   }
@@ -87,14 +95,14 @@ fn draw_rectangular_border(canvas: &mut FastBlendImage, border: BorderProperties
   if border.width.left > 0.0 {
     draw_filled_rect_from_color_input(
       canvas,
-      Rect::at(
-        border.offset.x as i32,
-        border.offset.y as i32 + border.width.top as i32,
-      )
-      .of_size(
-        border.width.left as u32,
-        (border.size.height - border.width.top - border.width.bottom) as u32,
-      ),
+      Size {
+        width: border.width.left,
+        height: border.size.height - border.width.top - border.width.bottom,
+      },
+      Point {
+        x: border.offset.x,
+        y: border.offset.y + border.width.top,
+      },
       &border.color,
     );
   }
@@ -103,14 +111,14 @@ fn draw_rectangular_border(canvas: &mut FastBlendImage, border: BorderProperties
   if border.width.right > 0.0 {
     draw_filled_rect_from_color_input(
       canvas,
-      Rect::at(
-        border.offset.x as i32 + border.size.width as i32 - border.width.right as i32,
-        border.offset.y as i32 + border.width.top as i32,
-      )
-      .of_size(
-        border.width.right as u32,
-        (border.size.height - border.width.top - border.width.bottom) as u32,
-      ),
+      Size {
+        width: border.width.right,
+        height: border.size.height - border.width.top - border.width.bottom,
+      },
+      Point {
+        x: border.offset.x + border.size.width - border.width.right,
+        y: border.offset.y + border.width.top,
+      },
       &border.color,
     );
   }

@@ -1,8 +1,10 @@
-use image::Rgba;
-use imageproc::{drawing::draw_hollow_rect_mut, rect::Rect};
-use taffy::Layout;
+use taffy::{Layout, Point};
 
-use crate::rendering::FastBlendImage;
+use crate::{
+  Color, SidesValue,
+  effects::{BorderProperties, draw_border},
+  rendering::FastBlendImage,
+};
 
 /// Draws debug borders around the node's layout areas.
 ///
@@ -13,16 +15,25 @@ pub fn draw_debug_border(canvas: &mut FastBlendImage, layout: Layout) {
   let y = layout.content_box_y();
   let size = layout.content_box_size();
 
-  draw_hollow_rect_mut(
+  draw_border(
     canvas,
-    Rect::at(x as i32, y as i32).of_size(size.width as u32, size.height as u32),
-    Rgba([255, 0, 0, 100]),
+    BorderProperties {
+      width: SidesValue::SingleValue(1.0).into(),
+      offset: Point { x, y },
+      size,
+      color: Color::Rgb(255, 0, 0).into(),
+      radius: None,
+    },
   );
 
-  draw_hollow_rect_mut(
+  draw_border(
     canvas,
-    Rect::at(layout.location.x as i32, layout.location.y as i32)
-      .of_size(layout.size.width as u32, layout.size.height as u32),
-    Rgba([0, 255, 0, 100]),
+    BorderProperties {
+      width: SidesValue::SingleValue(1.0).into(),
+      offset: layout.location,
+      size: layout.size,
+      color: Color::Rgb(0, 255, 0).into(),
+      radius: None,
+    },
   );
 }
