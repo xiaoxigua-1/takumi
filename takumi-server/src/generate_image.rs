@@ -65,7 +65,7 @@ pub async fn generate_image_handler(
     let image = renderer.draw(&state.context).map_err(|err| {
       (
         StatusCode::INTERNAL_SERVER_ERROR,
-        format!("Failed to render image: {err}"),
+        format!("Failed to render image: {err:?}"),
       )
     })?;
 
