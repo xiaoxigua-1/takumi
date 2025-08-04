@@ -9,6 +9,10 @@ use takumi::{
   resources::ImageSource,
 };
 use wasm_bindgen::prelude::*;
+use wee_alloc::WeeAlloc;
+
+#[global_allocator]
+static ALLOC: WeeAlloc = WeeAlloc::INIT;
 
 #[wasm_bindgen(typescript_custom_section)]
 const TS_APPEND_CONTENT: &'static str = r#"
@@ -68,22 +72,18 @@ impl Renderer {
     height: u32,
     format: Option<ImageOutputFormat>,
     quality: Option<u8>,
-  ) -> Result<Vec<u8>, JsError> {
+  ) -> Vec<u8> {
     let node = node.dyn_into().unwrap();
     let mut node: DefaultNodeKind = from_value(node).unwrap();
 
     node.inherit_style_for_children();
-    node
-      .hydrate(&self.context)
-      .map_err(|err| JsError::new(&format!("Failed to hydrate node: {err:?}")))?;
+    node.hydrate(&self.context).unwrap();
 
     let viewport = Viewport::new(width, height);
     let mut renderer = ImageRenderer::new(viewport);
 
     renderer.construct_taffy_tree(node, &self.context);
-    let image = renderer
-      .draw(&self.context)
-      .map_err(|err| JsError::new(&format!("Failed to render image: {err}")))?;
+    let image = renderer.draw(&self.context).unwrap();
 
     let mut buffer = Vec::new();
     let mut cursor = Cursor::new(&mut buffer);
@@ -96,7 +96,7 @@ impl Renderer {
     )
     .unwrap();
 
-    Ok(buffer)
+    buffer
   }
 
   #[wasm_bindgen(js_name = "renderAsDataUrl")]
@@ -107,14 +107,17 @@ impl Renderer {
     height: u32,
     format: Option<ImageOutputFormat>,
     quality: Option<u8>,
-  ) -> Result<String, JsError> {
-    let buffer = self.render(node, width, height, format, quality)?;
+  ) -> String {
+    let buffer = self.render(node, width, height, format, quality);
     let format = format.unwrap_or(ImageOutputFormat::Png);
 
-    Ok(format!(
-      "data:{};base64,{}",
-      format.content_type(),
-      BASE64_STANDARD.encode(buffer)
-    ))
+    let mut data_uri = String::new();
+
+    data_uri.push_str("data:");
+    data_uri.push_str(format.content_type());
+    data_uri.push_str(";base64,");
+    data_uri.push_str(&BASE64_STANDARD.encode(buffer));
+
+    data_uri
   }
 }
