@@ -190,12 +190,6 @@ impl<Nodes: Node<Nodes>> ImageRenderer<Nodes> {
       height: AvailableSpace::Definite(viewport.height as f32),
     };
 
-    let render_context = RenderContext {
-      global,
-      viewport,
-      parent_font_size: viewport.font_size,
-    };
-
     let taffy_context = self.get_taffy_context_mut()?;
 
     taffy_context
@@ -228,10 +222,6 @@ impl<Nodes: Node<Nodes>> ImageRenderer<Nodes> {
         },
       )
       .unwrap();
-
-    if render_context.global.print_debug_tree {
-      taffy_context.taffy.print_tree(taffy_context.root_node_id);
-    }
 
     draw_node_with_layout(
       taffy_context,

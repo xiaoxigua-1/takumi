@@ -48,7 +48,8 @@ features = ["shape-run-cache"]
 
 [dependencies.taffy]
 version = "0.8"
-features = ["serde"]
+default-features = false
+features = ["flexbox", "grid", "taffy_tree"]
 
 [dependencies.serde]
 version = "1"

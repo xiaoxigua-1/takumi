@@ -14,13 +14,6 @@ pub struct Args {
   #[arg(short, long, default_value_t = 3000)]
   pub port: u16,
 
-  /// Enables printing of the debug tree structure.
-  ///
-  /// When enabled, the server will print the node tree structure
-  /// during image generation for debugging purposes.
-  #[arg(long, default_value_t = false)]
-  pub print_debug_tree: bool,
-
   /// Enables drawing of debug borders around elements.
   ///
   /// When enabled, the server will draw borders around all elements

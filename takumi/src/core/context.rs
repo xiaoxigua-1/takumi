@@ -5,8 +5,6 @@ use crate::core::{FontContext, PersistentImageStore};
 /// This struct holds all the necessary state for rendering images, including
 /// font management, image storage, and debug options.
 pub struct GlobalContext {
-  /// Whether to print the debug tree during layout
-  pub print_debug_tree: bool,
   /// Whether to draw debug borders around nodes
   pub draw_debug_border: bool,
   /// The font context for text rendering
@@ -20,7 +18,6 @@ pub struct GlobalContext {
 impl Default for GlobalContext {
   fn default() -> Self {
     Self {
-      print_debug_tree: false,
       draw_debug_border: false,
       font_context: FontContext::default(),
       persistent_image_store: PersistentImageStore::default(),

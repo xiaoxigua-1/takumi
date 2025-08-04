@@ -16,7 +16,6 @@ async fn main() {
   let args = Args::parse();
 
   let context = GlobalContext {
-    print_debug_tree: args.print_debug_tree,
     draw_debug_border: args.draw_debug_border,
     ..Default::default()
   };

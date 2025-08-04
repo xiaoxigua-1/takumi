@@ -258,17 +258,13 @@ impl_from_taffy_enum!(
 #[derive(Debug, Clone, Deserialize, Serialize, Copy, TS, PartialEq)]
 #[serde(rename_all = "kebab-case")]
 pub enum Display {
-  /// The element generates a block-level box and its children follow the block layout algorithm
-  Block,
   /// The element generates a flex container and its children follow the flexbox layout algorithm
   Flex,
   /// The element generates a grid container and its children follow the CSS Grid layout algorithm
   Grid,
-  /// The element and its children are not rendered at all
-  None,
 }
 
-impl_from_taffy_enum!(Display, taffy::Display, Block, Flex, Grid, None);
+impl_from_taffy_enum!(Display, taffy::Display, Flex, Grid);
 
 /// Defines how flex items are aligned along the cross axis.
 ///

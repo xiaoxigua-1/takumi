@@ -55,7 +55,12 @@ pub fn draw_text(
     let mut truncated_text = &text[first_glyph.start..last_glyph.end];
 
     while !truncated_text.is_empty() {
-      let text_with_ellipsis = format!("{truncated_text}{ELLIPSIS_CHAR}");
+      let mut text_with_ellipsis =
+        String::with_capacity(truncated_text.len() + ELLIPSIS_CHAR.len());
+
+      text_with_ellipsis.push_str(truncated_text);
+      text_with_ellipsis.push_str(ELLIPSIS_CHAR);
+
       let truncated_buffer = construct_text_buffer(&text_with_ellipsis, style, context, None);
 
       let last_line = truncated_buffer.layout_runs().last().unwrap();
@@ -69,7 +74,12 @@ pub fn draw_text(
 
     let before_last_line = &text[..first_glyph.start];
 
-    let text_with_ellipsis = format!("{before_last_line}{truncated_text}{ELLIPSIS_CHAR}");
+    let mut text_with_ellipsis =
+      String::with_capacity(before_last_line.len() + truncated_text.len() + ELLIPSIS_CHAR.len());
+
+    text_with_ellipsis.push_str(before_last_line);
+    text_with_ellipsis.push_str(truncated_text);
+    text_with_ellipsis.push_str(ELLIPSIS_CHAR);
 
     return draw_text(&text_with_ellipsis, style, context, canvas, layout);
   }
