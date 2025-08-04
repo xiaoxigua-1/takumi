@@ -31,10 +31,7 @@ fn create_test_renderer() -> ImageRenderer<DefaultNodeKind> {
   ImageRenderer::new(Viewport::new(1200, 630))
 }
 
-fn assert_pixels_eq(
-  fixture_image: image::RgbaImage,
-  image: image::RgbaImage,
-) {
+fn assert_pixels_eq(fixture_image: image::RgbaImage, image: image::RgbaImage) {
   assert_eq!(fixture_image.dimensions(), image.dimensions());
 
   for (x, y, pixel) in fixture_image.enumerate_pixels() {
