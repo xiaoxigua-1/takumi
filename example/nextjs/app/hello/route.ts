@@ -3,11 +3,9 @@ import { createComponent, createRenderer } from "~/lib/create-renderer";
 
 const renderer = createRenderer();
 
-export const runtime = "nodejs";
-
 export async function GET(request: Request) {
   const url = new URL(request.url);
-  const name = url.searchParams.get("name") || "World";
+  const name = url.searchParams.get("name") || "Takumi";
 
   const buffer = await renderer.renderAsync(createComponent(name), {
     width: 1200,
