@@ -9,12 +9,11 @@
     "cf-typegen": "wrangler types"
   },
   "devDependencies": {
-    "@cloudflare/vitest-pool-workers": "^0.8.19",
     "typescript": "^5.5.2",
     "wrangler": "^4.27.0"
   },
   "dependencies": {
     "@takumi-rs/helpers": "../../takumi-helpers",
-    "@takumi-rs/wasm": "../../takumi-wasm/pkg"
+    "@takumi-rs/wasm": "../../takumi-wasm"
   }
 }

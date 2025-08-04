@@ -1,9 +1,9 @@
 import { describe, expect, test } from "bun:test";
-import { readFile, writeFile } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { container, image, percentage, rem, text } from "@takumi-rs/helpers";
 import { Glob } from "bun";
-import init, { ImageOutputFormat, Renderer } from "../pkg";
+import init, { ImageOutputFormat, Renderer } from "../pkg/takumi_wasm";
 
 const fontsGlob = new Glob("**/*.{woff2,ttf}");
 
@@ -64,31 +64,25 @@ describe("setup", () => {
 });
 
 describe("render", () => {
-  test("webp", async () => {
+  test("webp", () => {
     const result = renderer.render(node, 1200, 630, ImageOutputFormat.WebP);
 
-    await writeFile("./test.webp", result);
-
     expect(result).toBeInstanceOf(Uint8Array);
   });
 
-  test("png", async () => {
+  test("png", () => {
     const result = renderer.render(node, 1200, 630, ImageOutputFormat.Png);
 
-    await writeFile("./test.png", result);
-
     expect(result).toBeInstanceOf(Uint8Array);
   });
 
-  test("jpeg 75%", async () => {
+  test("jpeg 75%", () => {
     const result = renderer.render(node, 1200, 630, ImageOutputFormat.Jpeg, 75);
 
-    await writeFile("./test-75.jpg", result);
-
     expect(result).toBeInstanceOf(Uint8Array);
   });
 
-  test("jpeg 100%", async () => {
+  test("jpeg 100%", () => {
     const result = renderer.render(
       node,
       1200,
@@ -96,8 +90,6 @@ describe("render", () => {
       ImageOutputFormat.Jpeg,
       100,
     );
-
-    await writeFile("./test-100.jpg", result);
 
     expect(result).toBeInstanceOf(Uint8Array);
   });

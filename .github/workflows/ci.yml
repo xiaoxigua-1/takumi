@@ -340,13 +340,6 @@ jobs:
         working-directory: takumi-wasm
         run: bun run build
 
-      - name: Update package.json name for npm publish
-        working-directory: takumi-wasm/pkg
-        run: |
-          # Change package name from takumi-wasm to @takumi-rs/wasm
-          # Set repository URL for provenance validation
-          jq '.name = "@takumi-rs/wasm" | .repository.url = "git+https://github.com/kane50613/takumi.git"' package.json > temp.json && mv temp.json package.json
-
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
@@ -406,7 +399,7 @@ jobs:
       - uses: ./.github/actions/npm-version-exists-check
         id: check
         with:
-          working_directory: takumi-wasm/pkg
+          working_directory: takumi-wasm
 
   publish-wasm:
     name: Publish @takumi-rs/wasm
@@ -430,7 +423,7 @@ jobs:
       - name: Publish
         uses: ./.github/actions/publish-npm
         with:
-          working_directory: takumi-wasm/pkg
+          working_directory: takumi-wasm
           npm_token: ${{ secrets.NPM_TOKEN }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
 

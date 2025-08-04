@@ -1,12 +1,33 @@
 {
   "name": "@takumi-rs/wasm",
-  "private": true,
+  "version": "0.21.0",
   "scripts": {
-    "build": "wasm-pack build --out-dir pkg --target web"
+    "build": "wasm-pack build --no-pack --release --out-dir pkg --target web"
   },
+  "author": {
+    "email": "me@kane.tw",
+    "name": "Kane Wang",
+    "url": "https://kane.tw"
+  },
+  "repository": {
+    "url": "git+https://github.com/kane50613/takumi.git"
+  },
+  "readme": "README.md",
+  "license": "MIT",
   "devDependencies": {
     "@takumi-rs/helpers": "workspace:*",
     "@types/bun": "catalog:",
     "typescript": "catalog:"
-  }
+  },
+  "exports": {
+    ".": {
+      "types": "./pkg/takumi_wasm.d.ts",
+      "default": "./pkg/takumi_wasm.js"
+    },
+    "./takumi_wasm_bg.wasm": "./pkg/takumi_wasm_bg.wasm"
+  },
+  "files": [
+    "README.md",
+    "pkg/takumi*"
+  ]
 }
