@@ -9,10 +9,6 @@ use takumi::{
   resources::ImageSource,
 };
 use wasm_bindgen::prelude::*;
-use wee_alloc::WeeAlloc;
-
-#[global_allocator]
-static ALLOC: WeeAlloc = WeeAlloc::INIT;
 
 #[wasm_bindgen(typescript_custom_section)]
 const TS_APPEND_CONTENT: &'static str = r#"

@@ -27,8 +27,14 @@
     }
   },
   "exports": {
-    "types": "./dist/index.d.ts",
-    "default": "./dist/index.js"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./jsx": {
+      "types": "./dist/jsx/jsx.d.ts",
+      "default": "./dist/jsx/jsx.js"
+    }
   },
   "files": [
     "dist",

@@ -6,7 +6,8 @@
       "takumi-napi-core",
       "takumi-wasm",
       "docs",
-      "example/nextjs"
+      "example/nextjs",
+      "example/cloudflare-workers"
     ],
     "catalog": {
       "@types/bun": "^1.2.19",

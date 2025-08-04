@@ -13,7 +13,8 @@
       "!**/node_modules",
       "!**/dist",
       "!**/.next",
-      "!takumi-helpers/src/bindings"
+      "!takumi-helpers/src/bindings",
+      "!**/worker-configuration.d.ts"
     ]
   },
   "formatter": {
