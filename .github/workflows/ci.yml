@@ -390,12 +390,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Download artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: wasm-package
-          path: takumi-wasm/pkg
-
       - uses: ./.github/actions/npm-version-exists-check
         id: check
         with:

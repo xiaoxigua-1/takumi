@@ -69,6 +69,7 @@ jobs:
       - name: Update package.json version
         run: |
           jq -r '.version = "${{ steps.new_version.outputs.new_version }}"' takumi-helpers/package.json > temp.json && mv temp.json takumi-helpers/package.json
+          jq -r '.version = "${{ steps.new_version.outputs.new_version }}"' takumi-wasm/package.json > temp.json && mv temp.json takumi-wasm/package.json
           jq -r '.version = "${{ steps.new_version.outputs.new_version }}"' takumi-napi-core/package.json > temp.json && mv temp.json takumi-napi-core/package.json
 
       - name: Refresh bun.lock
