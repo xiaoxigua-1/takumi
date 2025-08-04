@@ -44,8 +44,8 @@
       "name": "cloudflare-workers",
       "version": "0.0.0",
       "dependencies": {
-        "@takumi-rs/helpers": "../../takumi-helpers",
-        "@takumi-rs/wasm": "../../takumi-wasm",
+        "@takumi-rs/helpers": "workspace:*",
+        "@takumi-rs/wasm": "workspace:*",
       },
       "devDependencies": {
         "typescript": "^5.5.2",
@@ -56,8 +56,8 @@
       "name": "nextjs",
       "version": "0.1.0",
       "dependencies": {
-        "@takumi-rs/core": "../../takumi-napi-core",
-        "@takumi-rs/helpers": "../../takumi-helpers",
+        "@takumi-rs/core": "workspace:*",
+        "@takumi-rs/helpers": "workspace:*",
         "next": "15.4.5",
         "react": "19.1.1",
         "react-dom": "19.1.1",

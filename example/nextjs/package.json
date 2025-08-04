@@ -9,8 +9,8 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@takumi-rs/core": "../../takumi-napi-core",
-    "@takumi-rs/helpers": "../../takumi-helpers",
+    "@takumi-rs/core": "workspace:*",
+    "@takumi-rs/helpers": "workspace:*",
     "next": "15.4.5",
     "react": "19.1.1",
     "react-dom": "19.1.1"

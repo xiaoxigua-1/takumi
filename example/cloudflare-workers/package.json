@@ -13,7 +13,7 @@
     "wrangler": "^4.27.0"
   },
   "dependencies": {
-    "@takumi-rs/helpers": "../../takumi-helpers",
-    "@takumi-rs/wasm": "../../takumi-wasm"
+    "@takumi-rs/helpers": "workspace:*",
+    "@takumi-rs/wasm": "workspace:*"
   }
 }
