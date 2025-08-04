@@ -4,7 +4,6 @@ use image::{ImageFormat, RgbImage, RgbaImage, codecs::jpeg::JpegEncoder};
 use serde::{Deserialize, Serialize};
 use slotmap::{DefaultKey, KeyData, SecondaryMap};
 use taffy::{AvailableSpace, NodeId, Point, TaffyTree, geometry::Size};
-use thiserror::Error;
 
 use crate::{
   core::{GlobalContext, Viewport},
@@ -109,10 +108,9 @@ impl<Nodes: Node<Nodes>> ImageRenderer<Nodes> {
 }
 
 /// An error that can occur when rendering an image.
-#[derive(Error, Debug)]
+#[derive(Debug)]
 pub enum RenderError {
   /// The Taffy context is missing, should call `construct_taffy_tree` first.
-  #[error("Missing Taffy context, should call `construct_taffy_tree` first.")]
   TaffyContextMissing,
 }
 
