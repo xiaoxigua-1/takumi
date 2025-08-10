@@ -52,9 +52,6 @@ export const stylePresets: Partial<
     margin: [em(2.33), 0],
     font_weight: 700,
   },
-  // Tables
-  // Lists
-  // Form elements
   // Inline elements
   strong: {
     font_weight: 700,
@@ -77,9 +74,9 @@ export const stylePresets: Partial<
     color: 0,
   },
   big: {
-    font_size: 16 * 1.2,
+    font_size: em(1.2),
   },
   small: {
-    font_size: 16 / 1.2,
+    font_size: em(1 / 1.2),
   },
 };

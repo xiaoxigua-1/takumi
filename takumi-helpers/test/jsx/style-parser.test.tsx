@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { em, percentage, rem, vh } from "../../src/helpers";
-import { fromJsx } from "../../src/jsx/jsx-processing";
+import { fromJsx } from "../../src/jsx/jsx";
 import type { ContainerNode, ImageNode } from "../../src/types";
 
 describe("style-parser", () => {

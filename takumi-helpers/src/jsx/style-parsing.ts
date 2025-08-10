@@ -25,10 +25,11 @@ export function parseLengthUnit(value: Property.Width | number): LengthUnit {
     return value as LengthUnit;
 
   const match = value.match(/^(-?[\d.]+)(.*)$/);
-  if (!match) return 0;
+  if (!match) return "auto";
 
   const [, num, unit] = match;
-  if (!num) return 0;
+  if (!num) return "auto";
+
   const numValue = Number.parseFloat(num);
 
   switch (unit) {
@@ -214,14 +215,12 @@ export function parseAspectRatio(aspectRatio: Property.AspectRatio): number {
 
 export function parseDisplay(display: Property.Display): Display {
   switch (display) {
-    case "block":
     case "flex":
     case "grid":
-    case "none":
       return display as Display;
     default:
-      console.warn(`Invalid display value: ${display}, fallback to 'block'.`);
-      return "block" as Display;
+      console.warn(`Invalid display value: ${display}, fallback to 'flex'.`);
+      return "flex" as Display;
   }
 }
 
@@ -230,8 +229,6 @@ export function parsePosition(position: Property.Position): Position {
     case "relative":
     case "absolute":
       return position as Position;
-    case "static":
-      return "relative" as Position;
     default:
       console.warn(
         `Invalid position value: ${position}, fallback to 'relative'.`,

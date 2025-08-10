@@ -51,9 +51,9 @@ describe("style-parsing", () => {
       expect(parseLengthUnit("max-content")).toBe("max-content");
     });
 
-    test("returns 0 for invalid values", () => {
-      expect(parseLengthUnit("invalid")).toBe(0);
-      expect(parseLengthUnit("")).toBe(0);
+    test("returns auto for invalid values", () => {
+      expect(parseLengthUnit("invalid")).toBe("auto");
+      expect(parseLengthUnit("")).toBe("auto");
     });
   });
 
@@ -116,15 +116,13 @@ describe("style-parsing", () => {
 
   describe("parseDisplay", () => {
     test("parses valid display values", () => {
-      expect(parseDisplay("block")).toBe("block");
       expect(parseDisplay("flex")).toBe("flex");
       expect(parseDisplay("grid")).toBe("grid");
-      expect(parseDisplay("none")).toBe("none");
     });
 
-    test("falls back to block for invalid values", () => {
-      expect(parseDisplay("inline")).toBe("block");
-      expect(parseDisplay("table")).toBe("block");
+    test("falls back to flex for invalid values", () => {
+      expect(parseDisplay("inline")).toBe("flex");
+      expect(parseDisplay("table")).toBe("flex");
     });
   });
 
