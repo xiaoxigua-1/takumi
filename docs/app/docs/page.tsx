@@ -15,6 +15,7 @@ import { Hand } from "lucide-react";
 import { baseOptions } from "~/layout-config";
 import { source } from "~/source";
 import type { Route } from "./+types/page";
+import { redirect } from "react-router";
 
 const components = {
   ...defaultMdxComponents,
@@ -30,7 +31,7 @@ export async function loader({ params }: Route.LoaderArgs) {
   const slugs = params["*"].split("/").filter((v) => v.length > 0);
   const page = source.getPage(slugs);
 
-  if (!page) throw new Error("Not found");
+  if (!page) throw redirect("/docs");
 
   const compiled = await compiler.compileFile({
     path: path.resolve("content/docs", page.path),
