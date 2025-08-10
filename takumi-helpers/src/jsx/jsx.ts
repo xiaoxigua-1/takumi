@@ -30,7 +30,7 @@ export async function fromJsx(element: ReactNode): Promise<Node[]> {
   // If element is a server component, wait for it to resolve first
   if (element instanceof Promise) return fromJsx(await element);
 
-  // 
+  //
   if (typeof element === "object" && Symbol.iterator in element)
     return collectIterable(element);
 
