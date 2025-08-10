@@ -25,14 +25,14 @@ const [node] = fromJsx(<SayHello name="Takumi" />);
 // You can then pass the node as a "root node" to render function
 ```
 
-## How components are being processed
+## How components are processed
 
 The rules for this function are simple, you can just [look at the implementation](https://github.com/kane50613/takumi/blob/master/takumi-helpers/src/jsx/jsx.ts) to understand it.
 
 1. React (Server) Components are resolved to their final values before processing.
-2. `<img>` and `<svg>` elements becomes an Image node with style applied.
-4. All other React elements becomes a Container node with style and [style presets](#styling-presets-for-common-elements) applied.
-3. Rest of the primitive types (string/number) are automatically converted to Text node.
+2. `<img>` and `<svg>` elements become an Image node with style applied.
+3. All other React elements become a Container node with style and [style presets](#styling-presets-for-common-elements) applied.
+4. Rest of the primitive types (string/number) are automatically converted to Text node.
 
 ## CSS Styling
 
@@ -40,7 +40,7 @@ The rules for this function are simple, you can just [look at the implementation
 
 Browsers like Chromium have [default stylesheets used to render HTML](https://chromium.googlesource.com/chromium/blink/+/master/Source/core/css/html.css). 
 
-In order to maintain consistency across web and Takumi rendered images, we takes reference from [vercel/satori Pre-defined styles for elements](https://github.com/vercel/satori/blob/main/src/handler/presets.ts) and then made [our own maintained presets](https://github.com/kane50613/takumi/blob/master/takumi-helpers/src/jsx/style-presets.ts).
+In order to maintain consistency across web and Takumi rendered images, we take reference from [vercel/satori Pre-defined styles for elements](https://github.com/vercel/satori/blob/main/src/handler/presets.ts) and then made [our own maintained presets](https://github.com/kane50613/takumi/blob/master/takumi-helpers/src/jsx/style-presets.ts).
 
 ### Style Parsing Compatibility
 
