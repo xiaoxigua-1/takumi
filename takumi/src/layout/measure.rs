@@ -25,10 +25,16 @@ pub fn measure_image(
     1.0
   };
 
-  if width.is_some() && height.is_none() {
-    height = Some(width.unwrap() / aspect_ratio);
-  } else if height.is_some() && width.is_none() {
-    width = Some(height.unwrap() * aspect_ratio);
+  if let Some(width) = width
+    && height.is_none()
+  {
+    height = Some(width / aspect_ratio);
+  }
+
+  if let Some(height) = height
+    && width.is_none()
+  {
+    width = Some(height * aspect_ratio);
   }
 
   // If neither dimension is specified, use intrinsic size but constrain to available space
