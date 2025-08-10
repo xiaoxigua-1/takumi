@@ -1,0 +1,4 @@
+{
+  "pages": ["nodejs", "wasm-web", "..."],
+  "defaultOpen": true
+}

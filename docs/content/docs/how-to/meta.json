@@ -1,6 +1,0 @@
-{
-  "title": "How to",
-  "icon": "WrenchIcon",
-  "pages": ["building-layouts", "rendering-text", "load-image"],
-  "defaultOpen": true
-}

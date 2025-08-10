@@ -7,8 +7,6 @@ import {
   type VirtualFile,
 } from "fumadocs-core/source";
 import matter from "gray-matter";
-import { icons } from "lucide-react";
-import { createElement } from "react";
 
 const files = Object.entries(
   import.meta.glob<true, "raw">("/content/docs/**/*", {
@@ -50,14 +48,11 @@ const virtualFiles: VirtualFile[] = files.flatMap(([file, content]) => {
 });
 
 export const source = loader({
-  icon(icon) {
-    if (icon && icon in icons)
-      return createElement(icons[icon as keyof typeof icons]);
-  },
   source: {
     files: virtualFiles,
   } as Source<{
     pageData: PageData & {
+      index?: boolean;
       content: string;
     };
     metaData: MetaData;

@@ -1,0 +1,69 @@
+---
+title: Use Takumi in Node.js or Bun
+description: Integrate Takumi with Node.js or Bun for server-side image generation.
+---
+
+Takumi provides [N-API bindings](https://napi.rs/) for Node.js and Bun, leveraging Node.js's libuv thread pool for multi-threaded image generation.
+
+Checkout [the Next.js example](https://github.com/kane50613/takumi/blob/master/example/nextjs) for a full-functioning example of using Takumi in a Node.js environment.
+
+## Installation
+
+```bash
+npm i @takumi-rs/core @takumi-rs/helpers
+```
+
+## Usage
+
+First, initialize a Renderer instance to render images.
+
+```ts
+import { Renderer } from "@takumi-rs/core";
+
+export const renderer = new Renderer({
+  fonts: [/* Add your font buffers */],
+  persistentImages: [/* Add your persistent images */]
+});
+```
+
+Create a function to construct layout.
+
+<Callout>
+you can take existing React component with [`fromJsx` function](/docs/deep-dives/from-jsx-helper).
+</Callout>
+
+```ts
+import { container, text } from "@takumi-rs/helpers";
+
+function createOpenGraphImage(name: string) {
+  return container({
+    width: 1200,
+    height: 630,
+    background_color: 0x000000,
+    children: [
+      text(`Hello, ${name}!`, {
+        font_size: 48,
+        color: 0xffffff,
+        x: 100,
+        y: 100,
+      }),
+    ],
+  });
+}
+```
+
+Finally, render the layout to an image buffer.
+
+```ts
+import type { OutputFormat } from "@takumi-rs/core";
+
+const imageBuffer = await renderer.renderAsync(createOpenGraphImage("John Doe"), {
+  width: 1200,
+  height: 630,
+  format: "WebP" as OutputFormat.WebP, // when `isolatedModules` is enabled, you need to use the enum value directly
+});
+```
+
+## Deep dive Into Advanced Usages
+
+If you are interested in more advanced usages of Takumi, consider take a look at [Deep Dives](/docs/deep-dives) section.

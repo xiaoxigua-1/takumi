@@ -1,6 +1,0 @@
-{
-  "title": "Helpers Package",
-  "icon": "WrenchIcon",
-  "pages": ["from-jsx"],
-  "defaultOpen": true
-}

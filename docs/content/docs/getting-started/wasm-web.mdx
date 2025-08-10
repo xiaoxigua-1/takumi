@@ -1,5 +1,5 @@
 ---
-title: Web (WASM) Integration
+title: Use Takumi in Browser (WASM)
 description: Integrate Takumi with WebAssembly (WASM) for client-side image generation.
 ---
 
@@ -8,13 +8,13 @@ Web worker integration is under development. Contributions welcome!
 </Callout>
 
 <Callout type="warn">
-For server-side rendering, consider using the [Node.js/Bun Integration](/docs/platforms/node) for improved performance and compatibility.
+For server-side rendering, consider using the [Node.js/Bun Integration](/docs/getting-started/nodejs) for improved performance and compatibility.
 </Callout>
 
 Takumi provides WebAssembly (WASM) bindings for browser compatibility, allowing client-side image generation. The WASM binary is downloaded client-side.
 
 ```bash
-npm install @takumi-rs/wasm
+npm install @takumi-rs/wasm @takumi-rs/helpers
 ```
 
 ## Load the WASM Module
@@ -99,9 +99,40 @@ useEffect(() => {
 }, []);
 ```
 
+### Cloudflare Workers Setup
+
+This is setup using [worker-sdk](https://github.com/cloudflare/workers-sdk) template, checkout working [cloudflare-workers example](https://github.com/kane50613/takumi/blob/master/example/cloudflare-workers/src/index.ts) here.
+
+Add this rule to `wrangler.jsonc` to allow importing of font files, do the same thing with images if needed.
+
+```json
+{
+  "rules": [
+    {
+      "type": "Data",
+      "globs": ["**/*.ttf", "**/*.woff", "**/*.woff2"],
+      "fallthrough": true
+    }
+  ]
+}
+```
+
+Use `initSync` function to setup initialized WebAssembly module.
+
+```ts
+import module from "@takumi-rs/wasm/takumi_wasm_bg.wasm";
+import { initSync, Renderer } from "@takumi-rs/wasm";
+
+initSync({ module });
+
+const renderer = new Renderer();
+```
+
 ### No Bundler Setup
 
 For direct browser usage without a bundler, download files locally or use a CDN like unpkg.
+
+## Usage
 
 ```javascript
 import { container, text, percentage } from "https://unpkg.com/@takumi-rs/helpers";
@@ -111,5 +142,68 @@ await init("http://unpkg.com/@takumi-rs/wasm/takumi_wasm_bg.wasm");
 
 const renderer = new Renderer();
 ```
+
+First, initialize a Renderer instance to render images.
+
+```ts
+import init, { Renderer } from "@takumi-rs/wasm";
+import wasmUrl from "@takumi-rs/wasm/takumi_wasm_bg.wasm?url";
+
+await init(wasmUrl);
+
+const renderer = new Renderer();
+
+// load fonts using renderer.loadFont()
+// load images using renderer.putPersistentImage()
+```
+
+Create a function to construct layout.
+
+<Callout>
+you can take existing React component with [`fromJsx` function](/docs/deep-dives/from-jsx-helper).
+</Callout>
+
+```ts
+import { container, text } from "@takumi-rs/helpers";
+
+function createOpenGraphImage(name: string) {
+  return container({
+    width: 1200,
+    height: 630,
+    background_color: 0x000000,
+    children: [
+      text(`Hello, ${name}!`, {
+        font_size: 48,
+        color: 0xffffff,
+        x: 100,
+        y: 100,
+      }),
+    ],
+  });
+}
+```
+
+Finally, render the layout to an image buffer.
+
+```ts
+import type { ImageOutputFormat } from "@takumi-rs/wasm";
+
+const imageBuffer = await renderer.render(
+  // root node
+  createOpenGraphImage("John Doe"),
+  // width
+  1200,
+  // height
+  630,
+  // format
+  "WebP" as ImageOutputFormat.WebP, // when `isolatedModules` is enabled, you need to use the enum value directly
+);
+
+// Data URL rendering is also supported through renderer.renderAsDataUrl()
+```
+
+## Deep dive Into Advanced Usages
+
+If you are interested in more advanced usages of Takumi, consider take a look at [Deep Dives](/docs/deep-dives) section.
 
 

@@ -1,0 +1,5 @@
+{
+  "title": "Documentation for Takumi",
+  "root": true,
+  "pages": ["index", "getting-started", "deep-dives"]
+}

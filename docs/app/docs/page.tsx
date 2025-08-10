@@ -1,7 +1,7 @@
 import * as path from "node:path";
 import { createCompiler } from "@fumadocs/mdx-remote";
 import { executeMdxSync } from "@fumadocs/mdx-remote/client";
-import type { PageTree } from "fumadocs-core/server";
+import { getPageTreePeers, type PageTree } from "fumadocs-core/server";
 import { DocsLayout } from "fumadocs-ui/layouts/docs";
 import defaultMdxComponents from "fumadocs-ui/mdx";
 import {
@@ -10,16 +10,16 @@ import {
   DocsPage,
   DocsTitle,
 } from "fumadocs-ui/page";
-import { BookOpen, Brain, Wrench } from "lucide-react";
+import { Hand } from "lucide-react";
 import { baseOptions } from "~/layout-config";
 import { source } from "~/source";
 import type { Route } from "./+types/page";
+import { Card, Cards } from "fumadocs-ui/components/card";
 
 const components = {
   ...defaultMdxComponents,
-  BookOpen,
-  Wrench,
-  Brain,
+  Hand,
+  DocsCategory,
 };
 
 const compiler = createCompiler({
@@ -29,17 +29,18 @@ const compiler = createCompiler({
 export async function loader({ params }: Route.LoaderArgs) {
   const slugs = params["*"].split("/").filter((v) => v.length > 0);
   const page = source.getPage(slugs);
+
   if (!page) throw new Error("Not found");
 
   const compiled = await compiler.compileFile({
-    path: path.resolve("content/docs", page.file.path),
+    path: path.resolve("content/docs", page.path),
     value: page.data.content,
   });
 
   return {
     page,
     compiled: compiled.toString(),
-    tree: source.pageTree,
+    tree: source.getPageTree(),
   };
 }
 
@@ -60,8 +61,23 @@ export default function Page(props: Route.ComponentProps) {
         <DocsDescription>{page.data.description}</DocsDescription>
         <DocsBody>
           <Mdx components={components} />
+          {page.data.index ? (
+            <DocsCategory tree={tree as PageTree.Root} url={page.url} />
+          ) : null}
         </DocsBody>
       </DocsPage>
     </DocsLayout>
+  );
+}
+
+function DocsCategory({ tree, url }: { tree: PageTree.Root; url: string }) {
+  return (
+    <Cards>
+      {getPageTreePeers(tree, url).map((peer) => (
+        <Card key={peer.url} title={peer.name} href={peer.url}>
+          {peer.description}
+        </Card>
+      ))}
+    </Cards>
   );
 }

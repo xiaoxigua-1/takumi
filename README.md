@@ -4,7 +4,7 @@
 
 _Takumi (匠) means "artisan" or "craftsman" in Japanese._
 
-For newcomers, check out the [Overview](https://takumi.kane.tw/docs/) and the [Pick Your Platform](https://takumi.kane.tw/docs/platforms/pick-your-platform) guide.
+For newcomers, check out the [Overview](https://takumi.kane.tw/docs/) documentation for installation and usage.
 
 ## Why building another satori alternative?
 

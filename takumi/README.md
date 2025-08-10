@@ -1,10 +1,8 @@
 # takumi
 
-High-performance Rust library for generating images with CSS Flexbox-like layouts.
+A library for generating images using Flexbox layout.
 
-## Usage
-
-For detailed documentation, please refer to the [main documentation](https://takumi.kane.tw/docs/platforms/pick-your-platform).
+Checkout [Getting Started](http://takumi.kane.tw/docs/getting-started) page for usages in Node.js / WASM and more.
 
 ## Credits
 
