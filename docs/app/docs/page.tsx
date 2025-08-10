@@ -12,10 +12,10 @@ import {
   DocsTitle,
 } from "fumadocs-ui/page";
 import { Hand } from "lucide-react";
+import { redirect } from "react-router";
 import { baseOptions } from "~/layout-config";
 import { source } from "~/source";
 import type { Route } from "./+types/page";
-import { redirect } from "react-router";
 
 const components = {
   ...defaultMdxComponents,
