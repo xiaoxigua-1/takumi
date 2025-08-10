@@ -22,7 +22,7 @@ function SayHello({ name }: { name: string }) {
 // You should destructure the array to get the first node.
 const [node] = fromJsx(<SayHello name="Takumi" />);
 
-console.log(node);
+// You can then pass the node as a "root node" to render function
 ```
 
 ## How components are being processed
@@ -44,7 +44,9 @@ In order to maintain consistency across web and Takumi rendered images, we takes
 
 ### Style Parsing Compatibility
 
-The style parser supports a comprehensive set of CSS properties with intelligent parsing and conversion:
+Takumi aims to support a wide range of CSS properties, but some advanced features may not be fully supported yet.
+
+So you should always test your styles to ensure they render as expected.
 
 <table>
 <thead>
