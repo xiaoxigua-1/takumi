@@ -90,7 +90,7 @@ impl Renderer {
     src: String,
     data: ArrayBuffer,
     signal: Option<AbortSignal>,
-  ) -> AsyncTask<PutPersistentImageTask> {
+  ) -> AsyncTask<PutPersistentImageTask<'_>> {
     AsyncTask::with_optional_signal(
       PutPersistentImageTask {
         src: Some(src),
@@ -106,7 +106,7 @@ impl Renderer {
     &self,
     data: ArrayBuffer,
     signal: Option<AbortSignal>,
-  ) -> AsyncTask<LoadFontTask> {
+  ) -> AsyncTask<LoadFontTask<'_>> {
     AsyncTask::with_optional_signal(
       LoadFontTask {
         context: &self.0,
@@ -121,7 +121,7 @@ impl Renderer {
     &self,
     fonts: Vec<ArrayBuffer>,
     signal: Option<AbortSignal>,
-  ) -> AsyncTask<LoadFontTask> {
+  ) -> AsyncTask<LoadFontTask<'_>> {
     AsyncTask::with_optional_signal(
       LoadFontTask {
         context: &self.0,
@@ -146,7 +146,7 @@ impl Renderer {
     source: Object,
     options: RenderOptions,
     signal: Option<AbortSignal>,
-  ) -> Result<AsyncTask<RenderTask>> {
+  ) -> Result<AsyncTask<RenderTask<'_>>> {
     let node = env.from_js_value(source)?;
 
     Ok(AsyncTask::with_optional_signal(

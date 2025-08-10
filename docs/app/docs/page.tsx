@@ -2,6 +2,7 @@ import * as path from "node:path";
 import { createCompiler } from "@fumadocs/mdx-remote";
 import { executeMdxSync } from "@fumadocs/mdx-remote/client";
 import { getPageTreePeers, type PageTree } from "fumadocs-core/server";
+import { Card, Cards } from "fumadocs-ui/components/card";
 import { DocsLayout } from "fumadocs-ui/layouts/docs";
 import defaultMdxComponents from "fumadocs-ui/mdx";
 import {
@@ -14,7 +15,6 @@ import { Hand } from "lucide-react";
 import { baseOptions } from "~/layout-config";
 import { source } from "~/source";
 import type { Route } from "./+types/page";
-import { Card, Cards } from "fumadocs-ui/components/card";
 
 const components = {
   ...defaultMdxComponents,
