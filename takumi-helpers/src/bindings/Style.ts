@@ -12,6 +12,7 @@ import type { Gap } from "./Gap";
 import type { Gradient } from "./Gradient";
 import type { GridAutoFlow } from "./GridAutoFlow";
 import type { GridLine } from "./GridLine";
+import type { GridTemplateComponent } from "./GridTemplateComponent";
 import type { GridTrackSize } from "./GridTrackSize";
 import type { ImageScalingAlgorithm } from "./ImageScalingAlgorithm";
 import type { JustifyContent } from "./JustifyContent";
@@ -21,7 +22,6 @@ import type { Position } from "./Position";
 import type { SidesValue } from "./SidesValue";
 import type { TextAlign } from "./TextAlign";
 import type { TextOverflow } from "./TextOverflow";
-import type { TrackSizingFunction } from "./TrackSizingFunction";
 
 /**
  * Main styling structure that contains all layout and visual properties.
@@ -170,11 +170,11 @@ grid_row?: GridLine,
 /**
  * Defines the line names and track sizing functions of the grid columns
  */
-grid_template_columns?: Array<TrackSizingFunction>, 
+grid_template_columns?: Array<GridTemplateComponent>, 
 /**
  * Defines the line names and track sizing functions of the grid rows
  */
-grid_template_rows?: Array<TrackSizingFunction>, 
+grid_template_rows?: Array<GridTemplateComponent>, 
 /**
  * How text should be overflowed
  */

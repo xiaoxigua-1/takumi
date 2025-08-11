@@ -1,7 +1,8 @@
 use takumi::{
-  Color, ContainerNode, Display, FlexDirection, Gap, GridTrackSize, InheritableStyle,
+  Color, ContainerNode, Display, FlexDirection, Gap, GridLengthUnit, GridTemplateComponent,
+  GridTrackSize, InheritableStyle,
   LengthUnit::{Percentage, Px},
-  Style, TrackSizingFunction,
+  Style,
 };
 
 mod test_utils;
@@ -189,8 +190,8 @@ fn test_style_grid_template_columns() {
       height: 200.0.into(),
       display: Display::Grid,
       grid_template_columns: Some(vec![
-        TrackSizingFunction::Single(GridTrackSize::Unit(Px(50.0))),
-        TrackSizingFunction::Single(GridTrackSize::Unit(Px(100.0))),
+        GridTemplateComponent::Single(GridTrackSize::Fixed(GridLengthUnit::Unit(Px(50.0)))),
+        GridTemplateComponent::Single(GridTrackSize::Fixed(GridLengthUnit::Unit(Px(100.0)))),
       ]),
       background_color: Some(Color::Rgb(0, 0, 255)), // Blue background
       ..Default::default()
@@ -229,8 +230,8 @@ fn test_style_grid_template_rows() {
       height: 200.0.into(),
       display: Display::Grid,
       grid_template_rows: Some(vec![
-        TrackSizingFunction::Single(GridTrackSize::Unit(Px(50.0))),
-        TrackSizingFunction::Single(GridTrackSize::Unit(Px(100.0))),
+        GridTemplateComponent::Single(GridTrackSize::Fixed(GridLengthUnit::Unit(Px(50.0)))),
+        GridTemplateComponent::Single(GridTrackSize::Fixed(GridLengthUnit::Unit(Px(100.0)))),
       ]),
       background_color: Some(Color::Rgb(0, 0, 255)), // Blue background
       ..Default::default()

@@ -7,14 +7,15 @@ import type {
   FontWeight,
   GridAutoFlow,
   GridLine,
-  GridTrackRepetition,
+  GridRepeatTrack,
+  GridRepetitionCount,
+  GridTemplateComponent,
   GridTrackSize,
   ImageScalingAlgorithm,
   LengthUnit,
   Position,
   SidesValue,
   TextOverflow,
-  TrackSizingFunction,
 } from "../types";
 import { parseColor } from "./color-parsing";
 
@@ -354,9 +355,9 @@ export function parseGridLine(gridLine: string): GridLine {
   return { start: lineNumber, end: null };
 }
 
-export function parseTrackSizingFunction(
+export function parseGridTemplateComponent(
   trackFunction: string,
-): TrackSizingFunction[] {
+): GridTemplateComponent[] {
   const repeatMatch = trackFunction.match(/repeat\(([^,]+),\s*(.+)\)/);
   if (repeatMatch) {
     const result = parseRepeatFunction(repeatMatch);
@@ -371,11 +372,11 @@ export function parseTrackSizingFunction(
 
 function parseRepeatFunction(
   match: RegExpMatchArray,
-): TrackSizingFunction[] | undefined {
+): GridTemplateComponent[] | undefined {
   const [, repetition, trackSizes] = match;
   if (!repetition || !trackSizes) return;
 
-  let repetitionValue: GridTrackRepetition;
+  let repetitionValue: GridRepetitionCount;
   if (repetition === "auto-fill") {
     repetitionValue = "auto-fill";
   } else if (repetition === "auto-fit") {
@@ -392,15 +393,20 @@ function parseRepeatFunction(
     .map((size) => {
       if (size.endsWith("fr")) {
         const frValue = Number.parseFloat(size.slice(0, -2));
-        return Number.isNaN(frValue) ? 0 : { fr: frValue };
+        return {
+          size: {
+            fr: frValue
+          },
+          names: []
+        };
       }
-      return parseLengthUnit(size) ?? 0;
+      return { size: parseLengthUnit(size) ?? 0, names: [] };
     });
 
   return [{ repeat: [repetitionValue, sizes] }];
 }
 
-function parseSimpleTrackSizes(trackFunction: string): TrackSizingFunction[] {
+function parseSimpleTrackSizes(trackFunction: string): GridTemplateComponent[] {
   const parts = trackFunction.trim().split(/\s+/);
   return parts.map((part) => {
     if (part.endsWith("fr")) {
@@ -479,31 +485,31 @@ export function parseGridRow(value: string | number): GridLine {
 }
 
 export function parseGridTemplateColumns(
-  value: string | number | TrackSizingFunction[],
-): TrackSizingFunction[] {
+  value: string | number | GridTemplateComponent[],
+): GridTemplateComponent[] {
   if (typeof value === "string") {
-    return parseTrackSizingFunction(value);
+    return parseGridTemplateComponent(value);
   }
   if (Array.isArray(value)) {
-    return value as TrackSizingFunction[];
+    return value as GridTemplateComponent[];
   }
   return typeof value === "number"
-    ? ([{ single: value }] as TrackSizingFunction[])
-    : ([{ single: 0 }] as TrackSizingFunction[]);
+    ? ([{ single: value }] as GridTemplateComponent[])
+    : ([{ single: 0 }] as GridTemplateComponent[]);
 }
 
 export function parseGridTemplateRows(
-  value: string | number | TrackSizingFunction[],
-): TrackSizingFunction[] {
+  value: string | number | GridTemplateComponent[],
+): GridTemplateComponent[] {
   if (typeof value === "string") {
-    return parseTrackSizingFunction(value);
+    return parseGridTemplateComponent(value);
   }
   if (Array.isArray(value)) {
-    return value as TrackSizingFunction[];
+    return value as GridTemplateComponent[];
   }
   return typeof value === "number"
-    ? ([{ single: value }] as TrackSizingFunction[])
-    : ([{ single: 0 }] as TrackSizingFunction[]);
+    ? ([{ single: value }] as GridTemplateComponent[])
+    : ([{ single: 0 }] as GridTemplateComponent[]);
 }
 
 export function parseLineClamp(value: string | number): number {

@@ -45,7 +45,7 @@ version = "0.14"
 features = ["shape-run-cache"]
 
 [dependencies.taffy]
-version = "0.8"
+version = "0.9"
 default-features = false
 features = ["flexbox", "grid", "taffy_tree"]
 

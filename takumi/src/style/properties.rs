@@ -8,8 +8,8 @@ use image::imageops::FilterType;
 use merge::{Merge, option::overwrite_none};
 use serde::{Deserialize, Serialize};
 use taffy::{
-  CompactLength, MaxTrackSizingFunction, MinTrackSizingFunction, NonRepeatedTrackSizingFunction,
-  Size, Style as TaffyStyle,
+  CompactLength, GridTemplateRepetition, MaxTrackSizingFunction, MinTrackSizingFunction, Size,
+  Style as TaffyStyle, TrackSizingFunction,
 };
 use ts_rs::TS;
 
@@ -468,9 +468,9 @@ pub struct Style {
   /// Specifies a grid item's size and location within the grid row
   pub grid_row: Option<GridLine>,
   /// Defines the line names and track sizing functions of the grid columns
-  pub grid_template_columns: Option<Vec<TrackSizingFunction>>,
+  pub grid_template_columns: Option<Vec<GridTemplateComponent>>,
   /// Defines the line names and track sizing functions of the grid rows
-  pub grid_template_rows: Option<Vec<TrackSizingFunction>>,
+  pub grid_template_rows: Option<Vec<GridTemplateComponent>>,
   /// Inheritable style properties that cascade to child elements
   #[serde(flatten)]
   pub inheritable_style: InheritableStyle,
@@ -523,7 +523,7 @@ impl Default for Style {
 /// Represents a grid track sizing function with serde support
 #[derive(Debug, Clone, Deserialize, Serialize, TS, PartialEq)]
 #[serde(rename_all = "kebab-case")]
-pub enum GridTrackSize {
+pub enum GridLengthUnit {
   /// A fraction of the available space
   Fr(f32),
   /// A fixed length
@@ -531,31 +531,67 @@ pub enum GridTrackSize {
   Unit(LengthUnit),
 }
 
-impl Default for GridTrackSize {
-  fn default() -> Self {
-    Self::Unit(LengthUnit::Auto)
+/// Represents a grid minmax()
+#[derive(Debug, Clone, Deserialize, Serialize, TS, PartialEq)]
+pub struct GridMinMaxSize {
+  /// The minimum size of the grid item
+  pub min: GridLengthUnit,
+  /// The maximum size of the grid item
+  pub max: GridLengthUnit,
+}
+
+/// Represents a grid track size
+#[derive(Debug, Clone, Deserialize, Serialize, TS, PartialEq)]
+#[serde(untagged)]
+pub enum GridTrackSize {
+  /// A minmax() track size
+  MinMax(GridMinMaxSize),
+  /// A fixed track size
+  Fixed(GridLengthUnit),
+}
+
+impl From<GridLengthUnit> for GridTrackSize {
+  fn from(length: GridLengthUnit) -> Self {
+    Self::Fixed(length)
+  }
+}
+
+/// Represents a grid repeat track
+#[derive(Debug, Clone, Deserialize, Serialize, TS, PartialEq)]
+pub struct GridRepeatTrack {
+  /// The size of the grid track
+  pub size: GridTrackSize,
+  /// The names of the grid lines
+  pub names: Vec<String>,
+}
+
+impl GridLengthUnit {
+  /// Converts the grid track size to a compact length representation.
+  pub fn to_compact_length(&self, context: &RenderContext) -> CompactLength {
+    match self {
+      GridLengthUnit::Fr(fr) => CompactLength::fr(*fr),
+      GridLengthUnit::Unit(unit) => unit.to_compact_length(context),
+    }
   }
 }
 
 impl GridTrackSize {
-  /// Converts the grid track size to a compact length representation.
-  pub fn to_compact_length(&self, context: &RenderContext) -> CompactLength {
-    match self {
-      GridTrackSize::Fr(fr) => CompactLength::fr(*fr),
-      GridTrackSize::Unit(unit) => unit.to_compact_length(context),
-    }
-  }
-
   /// Converts the grid track size to a non-repeated track sizing function.
-  pub fn to_min_max(&self, context: &RenderContext) -> NonRepeatedTrackSizingFunction {
-    let compact_length = self.to_compact_length(context);
-
-    // SAFETY: The compact length is a valid track sizing function.
-    unsafe {
-      NonRepeatedTrackSizingFunction {
-        min: MinTrackSizingFunction::from_raw(compact_length),
-        max: MaxTrackSizingFunction::from_raw(compact_length),
-      }
+  pub fn to_min_max(&self, context: &RenderContext) -> TrackSizingFunction {
+    match self {
+      // SAFETY: The compact length is a valid track sizing function.
+      Self::Fixed(size) => unsafe {
+        TrackSizingFunction {
+          min: MinTrackSizingFunction::from_raw(size.to_compact_length(context)),
+          max: MaxTrackSizingFunction::from_raw(size.to_compact_length(context)),
+        }
+      },
+      Self::MinMax(min_max) => unsafe {
+        TrackSizingFunction {
+          min: MinTrackSizingFunction::from_raw(min_max.min.to_compact_length(context)),
+          max: MaxTrackSizingFunction::from_raw(min_max.max.to_compact_length(context)),
+        }
+      },
     }
   }
 }
@@ -610,7 +646,7 @@ impl From<GridPlacement> for taffy::GridPlacement {
 /// Represents a grid track repetition pattern
 #[derive(Debug, Clone, Deserialize, Serialize, TS, Copy, PartialEq)]
 #[serde(rename_all = "kebab-case")]
-pub enum GridTrackRepetition {
+pub enum GridRepetitionCount {
   /// Automatically fills the available space with as many tracks as possible
   AutoFill,
   /// Automatically fits as many tracks as possible while maintaining minimum size
@@ -620,12 +656,12 @@ pub enum GridTrackRepetition {
   Count(u16),
 }
 
-impl From<GridTrackRepetition> for taffy::GridTrackRepetition {
-  fn from(repetition: GridTrackRepetition) -> Self {
+impl From<GridRepetitionCount> for taffy::RepetitionCount {
+  fn from(repetition: GridRepetitionCount) -> Self {
     match repetition {
-      GridTrackRepetition::AutoFill => taffy::GridTrackRepetition::AutoFill,
-      GridTrackRepetition::AutoFit => taffy::GridTrackRepetition::AutoFit,
-      GridTrackRepetition::Count(count) => taffy::GridTrackRepetition::Count(count),
+      GridRepetitionCount::AutoFill => taffy::RepetitionCount::AutoFill,
+      GridRepetitionCount::AutoFit => taffy::RepetitionCount::AutoFit,
+      GridRepetitionCount::Count(count) => taffy::RepetitionCount::Count(count),
     }
   }
 }
@@ -633,15 +669,15 @@ impl From<GridTrackRepetition> for taffy::GridTrackRepetition {
 /// Represents a track sizing function
 #[derive(Debug, Clone, Deserialize, Serialize, TS, PartialEq)]
 #[serde(rename_all = "kebab-case")]
-pub enum TrackSizingFunction {
+pub enum GridTemplateComponent {
   /// A single non-repeated track
   Single(GridTrackSize),
   /// Automatically generate grid tracks to fit the available space using the specified definite track lengths
   /// Only valid if every track in template (not just the repetition) has a fixed size.
-  Repeat(GridTrackRepetition, Vec<GridTrackSize>),
+  Repeat(GridRepetitionCount, Vec<GridRepeatTrack>),
 }
 
-impl TrackSizingFunction {
+impl GridTemplateComponent {
   /// Converts this track sizing function to a Taffy-compatible format.
   ///
   /// # Arguments
@@ -650,19 +686,25 @@ impl TrackSizingFunction {
   ///
   /// # Returns
   ///
-  /// A `taffy::TrackSizingFunction` that can be used with the Taffy layout engine
-  fn to_taffy(&self, context: &RenderContext) -> taffy::TrackSizingFunction {
+  /// A `taffy::GridTemplateComponent` that can be used with the Taffy layout engine
+  fn to_taffy(&self, context: &RenderContext) -> taffy::GridTemplateComponent<String> {
     match self {
       Self::Single(track_size) => {
-        taffy::TrackSizingFunction::Single(track_size.to_min_max(context))
+        taffy::GridTemplateComponent::Single(track_size.to_min_max(context))
       }
-      Self::Repeat(repetition, track_sizes) => taffy::TrackSizingFunction::Repeat(
-        (*repetition).into(),
-        track_sizes
+      Self::Repeat(repetition, tracks) => {
+        let track_sizes = tracks
           .iter()
-          .map(|size| size.to_min_max(context))
-          .collect(),
-      ),
+          .map(|track| track.size.to_min_max(context))
+          .collect();
+        let line_names = tracks.iter().map(|track| track.names.clone()).collect();
+
+        taffy::GridTemplateComponent::Repeat(GridTemplateRepetition {
+          count: (*repetition).into(),
+          tracks: track_sizes,
+          line_names,
+        })
+      }
     }
   }
 }

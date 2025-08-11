@@ -1,5 +1,6 @@
 import type { Style } from "./bindings/Style";
 
+// Export all binding types
 export * from "./bindings/AlignItems";
 export * from "./bindings/BoxShadow";
 export * from "./bindings/BoxShadowInput";
@@ -14,9 +15,13 @@ export * from "./bindings/Gap";
 export * from "./bindings/Gradient";
 export * from "./bindings/GradientStop";
 export * from "./bindings/GridAutoFlow";
+export * from "./bindings/GridLengthUnit";
 export * from "./bindings/GridLine";
+export * from "./bindings/GridMinMaxSize";
 export * from "./bindings/GridPlacement";
-export * from "./bindings/GridTrackRepetition";
+export * from "./bindings/GridRepeatTrack";
+export * from "./bindings/GridRepetitionCount";
+export * from "./bindings/GridTemplateComponent";
 export * from "./bindings/GridTrackSize";
 export * from "./bindings/ImageScalingAlgorithm";
 export * from "./bindings/InheritableStyle";
@@ -28,8 +33,6 @@ export * from "./bindings/SidesValue";
 export * from "./bindings/Style";
 export * from "./bindings/TextAlign";
 export * from "./bindings/TextOverflow";
-export * from "./bindings/TrackSizingFunction";
-export * from "./bindings/ValuePercentageAuto";
 
 type JsonValue =
   | string

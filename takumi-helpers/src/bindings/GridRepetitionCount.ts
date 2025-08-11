@@ -3,4 +3,4 @@
 /**
  * Represents a grid track repetition pattern
  */
-export type GridTrackRepetition = "auto-fill" | "auto-fit" | number;
+export type GridRepetitionCount = "auto-fill" | "auto-fit" | number;

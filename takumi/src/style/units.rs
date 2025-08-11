@@ -13,10 +13,11 @@ use crate::core::viewport::RenderContext;
 ///
 /// This corresponds to CSS values that can be specified as pixels, percentages,
 /// or the 'auto' keyword for automatic sizing.
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Copy, TS)]
+#[derive(Default, Debug, Clone, Deserialize, Serialize, PartialEq, Copy, TS)]
 #[serde(rename_all = "kebab-case")]
 pub enum LengthUnit {
   /// Automatic sizing based on content
+  #[default]
   Auto,
   /// Minimum content size
   MinContent,
@@ -40,12 +41,6 @@ pub enum LengthUnit {
 impl From<f32> for LengthUnit {
   fn from(value: f32) -> Self {
     Self::Px(value)
-  }
-}
-
-impl Default for LengthUnit {
-  fn default() -> Self {
-    Self::Auto
   }
 }
 
