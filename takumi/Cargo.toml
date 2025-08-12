@@ -15,7 +15,7 @@ ts-rs = "11.0"
 slotmap = "1.0"
 rayon = "1.10"
 cssparser = "0.35"
-csscolorparser = "0.7.2"
+csscolorparser = "0.7"
 
 [dependencies.base64]
 version = "0.22"
