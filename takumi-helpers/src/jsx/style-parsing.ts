@@ -387,34 +387,122 @@ function parseRepeatFunction(
     repetitionValue = numRepetition;
   }
 
-  const sizes = trackSizes
-    .trim()
-    .split(/\s+/)
-    .map((size) => {
-      if (size.endsWith("fr")) {
-        const frValue = Number.parseFloat(size.slice(0, -2));
-        return {
-          size: {
-            fr: frValue
-          },
-          names: []
-        };
-      }
-      return { size: parseLengthUnit(size) ?? 0, names: [] };
-    });
+  // Parse track sizes with potential names
+  const sizes = parseGridRepeatTracks(trackSizes);
 
   return [{ repeat: [repetitionValue, sizes] }];
 }
 
-function parseSimpleTrackSizes(trackFunction: string): GridTemplateComponent[] {
-  const parts = trackFunction.trim().split(/\s+/);
-  return parts.map((part) => {
-    if (part.endsWith("fr")) {
-      const frValue = Number.parseFloat(part.slice(0, -2));
-      return { single: Number.isNaN(frValue) ? 0 : { fr: frValue } };
+function parseGridRepeatTracks(trackSizes: string): GridRepeatTrack[] {
+  const tokens = tokenizeGridTrackList(trackSizes);
+  const result: GridRepeatTrack[] = [];
+  
+  // Keep track of names that come before the next size
+  let pendingNames: string[] = [];
+  
+  for (let i = 0; i < tokens.length; i++) {
+    const token = tokens[i];
+    if (token.type === "names") {
+      // Accumulate names
+      pendingNames.push(...token.value);
+    } else if (token.type === "size") {
+      // Parse the size
+      let size: GridTrackSize;
+      if (token.value.endsWith("fr")) {
+        const frValue = Number.parseFloat(token.value.slice(0, -2));
+        size = { fr: frValue };
+      } else {
+        size = parseLengthUnit(token.value) ?? 0;
+      }
+      
+      // Create a track with the accumulated names
+      result.push({ size, names: pendingNames });
+      
+      // Reset pending names
+      pendingNames = [];
     }
-    return { single: parseLengthUnit(part) ?? 0 };
-  });
+  }
+  
+  return result;
+}
+
+function tokenizeGridTrackList(input: string): Array<{ type: "size" | "names"; value: string | string[] }> {
+  const tokens: Array<{ type: "size" | "names"; value: string | string[] }> = [];
+  let i = 0;
+  
+  while (i < input.length) {
+    // Skip whitespace
+    while (i < input.length && /\s/.test(input[i])) {
+      i++;
+    }
+    
+    if (i >= input.length) break;
+    
+    // Check for line names in brackets
+    if (input[i] === "[") {
+      const bracketEnd = input.indexOf("]", i);
+      if (bracketEnd !== -1) {
+        const namesStr = input.substring(i + 1, bracketEnd).trim();
+        const names = namesStr ? namesStr.split(/\s+/) : [];
+        tokens.push({ type: "names", value: names });
+        i = bracketEnd + 1;
+        continue;
+      }
+    }
+    
+    // Parse track size (until next space or bracket)
+    let sizeEnd = i;
+    while (sizeEnd < input.length && !/\s/.test(input[sizeEnd]) && input[sizeEnd] !== "[") {
+      sizeEnd++;
+    }
+    
+    const size = input.substring(i, sizeEnd);
+    if (size) {
+      tokens.push({ type: "size", value: size });
+    }
+    
+    i = sizeEnd;
+  }
+  
+  return tokens;
+}
+
+function parseSimpleTrackSizes(trackFunction: string): GridTemplateComponent[] {
+  const tokens = tokenizeGridTrackList(trackFunction);
+  const result: GridTemplateComponent[] = [];
+  
+  // Keep track of names that come before the next size
+  let pendingNames: string[] = [];
+  
+  for (let i = 0; i < tokens.length; i++) {
+    const token = tokens[i];
+    if (token.type === "names") {
+      // Accumulate names
+      pendingNames.push(...token.value);
+    } else if (token.type === "size") {
+      // Parse the size
+      let size: GridTrackSize;
+      if (token.value.endsWith("fr")) {
+        const frValue = Number.parseFloat(token.value.slice(0, -2));
+        size = { fr: frValue };
+      } else {
+        size = parseLengthUnit(token.value) ?? 0;
+      }
+      
+      // If we have names, we need to create a repeat track with one item
+      if (pendingNames.length > 0) {
+        const repeatTrack: GridRepeatTrack = { size, names: pendingNames };
+        result.push({ repeat: [1, [repeatTrack]] });
+      } else {
+        result.push({ single: size });
+      }
+      
+      // Reset pending names
+      pendingNames = [];
+    }
+  }
+  
+  return result;
 }
 
 export function parseTextOverflow(
@@ -511,6 +599,9 @@ export function parseGridTemplateRows(
     ? ([{ single: value }] as GridTemplateComponent[])
     : ([{ single: 0 }] as GridTemplateComponent[]);
 }
+
+// Add export for tokenizeGridTrackList for testing
+export { tokenizeGridTrackList };
 
 export function parseLineClamp(value: string | number): number {
   if (value === "none") return 0;

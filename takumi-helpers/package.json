@@ -21,11 +21,6 @@
   "peerDependencies": {
     "react-dom": "^19.0.0"
   },
-  "peerDependenciesMeta": {
-    "react-dom": {
-      "optional": true
-    }
-  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -43,6 +38,11 @@
     "tsconfig.json"
   ],
   "license": "MIT",
+  "peerDependenciesMeta": {
+    "react-dom": {
+      "optional": true
+    }
+  },
   "scripts": {
     "build": "bun build.ts"
   },

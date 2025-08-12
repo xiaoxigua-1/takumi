@@ -3,7 +3,17 @@
 //! This module contains CSS-like properties including layout properties,
 //! typography settings, positioning, and visual effects.
 
+/// Box shadow properties for elements.
+pub mod box_shadow;
+/// Color parsing and representation for styling.
+pub mod color;
+/// Linear gradient properties for elements.
+pub mod linear_gradient;
+/// Parsing utilities for style properties.
+pub mod parser;
+
 use cosmic_text::{Align, FamilyOwned, Weight};
+use cssparser::{BasicParseError, ParseError};
 use image::imageops::FilterType;
 use merge::{Merge, option::overwrite_none};
 use serde::{Deserialize, Serialize};
@@ -22,6 +32,8 @@ use crate::{
     resolve_length_unit_rect_to_length_percentage_auto,
   },
 };
+
+type ParseResult<'i, T, E = BasicParseError<'i>> = Result<T, ParseError<'i, E>>;
 
 /// Represents font weight as a numeric value.
 ///

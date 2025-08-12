@@ -8,13 +8,14 @@ import {
   parseGridAutoFlow,
   parseGridLine,
   parseGridTrackSize,
+  parseGridTemplateComponent,
   parseLengthUnit,
   parsePosition,
   parseSideLengthUnits,
   parseTextOverflow,
-  parseTrackSizingFunction,
+  tokenizeGridTrackList,
 } from "../../src/jsx/style-parsing";
-import type { BoxShadow, GridLine } from "../../src/types";
+import type { BoxShadow, GridLine, GridTemplateComponent } from "../../src/types";
 
 describe("style-parsing", () => {
   describe("parseLengthUnit", () => {
@@ -266,29 +267,29 @@ describe("style-parsing", () => {
     });
   });
 
-  describe("parseTrackSizingFunction", () => {
+  describe("parseGridTemplateComponent", () => {
     test("parses simple track sizes", () => {
-      expect(parseTrackSizingFunction("1fr 2fr")).toEqual([
+      expect(parseGridTemplateComponent("1fr 2fr")).toEqual([
         { single: { fr: 1 } },
         { single: { fr: 2 } },
       ]);
     });
 
     test("parses repeat functions", () => {
-      expect(parseTrackSizingFunction("repeat(3, 1fr)")).toEqual([
-        { repeat: [3, [{ fr: 1 }]] },
+      expect(parseGridTemplateComponent("repeat(3, 1fr)")).toEqual([
+        { repeat: [3, [{ size: { fr: 1 }, names: [] }]] },
       ]);
     });
 
     test("parses auto-fill repeat", () => {
-      expect(parseTrackSizingFunction("repeat(auto-fill, 100px)")).toEqual([
-        { repeat: ["auto-fill", [100]] },
+      expect(parseGridTemplateComponent("repeat(auto-fill, 100px)")).toEqual([
+        { repeat: ["auto-fill", [{ size: 100, names: [] }]] },
       ]);
     });
 
     test("parses auto-fit repeat", () => {
-      expect(parseTrackSizingFunction("repeat(auto-fit, 1fr)")).toEqual([
-        { repeat: ["auto-fit", [{ fr: 1 }]] },
+      expect(parseGridTemplateComponent("repeat(auto-fit, 1fr)")).toEqual([
+        { repeat: ["auto-fit", [{ size: { fr: 1 }, names: [] }]] },
       ]);
     });
   });
@@ -330,6 +331,77 @@ describe("style-parsing", () => {
 
     test("falls back to 400 for invalid values", () => {
       expect(parseFontWeight("invalid")).toBe(400);
+    });
+  });
+
+  describe("tokenizeGridTrackList", () => {
+    test("tokenizes simple track sizes", () => {
+      expect(tokenizeGridTrackList("1fr 2fr 100px")).toEqual([
+        { type: "size", value: "1fr" },
+        { type: "size", value: "2fr" },
+        { type: "size", value: "100px" },
+      ]);
+    });
+
+    test("tokenizes track sizes with line names", () => {
+      expect(tokenizeGridTrackList("[header-start] 1fr [content-start] 2fr [footer-start]")).toEqual([
+        { type: "names", value: ["header-start"] },
+        { type: "size", value: "1fr" },
+        { type: "names", value: ["content-start"] },
+        { type: "size", value: "2fr" },
+        { type: "names", value: ["footer-start"] },
+      ]);
+    });
+
+    test("tokenizes multiple line names", () => {
+      expect(tokenizeGridTrackList("[first second] 1fr [third fourth fifth] 2fr")).toEqual([
+        { type: "names", value: ["first", "second"] },
+        { type: "size", value: "1fr" },
+        { type: "names", value: ["third", "fourth", "fifth"] },
+        { type: "size", value: "2fr" },
+      ]);
+    });
+  });
+
+  describe("parseGridTemplateComponent", () => {
+    test("parses simple track sizes with names", () => {
+      const result = parseGridTemplateComponent("[header-start] 1fr [content-start] 2fr [footer-start]");
+      expect(result).toEqual([
+        { repeat: [1, [{ size: { fr: 1 }, names: ["header-start"] }]] },
+        { repeat: [1, [{ size: { fr: 2 }, names: ["content-start"] }]] },
+      ]);
+    });
+
+    test("parses track sizes without names as single components", () => {
+      const result = parseGridTemplateComponent("1fr 2fr 100px");
+      expect(result).toEqual([
+        { single: { fr: 1 } },
+        { single: { fr: 2 } },
+        { single: 100 },
+      ]);
+    });
+
+    test("parses repeat functions with names", () => {
+      const result = parseGridTemplateComponent("repeat(3, [col-start] 1fr [col-end])");
+      expect(result).toEqual([
+        { repeat: [3, [{ size: { fr: 1 }, names: ["col-start"] }]] },
+      ]);
+    });
+
+    test("parses auto-fill repeat with names", () => {
+      const result = parseGridTemplateComponent("repeat(auto-fill, [col-start] 100px)");
+      expect(result).toEqual([
+        { repeat: ["auto-fill", [{ size: 100, names: ["col-start"] }]] },
+      ]);
+    });
+
+    test("parses complex grid template with mixed named and unnamed tracks", () => {
+      const result = parseGridTemplateComponent("[header] 100px [content-start] 1fr [content-end footer-start] 50px");
+      expect(result).toEqual([
+        { repeat: [1, [{ size: 100, names: ["header"] }]] },
+        { repeat: [1, [{ size: { fr: 1 }, names: ["content-start"] }]] },
+        { repeat: [1, [{ size: 50, names: ["content-end", "footer-start"] }]] },
+      ]);
     });
   });
 });
