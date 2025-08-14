@@ -1,11 +1,5 @@
-import type {
-  Color,
-  ColorInput,
-  ContainerNode,
-  ImageNode,
-  PartialStyle,
-  TextNode,
-} from "./types";
+import type { Color } from "./bindings/Color";
+import type { ContainerNode, ImageNode, PartialStyle, TextNode } from "./types";
 
 export function container(props: Omit<ContainerNode, "type">): ContainerNode {
   return {
@@ -72,14 +66,6 @@ export function rem(rem: number) {
 export function fr(fr: number) {
   return {
     fr,
-  };
-}
-
-export function gradient(from: ColorInput, to: ColorInput, angle = 0) {
-  return {
-    from,
-    to,
-    angle,
   };
 }
 

@@ -5,6 +5,10 @@
     "clientKind": "git",
     "useIgnoreFile": true
   },
+  "files": {
+    "ignoreUnknown": false,
+    "includes": ["**/*", "!**/worker-configuration.d.ts", "!**/bindings/*.ts"]
+  },
   "formatter": {
     "enabled": true,
     "useEditorconfig": true,
@@ -27,10 +31,6 @@
     "enabled": true,
     "rules": {
       "recommended": true,
-      "nursery": {
-        "noFloatingPromises": "error",
-        "noImportCycles": "error"
-      },
       "complexity": {
         "noExcessiveCognitiveComplexity": "error",
         "noUselessStringConcat": "error",

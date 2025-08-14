@@ -15,7 +15,7 @@ use crate::{FromCss, core::viewport::RenderContext, properties::ParseResult};
 /// This corresponds to CSS values that can be specified as pixels, percentages,
 /// or the 'auto' keyword for automatic sizing.
 #[derive(Default, Debug, Clone, Deserialize, Serialize, PartialEq, Copy, TS)]
-#[serde(try_from = "LengthUnitValue")]
+#[serde(try_from = "LengthUnitValue", into = "LengthUnitValue")]
 #[ts(as = "LengthUnitValue")]
 pub enum LengthUnit {
   /// Automatic sizing based on content
@@ -39,8 +39,8 @@ pub enum LengthUnit {
   Px(f32),
 }
 
-/// Proxy type for CSS `LengthUnit` deserialization.
-#[derive(Debug, Deserialize, TS)]
+/// Proxy type for CSS `LengthUnit` serialization/deserialization.
+#[derive(Debug, Deserialize, Serialize, TS)]
 #[serde(rename_all = "kebab-case")]
 pub enum LengthUnitValue {
   /// Automatic sizing based on content
@@ -96,6 +96,22 @@ impl TryFrom<LengthUnitValue> for LengthUnit {
 
         Ok(unit)
       }
+    }
+  }
+}
+
+impl From<LengthUnit> for LengthUnitValue {
+  fn from(value: LengthUnit) -> Self {
+    match value {
+      LengthUnit::Auto => LengthUnitValue::Auto,
+      LengthUnit::MinContent => LengthUnitValue::MinContent,
+      LengthUnit::MaxContent => LengthUnitValue::MaxContent,
+      LengthUnit::Percentage(v) => LengthUnitValue::Percentage(v),
+      LengthUnit::Rem(v) => LengthUnitValue::Rem(v),
+      LengthUnit::Em(v) => LengthUnitValue::Em(v),
+      LengthUnit::Vh(v) => LengthUnitValue::Vh(v),
+      LengthUnit::Vw(v) => LengthUnitValue::Vw(v),
+      LengthUnit::Px(v) => LengthUnitValue::Px(v),
     }
   }
 }
