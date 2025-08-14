@@ -10,5 +10,8 @@
 pub mod macros;
 /// Style properties and CSS-like attributes
 pub mod properties;
+/// Stylesheets: `Style`, `InheritableStyle`, `FontStyle` and resolution logic
+pub mod stylesheets;
 
 pub use properties::*;
+pub use stylesheets::*;

@@ -11,58 +11,69 @@ import type { TextOverflow } from "./TextOverflow";
 
 /**
  * Style properties that can be inherited by child elements.
- *
- * These properties are typically passed down from parent to child elements
- * in the layout hierarchy, such as font settings and colors.
  */
 export type InheritableStyle = { 
 /**
- * How text should be overflowed
+ * How text should be overflowed.
  */
 text_overflow?: TextOverflow, 
 /**
- * Color of the element's border
+ * Color of the element's border.
  */
 border_color?: Color, 
 /**
- * Text color for child text elements
+ * Text color for child text elements.
  */
 color?: LinearGradientOrColor, 
 /**
- * Font size in pixels for text rendering
+ * Font size for text rendering.
  */
 font_size?: LengthUnit, 
 /**
- * Font family name for text rendering
+ * Font family name for text rendering.
  */
 font_family?: FontFamily, 
 /**
- * Line height multiplier for text spacing
+ * Line height for text spacing.
  */
 line_height?: LengthUnit, 
 /**
- * Font weight for text rendering
+ * Font weight for text rendering.
  */
 font_weight?: FontWeight, 
 /**
- * Maximum number of lines for text before truncation
+ * Maximum number of lines for text before truncation.
  */
 line_clamp?: number, 
 /**
- * Corner radius for rounded borders
+ * Shorthand border radius (top, right, bottom, left).
  */
 border_radius?: Sides<LengthUnit>, 
 /**
- * Text alignment within the element
+ * Longhand: top border radius. Overrides `border_radius` top value.
+ */
+border_radius_top?: LengthUnit, 
+/**
+ * Longhand: right border radius. Overrides `border_radius` right value.
+ */
+border_radius_right?: LengthUnit, 
+/**
+ * Longhand: bottom border radius. Overrides `border_radius` bottom value.
+ */
+border_radius_bottom?: LengthUnit, 
+/**
+ * Longhand: left border radius. Overrides `border_radius` left value.
+ */
+border_radius_left?: LengthUnit, 
+/**
+ * Text alignment within the element.
  */
 text_align?: TextAlign, 
 /**
- * Additional spacing between characters in text
- * Positive values increase spacing, negative values decrease spacing
+ * Additional spacing between characters in text.
  */
 letter_spacing?: LengthUnit, 
 /**
- * Controls how images are scaled when rendered
- * This property determines the algorithm used for image scaling
+ * Controls how images are scaled when rendered.
  */
 image_rendering?: ImageScalingAlgorithm, };

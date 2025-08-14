@@ -1,0 +1,452 @@
+use cosmic_text::{Align, FamilyOwned, Weight};
+use merge::{Merge, option::overwrite_none};
+use serde::{Deserialize, Serialize};
+use taffy::{Size, Style as TaffyStyle};
+use ts_rs::TS;
+
+use crate::core::{DEFAULT_FONT_SIZE, DEFAULT_LINE_HEIGHT_SCALER, viewport::RenderContext};
+
+use super::properties::*;
+
+/// Represents the resolved font style for a text node.
+#[derive(Debug, Clone)]
+pub struct FontStyle {
+  /// Font size in pixels for text rendering.
+  pub font_size: f32,
+  /// Line height as an absolute value in pixels.
+  pub line_height: f32,
+  /// Font weight for text rendering.
+  pub font_weight: Weight,
+  /// Maximum number of lines for text before truncation.
+  pub line_clamp: Option<u32>,
+  /// Font family for text rendering.
+  pub font_family: Option<FamilyOwned>,
+  /// Letter spacing for text rendering in em units (relative to font size).
+  pub letter_spacing: Option<f32>,
+  /// Text alignment within the element.
+  pub text_align: Option<Align>,
+  /// How text should be overflowed.
+  pub text_overflow: TextOverflow,
+  /// Text color for child text elements.
+  pub color: LinearGradientOrColor,
+}
+
+/// Main styling structure that contains all layout and visual properties.
+#[derive(Debug, Clone, Deserialize, Serialize, TS)]
+#[serde(default)]
+#[ts(export, optional_fields)]
+pub struct Style {
+  /// Display algorithm to use for the element.
+  pub display: Display,
+  /// Width of the element.
+  pub width: LengthUnit,
+  /// Height of the element.
+  pub height: LengthUnit,
+  /// Max width of the element.
+  pub max_width: LengthUnit,
+  /// Max height of the element.
+  pub max_height: LengthUnit,
+  /// Min width of the element.
+  pub min_width: LengthUnit,
+  /// Min height of the element.
+  pub min_height: LengthUnit,
+  /// Aspect ratio of the element (width/height).
+  pub aspect_ratio: Option<f32>,
+  /// Internal spacing around the element's content (top, right, bottom, left).
+  pub padding: Sides<LengthUnit>,
+  /// Longhand: top padding. Overrides `padding` top value.
+  pub padding_top: Option<LengthUnit>,
+  /// Longhand: right padding. Overrides `padding` right value.
+  pub padding_right: Option<LengthUnit>,
+  /// Longhand: bottom padding. Overrides `padding` bottom value.
+  pub padding_bottom: Option<LengthUnit>,
+  /// Longhand: left padding. Overrides `padding` left value.
+  pub padding_left: Option<LengthUnit>,
+  /// External spacing around the element (top, right, bottom, left).
+  pub margin: Sides<LengthUnit>,
+  /// Longhand: top margin. Overrides `margin` top value.
+  pub margin_top: Option<LengthUnit>,
+  /// Longhand: right margin. Overrides `margin` right value.
+  pub margin_right: Option<LengthUnit>,
+  /// Longhand: bottom margin. Overrides `margin` bottom value.
+  pub margin_bottom: Option<LengthUnit>,
+  /// Longhand: left margin. Overrides `margin` left value.
+  pub margin_left: Option<LengthUnit>,
+  /// Positioning offsets (top, right, bottom, left) from the element's normal position.
+  pub inset: Sides<LengthUnit>,
+  /// Longhand: top offset. Overrides `inset` top value.
+  pub top: Option<LengthUnit>,
+  /// Longhand: right offset. Overrides `inset` right value.
+  pub right: Option<LengthUnit>,
+  /// Longhand: bottom offset. Overrides `inset` bottom value.
+  pub bottom: Option<LengthUnit>,
+  /// Longhand: left offset. Overrides `inset` left value.
+  pub left: Option<LengthUnit>,
+  /// Direction of flex layout (row or column).
+  pub flex_direction: FlexDirection,
+  /// How a single grid item is aligned along the inline (row) axis, overriding the container's justify-items value.
+  pub justify_self: Option<AlignItems>,
+  /// How items are aligned along the main axis.
+  pub justify_content: Option<JustifyContent>,
+  /// How lines are aligned within the flex container when there's extra space in the cross axis.
+  pub align_content: Option<JustifyContent>,
+  /// How grid items are aligned along the inline (row) axis within their grid areas.
+  pub justify_items: Option<AlignItems>,
+  /// How items are aligned along the cross axis.
+  pub align_items: Option<AlignItems>,
+  /// How a single item is aligned along the cross axis, overriding the container's align-items value.
+  pub align_self: Option<AlignItems>,
+  /// How flex items should wrap.
+  pub flex_wrap: FlexWrap,
+  /// The initial main size of the flex item before growing or shrinking.
+  pub flex_basis: LengthUnit,
+  /// Positioning method (relative, absolute, etc.).
+  pub position: Position,
+  /// Spacing between rows and columns in flex or grid layouts.
+  pub gap: Gap,
+  /// How much the flex item should grow relative to other flex items when positive free space is distributed.
+  pub flex_grow: f32,
+  /// How much the flex item should shrink relative to other flex items when negative free space is distributed.
+  pub flex_shrink: f32,
+  /// Width of the element's border on each side (top, right, bottom, left).
+  pub border_width: Sides<LengthUnit>,
+  /// Longhand: top border width. Overrides `border_width` top value.
+  pub border_width_top: Option<LengthUnit>,
+  /// Longhand: right border width. Overrides `border_width` right value.
+  pub border_width_right: Option<LengthUnit>,
+  /// Longhand: bottom border width. Overrides `border_width` bottom value.
+  pub border_width_bottom: Option<LengthUnit>,
+  /// Longhand: left border width. Overrides `border_width` left value.
+  pub border_width_left: Option<LengthUnit>,
+  /// How images should be fitted within their container.
+  pub object_fit: ObjectFit,
+  /// Background gradient(s).
+  pub background_image: Option<LinearGradients>,
+  /// Background color for the element.
+  pub background_color: Option<Color>,
+  /// Box shadow effect for the element.
+  pub box_shadow: Option<BoxShadows>,
+  /// Controls the size of implicitly-created grid columns.
+  pub grid_auto_columns: Option<Vec<GridTrackSize>>,
+  /// Controls the size of implicitly-created grid rows.
+  pub grid_auto_rows: Option<Vec<GridTrackSize>>,
+  /// Controls how auto-placed items are inserted in the grid.
+  pub grid_auto_flow: Option<GridAutoFlow>,
+  /// Specifies a grid item's size and location within the grid column.
+  pub grid_column: Option<GridLine>,
+  /// Specifies a grid item's size and location within the grid row.
+  pub grid_row: Option<GridLine>,
+  /// Defines the line names and track sizing functions of the grid columns.
+  pub grid_template_columns: Option<Vec<GridTemplateComponent>>,
+  /// Defines the line names and track sizing functions of the grid rows.
+  pub grid_template_rows: Option<Vec<GridTemplateComponent>>,
+  /// Inheritable style properties that cascade to child elements.
+  #[serde(flatten)]
+  pub inheritable_style: InheritableStyle,
+}
+
+impl Default for Style {
+  fn default() -> Self {
+    Self {
+      display: Display::Flex,
+      margin: Sides([LengthUnit::zero(); 4]),
+      margin_top: None,
+      margin_right: None,
+      margin_bottom: None,
+      margin_left: None,
+      padding: Sides([LengthUnit::zero(); 4]),
+      padding_top: None,
+      padding_right: None,
+      padding_bottom: None,
+      padding_left: None,
+      width: Default::default(),
+      height: Default::default(),
+      max_width: Default::default(),
+      max_height: Default::default(),
+      min_width: Default::default(),
+      min_height: Default::default(),
+      aspect_ratio: None,
+      inset: Default::default(),
+      top: None,
+      right: None,
+      bottom: None,
+      left: None,
+      flex_direction: Default::default(),
+      justify_content: Default::default(),
+      align_content: Default::default(),
+      justify_self: Default::default(),
+      justify_items: Default::default(),
+      align_items: Default::default(),
+      align_self: Default::default(),
+      position: Default::default(),
+      gap: Default::default(),
+      flex_grow: 0.0,
+      flex_shrink: 1.0,
+      flex_basis: Default::default(),
+      flex_wrap: FlexWrap::NoWrap,
+      border_width: Sides([LengthUnit::zero(); 4]),
+      border_width_top: None,
+      border_width_right: None,
+      border_width_bottom: None,
+      border_width_left: None,
+      object_fit: Default::default(),
+      box_shadow: Default::default(),
+      background_color: None,
+      background_image: None,
+      grid_auto_columns: None,
+      grid_auto_rows: None,
+      grid_auto_flow: None,
+      grid_column: None,
+      grid_row: None,
+      grid_template_columns: None,
+      grid_template_rows: None,
+      inheritable_style: Default::default(),
+    }
+  }
+}
+
+/// Style properties that can be inherited by child elements.
+#[derive(Debug, Clone, Deserialize, Serialize, Default, TS, Merge)]
+#[merge(strategy = overwrite_none)]
+#[ts(optional_fields, export)]
+pub struct InheritableStyle {
+  /// How text should be overflowed.
+  pub text_overflow: Option<TextOverflow>,
+  /// Color of the element's border.
+  pub border_color: Option<Color>,
+  /// Text color for child text elements.
+  pub color: Option<LinearGradientOrColor>,
+  /// Font size for text rendering.
+  pub font_size: Option<LengthUnit>,
+  /// Font family name for text rendering.
+  pub font_family: Option<FontFamily>,
+  /// Line height for text spacing.
+  pub line_height: Option<LengthUnit>,
+  /// Font weight for text rendering.
+  pub font_weight: Option<FontWeight>,
+  /// Maximum number of lines for text before truncation.
+  pub line_clamp: Option<u32>,
+  /// Shorthand border radius (top, right, bottom, left).
+  pub border_radius: Option<Sides<LengthUnit>>,
+  /// Longhand: top border radius. Overrides `border_radius` top value.
+  pub border_radius_top: Option<LengthUnit>,
+  /// Longhand: right border radius. Overrides `border_radius` right value.
+  pub border_radius_right: Option<LengthUnit>,
+  /// Longhand: bottom border radius. Overrides `border_radius` bottom value.
+  pub border_radius_bottom: Option<LengthUnit>,
+  /// Longhand: left border radius. Overrides `border_radius` left value.
+  pub border_radius_left: Option<LengthUnit>,
+  /// Text alignment within the element.
+  pub text_align: Option<TextAlign>,
+  /// Additional spacing between characters in text.
+  pub letter_spacing: Option<LengthUnit>,
+  /// Controls how images are scaled when rendered.
+  pub image_rendering: Option<ImageScalingAlgorithm>,
+}
+
+impl Style {
+  #[inline]
+  fn resolve_rect_with_longhands(
+    base: Sides<LengthUnit>,
+    top: Option<LengthUnit>,
+    right: Option<LengthUnit>,
+    bottom: Option<LengthUnit>,
+    left: Option<LengthUnit>,
+  ) -> taffy::Rect<LengthUnit> {
+    let mut values = base.0;
+    if let Some(v) = top {
+      values[0] = v;
+    }
+    if let Some(v) = right {
+      values[1] = v;
+    }
+    if let Some(v) = bottom {
+      values[2] = v;
+    }
+    if let Some(v) = left {
+      values[3] = v;
+    }
+    taffy::Rect {
+      top: values[0],
+      right: values[1],
+      bottom: values[2],
+      left: values[3],
+    }
+  }
+
+  #[inline]
+  fn resolved_padding(&self) -> taffy::Rect<LengthUnit> {
+    Self::resolve_rect_with_longhands(
+      self.padding,
+      self.padding_top,
+      self.padding_right,
+      self.padding_bottom,
+      self.padding_left,
+    )
+  }
+
+  #[inline]
+  fn resolved_margin(&self) -> taffy::Rect<LengthUnit> {
+    Self::resolve_rect_with_longhands(
+      self.margin,
+      self.margin_top,
+      self.margin_right,
+      self.margin_bottom,
+      self.margin_left,
+    )
+  }
+
+  #[inline]
+  fn resolved_inset(&self) -> taffy::Rect<LengthUnit> {
+    Self::resolve_rect_with_longhands(self.inset, self.top, self.right, self.bottom, self.left)
+  }
+
+  #[inline]
+  fn resolved_border_width(&self) -> taffy::Rect<LengthUnit> {
+    Self::resolve_rect_with_longhands(
+      self.border_width,
+      self.border_width_top,
+      self.border_width_right,
+      self.border_width_bottom,
+      self.border_width_left,
+    )
+  }
+
+  /// Converts this style to a Taffy-compatible style for layout calculations.
+  pub fn resolve_to_taffy_style(&self, context: &RenderContext) -> TaffyStyle {
+    TaffyStyle {
+      size: Size {
+        width: self.width.resolve_to_dimension(context),
+        height: self.height.resolve_to_dimension(context),
+      },
+      border: resolve_length_unit_rect_to_length_percentage(context, self.resolved_border_width()),
+      padding: resolve_length_unit_rect_to_length_percentage(context, self.resolved_padding()),
+      inset: resolve_length_unit_rect_to_length_percentage_auto(context, self.resolved_inset()),
+      margin: resolve_length_unit_rect_to_length_percentage_auto(context, self.resolved_margin()),
+      display: self.display.into(),
+      flex_direction: self.flex_direction.into(),
+      position: self.position.into(),
+      justify_content: self.justify_content.map(Into::into),
+      align_content: self.align_content.map(Into::into),
+      justify_items: self.justify_items.map(Into::into),
+      flex_grow: self.flex_grow,
+      align_items: self.align_items.map(Into::into),
+      gap: self.gap.resolve_to_size(context),
+      flex_basis: self.flex_basis.resolve_to_dimension(context),
+      flex_shrink: self.flex_shrink,
+      flex_wrap: self.flex_wrap.into(),
+      min_size: Size {
+        width: self.min_width.resolve_to_dimension(context),
+        height: self.min_height.resolve_to_dimension(context),
+      },
+      max_size: Size {
+        width: self.max_width.resolve_to_dimension(context),
+        height: self.max_height.resolve_to_dimension(context),
+      },
+      grid_auto_columns: self.grid_auto_columns.as_ref().map_or_else(Vec::new, |v| {
+        v.iter().map(|s| s.to_min_max(context)).collect()
+      }),
+      grid_auto_rows: self.grid_auto_rows.as_ref().map_or_else(Vec::new, |v| {
+        v.iter().map(|s| s.to_min_max(context)).collect()
+      }),
+      grid_auto_flow: self.grid_auto_flow.unwrap_or_default().into(),
+      grid_column: self
+        .grid_column
+        .as_ref()
+        .map_or_else(Default::default, |line| line.clone().into()),
+      grid_row: self
+        .grid_row
+        .as_ref()
+        .map_or_else(Default::default, |line| line.clone().into()),
+      grid_template_columns: self
+        .grid_template_columns
+        .as_ref()
+        .map_or_else(Vec::new, |v| {
+          v.iter().map(|s| s.to_taffy(context)).collect()
+        }),
+      grid_template_rows: self.grid_template_rows.as_ref().map_or_else(Vec::new, |v| {
+        v.iter().map(|s| s.to_taffy(context)).collect()
+      }),
+      aspect_ratio: self.aspect_ratio,
+      align_self: self.align_self.map(Into::into),
+      justify_self: self.justify_self.map(Into::into),
+      ..Default::default()
+    }
+  }
+
+  /// Resolves inheritable style properties to concrete values for text rendering.
+  pub fn resolve_to_font_style(&self, context: &RenderContext) -> FontStyle {
+    let font_size = self
+      .inheritable_style
+      .font_size
+      .map(|f| f.resolve_to_px(context))
+      .unwrap_or(DEFAULT_FONT_SIZE);
+
+    let line_height = self
+      .inheritable_style
+      .line_height
+      .map(|f| f.resolve_to_px(context))
+      .unwrap_or_else(|| font_size * DEFAULT_LINE_HEIGHT_SCALER);
+
+    FontStyle {
+      color: self
+        .inheritable_style
+        .color
+        .clone()
+        .unwrap_or(LinearGradientOrColor::Color(Color([0, 0, 0, 255]))),
+      font_size,
+      line_height,
+      font_weight: self
+        .inheritable_style
+        .font_weight
+        .unwrap_or_default()
+        .into(),
+      line_clamp: self.inheritable_style.line_clamp,
+      font_family: self.inheritable_style.font_family.clone().map(Into::into),
+      letter_spacing: self
+        .inheritable_style
+        .letter_spacing
+        .map(|spacing| spacing.resolve_to_px(context) / context.parent_font_size),
+      text_align: self.inheritable_style.text_align.and_then(Into::into),
+      text_overflow: self
+        .inheritable_style
+        .text_overflow
+        .unwrap_or(TextOverflow::Clip),
+    }
+  }
+}
+
+impl InheritableStyle {
+  /// Returns the final border radius considering longhands overriding shorthand.
+  pub fn resolved_border_radius(&self) -> Option<Sides<LengthUnit>> {
+    let mut any_longhand = false;
+    let mut values = if let Some(s) = self.border_radius {
+      s.0
+    } else {
+      [LengthUnit::zero(); 4]
+    };
+
+    if let Some(v) = self.border_radius_top {
+      values[0] = v;
+      any_longhand = true;
+    }
+    if let Some(v) = self.border_radius_right {
+      values[1] = v;
+      any_longhand = true;
+    }
+    if let Some(v) = self.border_radius_bottom {
+      values[2] = v;
+      any_longhand = true;
+    }
+    if let Some(v) = self.border_radius_left {
+      values[3] = v;
+      any_longhand = true;
+    }
+
+    if self.border_radius.is_some() || any_longhand {
+      Some(Sides(values))
+    } else {
+      None
+    }
+  }
+}

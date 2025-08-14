@@ -32,7 +32,7 @@ impl BorderProperties {
       color: style.inheritable_style.border_color.unwrap_or_default(),
       radius: style
         .inheritable_style
-        .border_radius
+        .resolved_border_radius()
         .map(|radius| BorderRadius::from_layout(context, layout, radius.into())),
     }
   }

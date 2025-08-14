@@ -105,7 +105,7 @@ pub trait Node<N: Node<N>>: Send + Sync + Debug + Clone {
       let border_radius = self
         .get_style()
         .inheritable_style
-        .border_radius
+        .resolved_border_radius()
         .map(|radius| BorderRadius::from_layout(context, &layout, radius.into()));
 
       draw_box_shadow(
@@ -130,7 +130,7 @@ pub trait Node<N: Node<N>>: Send + Sync + Debug + Clone {
       let border_radius = self
         .get_style()
         .inheritable_style
-        .border_radius
+        .resolved_border_radius()
         .map(|radius| BorderRadius::from_layout(context, &layout, radius.into()));
 
       draw_box_shadow(
@@ -155,7 +155,7 @@ pub trait Node<N: Node<N>>: Send + Sync + Debug + Clone {
       let radius = self
         .get_style()
         .inheritable_style
-        .border_radius
+        .resolved_border_radius()
         .map(|radius| BorderRadius::from_layout(context, &layout, radius.into()));
 
       draw_filled_rect_color(
@@ -179,7 +179,7 @@ pub trait Node<N: Node<N>>: Send + Sync + Debug + Clone {
       let radius = self
         .get_style()
         .inheritable_style
-        .border_radius
+        .resolved_border_radius()
         .map(|radius| BorderRadius::from_layout(context, &layout, radius.into()));
 
       for image in background_image.0.iter() {
