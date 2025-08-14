@@ -6,7 +6,7 @@
 use std::fmt::Debug;
 
 use rayon::iter::{ParallelBridge, ParallelIterator};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use crate::{core::GlobalContext, layout::trait_node::Node, style::Style};
 
@@ -14,7 +14,7 @@ use crate::{core::GlobalContext, layout::trait_node::Node, style::Style};
 ///
 /// Container nodes are used to group other nodes and apply layout
 /// properties like flexbox layout to arrange their children.
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct ContainerNode<Nodes: Node<Nodes>> {
   /// The styling properties for this container
   #[serde(default, flatten)]

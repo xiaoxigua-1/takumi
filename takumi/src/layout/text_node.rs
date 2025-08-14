@@ -3,7 +3,7 @@
 //! This module contains the TextNode struct which is used to render
 //! text content with configurable font properties and styling.
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use taffy::{AvailableSpace, Layout, Size};
 
 use crate::{
@@ -17,7 +17,7 @@ use crate::{
 ///
 /// Text nodes display text with configurable font properties,
 /// alignment, and styling options.
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct TextNode {
   /// The styling properties for this text node
   #[serde(default, flatten)]

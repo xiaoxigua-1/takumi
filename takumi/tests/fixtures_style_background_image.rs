@@ -1,5 +1,5 @@
 use takumi::{
-  Angle, Color, ColorHint, ContainerNode, GradientHint, InheritableStyle,
+  Angle, Color, ContainerNode, GradientHint, InheritableStyle,
   LengthUnit::{Percentage, Px},
   LinearGradient, LinearGradients, SidesValue, Style,
 };
@@ -12,14 +12,14 @@ fn test_style_background_image_gradient_basic() {
   // linear-gradient(45deg, #007aff, #34c759)
   let gradient = LinearGradient {
     steps: vec![
-      GradientHint::ColorHint(ColorHint {
+      GradientHint::ColorHint {
         color: Color([0, 122, 255, 255]),
         stop: None,
-      }),
-      GradientHint::ColorHint(ColorHint {
+      },
+      GradientHint::ColorHint {
         color: Color([52, 199, 89, 255]),
         stop: None,
-      }),
+      },
     ],
     angle: Angle(45.0),
   };
@@ -51,14 +51,14 @@ fn test_style_background_image_gradient_alt() {
   // linear-gradient(0deg, #ff3b30, #5856d6)
   let gradient = LinearGradient {
     steps: vec![
-      GradientHint::ColorHint(ColorHint {
+      GradientHint::ColorHint {
         color: Color([255, 59, 48, 255]),
         stop: None,
-      }),
-      GradientHint::ColorHint(ColorHint {
+      },
+      GradientHint::ColorHint {
         color: Color([88, 86, 214, 255]),
         stop: Some(1.0),
-      }),
+      },
     ],
     angle: Angle(0.0),
   };

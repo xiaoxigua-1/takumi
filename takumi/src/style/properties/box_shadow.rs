@@ -1,13 +1,13 @@
 use std::fmt::Debug;
 
 use cssparser::{BasicParseError, BasicParseErrorKind, ParseError, Parser, ParserInput};
-use serde::{Deserialize, Deserializer};
+use serde::{Deserialize, Deserializer, Serialize};
 use ts_rs::TS;
 
 use crate::{
   FromCss,
   properties::{ParseResult, color::Color},
-  units::LengthUnit,
+  length_unit::LengthUnit,
 };
 
 /// Represents a box shadow with all its properties.
@@ -17,7 +17,9 @@ use crate::{
 /// - Blur radius (optional, defaults to 0)
 /// - Spread radius (optional, defaults to 0)
 /// - Color (optional, defaults to transparent)
-#[derive(Debug, Clone, PartialEq, Copy)]
+#[derive(Debug, Clone, PartialEq, Copy, Serialize, Deserialize, TS)]
+#[ts(as = "BoxShadowValue")]
+#[serde(try_from = "BoxShadowValue")]
 pub struct BoxShadow {
   /// Whether the shadow is inset (inside the element) or outset (outside the element).
   pub inset: bool,
@@ -33,9 +35,61 @@ pub struct BoxShadow {
   pub color: Color,
 }
 
+/// Proxy type for `BoxShadow` Css deserialization.
+#[derive(Debug, Clone, PartialEq, TS, Deserialize)]
+#[serde(untagged)]
+pub enum BoxShadowValue {
+  /// Represents a structured box shadow.
+  Structured {
+    /// Whether the shadow is inset (inside the element) or outset (outside the element).
+    inset: bool,
+    /// Horizontal offset of the shadow.
+    offset_x: LengthUnit,
+    /// Vertical offset of the shadow.
+    offset_y: LengthUnit,
+    /// Blur radius of the shadow. Higher values create a more blurred shadow.
+    blur_radius: LengthUnit,
+    /// Spread radius of the shadow. Positive values expand the shadow, negative values shrink it.
+    spread_radius: LengthUnit,
+    /// Color of the shadow.
+    color: Color,
+  },
+  /// Represents a CSS string.
+  Css(String),
+}
+
+impl TryFrom<BoxShadowValue> for BoxShadow {
+  type Error = &'static str;
+
+  fn try_from(value: BoxShadowValue) -> Result<Self, Self::Error> {
+    match value {
+      BoxShadowValue::Structured {
+        inset,
+        offset_x,
+        offset_y,
+        blur_radius,
+        spread_radius,
+        color,
+      } => Ok(BoxShadow {
+        inset,
+        offset_x,
+        offset_y,
+        blur_radius,
+        spread_radius,
+        color,
+      }),
+      BoxShadowValue::Css(css) => {
+        let mut input = ParserInput::new(&css);
+        let mut parser = Parser::new(&mut input);
+
+        BoxShadow::from_css(&mut parser).map_err(|_| "Failed to parse box-shadow")
+      }
+    }
+  }
+}
+
 /// Represents a collection of box shadows, have custom `FromCss` implementation for comma-separated values.
-#[derive(Debug, Clone, PartialEq, TS)]
-#[ts(type = "string")]
+#[derive(Debug, Clone, PartialEq, TS, Serialize)]
 pub struct BoxShadows(pub Vec<BoxShadow>);
 
 impl<'de> Deserialize<'de> for BoxShadows {

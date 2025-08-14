@@ -2,7 +2,7 @@ use taffy::{Layout, Point};
 
 use crate::{
   effects::{BorderProperties, draw_border},
-  properties::{color::Color, units::SidesValue},
+  properties::{color::Color, length_unit::SidesValue},
   rendering::FastBlendImage,
 };
 

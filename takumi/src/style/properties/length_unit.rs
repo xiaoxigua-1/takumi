@@ -3,7 +3,7 @@
 //! This module provides various length units (px, em, rem, %, vh, vw) and
 //! utility types for handling measurements and spacing in CSS-like layouts.
 
-use cssparser::{Parser, Token, match_ignore_ascii_case};
+use cssparser::{Parser, ParserInput, Token, match_ignore_ascii_case};
 use serde::{Deserialize, Serialize};
 use taffy::{CompactLength, Dimension, LengthPercentage, LengthPercentageAuto, Rect, Size};
 use ts_rs::TS;
@@ -15,7 +15,8 @@ use crate::{FromCss, core::viewport::RenderContext, properties::ParseResult};
 /// This corresponds to CSS values that can be specified as pixels, percentages,
 /// or the 'auto' keyword for automatic sizing.
 #[derive(Default, Debug, Clone, Deserialize, Serialize, PartialEq, Copy, TS)]
-#[serde(rename_all = "kebab-case")]
+#[serde(try_from = "LengthUnitValue")]
+#[ts(as = "LengthUnitValue")]
 pub enum LengthUnit {
   /// Automatic sizing based on content
   #[default]
@@ -35,17 +36,59 @@ pub enum LengthUnit {
   /// Vw value relative to the viewport width (0-100)
   Vw(f32),
   /// Specific pixel value
-  #[serde(untagged)]
   Px(f32),
 }
 
 /// Proxy type for CSS `LengthUnit` deserialization.
 #[derive(Debug, Deserialize, TS)]
+#[serde(rename_all = "kebab-case")]
 pub enum LengthUnitValue {
-  /// Original `LengthUnit` deserialization
-  Unit(LengthUnit),
+  /// Automatic sizing based on content
+  Auto,
+  /// Minimum content size
+  MinContent,
+  /// Maximum content size
+  MaxContent,
+  /// Percentage value relative to parent container (0-100)
+  Percentage(f32),
+  /// Rem value relative to the root font size
+  Rem(f32),
+  /// Em value relative to the font size
+  Em(f32),
+  /// Vh value relative to the viewport height (0-100)
+  Vh(f32),
+  /// Vw value relative to the viewport width (0-100)
+  Vw(f32),
+  /// Specific pixel value
+  #[serde(untagged)]
+  Px(f32),
   /// CSS string representation
+  #[serde(untagged)]
   Css(String),
+}
+
+impl TryFrom<LengthUnitValue> for LengthUnit {
+  type Error = &'static str;
+
+  fn try_from(value: LengthUnitValue) -> Result<Self, Self::Error> {
+    match value {
+      LengthUnitValue::Auto => Ok(Self::Auto),
+      LengthUnitValue::MinContent => Ok(Self::MinContent),
+      LengthUnitValue::MaxContent => Ok(Self::MaxContent),
+      LengthUnitValue::Percentage(v) => Ok(Self::Percentage(v)),
+      LengthUnitValue::Rem(v) => Ok(Self::Rem(v)),
+      LengthUnitValue::Em(v) => Ok(Self::Em(v)),
+      LengthUnitValue::Vh(v) => Ok(Self::Vh(v)),
+      LengthUnitValue::Vw(v) => Ok(Self::Vw(v)),
+      LengthUnitValue::Px(v) => Ok(Self::Px(v)),
+      LengthUnitValue::Css(s) => {
+        let mut input = ParserInput::new(&s);
+        let mut parser = Parser::new(&mut input);
+
+        LengthUnit::from_css(&mut parser).map_err(|_| "Failed to parse CSS length unit")
+      }
+    }
+  }
 }
 
 impl LengthUnit {

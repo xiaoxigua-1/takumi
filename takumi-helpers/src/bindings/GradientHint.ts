@@ -2,14 +2,14 @@
 import type { Color } from "./Color";
 
 /**
- * Represents a single color stop in a gradient.
+ * Represents a gradient stop.
  */
-export type GradientStop = { 
+export type GradientHint = { 
 /**
- * The color of the gradient stop
+ * The color of the gradient stop.
  */
 color: Color, 
 /**
- * Position in the range [0.0, 1.0]
+ * The position of the gradient stop (0% to 100%).
  */
-position: number, };
+stop: number | null, } | number;

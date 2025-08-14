@@ -1,6 +1,6 @@
 use takumi::core::GlobalContext;
 use takumi::core::viewport::RenderContext;
-use takumi::style::units::{Gap, LengthUnit, SidesValue};
+use takumi::style::length_unit::{Gap, LengthUnit, SidesValue};
 
 fn create_test_context() -> RenderContext<'static> {
   let global = Box::leak(Box::new(GlobalContext::default()));

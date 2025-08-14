@@ -11,13 +11,13 @@ pub mod color;
 pub mod linear_gradient;
 /// Parsing utilities for style properties.
 pub mod parser;
-pub mod units;
+pub mod length_unit;
 
 pub use box_shadow::*;
 pub use color::*;
 pub use linear_gradient::*;
 pub use parser::*;
-pub use units::*;
+pub use length_unit::*;
 
 use cosmic_text::{Align, FamilyOwned, Weight};
 use cssparser::{BasicParseError, ParseError, Parser};
@@ -351,7 +351,7 @@ pub struct FontStyle {
 /// This structure combines both layout properties (like width, height, padding)
 /// and inheritable properties (like font settings, colors) that can be passed
 /// down to child elements.
-#[derive(Debug, Clone, Deserialize, TS)]
+#[derive(Debug, Clone, Deserialize, Serialize, TS)]
 #[serde(default)]
 #[ts(export, optional_fields)]
 pub struct Style {
@@ -719,7 +719,7 @@ impl From<ImageScalingAlgorithm> for FilterType {
 ///
 /// These properties are typically passed down from parent to child elements
 /// in the layout hierarchy, such as font settings and colors.
-#[derive(Debug, Clone, Deserialize, Default, Merge, TS)]
+#[derive(Debug, Clone, Deserialize, Serialize, Default, Merge, TS)]
 #[merge(strategy = overwrite_none)]
 #[ts(optional_fields, export)]
 pub struct InheritableStyle {

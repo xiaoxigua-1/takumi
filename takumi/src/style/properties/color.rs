@@ -1,7 +1,7 @@
 use csscolorparser::{NAMED_COLORS, ParseColorError};
 use cssparser::{Parser, ToCss, Token};
 use image::Rgba;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
 use crate::{FromCss, properties::ParseResult};
@@ -21,7 +21,7 @@ pub enum ColorValue {
 }
 
 /// Represents a color with 8-bit RGBA components.
-#[derive(Debug, Clone, PartialEq, Deserialize, TS, Copy)]
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize, TS, Copy)]
 #[serde(try_from = "ColorValue")]
 #[ts(as = "ColorValue")]
 pub struct Color(pub [u8; 4]);
