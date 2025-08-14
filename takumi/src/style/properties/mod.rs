@@ -7,17 +7,20 @@
 pub mod box_shadow;
 /// Color parsing and representation for styling.
 pub mod color;
+pub mod length_unit;
 /// Linear gradient properties for elements.
 pub mod linear_gradient;
 /// Parsing utilities for style properties.
 pub mod parser;
-pub mod length_unit;
+/// Sides and related utilities for specifying padding, margin, and borders.
+pub mod sides;
 
 pub use box_shadow::*;
 pub use color::*;
+pub use length_unit::*;
 pub use linear_gradient::*;
 pub use parser::*;
-pub use length_unit::*;
+pub use sides::*;
 
 use cosmic_text::{Align, FamilyOwned, Weight};
 use cssparser::{BasicParseError, ParseError, Parser};
@@ -224,7 +227,7 @@ impl_from_taffy_enum!(Display, taffy::Display, Flex, Grid);
 
 /// Defines how flex items are aligned along the cross axis.
 ///
-/// This enum determines how flex items are aligned within the flex container
+/// This enum determines how items are aligned within the flex container
 /// along the cross axis (perpendicular to the main axis).
 #[derive(Debug, Clone, Deserialize, Serialize, Copy, TS, PartialEq)]
 #[serde(rename_all = "kebab-case")]
@@ -372,11 +375,11 @@ pub struct Style {
   /// Aspect ratio of the element (width/height)
   pub aspect_ratio: Option<f32>,
   /// Internal spacing around the element's content (top, right, bottom, left)
-  pub padding: SidesValue<LengthUnit>,
+  pub padding: Sides<LengthUnit>,
   /// External spacing around the element (top, right, bottom, left)
-  pub margin: SidesValue<LengthUnit>,
+  pub margin: Sides<LengthUnit>,
   /// Positioning offsets (top, right, bottom, left) from the element's normal position
-  pub inset: SidesValue<LengthUnit>,
+  pub inset: Sides<LengthUnit>,
   /// Direction of flex layout (row or column)
   pub flex_direction: FlexDirection,
   /// How a single grid item is aligned along the inline (row) axis, overriding the container's justify-items value
@@ -404,7 +407,7 @@ pub struct Style {
   /// How much the flex item should shrink relative to other flex items when negative free space is distributed
   pub flex_shrink: f32,
   /// Width of the element's border on each side (top, right, bottom, left)
-  pub border_width: SidesValue<LengthUnit>,
+  pub border_width: Sides<LengthUnit>,
   /// How images should be fitted within their container
   pub object_fit: ObjectFit,
   /// Background gradient(s)
@@ -436,8 +439,8 @@ impl Default for Style {
   fn default() -> Self {
     Self {
       display: Display::Flex,
-      margin: SidesValue::SingleValue(LengthUnit::Px(0.0)),
-      padding: SidesValue::SingleValue(LengthUnit::Px(0.0)),
+      margin: Sides([LengthUnit::zero(); 4]),
+      padding: Sides([LengthUnit::zero(); 4]),
       width: Default::default(),
       height: Default::default(),
       max_width: Default::default(),
@@ -459,7 +462,7 @@ impl Default for Style {
       flex_shrink: 1.0,
       flex_basis: Default::default(),
       flex_wrap: FlexWrap::NoWrap,
-      border_width: SidesValue::SingleValue(LengthUnit::Px(0.0)),
+      border_width: Sides([LengthUnit::zero(); 4]),
       object_fit: Default::default(),
       box_shadow: Default::default(),
       background_color: None,
@@ -740,7 +743,7 @@ pub struct InheritableStyle {
   /// Maximum number of lines for text before truncation
   pub line_clamp: Option<u32>,
   /// Corner radius for rounded borders
-  pub border_radius: Option<SidesValue<LengthUnit>>,
+  pub border_radius: Option<Sides<LengthUnit>>,
   /// Text alignment within the element
   pub text_align: Option<TextAlign>,
   /// Additional spacing between characters in text

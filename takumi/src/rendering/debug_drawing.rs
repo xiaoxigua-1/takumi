@@ -2,8 +2,9 @@ use taffy::{Layout, Point};
 
 use crate::{
   effects::{BorderProperties, draw_border},
-  properties::{color::Color, length_unit::SidesValue},
+  properties::color::Color,
   rendering::FastBlendImage,
+  sides::Sides,
 };
 
 /// Draws debug borders around the node's layout areas.
@@ -18,7 +19,7 @@ pub fn draw_debug_border(canvas: &mut FastBlendImage, layout: Layout) {
   draw_border(
     canvas,
     BorderProperties {
-      width: SidesValue::SingleValue(1.0).into(),
+      width: Sides([1.0; 4]).into(),
       offset: Point { x, y },
       size,
       color: Color([255, 0, 0, 255]),
@@ -29,7 +30,7 @@ pub fn draw_debug_border(canvas: &mut FastBlendImage, layout: Layout) {
   draw_border(
     canvas,
     BorderProperties {
-      width: SidesValue::SingleValue(1.0).into(),
+      width: Sides([1.0; 4]).into(),
       offset: layout.location,
       size: layout.size,
       color: Color([0, 255, 0, 255]),

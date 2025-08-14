@@ -2229,6 +2229,7 @@ dependencies = [
  "rayon",
  "resvg",
  "serde",
+ "serde_json",
  "slotmap",
  "taffy",
  "ts-rs",

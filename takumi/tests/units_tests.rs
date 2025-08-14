@@ -1,6 +1,7 @@
 use takumi::core::GlobalContext;
 use takumi::core::viewport::RenderContext;
-use takumi::style::length_unit::{Gap, LengthUnit, SidesValue};
+use takumi::sides::Sides;
+use takumi::style::length_unit::{Gap, LengthUnit};
 
 fn create_test_context() -> RenderContext<'static> {
   let global = Box::leak(Box::new(GlobalContext::default()));
@@ -177,8 +178,7 @@ fn test_length_unit_context_dependent_calculations() {
 
 #[test]
 fn test_sides_value_single_value() {
-  let value = SidesValue::SingleValue(LengthUnit::Px(10.0));
-  let rect: taffy::Rect<LengthUnit> = value.into();
+  let rect: taffy::Rect<LengthUnit> = Sides([LengthUnit::Px(10.0); 4]).into();
 
   assert_eq!(rect.left, LengthUnit::Px(10.0));
   assert_eq!(rect.right, LengthUnit::Px(10.0));
@@ -187,24 +187,13 @@ fn test_sides_value_single_value() {
 }
 
 #[test]
-fn test_sides_value_axis_sides() {
-  let value = SidesValue::AxisSidesArray(LengthUnit::Px(20.0), LengthUnit::Px(10.0));
-  let rect: taffy::Rect<LengthUnit> = value.into();
-
-  assert_eq!(rect.left, LengthUnit::Px(10.0));
-  assert_eq!(rect.right, LengthUnit::Px(10.0));
-  assert_eq!(rect.top, LengthUnit::Px(20.0));
-  assert_eq!(rect.bottom, LengthUnit::Px(20.0));
-}
-
-#[test]
 fn test_sides_value_all_sides() {
-  let value = SidesValue::AllSides(
+  let value = Sides([
     LengthUnit::Px(10.0),
     LengthUnit::Px(20.0),
     LengthUnit::Px(30.0),
     LengthUnit::Px(40.0),
-  );
+  ]);
   let rect: taffy::Rect<LengthUnit> = value.into();
 
   assert_eq!(rect.top, LengthUnit::Px(10.0));
@@ -227,23 +216,6 @@ fn test_gap_array() {
   let gap = Gap::Array(LengthUnit::Px(15.0), LengthUnit::Px(20.0));
   let _size = gap.resolve_to_size(&context);
   // We can't test the taffy types directly, but the conversion should work
-}
-
-#[test]
-fn test_integration_scenario() {
-  let context = create_custom_context(1440, 900, 16.0, 14.0);
-
-  let margin = SidesValue::SingleValue(LengthUnit::Rem(1.0));
-  let padding = SidesValue::AxisSidesArray(LengthUnit::Em(0.5), LengthUnit::Percentage(2.0));
-  let gap = Gap::Array(LengthUnit::Vw(1.0), LengthUnit::Vh(2.0));
-
-  let margin_rect: taffy::Rect<LengthUnit> = margin.into();
-  let padding_rect: taffy::Rect<LengthUnit> = padding.into();
-  let _gap_size = gap.resolve_to_size(&context);
-
-  assert!((margin_rect.left.resolve_to_px(&context) - 16.0).abs() < 0.01);
-  assert!((padding_rect.top.resolve_to_px(&context) - 7.0).abs() < 0.01);
-  assert!((padding_rect.left.resolve_to_px(&context) - 0.28).abs() < 0.01);
 }
 
 #[test]

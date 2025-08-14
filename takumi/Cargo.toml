@@ -81,3 +81,6 @@ woff2 = ["dep:woff2-patched", "dep:bytes"]
 woff = ["dep:flate2"]
 http_image_store = ["dep:minreq", "dep:lru"]
 test_update_fixtures = []
+
+[dev-dependencies]
+serde_json = "1"

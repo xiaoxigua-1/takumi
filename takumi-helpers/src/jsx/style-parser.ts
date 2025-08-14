@@ -15,8 +15,6 @@ import {
   removeGlobalValues,
   type SnakeToCamelCase,
 } from "../utils";
-import { parseColor } from "./color-parsing";
-import { parseLinearGradient } from "./linear-gradient-parsing";
 import {
   parseAspectRatio,
   parseBoxShadow,
@@ -28,10 +26,8 @@ import {
   parseGridTemplateColumns,
   parseGridTemplateRows,
   parseImageRendering,
-  parseLengthUnit,
   parseLineClamp,
   parsePosition,
-  parseSideLengthUnits,
 } from "./style-parsing";
 
 const SKIP_PARSING_SYMBOL = Symbol("skip-parsing");

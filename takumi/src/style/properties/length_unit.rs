@@ -85,7 +85,16 @@ impl TryFrom<LengthUnitValue> for LengthUnit {
         let mut input = ParserInput::new(&s);
         let mut parser = Parser::new(&mut input);
 
-        LengthUnit::from_css(&mut parser).map_err(|_| "Failed to parse CSS length unit")
+        let unit =
+          LengthUnit::from_css(&mut parser).map_err(|_| "Failed to parse CSS length unit")?;
+
+        // Ensure no trailing tokens remain so that multi-value CSS like
+        // "1px 2px" does not get parsed as a single LengthUnit.
+        parser
+          .expect_exhausted()
+          .map_err(|_| "Failed to parse CSS length unit: trailing tokens found")?;
+
+        Ok(unit)
       }
     }
   }
@@ -195,59 +204,6 @@ impl LengthUnit {
   pub fn resolve_to_dimension(self, context: &RenderContext) -> Dimension {
     // SAFETY: only length/percentage/auto are allowed
     unsafe { Dimension::from_raw(self.to_compact_length(context)) }
-  }
-}
-
-/// Represents values that can be applied to all sides of an element.
-///
-/// This enum allows for flexible specification of values like padding, margin,
-/// or border sizes using either a single value for all sides, separate values
-/// for vertical/horizontal axes, or individual values for each side.
-#[derive(Debug, Clone, Copy, Deserialize, Serialize, TS, PartialEq)]
-#[serde(untagged)]
-pub enum SidesValue<T> {
-  /// Same value for all four sides
-  SingleValue(T),
-  /// Separate values for vertical and horizontal sides (vertical, horizontal)
-  AxisSidesArray(T, T),
-  /// Individual values for each side (top, right, bottom, left)
-  AllSides(T, T, T, T),
-}
-
-impl<T> From<T> for SidesValue<T> {
-  fn from(value: T) -> Self {
-    Self::SingleValue(value)
-  }
-}
-
-impl<T: Default> Default for SidesValue<T> {
-  fn default() -> Self {
-    Self::SingleValue(T::default())
-  }
-}
-
-impl<T: Copy, F: Copy + Default + Into<T>> From<SidesValue<F>> for Rect<T> {
-  fn from(value: SidesValue<F>) -> Self {
-    match value {
-      SidesValue::AllSides(top, right, bottom, left) => Rect {
-        left: left.into(),
-        right: right.into(),
-        top: top.into(),
-        bottom: bottom.into(),
-      },
-      SidesValue::AxisSidesArray(vertical, horizontal) => Rect {
-        left: horizontal.into(),
-        right: horizontal.into(),
-        top: vertical.into(),
-        bottom: vertical.into(),
-      },
-      SidesValue::SingleValue(value) => Rect {
-        left: value.into(),
-        right: value.into(),
-        top: value.into(),
-        bottom: value.into(),
-      },
-    }
   }
 }
 

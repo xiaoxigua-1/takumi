@@ -19,7 +19,7 @@ import type { LinearGradientOrColor } from "./LinearGradientOrColor";
 import type { LinearGradients } from "./LinearGradients";
 import type { ObjectFit } from "./ObjectFit";
 import type { Position } from "./Position";
-import type { SidesValue } from "./SidesValue";
+import type { Sides } from "./Sides";
 import type { TextAlign } from "./TextAlign";
 import type { TextOverflow } from "./TextOverflow";
 
@@ -66,15 +66,15 @@ aspect_ratio?: number,
 /**
  * Internal spacing around the element's content (top, right, bottom, left)
  */
-padding: SidesValue<LengthUnit>, 
+padding: Sides<LengthUnit>, 
 /**
  * External spacing around the element (top, right, bottom, left)
  */
-margin: SidesValue<LengthUnit>, 
+margin: Sides<LengthUnit>, 
 /**
  * Positioning offsets (top, right, bottom, left) from the element's normal position
  */
-inset: SidesValue<LengthUnit>, 
+inset: Sides<LengthUnit>, 
 /**
  * Direction of flex layout (row or column)
  */
@@ -130,7 +130,7 @@ flex_shrink: number,
 /**
  * Width of the element's border on each side (top, right, bottom, left)
  */
-border_width: SidesValue<LengthUnit>, 
+border_width: Sides<LengthUnit>, 
 /**
  * How images should be fitted within their container
  */
@@ -210,7 +210,7 @@ line_clamp?: number,
 /**
  * Corner radius for rounded borders
  */
-border_radius?: SidesValue<LengthUnit>, 
+border_radius?: Sides<LengthUnit>, 
 /**
  * Text alignment within the element
  */

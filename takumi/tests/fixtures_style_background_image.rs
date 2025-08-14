@@ -1,7 +1,7 @@
 use takumi::{
   Angle, Color, ContainerNode, GradientHint, InheritableStyle,
   LengthUnit::{Percentage, Px},
-  LinearGradient, LinearGradients, SidesValue, Style,
+  LinearGradient, LinearGradients, Style,
 };
 
 mod test_utils;
@@ -32,7 +32,7 @@ fn test_style_background_image_gradient_basic() {
       background_image: Some(LinearGradients(vec![gradient])),
       // Add radius to exercise rounded background composition path
       inheritable_style: InheritableStyle {
-        border_radius: Some(SidesValue::SingleValue(Px(12.0))),
+        border_radius: Some(Px(12.0).into()),
         ..Default::default()
       },
       ..Default::default()

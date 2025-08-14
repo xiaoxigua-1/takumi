@@ -1,7 +1,7 @@
 use takumi::{
   BoxShadow, BoxShadows, Color, ContainerNode, InheritableStyle,
   LengthUnit::{Percentage, Px},
-  Position, SidesValue, Style,
+  Position, Style,
 };
 
 mod test_utils;
@@ -33,7 +33,7 @@ fn test_style_border_radius() {
       height: Percentage(100.0),
       background_color: Some(Color([255, 0, 0, 255])), // Red background to show rounded corners
       inheritable_style: InheritableStyle {
-        border_radius: Some(SidesValue::SingleValue(Px(20.0))), // Uniform rounded corners of 20px
+        border_radius: Some(Px(20.0).into()), // Uniform rounded corners of 20px
         ..Default::default()
       },
       ..Default::default()
@@ -114,7 +114,7 @@ fn test_style_box_shadow_inset() {
           height: Px(80.0),
           background_color: Some(Color([255, 255, 255, 255])), // White child for inset visibility
           inheritable_style: InheritableStyle {
-            border_radius: Some(SidesValue::SingleValue(Px(16.0))),
+            border_radius: Some(Px(16.0).into()),
             ..Default::default()
           },
           box_shadow: Some(BoxShadows(vec![BoxShadow {

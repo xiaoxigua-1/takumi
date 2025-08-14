@@ -5,7 +5,7 @@ import type { FontWeight } from "./FontWeight";
 import type { ImageScalingAlgorithm } from "./ImageScalingAlgorithm";
 import type { LengthUnit } from "./LengthUnit";
 import type { LinearGradientOrColor } from "./LinearGradientOrColor";
-import type { SidesValue } from "./SidesValue";
+import type { Sides } from "./Sides";
 import type { TextAlign } from "./TextAlign";
 import type { TextOverflow } from "./TextOverflow";
 
@@ -51,7 +51,7 @@ line_clamp?: number,
 /**
  * Corner radius for rounded borders
  */
-border_radius?: SidesValue<LengthUnit>, 
+border_radius?: Sides<LengthUnit>, 
 /**
  * Text alignment within the element
  */
