@@ -6,8 +6,8 @@ use ts_rs::TS;
 
 use crate::{
   FromCss,
-  properties::{ParseResult, color::Color},
   length_unit::LengthUnit,
+  properties::{ParseResult, color::Color},
 };
 
 /// Represents a box shadow with all its properties.

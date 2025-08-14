@@ -10,7 +10,6 @@ import { renderToString } from "react-dom/server";
 import { container, image, text } from "../helpers";
 import type { Node } from "../types";
 import { parseStyle } from "./style-parser";
-import { parseLengthUnit } from "./style-parsing";
 import { stylePresets } from "./style-presets";
 
 const REACT_ELEMENT_TYPE = Symbol.for("react.transitional.element");
@@ -88,8 +87,8 @@ function createImageElement(element: ReactElement<ComponentProps<"img">>) {
   return [
     image(element.props.src, {
       ...parseStyle(element.props.style),
-      width: width ? parseLengthUnit(width) : undefined,
-      height: height ? parseLengthUnit(height) : undefined,
+      width,
+      height,
     }),
   ];
 }

@@ -1,12 +1,12 @@
 import type { JSX } from "react";
 import { em, rgba } from "../helpers";
-import type { Style } from "../types";
+import type { PartialStyle } from "../types";
 
 // Reference from Chromium's default style presets
 // https://chromium.googlesource.com/chromium/blink/+/master/Source/core/css/html.css
 // https://github.com/vercel/satori/blob/main/src/handler/presets.ts
 export const stylePresets: Partial<
-  Record<keyof JSX.IntrinsicElements, Partial<Style>>
+  Record<keyof JSX.IntrinsicElements, PartialStyle>
 > = {
   // Generic block-level elements
   p: {
