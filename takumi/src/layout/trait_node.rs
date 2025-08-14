@@ -8,10 +8,9 @@ use std::fmt::Debug;
 use taffy::{AvailableSpace, Layout, Size};
 
 use crate::{
-  ColorInput,
   core::{GlobalContext, RenderContext},
   effects::{BorderRadius, BoxShadowRenderPhase, draw_box_shadow},
-  rendering::{FastBlendImage, draw_background},
+  rendering::{FastBlendImage, draw_filled_rect_color, draw_filled_rect_gradient},
   style::Style,
 };
 
@@ -159,11 +158,12 @@ pub trait Node<N: Node<N>>: Send + Sync + Debug + Clone {
         .border_radius
         .map(|radius| BorderRadius::from_layout(context, &layout, radius.into()));
 
-      draw_background(
-        &ColorInput::Color(*background_color),
-        radius,
+      draw_filled_rect_color(
         canvas,
-        layout,
+        layout.size,
+        layout.location,
+        *background_color,
+        radius,
       );
     }
   }
@@ -182,12 +182,9 @@ pub trait Node<N: Node<N>>: Send + Sync + Debug + Clone {
         .border_radius
         .map(|radius| BorderRadius::from_layout(context, &layout, radius.into()));
 
-      draw_background(
-        &ColorInput::Gradient(background_image.clone()),
-        radius,
-        canvas,
-        layout,
-      );
+      for image in background_image.0.iter() {
+        draw_filled_rect_gradient(canvas, layout.size, layout.location, image, radius);
+      }
     }
   }
 

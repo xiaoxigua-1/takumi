@@ -3,9 +3,9 @@ use std::sync::LazyLock;
 use cosmic_text::Weight;
 use taffy::{AvailableSpace, geometry::Size};
 use takumi::{
-  Color, FontFamily,
+  Color, FontFamily, LinearGradientOrColor,
   core::{DEFAULT_FONT_SIZE, DEFAULT_LINE_HEIGHT_SCALER, GlobalContext, RenderContext},
-  style::ResolvedFontStyle,
+  style::FontStyle,
 };
 
 const NOTO_SANS_REGULAR_BUFFER: &[u8] =
@@ -14,10 +14,6 @@ const NOTO_SANS_REGULAR_BUFFER: &[u8] =
 // Viewport dimensions
 const VIEWPORT_WIDTH: u32 = 800;
 const VIEWPORT_HEIGHT: u32 = 600;
-
-// Color values
-const COLOR_BLACK: u8 = 0;
-const COLOR_ALPHA_OPAQUE: f32 = 1.0;
 
 // Font settings
 const LETTER_SPACING_0: f32 = 0.0;
@@ -48,8 +44,8 @@ fn create_test_context() -> RenderContext<'static> {
 }
 
 // Helper function to create a basic ResolvedFontStyle for testing
-fn create_test_font_style() -> ResolvedFontStyle {
-  ResolvedFontStyle {
+fn create_test_font_style() -> FontStyle {
+  FontStyle {
     font_size: DEFAULT_FONT_SIZE,
     line_height: DEFAULT_FONT_SIZE * DEFAULT_LINE_HEIGHT_SCALER,
     font_weight: Weight::NORMAL,
@@ -58,7 +54,7 @@ fn create_test_font_style() -> ResolvedFontStyle {
     letter_spacing: Some(LETTER_SPACING_0),
     text_align: Some(cosmic_text::Align::Left),
     text_overflow: takumi::style::TextOverflow::Clip,
-    color: Color::Rgba(COLOR_BLACK, COLOR_BLACK, COLOR_BLACK, COLOR_ALPHA_OPAQUE).into(),
+    color: LinearGradientOrColor::Color(Color([0, 0, 0, 255])),
   }
 }
 
@@ -257,7 +253,7 @@ mod measure_text_tests {
   // Helper function to measure text with custom style
   fn measure_text_with_style(
     text: &str,
-    style: &ResolvedFontStyle,
+    style: &FontStyle,
     width: Option<f32>,
     height: Option<f32>,
     available_width: AvailableSpace,

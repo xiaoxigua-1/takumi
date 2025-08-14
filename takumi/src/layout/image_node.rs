@@ -5,7 +5,7 @@
 
 use std::sync::{Arc, OnceLock};
 
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use taffy::{AvailableSpace, Layout, Size};
 
 use crate::{
@@ -21,7 +21,7 @@ use crate::{
 ///
 /// Image nodes display images loaded from URLs or file paths,
 /// with support for async loading and caching.
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct ImageNode {
   /// The styling properties for this image node
   #[serde(default, flatten)]

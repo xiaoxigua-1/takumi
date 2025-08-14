@@ -11,9 +11,16 @@ pub mod color;
 pub mod linear_gradient;
 /// Parsing utilities for style properties.
 pub mod parser;
+pub mod units;
+
+pub use box_shadow::*;
+pub use color::*;
+pub use linear_gradient::*;
+pub use parser::*;
+pub use units::*;
 
 use cosmic_text::{Align, FamilyOwned, Weight};
-use cssparser::{BasicParseError, ParseError};
+use cssparser::{BasicParseError, ParseError, Parser};
 use image::imageops::FilterType;
 use merge::{Merge, option::overwrite_none};
 use serde::{Deserialize, Serialize};
@@ -24,16 +31,19 @@ use taffy::{
 use ts_rs::TS;
 
 use crate::{
-  Gradient,
   core::{DEFAULT_FONT_SIZE, DEFAULT_LINE_HEIGHT_SCALER, viewport::RenderContext},
   impl_from_taffy_enum,
-  style::{
-    Color, ColorInput, Gap, LengthUnit, SidesValue, resolve_length_unit_rect_to_length_percentage,
-    resolve_length_unit_rect_to_length_percentage_auto,
-  },
 };
 
 type ParseResult<'i, T, E = BasicParseError<'i>> = Result<T, ParseError<'i, E>>;
+
+/// Trait for types that can be deserialized from CSS.
+pub trait FromCss<'i> {
+  /// Deserializes the type from a CSS string.
+  fn from_css(input: &mut Parser<'i, '_>) -> ParseResult<'i, Self>
+  where
+    Self: Sized;
+}
 
 /// Represents font weight as a numeric value.
 ///
@@ -151,72 +161,6 @@ impl_from_taffy_enum!(
   RowReverse,
   ColumnReverse
 );
-
-/// Defines a box shadow for an element.
-///
-/// This struct contains the properties for a box shadow, including color,
-/// offset, blur radius, spread radius, and inset flag.
-#[derive(Debug, Clone, Deserialize, Serialize, TS, PartialEq)]
-pub struct BoxShadow {
-  /// Color of the box shadow
-  pub color: ColorInput,
-  /// Horizontal offset of the box shadow
-  pub offset_x: LengthUnit,
-  /// Vertical offset of the box shadow
-  pub offset_y: LengthUnit,
-  /// Blur radius of the box shadow (must be non-negative)
-  pub blur_radius: LengthUnit,
-  /// Spread radius of the box shadow (can be negative)
-  pub spread_radius: LengthUnit,
-  /// Whether the shadow is inset (inside the element) or outset (outside the element)
-  #[serde(default)]
-  pub inset: bool,
-}
-
-impl BoxShadow {
-  pub(crate) fn resolve(self, context: &RenderContext) -> BoxShadowResolved {
-    BoxShadowResolved {
-      color: self.color,
-      offset_x: self.offset_x.resolve_to_px(context),
-      offset_y: self.offset_y.resolve_to_px(context),
-      blur_radius: self.blur_radius.resolve_to_px(context),
-      spread_radius: self.spread_radius.resolve_to_px(context),
-      inset: self.inset,
-    }
-  }
-}
-
-/// Represents a resolved box shadow with concrete pixel values.
-///
-/// This struct contains the final computed values for a box shadow
-/// after resolving relative units to absolute pixels.
-pub(crate) struct BoxShadowResolved {
-  /// Color of the box shadow
-  pub color: ColorInput,
-  /// Horizontal offset in pixels
-  pub offset_x: f32,
-  /// Vertical offset in pixels
-  pub offset_y: f32,
-  /// Blur radius in pixels
-  pub blur_radius: f32,
-  /// Spread radius in pixels
-  pub spread_radius: f32,
-  /// Whether the shadow is inset (inside the element)
-  pub inset: bool,
-}
-
-/// Defines a box shadow for an element.
-///
-/// This enum allows for flexible specification of box shadows, including
-/// a single shadow or multiple shadows.
-#[derive(Debug, Clone, Deserialize, Serialize, TS, PartialEq)]
-#[serde(untagged)]
-pub enum BoxShadowInput {
-  /// A single box shadow
-  Single(BoxShadow),
-  /// Multiple box shadows
-  Multiple(Vec<BoxShadow>),
-}
 
 /// Defines how flex items are aligned along the main axis.
 ///
@@ -381,7 +325,7 @@ impl From<FontFamily> for FamilyOwned {
 /// This struct contains the resolved font style properties after inheriting
 /// from parent elements and converting relative units to absolute values.
 #[derive(Debug, Clone)]
-pub struct ResolvedFontStyle {
+pub struct FontStyle {
   /// Font size in pixels for text rendering
   pub font_size: f32,
   /// Line height as an absolute value in pixels
@@ -399,7 +343,7 @@ pub struct ResolvedFontStyle {
   /// How text should be overflowed
   pub text_overflow: TextOverflow,
   /// Text color for child text elements
-  pub color: ColorInput,
+  pub color: LinearGradientOrColor,
 }
 
 /// Main styling structure that contains all layout and visual properties.
@@ -407,7 +351,7 @@ pub struct ResolvedFontStyle {
 /// This structure combines both layout properties (like width, height, padding)
 /// and inheritable properties (like font settings, colors) that can be passed
 /// down to child elements.
-#[derive(Debug, Clone, Deserialize, Serialize, TS)]
+#[derive(Debug, Clone, Deserialize, TS)]
 #[serde(default)]
 #[ts(export, optional_fields)]
 pub struct Style {
@@ -464,11 +408,11 @@ pub struct Style {
   /// How images should be fitted within their container
   pub object_fit: ObjectFit,
   /// Background gradient(s)
-  pub background_image: Option<Gradient>,
+  pub background_image: Option<LinearGradients>,
   /// Background color for the element
   pub background_color: Option<Color>,
   /// Box shadow effect for the element
-  pub box_shadow: Option<BoxShadowInput>,
+  pub box_shadow: Option<BoxShadows>,
   /// Controls the size of implicitly-created grid columns
   pub grid_auto_columns: Option<Vec<GridTrackSize>>,
   /// Controls the size of implicitly-created grid rows
@@ -775,16 +719,16 @@ impl From<ImageScalingAlgorithm> for FilterType {
 ///
 /// These properties are typically passed down from parent to child elements
 /// in the layout hierarchy, such as font settings and colors.
-#[derive(Debug, Clone, Deserialize, Default, Serialize, Merge, TS)]
+#[derive(Debug, Clone, Deserialize, Default, Merge, TS)]
 #[merge(strategy = overwrite_none)]
 #[ts(optional_fields, export)]
 pub struct InheritableStyle {
   /// How text should be overflowed
   pub text_overflow: Option<TextOverflow>,
   /// Color of the element's border
-  pub border_color: Option<ColorInput>,
+  pub border_color: Option<Color>,
   /// Text color for child text elements
-  pub color: Option<ColorInput>,
+  pub color: Option<LinearGradientOrColor>,
   /// Font size in pixels for text rendering
   pub font_size: Option<LengthUnit>,
   /// Font family name for text rendering
@@ -893,7 +837,7 @@ impl Style {
   /// # Returns
   ///
   /// A `ResolvedFontStyle` with all font-related properties resolved to concrete values
-  pub fn resolve_to_font_style(&self, context: &RenderContext) -> ResolvedFontStyle {
+  pub fn resolve_to_font_style(&self, context: &RenderContext) -> FontStyle {
     let font_size = self
       .inheritable_style
       .font_size
@@ -906,7 +850,7 @@ impl Style {
       .map(|f| f.resolve_to_px(context))
       .unwrap_or_else(|| font_size * DEFAULT_LINE_HEIGHT_SCALER);
 
-    ResolvedFontStyle {
+    FontStyle {
       color: self.inheritable_style.color.clone().unwrap_or_default(),
       font_size,
       line_height,

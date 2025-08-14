@@ -1,6 +1,6 @@
 use taffy::{AvailableSpace, geometry::Size};
 
-use crate::{core::RenderContext, rendering::construct_text_buffer, style::ResolvedFontStyle};
+use crate::{core::RenderContext, rendering::construct_text_buffer, style::FontStyle};
 
 /// Measures the size of image based on known dimensions and available space.
 pub fn measure_image(
@@ -92,7 +92,7 @@ pub fn measure_image(
 pub fn measure_text(
   context: &RenderContext,
   text: &str,
-  style: &ResolvedFontStyle,
+  style: &FontStyle,
   known_dimensions: Size<Option<f32>>,
   available_space: Size<AvailableSpace>,
 ) -> Size<f32> {

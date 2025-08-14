@@ -3,11 +3,12 @@
 //! This module provides various length units (px, em, rem, %, vh, vw) and
 //! utility types for handling measurements and spacing in CSS-like layouts.
 
+use cssparser::{Parser, Token, match_ignore_ascii_case};
 use serde::{Deserialize, Serialize};
 use taffy::{CompactLength, Dimension, LengthPercentage, LengthPercentageAuto, Rect, Size};
 use ts_rs::TS;
 
-use crate::core::viewport::RenderContext;
+use crate::{FromCss, core::viewport::RenderContext, properties::ParseResult};
 
 /// Represents a value that can be a specific length, percentage, or automatic.
 ///
@@ -38,9 +39,60 @@ pub enum LengthUnit {
   Px(f32),
 }
 
+/// Proxy type for CSS `LengthUnit` deserialization.
+#[derive(Debug, Deserialize, TS)]
+pub enum LengthUnitValue {
+  /// Original `LengthUnit` deserialization
+  Unit(LengthUnit),
+  /// CSS string representation
+  Css(String),
+}
+
+impl LengthUnit {
+  /// Returns a zero pixel length unit.
+  pub const fn zero() -> Self {
+    Self::Px(0.0)
+  }
+}
+
 impl From<f32> for LengthUnit {
   fn from(value: f32) -> Self {
     Self::Px(value)
+  }
+}
+
+impl<'i> FromCss<'i> for LengthUnit {
+  fn from_css(input: &mut Parser<'i, '_>) -> ParseResult<'i, Self> {
+    let location = input.current_source_location();
+    let token = input.next()?;
+
+    match *token {
+      Token::Ident(ref unit) => match_ignore_ascii_case! {&unit,
+        "auto" => Ok(Self::Auto),
+        "min-content" => Ok(Self::MinContent),
+        "max-content" => Ok(Self::MaxContent),
+        _ => Err(location.new_basic_unexpected_token_error(token.clone()).into()),
+      },
+      Token::Dimension {
+        value, ref unit, ..
+      } => {
+        match_ignore_ascii_case! {&unit,
+          "px" => Ok(Self::Px(value)),
+          "em" => Ok(Self::Em(value)),
+          "rem" => Ok(Self::Rem(value)),
+          "vw" => Ok(Self::Vw(value)),
+          "vh" => Ok(Self::Vh(value)),
+          _ => Err(location.new_basic_unexpected_token_error(token.clone()).into()),
+        }
+      }
+      Token::Percentage { unit_value, .. } => Ok(Self::Percentage(unit_value * 100.0)),
+      Token::Number { value, .. } => Ok(Self::Px(value)),
+      _ => Err(
+        location
+          .new_basic_unexpected_token_error(token.clone())
+          .into(),
+      ),
+    }
   }
 }
 

@@ -1,8 +1,8 @@
 use taffy::{Layout, Point};
 
 use crate::{
-  Color, SidesValue,
   effects::{BorderProperties, draw_border},
+  properties::{color::Color, units::SidesValue},
   rendering::FastBlendImage,
 };
 
@@ -21,7 +21,7 @@ pub fn draw_debug_border(canvas: &mut FastBlendImage, layout: Layout) {
       width: SidesValue::SingleValue(1.0).into(),
       offset: Point { x, y },
       size,
-      color: Color::Rgb(255, 0, 0).into(),
+      color: Color([255, 0, 0, 255]),
       radius: None,
     },
   );
@@ -32,7 +32,7 @@ pub fn draw_debug_border(canvas: &mut FastBlendImage, layout: Layout) {
       width: SidesValue::SingleValue(1.0).into(),
       offset: layout.location,
       size: layout.size,
-      color: Color::Rgb(0, 255, 0).into(),
+      color: Color([0, 255, 0, 255]),
       radius: None,
     },
   );
