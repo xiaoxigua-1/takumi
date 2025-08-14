@@ -53,7 +53,8 @@ pub fn draw_filled_rect_gradient(
 
 /// Creates an image from a gradient.
 pub fn create_gradient_image(color: &LinearGradient, width: u32, height: u32) -> RgbaImage {
+  let stops = color.resolve_stops();
   RgbaImage::from_par_fn(width, height, |x, y| {
-    color.at(width as f32, height as f32, x, y).into()
+    color.at(width as f32, height as f32, x, y, &stops).into()
   })
 }

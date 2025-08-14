@@ -104,6 +104,9 @@ fn draw_buffer(
   let mut font_system = context.global.font_context.font_system.lock().unwrap();
   let mut font_cache = context.global.font_context.font_cache.lock().unwrap();
 
+  // Pre-resolve gradient stops once if needed
+  let mut cached_stops: Option<(f32, f32, Vec<crate::style::GradientStop>)> = None;
+
   for run in buffer.layout_runs() {
     for glyph in run.glyphs.iter() {
       let physical_glyph = glyph.physical((0., 0.), 1.0);
@@ -117,7 +120,7 @@ fn draw_buffer(
           .color_opt
           .map(|color| Rgba(color.as_rgba()))
           .or_else(|| match color {
-            LinearGradientOrColor::Color(c) => Some((*c).into()),
+            LinearGradientOrColor::Color(color) => Some((*color).into()),
             LinearGradientOrColor::Gradient(_) => None,
           });
 
@@ -133,14 +136,28 @@ fn draw_buffer(
                 glyph_color
               } else {
                 match color {
-                  LinearGradientOrColor::Gradient(gradient) => gradient
-                    .at(
-                      content_box.width,
-                      content_box.height,
-                      final_x as u32,
-                      final_y as u32,
-                    )
-                    .into(),
+                  LinearGradientOrColor::Gradient(gradient) => {
+                    // Cache stops per (width,height) pair
+                    let (w, h, stops_ref) = match &mut cached_stops {
+                      Some((w, h, stops))
+                        if *w == content_box.width && *h == content_box.height =>
+                      {
+                        (*w, *h, stops as &Vec<crate::style::GradientStop>)
+                      }
+                      _ => {
+                        let stops = gradient.resolve_stops();
+                        cached_stops = Some((content_box.width, content_box.height, stops));
+                        if let Some((w, h, stops)) = &cached_stops {
+                          (*w, *h, stops)
+                        } else {
+                          unreachable!()
+                        }
+                      }
+                    };
+                    gradient
+                      .at(w, h, final_x as u32, final_y as u32, stops_ref)
+                      .into()
+                  }
                   LinearGradientOrColor::Color(_) => unreachable!(),
                 }
               };
@@ -150,7 +167,7 @@ fn draw_buffer(
                 alpha => {
                   let mut blended_color = Rgba(picked_color.0);
 
-                  blended_color.0[3] *= (alpha as f32 / 255.0) as u8;
+                  blended_color.0[3] = (blended_color.0[3] as f32 * (alpha as f32 / 255.0)) as u8;
 
                   blended_color
                 }

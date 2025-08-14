@@ -854,7 +854,11 @@ impl Style {
       .unwrap_or_else(|| font_size * DEFAULT_LINE_HEIGHT_SCALER);
 
     FontStyle {
-      color: self.inheritable_style.color.clone().unwrap_or_default(),
+      color: self
+        .inheritable_style
+        .color
+        .clone()
+        .unwrap_or(LinearGradientOrColor::Color(Color([0, 0, 0, 255]))),
       font_size,
       line_height,
       font_weight: self
