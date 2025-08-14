@@ -1,5 +1,4 @@
 import { describe, expect, test } from "bun:test";
-import { useId } from "react";
 import { renderToString } from "react-dom/server";
 import { container } from "../../src/helpers";
 import { fromJsx } from "../../src/jsx/jsx";
@@ -338,7 +337,8 @@ describe("fromJsx", () => {
         <title>Logo</title>
         <circle cx="90" cy="90" r="86" fill="url(#logo-iconGradient)" />
         <defs>
-          <filter id={useId()} colorInterpolationFilters="sRGB">
+          {/** biome-ignore lint/correctness/useUniqueElementIds: This is not in React runtime */}
+          <filter id="logo-shadow" colorInterpolationFilters="sRGB">
             <feDropShadow
               dx="0"
               dy="0"
@@ -347,7 +347,8 @@ describe("fromJsx", () => {
               floodOpacity="1"
             />
           </filter>
-          <linearGradient id={useId()} gradientTransform="rotate(45)">
+          {/** biome-ignore lint/correctness/useUniqueElementIds: This is not in React runtime */}
+          <linearGradient id="logo-iconGradient" gradientTransform="rotate(45)">
             <stop offset="45%" stopColor="black" />
             <stop offset="100%" stopColor="white" />
           </linearGradient>
