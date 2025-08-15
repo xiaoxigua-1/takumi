@@ -9,7 +9,6 @@ use crate::{
   core::RenderContext,
   effects::{BorderRadius, apply_border_radius_antialiased},
 };
-use rayon::prelude::*;
 
 use crate::rendering::FastBlendImage;
 
@@ -108,18 +107,22 @@ pub fn draw_box_shadow(
       });
 
       // Preserve existing stacking order (reverse iteration) while filtering by phase.
-      let images = if cfg!(feature = "rayon") {
+      #[cfg(feature = "rayon")]
+      let images = {
+        use rayon::iter::{ParallelBridge, ParallelIterator};
+
         to_draw
           .rev()
           .par_bridge()
           .map(|shadow| draw_single_box_shadow(&shadow, border_radius, layout))
           .collect::<Vec<_>>()
-      } else {
-        to_draw
-          .rev()
-          .map(|shadow| draw_single_box_shadow(&shadow, border_radius, layout))
-          .collect::<Vec<_>>()
       };
+
+      #[cfg(not(feature = "rayon"))]
+      let images = to_draw
+        .rev()
+        .map(|shadow| draw_single_box_shadow(&shadow, border_radius, layout))
+        .collect::<Vec<_>>();
 
       for draw in images {
         canvas.overlay_image(

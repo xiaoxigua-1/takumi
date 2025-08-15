@@ -5,8 +5,6 @@
 
 use std::fmt::Debug;
 
-#[cfg(feature = "rayon")]
-use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use serde::{Deserialize, Serialize};
 
 use crate::{core::GlobalContext, layout::trait_node::Node, style::Style};
@@ -66,11 +64,17 @@ impl<Nodes: Node<Nodes>> Node<Nodes> for ContainerNode<Nodes> {
       return should_hydrate[0].hydrate(context);
     }
 
-    if cfg!(feature = "rayon") {
+    #[cfg(feature = "rayon")]
+    {
+      use rayon::iter::{IntoParallelIterator, ParallelIterator};
+
       should_hydrate
         .into_par_iter()
         .try_for_each(|child| child.hydrate(context))
-    } else {
+    }
+
+    #[cfg(not(feature = "rayon"))]
+    {
       should_hydrate
         .iter()
         .try_for_each(|child| child.hydrate(context))
