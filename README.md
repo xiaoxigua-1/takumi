@@ -11,6 +11,7 @@ For newcomers, check out the [Overview](https://takumi.kane.tw/docs/) documentat
 - All in one. No need to output SVG then have [resvg-js](https://github.com/thx/resvg-js) rendering it again to output PNG.
 - Minimal binary size targets to run everywhere. Node.js, web, embedded in Rust, pre-built http server.
 - Takes your existing JSX components and drops them in. It should just work.
+- RTL support.
 - WOFF2 font support. Trims your bundle size.
 - PNG, JPEG, WebP output support.
 
