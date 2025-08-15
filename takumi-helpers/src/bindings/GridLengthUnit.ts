@@ -4,4 +4,4 @@ import type { LengthUnit } from "./LengthUnit";
 /**
  * Represents a grid track sizing function with serde support
  */
-export type GridLengthUnit = { "fr": number } | LengthUnit;
+export type GridLengthUnit = { "fr": number } | LengthUnit | string;
