@@ -169,8 +169,8 @@ describe("fromJsx", () => {
           {
             type: "container",
             children: [{ type: "text", text: "Title" }],
-            font_size: { em: 2 },
-            font_weight: 700,
+            fontSize: { em: 2 },
+            fontWeight: 700,
             margin: [{ em: 0.67 }, 0],
           },
           {
@@ -183,7 +183,7 @@ describe("fromJsx", () => {
                   {
                     type: "container",
                     children: [{ type: "text", text: "bold" }],
-                    font_weight: 700,
+                    fontWeight: 700,
                   },
                   { type: "text", text: " text" },
                 ],
@@ -296,8 +296,8 @@ describe("fromJsx", () => {
             {
               type: "container",
               children: [{ type: "text", text: "Welcome" }],
-              font_size: { em: 2 },
-              font_weight: 700,
+              fontSize: { em: 2 },
+              fontWeight: 700,
               margin: [{ em: 0.67 }, 0],
             },
             {
