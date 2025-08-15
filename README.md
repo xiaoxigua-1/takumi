@@ -1,6 +1,6 @@
-# Takumi
+<img src="./assets/images/takumi.svg" alt="Takumi" width="64" />
 
-![Takumi](./assets/images/takumi.svg =96x)
+# Takumi
 
 > 🚧 This project is under development.
 
