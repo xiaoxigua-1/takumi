@@ -6,7 +6,7 @@ import {
   type ReactElement,
   type ReactNode,
 } from "react";
-import { renderToString } from "react-dom/server";
+import { renderToStaticMarkup } from "react-dom/server";
 import { container, image, text } from "../helpers";
 import type { Node, PartialStyle } from "../types";
 import { stylePresets } from "./style-presets";
@@ -94,7 +94,7 @@ function createImageElement(element: ReactElement<ComponentProps<"img">>) {
 
 function createSvgElement(element: ReactElement<ComponentProps<"svg">>) {
   return image(
-    renderToString(
+    renderToStaticMarkup(
       cloneElement(
         element,
         {
