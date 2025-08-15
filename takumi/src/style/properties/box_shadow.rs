@@ -40,6 +40,7 @@ pub struct BoxShadow {
 #[serde(untagged)]
 pub enum BoxShadowValue {
   /// Represents a structured box shadow.
+  #[serde(rename_all = "camelCase")]
   Structured {
     /// Whether the shadow is inset (inside the element) or outset (outside the element).
     inset: bool,

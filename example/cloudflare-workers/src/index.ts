@@ -33,18 +33,18 @@ export default {
       container({
         width: percentage(100),
         height: percentage(100),
-        background_color: 0,
+        backgroundColor: 0,
         color: 0xffffff,
         padding: rem(4),
-        flex_direction: "column",
+        flexDirection: "column",
         gap: rem(0.5),
         children: [
           text(`Hello, ${name}!`, {
-            font_size: 64,
-            font_weight: 700,
+            fontSize: 64,
+            fontWeight: 700,
           }),
           text("Nothing beats a Jet2 holiday!", {
-            font_size: 32,
+            fontSize: 32,
             color: rgba(255, 255, 255, 0.8),
           }),
           image(logo, {
@@ -52,7 +52,7 @@ export default {
             inset: ["auto", "auto", rem(4), rem(4)],
             width: 96,
             height: 96,
-            border_radius: percentage(50),
+            borderRadius: percentage(50),
           }),
         ],
       }),

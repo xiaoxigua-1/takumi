@@ -15,6 +15,7 @@
     "@types/react-dom": "^19.1.7",
     "bun-plugin-dts": "^0.3.0",
     "react": "^19.1.0",
+    "tsup": "^8.5.0",
     "typescript": "catalog:"
   },
   "peerDependencies": {
@@ -23,10 +24,14 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs",
       "default": "./dist/index.js"
     },
     "./jsx": {
       "types": "./dist/jsx/jsx.d.ts",
+      "import": "./dist/jsx/jsx.js",
+      "require": "./dist/jsx/jsx.cjs",
       "default": "./dist/jsx/jsx.js"
     }
   },
@@ -43,7 +48,7 @@
     }
   },
   "scripts": {
-    "build": "bun build.ts"
+    "build": "tsup-node src/index.ts src/jsx/jsx.ts --minify --dts --format esm,cjs --no-splitting"
   },
   "type": "module"
 }

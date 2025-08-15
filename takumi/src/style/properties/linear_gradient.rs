@@ -17,7 +17,7 @@ pub struct LinearGradient {
   /// The angle of the gradient.
   pub angle: Angle,
   /// The steps of the gradient.
-  pub steps: Vec<GradientHint>,
+  pub stops: Vec<GradientStop>,
 }
 
 /// Proxy type for `LinearGradient` Css deserialization.
@@ -29,7 +29,7 @@ pub enum LinearGradientValue {
     /// The angle of the gradient.
     angle: Angle,
     /// The steps of the gradient.
-    steps: Vec<GradientHint>,
+    stops: Vec<GradientStop>,
   },
   /// Represents a CSS string.
   Css(String),
@@ -40,7 +40,7 @@ impl TryFrom<LinearGradientValue> for LinearGradient {
 
   fn try_from(value: LinearGradientValue) -> Result<Self, Self::Error> {
     match value {
-      LinearGradientValue::Structured { angle, steps } => Ok(LinearGradient { angle, steps }),
+      LinearGradientValue::Structured { angle, stops } => Ok(LinearGradient { angle, stops }),
       LinearGradientValue::Css(css) => {
         let mut input = ParserInput::new(&css);
         let mut parser = Parser::new(&mut input);
@@ -133,23 +133,23 @@ impl LinearGradient {
   }
 
   /// Resolves gradient steps into color stops with positions
-  pub fn resolve_stops(&self) -> Vec<GradientStop> {
+  pub fn resolve_stops(&self) -> Vec<ResolvedGradientStop> {
     let mut resolved_stops = Vec::new();
     let mut last_position: Option<f32> = None;
 
-    for step in &self.steps {
+    for step in &self.stops {
       match step {
-        GradientHint::ColorHint { color, stop } => {
+        GradientStop::ColorHint { color, hint: stop } => {
           let position = stop.unwrap_or(last_position.unwrap_or(0.0));
 
-          resolved_stops.push(GradientStop {
+          resolved_stops.push(ResolvedGradientStop {
             color: *color,
             position,
           });
 
           last_position = Some(position);
         }
-        GradientHint::Hint(_hint_value) => {
+        GradientStop::Hint(_hint_value) => {
           // Hints are used for determining optimal color distribution, but don't add actual color stops
         }
       }
@@ -160,9 +160,9 @@ impl LinearGradient {
       // Set last stop to 1.0 if it wasn't explicitly set
       if resolved_stops.last().map(|s| s.position) != Some(1.0)
         && self
-          .steps
+          .stops
           .last()
-          .map(|s| matches!(s, GradientHint::ColorHint { stop, .. } if stop.is_none()))
+          .map(|s| matches!(s, GradientStop::ColorHint { hint, .. } if hint.is_none()))
           .unwrap_or(false)
       {
         if let Some(last) = resolved_stops.last_mut() {
@@ -257,7 +257,7 @@ pub struct LinearGradientDrawContext {
   /// Epsilon size of one pixel relative to the longest edge.
   pub pixel_epsilon: f32,
   /// Resolved and ordered color stops.
-  pub resolved_stops: Vec<GradientStop>,
+  pub resolved_stops: Vec<ResolvedGradientStop>,
   /// Cache of computed colors keyed by quantized position along the gradient [0, 1].
   color_cache: HashMap<u32, Color>,
 }
@@ -362,13 +362,13 @@ impl Default for LinearGradientOrColor {
 /// Represents a gradient stop.
 #[derive(Debug, Clone, PartialEq, TS, Deserialize, Serialize)]
 #[serde(untagged)]
-pub enum GradientHint {
+pub enum GradientStop {
   /// A color gradient stop.
   ColorHint {
     /// The color of the gradient stop.
     color: Color,
     /// The position of the gradient stop (0% to 100%).
-    stop: Option<f32>,
+    hint: Option<f32>,
   },
   /// A numeric gradient stop.
   Hint(f32),
@@ -376,24 +376,24 @@ pub enum GradientHint {
 
 /// Represents a resolved gradient stop with a position.
 #[derive(Debug, Clone, PartialEq, TS, Deserialize, Serialize)]
-pub struct GradientStop {
+pub struct ResolvedGradientStop {
   /// The color of the gradient stop.
   pub color: Color,
   /// The position of the gradient stop (0.0 to 1.0).
   pub position: f32,
 }
 
-impl<'i> FromCss<'i> for GradientHint {
+impl<'i> FromCss<'i> for GradientStop {
   /// Parses a gradient hint from the input.
-  fn from_css(input: &mut Parser<'i, '_>) -> ParseResult<'i, GradientHint> {
+  fn from_css(input: &mut Parser<'i, '_>) -> ParseResult<'i, GradientStop> {
     if let Ok(hint) = input.try_parse(parse_length_percentage) {
-      return Ok(GradientHint::Hint(hint));
+      return Ok(GradientStop::Hint(hint));
     };
 
     let color = Color::from_css(input)?;
     let hint = input.try_parse(parse_length_percentage).ok();
 
-    Ok(GradientHint::ColorHint { color, stop: hint })
+    Ok(GradientStop::ColorHint { color, hint })
   }
 }
 
@@ -490,10 +490,13 @@ impl<'i> FromCss<'i> for LinearGradient {
           break;
         }
 
-        steps.push(GradientHint::from_css(input)?);
+        steps.push(GradientStop::from_css(input)?);
       }
 
-      Ok(LinearGradient { angle, steps })
+      Ok(LinearGradient {
+        angle,
+        stops: steps,
+      })
     })
   }
 }
@@ -593,14 +596,14 @@ mod tests {
       gradient,
       Ok(LinearGradient {
         angle: Angle(45.0),
-        steps: vec![
-          GradientHint::ColorHint {
+        stops: vec![
+          GradientStop::ColorHint {
             color: Color([255, 0, 0, 255]),
-            stop: None,
+            hint: None,
           },
-          GradientHint::ColorHint {
+          GradientStop::ColorHint {
             color: Color([0, 0, 255, 255]),
-            stop: None,
+            hint: None,
           },
         ]
       })
@@ -744,14 +747,14 @@ mod tests {
       gradient,
       Ok(LinearGradient {
         angle: Angle(45.0),
-        steps: vec![
-          GradientHint::ColorHint {
+        stops: vec![
+          GradientStop::ColorHint {
             color: Color([255, 0, 0, 255]),
-            stop: None,
+            hint: None,
           },
-          GradientHint::ColorHint {
+          GradientStop::ColorHint {
             color: Color([0, 0, 255, 255]),
-            stop: None,
+            hint: None,
           },
         ]
       })
@@ -768,14 +771,14 @@ mod tests {
       gradient,
       Ok(LinearGradient {
         angle: Angle(270.0),
-        steps: vec![
-          GradientHint::ColorHint {
+        stops: vec![
+          GradientStop::ColorHint {
             color: Color([255, 0, 0, 255]),
-            stop: Some(0.0),
+            hint: Some(0.0),
           },
-          GradientHint::ColorHint {
+          GradientStop::ColorHint {
             color: Color([0, 0, 255, 255]),
-            stop: Some(1.0),
+            hint: Some(1.0),
           },
         ]
       })
@@ -792,15 +795,15 @@ mod tests {
       gradient,
       Ok(LinearGradient {
         angle: Angle(270.0),
-        steps: vec![
-          GradientHint::ColorHint {
+        stops: vec![
+          GradientStop::ColorHint {
             color: Color([255, 0, 0, 255]),
-            stop: None,
+            hint: None,
           },
-          GradientHint::Hint(0.5),
-          GradientHint::ColorHint {
+          GradientStop::Hint(0.5),
+          GradientStop::ColorHint {
             color: Color([0, 0, 255, 255]),
-            stop: None,
+            hint: None,
           },
         ]
       })
@@ -817,9 +820,9 @@ mod tests {
       gradient,
       Ok(LinearGradient {
         angle: Angle(180.0),
-        steps: vec![GradientHint::ColorHint {
+        stops: vec![GradientStop::ColorHint {
           color: Color([255, 0, 0, 255]),
-          stop: None,
+          hint: None,
         },]
       })
     );
@@ -837,9 +840,9 @@ mod tests {
       gradient,
       Ok(LinearGradient {
         angle: Angle(180.0),
-        steps: vec![GradientHint::ColorHint {
+        stops: vec![GradientStop::ColorHint {
           color: Color([0, 0, 255, 255]), // Only the last color is parsed due to the parsing logic
-          stop: None,
+          hint: None,
         },]
       })
     );
@@ -849,13 +852,13 @@ mod tests {
   fn test_parse_gradient_hint_color() {
     let mut input = ParserInput::new("#ff0000");
     let mut parser = Parser::new(&mut input);
-    let gradient_hint = GradientHint::from_css(&mut parser);
+    let gradient_hint = GradientStop::from_css(&mut parser);
 
     assert_eq!(
       gradient_hint,
-      Ok(GradientHint::ColorHint {
+      Ok(GradientStop::ColorHint {
         color: Color([255, 0, 0, 255]),
-        stop: None,
+        hint: None,
       })
     );
   }
@@ -864,9 +867,9 @@ mod tests {
   fn test_parse_gradient_hint_numeric() {
     let mut input = ParserInput::new("50%");
     let mut parser = Parser::new(&mut input);
-    let gradient_hint = GradientHint::from_css(&mut parser);
+    let gradient_hint = GradientStop::from_css(&mut parser);
 
-    assert_eq!(gradient_hint, Ok(GradientHint::Hint(0.5)));
+    assert_eq!(gradient_hint, Ok(GradientStop::Hint(0.5)));
   }
 
   #[test]
@@ -926,20 +929,20 @@ mod tests {
       gradient,
       Ok(LinearGradient {
         angle: Angle(45.0),
-        steps: vec![
-          GradientHint::ColorHint {
+        stops: vec![
+          GradientStop::ColorHint {
             color: Color([255, 0, 0, 255]),
-            stop: None,
+            hint: None,
           },
-          GradientHint::Hint(0.25),
-          GradientHint::ColorHint {
+          GradientStop::Hint(0.25),
+          GradientStop::ColorHint {
             color: Color([0, 255, 0, 255]),
-            stop: None,
+            hint: None,
           },
-          GradientHint::Hint(0.75),
-          GradientHint::ColorHint {
+          GradientStop::Hint(0.75),
+          GradientStop::ColorHint {
             color: Color([0, 0, 255, 255]),
-            stop: None,
+            hint: None,
           },
         ]
       })
@@ -950,14 +953,14 @@ mod tests {
   fn test_linear_gradient_at_simple() {
     let gradient = LinearGradient {
       angle: Angle(0.0), // Top to bottom
-      steps: vec![
-        GradientHint::ColorHint {
+      stops: vec![
+        GradientStop::ColorHint {
           color: Color([255, 0, 0, 255]), // Red
-          stop: Some(0.0),
+          hint: Some(0.0),
         },
-        GradientHint::ColorHint {
+        GradientStop::ColorHint {
           color: Color([0, 0, 255, 255]), // Blue
-          stop: Some(1.0),
+          hint: Some(1.0),
         },
       ],
     };
@@ -985,14 +988,14 @@ mod tests {
   fn test_linear_gradient_at_horizontal() {
     let gradient = LinearGradient {
       angle: Angle(270.0), // Left to right
-      steps: vec![
-        GradientHint::ColorHint {
+      stops: vec![
+        GradientStop::ColorHint {
           color: Color([255, 0, 0, 255]), // Red
-          stop: Some(0.0),
+          hint: Some(0.0),
         },
-        GradientHint::ColorHint {
+        GradientStop::ColorHint {
           color: Color([0, 0, 255, 255]), // Blue
-          stop: Some(1.0),
+          hint: Some(1.0),
         },
       ],
     };
@@ -1011,14 +1014,14 @@ mod tests {
   fn test_linear_gradient_at_diagonal() {
     let gradient = LinearGradient {
       angle: Angle(45.0), // Diagonal
-      steps: vec![
-        GradientHint::ColorHint {
+      stops: vec![
+        GradientStop::ColorHint {
           color: Color([255, 0, 0, 255]), // Red
-          stop: Some(0.0),
+          hint: Some(0.0),
         },
-        GradientHint::ColorHint {
+        GradientStop::ColorHint {
           color: Color([0, 0, 255, 255]), // Blue
-          stop: Some(1.0),
+          hint: Some(1.0),
         },
       ],
     };
@@ -1036,9 +1039,9 @@ mod tests {
   fn test_linear_gradient_at_single_color() {
     let gradient = LinearGradient {
       angle: Angle(0.0),
-      steps: vec![GradientHint::ColorHint {
+      stops: vec![GradientStop::ColorHint {
         color: Color([255, 0, 0, 255]), // Red
-        stop: None,
+        hint: None,
       }],
     };
 
@@ -1052,7 +1055,7 @@ mod tests {
   fn test_linear_gradient_at_no_steps() {
     let gradient = LinearGradient {
       angle: Angle(0.0),
-      steps: vec![],
+      stops: vec![],
     };
 
     // Should return transparent

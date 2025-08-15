@@ -19,19 +19,19 @@ inset: boolean,
 /**
  * Horizontal offset of the shadow.
  */
-offset_x: LengthUnit, 
+offsetX: LengthUnit, 
 /**
  * Vertical offset of the shadow.
  */
-offset_y: LengthUnit, 
+offsetY: LengthUnit, 
 /**
  * Blur radius of the shadow. Higher values create a more blurred shadow.
  */
-blur_radius: LengthUnit, 
+blurRadius: LengthUnit, 
 /**
  * Spread radius of the shadow. Positive values expand the shadow, negative values shrink it.
  */
-spread_radius: LengthUnit, 
+spreadRadius: LengthUnit, 
 /**
  * Color of the shadow.
  */
