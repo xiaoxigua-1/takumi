@@ -140,7 +140,7 @@ impl LinearGradient {
     for step in &self.stops {
       match step {
         GradientStop::ColorHint { color, hint: stop } => {
-          let position = stop.unwrap_or(last_position.unwrap_or(0.0));
+          let position = stop.or(last_position).unwrap_or(0.0);
 
           resolved_stops.push(ResolvedGradientStop {
             color: *color,
