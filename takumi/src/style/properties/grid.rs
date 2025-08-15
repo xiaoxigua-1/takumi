@@ -1,4 +1,4 @@
-use cssparser::{BasicParseError, ParseError, Parser, Token};
+use cssparser::{BasicParseError, ParseError, Parser, ParserInput, Token};
 use serde::{Deserialize, Serialize};
 use taffy::{
   CompactLength, GridTemplateRepetition, MaxTrackSizingFunction, MinTrackSizingFunction,
@@ -12,13 +12,44 @@ type ParseResult<'i, T, E = BasicParseError<'i>> = Result<T, ParseError<'i, E>>;
 
 /// Represents a grid track sizing function with serde support
 #[derive(Debug, Clone, Deserialize, Serialize, TS, PartialEq)]
-#[serde(rename_all = "kebab-case")]
+#[serde(try_from = "GridLengthUnitValue")]
+#[ts(as = "GridLengthUnitValue")]
 pub enum GridLengthUnit {
   /// A fraction of the available space
   Fr(f32),
   /// A fixed length
   #[serde(untagged)]
   Unit(LengthUnit),
+}
+
+/// Represents a grid length unit value with serde support
+#[derive(Debug, Clone, Deserialize, Serialize, TS, PartialEq)]
+#[serde(rename_all = "kebab-case")]
+pub enum GridLengthUnitValue {
+  /// A fraction of the available space
+  Fr(f32),
+  /// A fixed length
+  #[serde(untagged)]
+  Unit(LengthUnit),
+  /// A CSS string representation
+  #[serde(untagged)]
+  Css(String),
+}
+
+impl TryFrom<GridLengthUnitValue> for GridLengthUnit {
+  type Error = &'static str;
+
+  fn try_from(value: GridLengthUnitValue) -> Result<Self, Self::Error> {
+    match value {
+      GridLengthUnitValue::Fr(fr) => Ok(GridLengthUnit::Fr(fr)),
+      GridLengthUnitValue::Unit(unit) => Ok(GridLengthUnit::Unit(unit)),
+      GridLengthUnitValue::Css(css) => {
+        let mut input = ParserInput::new(&css);
+        let mut parser = Parser::new(&mut input);
+        GridLengthUnit::from_css(&mut parser).map_err(|_| "Failed to parse CSS grid length unit")
+      }
+    }
+  }
 }
 
 /// Represents a grid minmax()
