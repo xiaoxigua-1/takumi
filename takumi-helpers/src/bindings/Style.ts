@@ -22,6 +22,7 @@ import type { Position } from "./Position";
 import type { Sides } from "./Sides";
 import type { TextAlign } from "./TextAlign";
 import type { TextOverflow } from "./TextOverflow";
+import type { TextTransform } from "./TextTransform";
 
 /**
  * Main styling structure that contains all layout and visual properties.
@@ -239,6 +240,10 @@ gridTemplateRows?: Array<GridTemplateComponent>,
  * How text should be overflowed.
  */
 textOverflow?: TextOverflow, 
+/**
+ * Controls text case transformation when rendering.
+ */
+textTransform?: TextTransform, 
 /**
  * Color of the element's border.
  */

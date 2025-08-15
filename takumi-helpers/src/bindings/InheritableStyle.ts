@@ -8,6 +8,7 @@ import type { LinearGradientOrColor } from "./LinearGradientOrColor";
 import type { Sides } from "./Sides";
 import type { TextAlign } from "./TextAlign";
 import type { TextOverflow } from "./TextOverflow";
+import type { TextTransform } from "./TextTransform";
 
 /**
  * Style properties that can be inherited by child elements.
@@ -17,6 +18,10 @@ export type InheritableStyle = {
  * How text should be overflowed.
  */
 textOverflow?: TextOverflow, 
+/**
+ * Controls text case transformation when rendering.
+ */
+textTransform?: TextTransform, 
 /**
  * Color of the element's border.
  */

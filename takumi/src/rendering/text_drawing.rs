@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use cosmic_text::{Attrs, Buffer, Metrics, Shaping};
 use image::{Pixel, Rgba};
 use taffy::{Layout, Size};
@@ -6,7 +8,7 @@ use crate::{
   core::RenderContext,
   linear_gradient::LinearGradientOrColor,
   rendering::FastBlendImage,
-  style::{FontStyle, TextOverflow},
+  style::{FontStyle, TextOverflow, TextTransform},
 };
 
 const ELLIPSIS_CHAR: &str = "…";
@@ -28,8 +30,10 @@ pub fn draw_text(
   let start_x = layout.content_box_x();
   let start_y = layout.content_box_y();
 
+  let render_text = apply_text_transform(text, style.text_transform);
+
   let buffer = construct_text_buffer(
-    text,
+    &render_text,
     style,
     context,
     Some((Some(content_box.width), Some(content_box.height))),
@@ -46,12 +50,12 @@ pub fn draw_text(
   };
 
   let should_append_ellipsis =
-    style.text_overflow == TextOverflow::Ellipsis && last_glyph.end < text.len();
+    style.text_overflow == TextOverflow::Ellipsis && last_glyph.end < render_text.len();
 
   if should_append_ellipsis {
     let first_glyph = last_run.glyphs.first().unwrap();
 
-    let mut truncated_text = &text[first_glyph.start..last_glyph.end];
+    let mut truncated_text = &render_text[first_glyph.start..last_glyph.end];
 
     while !truncated_text.is_empty() {
       let mut text_with_ellipsis =
@@ -71,7 +75,7 @@ pub fn draw_text(
       truncated_text = &truncated_text[..truncated_text.len() - ELLIPSIS_CHAR.len()];
     }
 
-    let before_last_line = &text[..first_glyph.start];
+    let before_last_line = &render_text[..first_glyph.start];
 
     let mut text_with_ellipsis =
       String::with_capacity(before_last_line.len() + truncated_text.len() + ELLIPSIS_CHAR.len());
@@ -232,13 +236,42 @@ pub(crate) fn construct_text_buffer(
     buffer.set_size(&mut font_system, width, height);
   }
 
+  let text = apply_text_transform(text, font_style.text_transform);
+
   buffer.set_rich_text(
     &mut font_system,
-    [(text, attrs.clone())],
+    [(text.as_ref(), attrs.clone())],
     &attrs,
     Shaping::Advanced,
     font_style.text_align,
   );
 
   buffer
+}
+
+/// Applies text transform to the input text.
+pub fn apply_text_transform<'a>(input: &'a str, transform: TextTransform) -> Cow<'a, str> {
+  match transform {
+    TextTransform::None => Cow::Borrowed(input),
+    TextTransform::Uppercase => Cow::Owned(input.to_uppercase()),
+    TextTransform::Lowercase => Cow::Owned(input.to_lowercase()),
+    TextTransform::Capitalize => {
+      let mut result = String::with_capacity(input.len());
+      let mut start_of_word = true;
+      for ch in input.chars() {
+        if ch.is_alphabetic() {
+          if start_of_word {
+            result.extend(ch.to_uppercase());
+            start_of_word = false;
+          } else {
+            result.extend(ch.to_lowercase());
+          }
+        } else {
+          start_of_word = !ch.is_numeric();
+          result.push(ch);
+        }
+      }
+      Cow::Owned(result)
+    }
+  }
 }

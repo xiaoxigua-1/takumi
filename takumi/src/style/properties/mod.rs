@@ -272,6 +272,21 @@ pub enum TextOverflow {
   Clip,
 }
 
+/// Controls text case transformation when rendering.
+#[derive(Default, Debug, Clone, Deserialize, Serialize, Copy, TS, PartialEq)]
+#[serde(rename_all = "kebab-case")]
+pub enum TextTransform {
+  /// Do not transform text
+  #[default]
+  None,
+  /// Transform all characters to uppercase
+  Uppercase,
+  /// Transform all characters to lowercase
+  Lowercase,
+  /// Uppercase the first letter of each word
+  Capitalize,
+}
+
 /// Represents a font family for text rendering.
 /// Use only the family name (no style suffixes like "Bold", "Italic", "Regular").
 /// Multi-word names are allowed (e.g., "Noto Sans") and should be provided as-is without quotes.

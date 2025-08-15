@@ -27,6 +27,8 @@ pub struct FontStyle {
   pub text_align: Option<Align>,
   /// How text should be overflowed.
   pub text_overflow: TextOverflow,
+  /// Text transform behavior (uppercase, lowercase, capitalize, none)
+  pub text_transform: TextTransform,
   /// Text color for child text elements.
   pub color: LinearGradientOrColor,
 }
@@ -213,6 +215,8 @@ impl Default for Style {
 pub struct InheritableStyle {
   /// How text should be overflowed.
   pub text_overflow: Option<TextOverflow>,
+  /// Controls text case transformation when rendering.
+  pub text_transform: Option<TextTransform>,
   /// Color of the element's border.
   pub border_color: Option<Color>,
   /// Text color for child text elements.
@@ -413,6 +417,7 @@ impl Style {
         .inheritable_style
         .text_overflow
         .unwrap_or(TextOverflow::Clip),
+      text_transform: self.inheritable_style.text_transform.unwrap_or_default(),
     }
   }
 }

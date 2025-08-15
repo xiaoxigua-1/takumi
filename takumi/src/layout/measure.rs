@@ -1,6 +1,10 @@
 use taffy::{AvailableSpace, geometry::Size};
 
-use crate::{core::RenderContext, rendering::construct_text_buffer, style::FontStyle};
+use crate::{
+  core::RenderContext,
+  rendering::{apply_text_transform, construct_text_buffer},
+  style::FontStyle,
+};
 
 /// Measures the size of image based on known dimensions and available space.
 pub fn measure_image(
@@ -125,8 +129,10 @@ pub fn measure_text(
     (None, None) => None,
   };
 
+  let text = apply_text_transform(text, style.text_transform);
+
   let buffer = construct_text_buffer(
-    text,
+    &text,
     style,
     context,
     Some((width_constraint, height_constraint_with_max_lines)),

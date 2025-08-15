@@ -1,7 +1,7 @@
 use takumi::{
-  Color, DefaultNodeKind, FontWeight, InheritableStyle,
+  Color, ContainerNode, DefaultNodeKind, FontWeight, InheritableStyle,
   LengthUnit::{Percentage, Px},
-  Style, TextAlign, TextNode, TextOverflow,
+  Style, TextAlign, TextNode, TextOverflow, TextTransform,
 };
 
 mod test_utils;
@@ -207,4 +207,72 @@ Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliqu
   };
 
   run_style_width_test(text.into(), "tests/fixtures/text_ellipsis_line_clamp_2.png");
+}
+
+#[test]
+fn fixtures_text_transform_all() {
+  let container = ContainerNode {
+    style: Style {
+      width: Percentage(100.0),
+      height: Percentage(100.0),
+      background_color: Some(Color([240, 240, 240, 255])),
+      ..Default::default()
+    },
+    children: Some(vec![
+      TextNode {
+        style: Style {
+          width: Percentage(100.0),
+          inheritable_style: InheritableStyle {
+            font_size: Some(Px(28.0)),
+            text_transform: Some(TextTransform::None),
+            ..Default::default()
+          },
+          ..Default::default()
+        },
+        text: "None: The quick Brown Fox".to_string(),
+      }
+      .into(),
+      TextNode {
+        style: Style {
+          width: Percentage(100.0),
+          inheritable_style: InheritableStyle {
+            font_size: Some(Px(28.0)),
+            text_transform: Some(TextTransform::Uppercase),
+            ..Default::default()
+          },
+          ..Default::default()
+        },
+        text: "Uppercase: The quick Brown Fox".to_string(),
+      }
+      .into(),
+      TextNode {
+        style: Style {
+          width: Percentage(100.0),
+          inheritable_style: InheritableStyle {
+            font_size: Some(Px(28.0)),
+            text_transform: Some(TextTransform::Lowercase),
+            ..Default::default()
+          },
+          ..Default::default()
+        },
+        text: "Lowercase: The QUICK Brown FOX".to_string(),
+      }
+      .into(),
+      TextNode {
+        style: Style {
+          width: Percentage(100.0),
+          inheritable_style: InheritableStyle {
+            font_size: Some(Px(28.0)),
+            text_transform: Some(TextTransform::Capitalize),
+            ..Default::default()
+          },
+          ..Default::default()
+        },
+        text: "Capitalize: the quick brown fox".to_string(),
+      }
+      .into(),
+    ]),
+  };
+
+  run_style_width_test(container.into(), "tests/fixtures/text_transform_all.png");
 }
