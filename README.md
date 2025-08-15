@@ -1,8 +1,10 @@
 # Takumi
 
+![Takumi](./assets/images/takumi.svg =96x)
+
 > 🚧 This project is under development.
 
-_Takumi (匠) means "artisan" or "craftsman" in Japanese._
+_Takumi (匠 🪓) means "artisan" or "craftsman" in Japanese._
 
 For newcomers, check out the [Overview](https://takumi.kane.tw/docs/) documentation for installation and usage.
 
