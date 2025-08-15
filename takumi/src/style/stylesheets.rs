@@ -17,6 +17,8 @@ pub struct FontStyle {
   pub line_height: f32,
   /// Font weight for text rendering.
   pub font_weight: Weight,
+  /// Font slant style (normal, italic, oblique).
+  pub text_style: TextStyle,
   /// Maximum number of lines for text before truncation.
   pub line_clamp: Option<u32>,
   /// Font family for text rendering.
@@ -217,6 +219,8 @@ pub struct InheritableStyle {
   pub text_overflow: Option<TextOverflow>,
   /// Controls text case transformation when rendering.
   pub text_transform: Option<TextTransform>,
+  /// Font slant style (normal, italic, oblique).
+  pub text_style: Option<TextStyle>,
   /// Color of the element's border.
   pub border_color: Option<Color>,
   /// Text color for child text elements.
@@ -406,6 +410,7 @@ impl Style {
         .font_weight
         .unwrap_or_default()
         .into(),
+      text_style: self.inheritable_style.text_style.unwrap_or_default(),
       line_clamp: self.inheritable_style.line_clamp,
       font_family: self.inheritable_style.font_family.clone().map(Into::into),
       letter_spacing: self

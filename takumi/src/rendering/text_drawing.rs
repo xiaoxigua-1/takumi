@@ -222,6 +222,8 @@ pub(crate) fn construct_text_buffer(
 
   let mut attrs = Attrs::new().weight(font_style.font_weight);
 
+  attrs = attrs.style(font_style.text_style.into());
+
   if let Some(font_family) = font_style.font_family.as_ref() {
     attrs = attrs.family(font_family.as_family());
   }

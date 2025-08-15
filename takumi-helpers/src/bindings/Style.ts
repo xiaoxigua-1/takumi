@@ -22,6 +22,7 @@ import type { Position } from "./Position";
 import type { Sides } from "./Sides";
 import type { TextAlign } from "./TextAlign";
 import type { TextOverflow } from "./TextOverflow";
+import type { TextStyle } from "./TextStyle";
 import type { TextTransform } from "./TextTransform";
 
 /**
@@ -244,6 +245,10 @@ textOverflow?: TextOverflow,
  * Controls text case transformation when rendering.
  */
 textTransform?: TextTransform, 
+/**
+ * Font slant style (normal, italic, oblique).
+ */
+textStyle?: TextStyle, 
 /**
  * Color of the element's border.
  */

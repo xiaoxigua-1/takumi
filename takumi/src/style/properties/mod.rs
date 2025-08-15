@@ -372,3 +372,18 @@ impl From<ImageScalingAlgorithm> for FilterType {
     }
   }
 }
+
+/// Controls the slant (italic/oblique) of text rendering.
+#[derive(Default, Debug, Clone, Copy, Deserialize, Serialize, TS, PartialEq)]
+#[serde(rename_all = "kebab-case")]
+pub enum TextStyle {
+  /// A face that is neither italic nor obliqued.
+  #[default]
+  Normal,
+  /// A form that is generally cursive in nature.
+  Italic,
+  /// A typically-sloped version of the regular face.
+  Oblique,
+}
+
+impl_from_taffy_enum!(TextStyle, cosmic_text::Style, Normal, Italic, Oblique);

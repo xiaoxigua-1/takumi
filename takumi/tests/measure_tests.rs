@@ -5,7 +5,7 @@ use taffy::{AvailableSpace, geometry::Size};
 use takumi::{
   Color, FontFamily, LinearGradientOrColor,
   core::{DEFAULT_FONT_SIZE, DEFAULT_LINE_HEIGHT_SCALER, GlobalContext, RenderContext},
-  style::{FontStyle, TextOverflow, TextTransform},
+  style::{FontStyle, TextOverflow, TextStyle, TextTransform},
 };
 
 const NOTO_SANS_REGULAR_BUFFER: &[u8] =
@@ -49,6 +49,7 @@ fn create_test_font_style() -> FontStyle {
     font_size: DEFAULT_FONT_SIZE,
     line_height: DEFAULT_FONT_SIZE * DEFAULT_LINE_HEIGHT_SCALER,
     font_weight: Weight::NORMAL,
+    text_style: TextStyle::Normal,
     line_clamp: None,
     font_family: Some(FontFamily::Custom(FONT_FAMILY_NOTO_SANS.to_string()).into()),
     letter_spacing: Some(LETTER_SPACING_0),
