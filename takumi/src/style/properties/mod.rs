@@ -7,6 +7,9 @@
 pub mod box_shadow;
 /// Color parsing and representation for styling.
 pub mod color;
+/// Gap properties for flex and grid layouts.
+pub mod gap;
+/// Length units and measurement types for the takumi styling system.
 pub mod length_unit;
 /// Linear gradient properties for elements.
 pub mod linear_gradient;
@@ -17,6 +20,7 @@ pub mod sides;
 
 pub use box_shadow::*;
 pub use color::*;
+pub use gap::*;
 pub use length_unit::*;
 pub use linear_gradient::*;
 pub use parser::*;

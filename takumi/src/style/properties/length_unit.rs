@@ -5,7 +5,7 @@
 
 use cssparser::{Parser, ParserInput, Token, match_ignore_ascii_case};
 use serde::{Deserialize, Serialize};
-use taffy::{CompactLength, Dimension, LengthPercentage, LengthPercentageAuto, Rect, Size};
+use taffy::{CompactLength, Dimension, LengthPercentage, LengthPercentageAuto, Rect};
 use ts_rs::TS;
 
 use crate::{FromCss, core::viewport::RenderContext, properties::ParseResult};
@@ -222,59 +222,6 @@ impl LengthUnit {
     unsafe { Dimension::from_raw(self.to_compact_length(context)) }
   }
 }
-
-/// Represents spacing between flex items.
-///
-/// Can be either a single value applied to both axes, or separate values
-/// for horizontal and vertical spacing.
-#[derive(Debug, Clone, Copy, Deserialize, Serialize, TS, PartialEq)]
-#[serde(untagged)]
-pub enum Gap {
-  /// Same gap value for both horizontal and vertical spacing
-  SingleValue(LengthUnit),
-  /// Separate values for horizontal and vertical spacing (horizontal, vertical)
-  Array(LengthUnit, LengthUnit),
-}
-
-impl Default for Gap {
-  fn default() -> Self {
-    Self::SingleValue(LengthUnit::Px(0.0))
-  }
-}
-
-impl Gap {
-  /// Resolves the gap to a size in length percentages.
-  ///
-  /// This method converts the gap value to a size in length percentages,
-  /// which can be used to set the size of flex items in a flex container.
-  pub fn resolve_to_size(self, context: &RenderContext) -> Size<LengthPercentage> {
-    match self {
-      Gap::SingleValue(value) => Size {
-        width: value.resolve_to_length_percentage(context),
-        height: value.resolve_to_length_percentage(context),
-      },
-      Gap::Array(horizontal, vertical) => Size {
-        width: horizontal.resolve_to_length_percentage(context),
-        height: vertical.resolve_to_length_percentage(context),
-      },
-    }
-  }
-}
-
-/// Represents values for horizontal and vertical axes.
-///
-/// Used for properties that can have different values for horizontal
-/// and vertical directions, such as padding or margin.
-#[derive(Debug, Clone, Deserialize, Serialize, TS)]
-pub struct AxisSides<T> {
-  /// Horizontal axis value
-  #[serde(default)]
-  pub horizontal: T,
-  /// Vertical axis value
-  #[serde(default)]
-  pub vertical: T,
-}
-
 /// Utility function to resolve a rect of length units to length percentages.
 pub fn resolve_length_unit_rect_to_length_percentage(
   context: &RenderContext,

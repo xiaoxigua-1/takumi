@@ -128,8 +128,8 @@ fn test_style_gap() {
     style: Style {
       width: Percentage(100.0),
       height: Percentage(100.0),
-      display: Display::Flex, // Enable flexbox layout to demonstrate gap
-      gap: Gap::Array(Px(20.0), Px(20.0)), // Create spacing between children
+      display: Display::Flex,       // Enable flexbox layout to demonstrate gap
+      gap: Gap(Px(20.0), Px(40.0)), // Create spacing between children
       background_color: Some(Color([0, 0, 255, 255])), // Blue background to show container
       ..Default::default()
     },

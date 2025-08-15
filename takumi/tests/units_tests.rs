@@ -1,7 +1,7 @@
 use takumi::core::GlobalContext;
 use takumi::core::viewport::RenderContext;
 use takumi::sides::Sides;
-use takumi::style::length_unit::{Gap, LengthUnit};
+use takumi::style::{gap::Gap, length_unit::LengthUnit};
 
 fn create_test_context() -> RenderContext<'static> {
   let global = Box::leak(Box::new(GlobalContext::default()));
@@ -205,7 +205,7 @@ fn test_sides_value_all_sides() {
 #[test]
 fn test_gap_single_value() {
   let context = create_test_context();
-  let gap = Gap::SingleValue(LengthUnit::Px(10.0));
+  let gap = Gap(LengthUnit::Px(10.0), LengthUnit::Px(10.0));
   let _size = gap.resolve_to_size(&context);
   // We can't test the taffy types directly, but the conversion should work
 }
@@ -213,7 +213,7 @@ fn test_gap_single_value() {
 #[test]
 fn test_gap_array() {
   let context = create_test_context();
-  let gap = Gap::Array(LengthUnit::Px(15.0), LengthUnit::Px(20.0));
+  let gap = Gap(LengthUnit::Px(15.0), LengthUnit::Px(20.0));
   let _size = gap.resolve_to_size(&context);
   // We can't test the taffy types directly, but the conversion should work
 }
