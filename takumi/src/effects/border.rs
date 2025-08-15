@@ -3,10 +3,9 @@ use taffy::{Layout, Point, Size};
 
 use crate::core::RenderContext;
 use crate::effects::{BorderRadius, apply_border_radius_antialiased};
-use crate::rendering::{
-  FastBlendImage, create_image_from_color_input, draw_filled_rect_from_color_input,
-};
-use crate::style::{ColorInput, Style};
+use crate::properties::color::Color;
+use crate::rendering::{FastBlendImage, draw_filled_rect_color};
+use crate::style::Style;
 
 /// Represents the properties of a border.
 #[derive(Debug, Clone)]
@@ -18,7 +17,7 @@ pub struct BorderProperties {
   /// The size of the border.
   pub size: Size<f32>,
   /// The color of the border.
-  pub color: ColorInput,
+  pub color: Color,
   /// The radius of the border.
   pub radius: Option<BorderRadius>,
 }
@@ -30,14 +29,10 @@ impl BorderProperties {
       width: layout.border,
       offset: layout.location,
       size: layout.size,
-      color: style
-        .inheritable_style
-        .border_color
-        .clone()
-        .unwrap_or_default(),
+      color: style.inheritable_style.border_color.unwrap_or_default(),
       radius: style
         .inheritable_style
-        .border_radius
+        .resolved_border_radius()
         .map(|radius| BorderRadius::from_layout(context, layout, radius.into())),
     }
   }
@@ -61,7 +56,7 @@ pub fn draw_border(canvas: &mut FastBlendImage, border: BorderProperties) {
 fn draw_rectangular_border(canvas: &mut FastBlendImage, border: BorderProperties) {
   // Top border
   if border.width.top > 0.0 {
-    draw_filled_rect_from_color_input(
+    draw_filled_rect_color(
       canvas,
       Size {
         width: border.size.width,
@@ -71,13 +66,14 @@ fn draw_rectangular_border(canvas: &mut FastBlendImage, border: BorderProperties
         x: border.offset.x,
         y: border.offset.y,
       },
-      &border.color,
+      border.color,
+      None,
     );
   }
 
   // Bottom border
   if border.width.bottom > 0.0 {
-    draw_filled_rect_from_color_input(
+    draw_filled_rect_color(
       canvas,
       Size {
         width: border.size.width,
@@ -87,13 +83,14 @@ fn draw_rectangular_border(canvas: &mut FastBlendImage, border: BorderProperties
         x: border.offset.x,
         y: border.offset.y + border.size.height - border.width.bottom,
       },
-      &border.color,
+      border.color,
+      None,
     );
   }
 
   // Left border (excluding corners already drawn by top/bottom)
   if border.width.left > 0.0 {
-    draw_filled_rect_from_color_input(
+    draw_filled_rect_color(
       canvas,
       Size {
         width: border.width.left,
@@ -103,13 +100,14 @@ fn draw_rectangular_border(canvas: &mut FastBlendImage, border: BorderProperties
         x: border.offset.x,
         y: border.offset.y + border.width.top,
       },
-      &border.color,
+      border.color,
+      None,
     );
   }
 
   // Right border (excluding corners already drawn by top/bottom)
   if border.width.right > 0.0 {
-    draw_filled_rect_from_color_input(
+    draw_filled_rect_color(
       canvas,
       Size {
         width: border.width.right,
@@ -119,7 +117,8 @@ fn draw_rectangular_border(canvas: &mut FastBlendImage, border: BorderProperties
         x: border.offset.x + border.size.width - border.width.right,
         y: border.offset.y + border.width.top,
       },
-      &border.color,
+      border.color,
+      None,
     );
   }
 }
@@ -139,10 +138,10 @@ fn draw_rounded_border(
   }
 
   // Create a temporary image filled with border color
-  let mut border_image = create_image_from_color_input(
-    &border.color,
+  let mut border_image = RgbaImage::from_pixel(
     border.size.width as u32,
     border.size.height as u32,
+    border.color.into(),
   );
 
   // Apply antialiased border radius to the outer edge

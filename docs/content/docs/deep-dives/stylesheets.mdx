@@ -1,0 +1,16 @@
+---
+title: Stylesheets
+description: Takumi aims to support a wide range of CSS properties, read this to understand how to use them.
+---
+
+## How is it implemented?
+
+Takumi uses [Taffy](https://github.com/DioxusLabs/taffy) to layout the positions, and [cosmic_text](https://github.com/pop-os/cosmic-text) to render the text, so it mostly depends on the features that these two libraries support.
+
+But for box shadow and linear gradient, Takumi has its own implementation.
+
+## CSS Properties
+
+We support CSS values parsing or structured values parsing.
+
+You can check the [`Style` interface in `takumi-helpers`](https://github.com/kane50613/takumi/blob/master/takumi-helpers/src/bindings/Style.ts) or [`Style` struct](https://docs.rs/takumi/latest/takumi/style/properties/struct.Style.html) to see how structured values are parsed.

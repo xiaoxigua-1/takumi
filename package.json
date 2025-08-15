@@ -6,11 +6,10 @@
       "takumi-napi-core",
       "takumi-wasm",
       "docs",
-      "example/nextjs",
-      "example/cloudflare-workers"
+      "example/*"
     ],
     "catalog": {
-      "@types/bun": "^1.2.19",
+      "@types/bun": "^1.2.20",
       "typescript": "^5.9.2"
     }
   },
@@ -18,7 +17,7 @@
     "lint": "biome ci ."
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.1.4",
+    "@biomejs/biome": "^2.2.0",
     "simple-git-hooks": "^2.13.1"
   },
   "trustedDependencies": [

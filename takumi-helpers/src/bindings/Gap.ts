@@ -7,4 +7,4 @@ import type { LengthUnit } from "./LengthUnit";
  * Can be either a single value applied to both axes, or separate values
  * for horizontal and vertical spacing.
  */
-export type Gap = LengthUnit | [LengthUnit, LengthUnit];
+export type Gap = LengthUnit | [LengthUnit, LengthUnit] | string;

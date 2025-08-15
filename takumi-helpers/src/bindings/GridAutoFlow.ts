@@ -3,4 +3,4 @@
 /**
  * Represents the grid auto flow with serde support
  */
-export type GridAutoFlow = "row" | "column" | "row-dense" | "column-dense";
+export type GridAutoFlow = "row" | "column" | "row dense" | "column dense";

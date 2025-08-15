@@ -11,9 +11,17 @@ rust-version = "1.85.1"
 
 [dependencies]
 merge = "0.2"
-ts-rs = "11.0"
 slotmap = "1.0"
-rayon = "1.10"
+cssparser = "0.35"
+csscolorparser = "0.7"
+
+[dependencies.rayon]
+version = "1.10"
+optional = true
+
+[dependencies.ts-rs]
+version = "11.0"
+features = ["no-serde-warnings"]
 
 [dependencies.base64]
 version = "0.22"
@@ -60,7 +68,7 @@ optional = true
 [dependencies.image]
 default-features = false
 version = "0.25"
-features = ["jpeg", "png", "webp", "rayon"]
+features = ["jpeg", "png", "webp"]
 
 [dependencies.resvg]
 version = "0.45"
@@ -68,11 +76,22 @@ default-features = false
 optional = true
 
 [features]
-default = ["woff2", "woff", "image_data_uri", "http_image_store", "svg"]
+default = [
+  "woff2",
+  "woff",
+  "image_data_uri",
+  "http_image_store",
+  "svg",
+  "rayon",
+]
 wasm = ["dep:wasm-bindgen"]
 image_data_uri = ["dep:base64"]
 svg = ["dep:resvg"]
 woff2 = ["dep:woff2-patched", "dep:bytes"]
 woff = ["dep:flate2"]
 http_image_store = ["dep:minreq", "dep:lru"]
+rayon = ["dep:rayon", "image/rayon"]
 test_update_fixtures = []
+
+[dev-dependencies]
+serde_json = "1"

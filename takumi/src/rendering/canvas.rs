@@ -4,7 +4,6 @@
 //! fast image blending and pixel manipulation operations.
 
 use image::{Pixel, Rgba, RgbaImage};
-use rayon::prelude::*;
 
 /// A performance-optimized implementation of image blending operations.
 ///
@@ -55,38 +54,12 @@ impl FastBlendImage {
     let target_width = image.width().min(self.width().saturating_sub(left));
     let target_height = image.height().min(self.height().saturating_sub(top));
 
-    let overlay_size_percentage =
-      (target_width * target_height) as f32 / (image.width() * image.height()) as f32;
-
-    if overlay_size_percentage < 0.5 {
-      for y in 0..target_height {
-        for x in 0..target_width {
-          let pixel = *image.get_pixel(x, y);
-          self.draw_pixel(x + left, y + top, pixel);
-        }
+    for y in 0..target_height {
+      for x in 0..target_width {
+        let pixel = *image.get_pixel(x, y);
+        self.draw_pixel(x + left, y + top, pixel);
       }
-
-      return;
     }
-
-    self.0.par_enumerate_pixels_mut().for_each(|(x, y, pixel)| {
-      if x < left || y < top || x >= left + target_width || y >= top + target_height {
-        return;
-      }
-
-      let image_pixel = *image.get_pixel(x - left, y - top);
-
-      if image_pixel.0[3] == 0 {
-        return;
-      }
-
-      if image_pixel.0[3] == 255 {
-        *pixel = image_pixel;
-        return;
-      }
-
-      pixel.blend(&image_pixel);
-    });
   }
 
   /// Consumes the FastBlendImage and returns the underlying RgbaImage.

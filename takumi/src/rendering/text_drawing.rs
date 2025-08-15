@@ -1,12 +1,12 @@
-use cosmic_text::{Attrs, Buffer, Color, Metrics, Shaping};
-use image::Rgba;
+use cosmic_text::{Attrs, Buffer, Metrics, Shaping};
+use image::{Pixel, Rgba};
 use taffy::{Layout, Size};
 
 use crate::{
-  ColorInput,
   core::RenderContext,
+  linear_gradient::LinearGradientOrColor,
   rendering::FastBlendImage,
-  style::{ColorAt, ResolvedFontStyle, TextOverflow},
+  style::{FontStyle, TextOverflow},
 };
 
 const ELLIPSIS_CHAR: &str = "…";
@@ -14,12 +14,12 @@ const ELLIPSIS_CHAR: &str = "…";
 /// Draws text on the canvas with the specified font style and layout.
 pub fn draw_text(
   text: &str,
-  style: &ResolvedFontStyle,
+  style: &FontStyle,
   context: &RenderContext,
   canvas: &mut FastBlendImage,
   layout: Layout,
 ) {
-  if style.color.is_transparent() || style.font_size == 0.0 {
+  if style.font_size == 0.0 {
     return;
   }
 
@@ -98,63 +98,118 @@ fn draw_buffer(
   buffer: &Buffer,
   canvas: &mut FastBlendImage,
   content_box: Size<f32>,
-  color: &ColorInput,
+  color: &LinearGradientOrColor,
   (start_x, start_y): (f32, f32),
 ) {
   let mut font_system = context.global.font_context.font_system.lock().unwrap();
   let mut font_cache = context.global.font_context.font_cache.lock().unwrap();
 
+  let mut gradient_ctx = if let LinearGradientOrColor::Gradient(gradient) = color {
+    Some(gradient.to_draw_context(content_box.width, content_box.height))
+  } else {
+    None
+  };
+
   for run in buffer.layout_runs() {
     for glyph in run.glyphs.iter() {
       let physical_glyph = glyph.physical((0., 0.), 1.0);
 
-      let glyph_color = match glyph.color_opt {
-        Some(some) => some,
-        None => Color(0),
+      let Some(image) = font_cache.get_image(&mut font_system, physical_glyph.cache_key) else {
+        continue; // No image for this glyph, skip
       };
 
-      font_cache.with_pixels(
-        &mut font_system,
-        physical_glyph.cache_key,
-        glyph_color,
-        |glyph_x, glyph_y, glyph_color| {
-          if glyph_color.a() == 0 {
-            return;
+      let glyph_color =
+        glyph
+          .color_opt
+          .map(|color| Rgba(color.as_rgba()))
+          .or_else(|| match color {
+            LinearGradientOrColor::Color(color) => Some((*color).into()),
+            LinearGradientOrColor::Gradient(_) => None,
+          });
+
+      match image.content {
+        cosmic_text::SwashContent::Mask => {
+          let mut i = 0;
+          for off_y in 0..image.placement.height as i32 {
+            for off_x in 0..image.placement.width as i32 {
+              let final_y = run.line_y as i32 + physical_glyph.y - image.placement.top + off_y;
+              let final_x = physical_glyph.x + image.placement.left + off_x;
+
+              let picked_color = if let Some(glyph_color) = glyph_color {
+                glyph_color
+              } else {
+                match color {
+                  LinearGradientOrColor::Gradient(gradient) => gradient
+                    .at(
+                      final_x as u32,
+                      final_y as u32,
+                      gradient_ctx.as_mut().unwrap(),
+                    )
+                    .into(),
+                  LinearGradientOrColor::Color(_) => unreachable!(),
+                }
+              };
+
+              let blended_color = match image.data[i] {
+                255 => picked_color,
+                alpha => {
+                  let mut blended_color = Rgba(picked_color.0);
+
+                  blended_color.0[3] = (blended_color.0[3] as f32 * (alpha as f32 / 255.0)) as u8;
+
+                  blended_color
+                }
+              };
+
+              canvas.draw_pixel(
+                final_x as u32 + start_x as u32,
+                final_y as u32 + start_y as u32,
+                blended_color,
+              );
+
+              i += 1;
+            }
           }
+        }
+        cosmic_text::SwashContent::Color => {
+          let mut i = 0;
+          for off_y in 0..image.placement.height as i32 {
+            for off_x in 0..image.placement.width as i32 {
+              let final_y = run.line_y as i32 + physical_glyph.y - image.placement.top + off_y;
+              let final_x = physical_glyph.x + image.placement.left + off_x;
 
-          let x = physical_glyph.x + glyph_x;
-          let y = run.line_y as i32 + physical_glyph.y + glyph_y;
+              let picked_color = *Rgba::from_slice(image.data[i..i + 4].into());
 
-          let glyph_color = glyph_color.as_rgba();
+              let blended_color = match glyph_color.map(|color| color.0[3]) {
+                Some(255) | None => picked_color,
+                Some(alpha) => {
+                  let mut blended_color = Rgba(picked_color.0);
 
-          let text_alpha = glyph_color[3] as f32 / 255.0;
+                  blended_color.0[3] *= (alpha as f32 / 255.0) as u8;
 
-          // FIXME: emojis with rich coloring with black might not be rendered correctly.
-          let mut render_color: Rgba<u8> =
-            if glyph_color[0] == 0 && glyph_color[1] == 0 && glyph_color[2] == 0 {
-              color
-                .at(content_box.width, content_box.height, x as u32, y as u32)
-                .into()
-            } else {
-              Rgba(glyph_color)
-            };
+                  blended_color
+                }
+              };
 
-          render_color.0[3] = (render_color.0[3] as f32 * text_alpha) as u8;
+              canvas.draw_pixel(
+                final_x as u32 + start_x as u32,
+                final_y as u32 + start_y as u32,
+                blended_color,
+              );
 
-          canvas.draw_pixel(
-            start_x as u32 + x as u32,
-            start_y as u32 + y as u32,
-            render_color,
-          );
-        },
-      );
+              i += 4;
+            }
+          }
+        }
+        _ => {}
+      }
     }
   }
 }
 
 pub(crate) fn construct_text_buffer(
   text: &str,
-  font_style: &ResolvedFontStyle,
+  font_style: &FontStyle,
   context: &RenderContext,
   size: Option<(Option<f32>, Option<f32>)>,
 ) -> Buffer {

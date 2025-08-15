@@ -169,8 +169,8 @@ describe("fromJsx", () => {
           {
             type: "container",
             children: [{ type: "text", text: "Title" }],
-            font_size: { em: 2 },
-            font_weight: 700,
+            fontSize: { em: 2 },
+            fontWeight: 700,
             margin: [{ em: 0.67 }, 0],
           },
           {
@@ -183,7 +183,7 @@ describe("fromJsx", () => {
                   {
                     type: "container",
                     children: [{ type: "text", text: "bold" }],
-                    font_weight: 700,
+                    fontWeight: 700,
                   },
                   { type: "text", text: " text" },
                 ],
@@ -296,8 +296,8 @@ describe("fromJsx", () => {
             {
               type: "container",
               children: [{ type: "text", text: "Welcome" }],
-              font_size: { em: 2 },
-              font_weight: 700,
+              fontSize: { em: 2 },
+              fontWeight: 700,
               margin: [{ em: 0.67 }, 0],
             },
             {
@@ -337,6 +337,7 @@ describe("fromJsx", () => {
         <title>Logo</title>
         <circle cx="90" cy="90" r="86" fill="url(#logo-iconGradient)" />
         <defs>
+          {/** biome-ignore lint/correctness/useUniqueElementIds: This is not in React runtime */}
           <filter id="logo-shadow" colorInterpolationFilters="sRGB">
             <feDropShadow
               dx="0"
@@ -346,6 +347,7 @@ describe("fromJsx", () => {
               floodOpacity="1"
             />
           </filter>
+          {/** biome-ignore lint/correctness/useUniqueElementIds: This is not in React runtime */}
           <linearGradient id="logo-iconGradient" gradientTransform="rotate(45)">
             <stop offset="45%" stopColor="black" />
             <stop offset="100%" stopColor="white" />

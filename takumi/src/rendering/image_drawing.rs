@@ -160,7 +160,7 @@ pub fn draw_image(
   );
 
   // Apply border radius if specified
-  if let Some(border_radius) = style.inheritable_style.border_radius {
+  if let Some(border_radius) = style.inheritable_style.resolved_border_radius() {
     apply_border_radius_antialiased(
       &mut image,
       BorderRadius::from_layout(context, &layout, border_radius.into()),

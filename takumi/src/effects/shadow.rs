@@ -5,12 +5,10 @@ use image::{
 use taffy::{Layout, Point, Size};
 
 use crate::{
+  box_shadow::{BoxShadow, BoxShadows},
   core::RenderContext,
   effects::{BorderRadius, apply_border_radius_antialiased},
-  rendering::create_image_from_color_input,
-  style::{BoxShadowInput, BoxShadowResolved},
 };
-use rayon::prelude::*;
 
 use crate::rendering::FastBlendImage;
 
@@ -36,25 +34,55 @@ pub enum BoxShadowRenderPhase {
   Inset,
 }
 
+/// Represents a resolved box shadow with all its properties.
+pub struct BoxShadowResolved {
+  /// Whether the shadow is inset or outset.
+  pub inset: bool,
+  /// Horizontal offset of the shadow.
+  pub offset_x: f32,
+  /// Vertical offset of the shadow.
+  pub offset_y: f32,
+  /// Blur radius of the shadow. Higher values create a more blurred shadow.
+  pub blur_radius: f32,
+  /// Spread radius of the shadow. Positive values expand the shadow, negative values shrink it.
+  pub spread_radius: f32,
+  /// Color of the shadow.
+  pub color: Rgba<u8>,
+}
+
+impl BoxShadowResolved {
+  /// Creates a new `BoxShadowResolved` from a `BoxShadow` and a `RenderContext`.
+  pub fn from_box_shadow(shadow: &BoxShadow, context: &RenderContext) -> Self {
+    Self {
+      inset: shadow.inset,
+      offset_x: shadow.offset_x.resolve_to_px(context),
+      offset_y: shadow.offset_y.resolve_to_px(context),
+      blur_radius: shadow.blur_radius.resolve_to_px(context),
+      spread_radius: shadow.spread_radius.resolve_to_px(context),
+      color: shadow.color.into(),
+    }
+  }
+}
+
 /// Draws box shadows for an element, filtered by render phase (outset vs inset).
 pub fn draw_box_shadow(
   context: &RenderContext,
-  box_shadow_input: &BoxShadowInput,
+  box_shadows: &BoxShadows,
   border_radius: Option<BorderRadius>,
   canvas: &mut FastBlendImage,
   layout: Layout,
   phase: BoxShadowRenderPhase,
 ) {
-  match box_shadow_input {
-    BoxShadowInput::Single(shadow) => {
-      let resolved = shadow.clone().resolve(context);
-
+  match &box_shadows.0[..] {
+    [shadow] => {
       let matches_phase = match phase {
-        BoxShadowRenderPhase::Outset => !resolved.inset,
-        BoxShadowRenderPhase::Inset => resolved.inset,
+        BoxShadowRenderPhase::Outset => !shadow.inset,
+        BoxShadowRenderPhase::Inset => shadow.inset,
       };
 
       if matches_phase {
+        let resolved = BoxShadowResolved::from_box_shadow(shadow, context);
+
         let draw = draw_single_box_shadow(&resolved, border_radius, layout);
 
         canvas.overlay_image(
@@ -64,24 +92,39 @@ pub fn draw_box_shadow(
         );
       }
     }
-    BoxShadowInput::Multiple(shadows) => {
-      // Preserve existing stacking order (reverse iteration) while filtering by phase.
-      let images = shadows.par_iter().rev().filter_map(|shadow| {
-        let resolved = shadow.clone().resolve(context);
-
+    shadows => {
+      let to_draw = shadows.iter().filter_map(|shadow| {
         let matches_phase = match phase {
-          BoxShadowRenderPhase::Outset => !resolved.inset,
-          BoxShadowRenderPhase::Inset => resolved.inset,
+          BoxShadowRenderPhase::Outset => !shadow.inset,
+          BoxShadowRenderPhase::Inset => shadow.inset,
         };
 
         if matches_phase {
-          Some(draw_single_box_shadow(&resolved, border_radius, layout))
+          Some(BoxShadowResolved::from_box_shadow(shadow, context))
         } else {
           None
         }
       });
 
-      for draw in images.collect::<Vec<_>>() {
+      // Preserve existing stacking order (reverse iteration) while filtering by phase.
+      #[cfg(feature = "rayon")]
+      let images = {
+        use rayon::iter::{ParallelBridge, ParallelIterator};
+
+        to_draw
+          .rev()
+          .par_bridge()
+          .map(|shadow| draw_single_box_shadow(&shadow, border_radius, layout))
+          .collect::<Vec<_>>()
+      };
+
+      #[cfg(not(feature = "rayon"))]
+      let images = to_draw
+        .rev()
+        .map(|shadow| draw_single_box_shadow(&shadow, border_radius, layout))
+        .collect::<Vec<_>>();
+
+      for draw in images {
         canvas.overlay_image(
           &draw.image,
           (layout.location.x + draw.offset.x) as u32,
@@ -123,10 +166,10 @@ fn draw_inset_shadow(
   border_radius: Option<BorderRadius>,
   layout: Layout,
 ) -> RgbaImage {
-  let mut shadow_image = create_image_from_color_input(
-    &shadow.color,
+  let mut shadow_image = RgbaImage::from_pixel(
     layout.size.width as u32,
     layout.size.height as u32,
+    shadow.color,
   );
 
   remove_inner_section(
@@ -165,10 +208,10 @@ fn draw_outset_shadow(
   border_radius: Option<BorderRadius>,
   layout: Layout,
 ) -> RgbaImage {
-  let mut spread_image = create_image_from_color_input(
-    &shadow.color,
+  let mut spread_image = RgbaImage::from_pixel(
     (layout.size.width + shadow.spread_radius * 2.0) as u32,
     (layout.size.height + shadow.spread_radius * 2.0) as u32,
+    shadow.color,
   );
 
   if let Some(mut border_radius) = border_radius {
@@ -200,6 +243,10 @@ fn draw_outset_shadow(
   blur_image
 }
 
+fn get_pixel_index_from_axis(x: u32, y: u32, width: u32) -> usize {
+  (y * width + x) as usize
+}
+
 fn remove_inner_section(
   image: &mut RgbaImage,
   offset: Point<i32>,
@@ -207,14 +254,16 @@ fn remove_inner_section(
   border_radius: Option<BorderRadius>,
 ) {
   let Some(border_radius) = border_radius else {
-    let max_y = (offset.y + size.height as i32).min(image.height() as i32);
-    let max_x = (offset.x + size.width as i32).min(image.width() as i32);
+    let width = image.width();
+    let image_mut = image.as_mut();
 
-    image.par_enumerate_pixels_mut().for_each(|(x, y, pixel)| {
-      if x as i32 >= offset.x && (x as i32) < max_x && y as i32 >= offset.y && (y as i32) < max_y {
-        pixel.0[3] = 0;
+    for x in 0..size.width {
+      for y in 0..size.height {
+        let index = get_pixel_index_from_axis(x + offset.x as u32, y + offset.y as u32, width);
+
+        image_mut[index * 4 + 3] = 0;
       }
-    });
+    }
 
     return;
   };
@@ -223,21 +272,23 @@ fn remove_inner_section(
 
   apply_border_radius_antialiased(&mut mask, border_radius);
 
-  image.par_enumerate_pixels_mut().for_each(|(x, y, pixel)| {
-    let Some(masked_pixel) =
-      mask.get_pixel_checked((x as i32 - offset.x) as u32, (y as i32 - offset.y) as u32)
-    else {
-      return;
-    };
+  let width = image.width();
+  let pixels = image.as_mut();
 
-    match masked_pixel.0[3] {
+  for (x, y, mask_pixel) in mask.enumerate_pixels() {
+    match mask_pixel.0[3] {
       255 => {
-        pixel.0[3] = 0;
+        let index = get_pixel_index_from_axis(x + offset.x as u32, y + offset.y as u32, width);
+
+        pixels[index * 4 + 3] = 0;
       }
       0 => {}
       _ => {
-        pixel.0[3] *= masked_pixel.0[3] / 255;
+        let index = get_pixel_index_from_axis(x + offset.x as u32, y + offset.y as u32, width);
+
+        pixels[index * 4 + 3] =
+          (pixels[index * 4 + 3] as f32 * (mask_pixel.0[3] as f32 / 255.0)) as u8;
       }
     }
-  });
+  }
 }

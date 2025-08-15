@@ -1,9 +1,13 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.1.4/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.2.0/schema.json",
   "vcs": {
     "enabled": true,
     "clientKind": "git",
     "useIgnoreFile": true
+  },
+  "files": {
+    "ignoreUnknown": false,
+    "includes": ["**/*", "!**/worker-configuration.d.ts", "!**/bindings/*.ts"]
   },
   "formatter": {
     "enabled": true,
@@ -27,11 +31,6 @@
     "enabled": true,
     "rules": {
       "recommended": true,
-      "nursery": {
-        "noFloatingPromises": "error",
-        "noTsIgnore": "error",
-        "noImportCycles": "error"
-      },
       "complexity": {
         "noExcessiveCognitiveComplexity": "error",
         "noUselessStringConcat": "error",
@@ -59,6 +58,7 @@
         "useCollapsedIf": "error"
       },
       "suspicious": {
+        "noTsIgnore": "error",
         "useErrorMessage": "error",
         "useAwait": "error",
         "noTemplateCurlyInString": "error"

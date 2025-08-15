@@ -3,18 +3,20 @@
 //! This module provides various length units (px, em, rem, %, vh, vw) and
 //! utility types for handling measurements and spacing in CSS-like layouts.
 
+use cssparser::{Parser, ParserInput, Token, match_ignore_ascii_case};
 use serde::{Deserialize, Serialize};
-use taffy::{CompactLength, Dimension, LengthPercentage, LengthPercentageAuto, Rect, Size};
+use taffy::{CompactLength, Dimension, LengthPercentage, LengthPercentageAuto, Rect};
 use ts_rs::TS;
 
-use crate::core::viewport::RenderContext;
+use crate::{FromCss, core::viewport::RenderContext, properties::ParseResult};
 
 /// Represents a value that can be a specific length, percentage, or automatic.
 ///
 /// This corresponds to CSS values that can be specified as pixels, percentages,
 /// or the 'auto' keyword for automatic sizing.
 #[derive(Default, Debug, Clone, Deserialize, Serialize, PartialEq, Copy, TS)]
-#[serde(rename_all = "kebab-case")]
+#[serde(try_from = "LengthUnitValue", into = "LengthUnitValue")]
+#[ts(as = "LengthUnitValue")]
 pub enum LengthUnit {
   /// Automatic sizing based on content
   #[default]
@@ -34,13 +36,131 @@ pub enum LengthUnit {
   /// Vw value relative to the viewport width (0-100)
   Vw(f32),
   /// Specific pixel value
+  Px(f32),
+}
+
+/// Proxy type for CSS `LengthUnit` serialization/deserialization.
+#[derive(Debug, Deserialize, Serialize, TS)]
+#[serde(rename_all = "kebab-case")]
+pub enum LengthUnitValue {
+  /// Automatic sizing based on content
+  Auto,
+  /// Minimum content size
+  MinContent,
+  /// Maximum content size
+  MaxContent,
+  /// Percentage value relative to parent container (0-100)
+  Percentage(f32),
+  /// Rem value relative to the root font size
+  Rem(f32),
+  /// Em value relative to the font size
+  Em(f32),
+  /// Vh value relative to the viewport height (0-100)
+  Vh(f32),
+  /// Vw value relative to the viewport width (0-100)
+  Vw(f32),
+  /// Specific pixel value
   #[serde(untagged)]
   Px(f32),
+  /// CSS string representation
+  #[serde(untagged)]
+  Css(String),
+}
+
+impl TryFrom<LengthUnitValue> for LengthUnit {
+  type Error = &'static str;
+
+  fn try_from(value: LengthUnitValue) -> Result<Self, Self::Error> {
+    match value {
+      LengthUnitValue::Auto => Ok(Self::Auto),
+      LengthUnitValue::MinContent => Ok(Self::MinContent),
+      LengthUnitValue::MaxContent => Ok(Self::MaxContent),
+      LengthUnitValue::Percentage(v) => Ok(Self::Percentage(v)),
+      LengthUnitValue::Rem(v) => Ok(Self::Rem(v)),
+      LengthUnitValue::Em(v) => Ok(Self::Em(v)),
+      LengthUnitValue::Vh(v) => Ok(Self::Vh(v)),
+      LengthUnitValue::Vw(v) => Ok(Self::Vw(v)),
+      LengthUnitValue::Px(v) => Ok(Self::Px(v)),
+      LengthUnitValue::Css(s) => {
+        let mut input = ParserInput::new(&s);
+        let mut parser = Parser::new(&mut input);
+
+        let unit =
+          LengthUnit::from_css(&mut parser).map_err(|_| "Failed to parse CSS length unit")?;
+
+        // Ensure no trailing tokens remain so that multi-value CSS like
+        // "1px 2px" does not get parsed as a single LengthUnit.
+        parser
+          .expect_exhausted()
+          .map_err(|_| "Failed to parse CSS length unit: trailing tokens found")?;
+
+        Ok(unit)
+      }
+    }
+  }
+}
+
+impl From<LengthUnit> for LengthUnitValue {
+  fn from(value: LengthUnit) -> Self {
+    match value {
+      LengthUnit::Auto => LengthUnitValue::Auto,
+      LengthUnit::MinContent => LengthUnitValue::MinContent,
+      LengthUnit::MaxContent => LengthUnitValue::MaxContent,
+      LengthUnit::Percentage(v) => LengthUnitValue::Percentage(v),
+      LengthUnit::Rem(v) => LengthUnitValue::Rem(v),
+      LengthUnit::Em(v) => LengthUnitValue::Em(v),
+      LengthUnit::Vh(v) => LengthUnitValue::Vh(v),
+      LengthUnit::Vw(v) => LengthUnitValue::Vw(v),
+      LengthUnit::Px(v) => LengthUnitValue::Px(v),
+    }
+  }
+}
+
+impl LengthUnit {
+  /// Returns a zero pixel length unit.
+  pub const fn zero() -> Self {
+    Self::Px(0.0)
+  }
 }
 
 impl From<f32> for LengthUnit {
   fn from(value: f32) -> Self {
     Self::Px(value)
+  }
+}
+
+impl<'i> FromCss<'i> for LengthUnit {
+  fn from_css(input: &mut Parser<'i, '_>) -> ParseResult<'i, Self> {
+    let location = input.current_source_location();
+    let token = input.next()?;
+
+    match *token {
+      Token::Ident(ref unit) => match_ignore_ascii_case! {&unit,
+        "auto" => Ok(Self::Auto),
+        "min-content" => Ok(Self::MinContent),
+        "max-content" => Ok(Self::MaxContent),
+        _ => Err(location.new_basic_unexpected_token_error(token.clone()).into()),
+      },
+      Token::Dimension {
+        value, ref unit, ..
+      } => {
+        match_ignore_ascii_case! {&unit,
+          "px" => Ok(Self::Px(value)),
+          "em" => Ok(Self::Em(value)),
+          "rem" => Ok(Self::Rem(value)),
+          "vw" => Ok(Self::Vw(value)),
+          "vh" => Ok(Self::Vh(value)),
+          _ => Err(location.new_basic_unexpected_token_error(token.clone()).into()),
+        }
+      }
+      Token::Percentage { unit_value, .. } => Ok(Self::Percentage(unit_value * 100.0)),
+      Token::Number { value, .. } => Ok(Self::Px(value)),
+      _ => Err(
+        location
+          .new_basic_unexpected_token_error(token.clone())
+          .into(),
+      ),
+    }
   }
 }
 
@@ -102,112 +222,6 @@ impl LengthUnit {
     unsafe { Dimension::from_raw(self.to_compact_length(context)) }
   }
 }
-
-/// Represents values that can be applied to all sides of an element.
-///
-/// This enum allows for flexible specification of values like padding, margin,
-/// or border sizes using either a single value for all sides, separate values
-/// for vertical/horizontal axes, or individual values for each side.
-#[derive(Debug, Clone, Copy, Deserialize, Serialize, TS, PartialEq)]
-#[serde(untagged)]
-pub enum SidesValue<T> {
-  /// Same value for all four sides
-  SingleValue(T),
-  /// Separate values for vertical and horizontal sides (vertical, horizontal)
-  AxisSidesArray(T, T),
-  /// Individual values for each side (top, right, bottom, left)
-  AllSides(T, T, T, T),
-}
-
-impl<T> From<T> for SidesValue<T> {
-  fn from(value: T) -> Self {
-    Self::SingleValue(value)
-  }
-}
-
-impl<T: Default> Default for SidesValue<T> {
-  fn default() -> Self {
-    Self::SingleValue(T::default())
-  }
-}
-
-impl<T: Copy, F: Copy + Default + Into<T>> From<SidesValue<F>> for Rect<T> {
-  fn from(value: SidesValue<F>) -> Self {
-    match value {
-      SidesValue::AllSides(top, right, bottom, left) => Rect {
-        left: left.into(),
-        right: right.into(),
-        top: top.into(),
-        bottom: bottom.into(),
-      },
-      SidesValue::AxisSidesArray(vertical, horizontal) => Rect {
-        left: horizontal.into(),
-        right: horizontal.into(),
-        top: vertical.into(),
-        bottom: vertical.into(),
-      },
-      SidesValue::SingleValue(value) => Rect {
-        left: value.into(),
-        right: value.into(),
-        top: value.into(),
-        bottom: value.into(),
-      },
-    }
-  }
-}
-
-/// Represents spacing between flex items.
-///
-/// Can be either a single value applied to both axes, or separate values
-/// for horizontal and vertical spacing.
-#[derive(Debug, Clone, Copy, Deserialize, Serialize, TS, PartialEq)]
-#[serde(untagged)]
-pub enum Gap {
-  /// Same gap value for both horizontal and vertical spacing
-  SingleValue(LengthUnit),
-  /// Separate values for horizontal and vertical spacing (horizontal, vertical)
-  Array(LengthUnit, LengthUnit),
-}
-
-impl Default for Gap {
-  fn default() -> Self {
-    Self::SingleValue(LengthUnit::Px(0.0))
-  }
-}
-
-impl Gap {
-  /// Resolves the gap to a size in length percentages.
-  ///
-  /// This method converts the gap value to a size in length percentages,
-  /// which can be used to set the size of flex items in a flex container.
-  pub fn resolve_to_size(self, context: &RenderContext) -> Size<LengthPercentage> {
-    match self {
-      Gap::SingleValue(value) => Size {
-        width: value.resolve_to_length_percentage(context),
-        height: value.resolve_to_length_percentage(context),
-      },
-      Gap::Array(horizontal, vertical) => Size {
-        width: horizontal.resolve_to_length_percentage(context),
-        height: vertical.resolve_to_length_percentage(context),
-      },
-    }
-  }
-}
-
-/// Represents values for horizontal and vertical axes.
-///
-/// Used for properties that can have different values for horizontal
-/// and vertical directions, such as padding or margin.
-#[derive(Debug, Clone, Deserialize, Serialize, TS)]
-pub struct AxisSides<T> {
-  /// Horizontal axis value
-  #[serde(default)]
-  pub horizontal: T,
-  /// Vertical axis value
-  #[serde(default)]
-  pub vertical: T,
-}
-
 /// Utility function to resolve a rect of length units to length percentages.
 pub fn resolve_length_unit_rect_to_length_percentage(
   context: &RenderContext,

@@ -1,6 +1,6 @@
 use std::io::{Seek, Write};
 
-use image::{ImageFormat, RgbImage, RgbaImage, codecs::jpeg::JpegEncoder};
+use image::{ExtendedColorType, ImageFormat, RgbaImage, codecs::jpeg::JpegEncoder};
 use serde::{Deserialize, Serialize};
 use slotmap::{DefaultKey, KeyData, SecondaryMap};
 use taffy::{AvailableSpace, NodeId, Point, TaffyTree, geometry::Size};
@@ -83,14 +83,15 @@ pub fn write_image<T: Write + Seek>(
       image.write_to(destination, format.into())?;
     }
     ImageOutputFormat::Jpeg => {
-      let rgb_image = RgbImage::from_par_fn(image.width(), image.height(), |x, y| {
-        let pixel = image.get_pixel(x, y);
-        image::Rgb([pixel[0], pixel[1], pixel[2]])
-      });
+      // Strip alpha channel into a tightly packed RGB buffer
+      let raw = image.as_raw();
+      let mut rgb = Vec::with_capacity(raw.len() / 4 * 3);
+      for px in raw.chunks_exact(4) {
+        rgb.extend_from_slice(&px[..3]);
+      }
 
       let mut encoder = JpegEncoder::new_with_quality(destination, jpeg_quality.unwrap_or(75));
-
-      encoder.encode_image(&rgb_image)?;
+      encoder.encode(&rgb, image.width(), image.height(), ExtendedColorType::Rgb8)?;
     }
   }
 

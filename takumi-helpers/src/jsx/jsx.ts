@@ -6,11 +6,9 @@ import {
   type ReactElement,
   type ReactNode,
 } from "react";
-import { renderToString } from "react-dom/server";
+import { renderToStaticMarkup } from "react-dom/server";
 import { container, image, text } from "../helpers";
-import type { Node } from "../types";
-import { parseStyle } from "./style-parser";
-import { parseLengthUnit } from "./style-parsing";
+import type { Node, PartialStyle } from "../types";
 import { stylePresets } from "./style-presets";
 
 const REACT_ELEMENT_TYPE = Symbol.for("react.transitional.element");
@@ -72,7 +70,7 @@ async function processReactElement(element: ReactElement): Promise<Node[]> {
     container({
       children,
       ...stylePresets[element.type as keyof JSX.IntrinsicElements],
-      ...parseStyle(style),
+      ...(style as PartialStyle),
     }),
   ];
 }
@@ -87,16 +85,16 @@ function createImageElement(element: ReactElement<ComponentProps<"img">>) {
 
   return [
     image(element.props.src, {
-      ...parseStyle(element.props.style),
-      width: width ? parseLengthUnit(width) : undefined,
-      height: height ? parseLengthUnit(height) : undefined,
+      ...(element.props.style as PartialStyle),
+      width,
+      height,
     }),
   ];
 }
 
 function createSvgElement(element: ReactElement<ComponentProps<"svg">>) {
   return image(
-    renderToString(
+    renderToStaticMarkup(
       cloneElement(
         element,
         {

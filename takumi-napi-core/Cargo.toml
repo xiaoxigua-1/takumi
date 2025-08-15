@@ -12,7 +12,7 @@ rayon = "1.10"
 
 [dependencies.takumi]
 path = "../takumi"
-features = ["woff2", "woff", "image_data_uri", "svg"]
+features = ["woff2", "woff", "image_data_uri", "svg", "rayon"]
 default-features = false
 
 [dependencies.napi]

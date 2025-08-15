@@ -5,7 +5,6 @@
 
 use std::fmt::Debug;
 
-use rayon::iter::{ParallelBridge, ParallelIterator};
 use serde::{Deserialize, Serialize};
 
 use crate::{core::GlobalContext, layout::trait_node::Node, style::Style};
@@ -14,7 +13,7 @@ use crate::{core::GlobalContext, layout::trait_node::Node, style::Style};
 ///
 /// Container nodes are used to group other nodes and apply layout
 /// properties like flexbox layout to arrange their children.
-#[derive(Debug, Deserialize, Clone, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct ContainerNode<Nodes: Node<Nodes>> {
   /// The styling properties for this container
   #[serde(default, flatten)]
@@ -52,11 +51,34 @@ impl<Nodes: Node<Nodes>> Node<Nodes> for ContainerNode<Nodes> {
       return Ok(());
     };
 
-    children
+    let should_hydrate = children
       .iter()
       .filter(|child| child.should_hydrate())
-      .par_bridge()
-      .try_for_each(|child| child.hydrate(context))
+      .collect::<Vec<_>>();
+
+    if should_hydrate.is_empty() {
+      return Ok(());
+    }
+
+    if should_hydrate.len() == 1 {
+      return should_hydrate[0].hydrate(context);
+    }
+
+    #[cfg(feature = "rayon")]
+    {
+      use rayon::iter::{IntoParallelIterator, ParallelIterator};
+
+      should_hydrate
+        .into_par_iter()
+        .try_for_each(|child| child.hydrate(context))
+    }
+
+    #[cfg(not(feature = "rayon"))]
+    {
+      should_hydrate
+        .iter()
+        .try_for_each(|child| child.hydrate(context))
+    }
   }
 
   fn inherit_style_for_children(&mut self) {
