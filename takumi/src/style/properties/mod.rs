@@ -7,6 +7,8 @@
 pub mod box_shadow;
 /// Color parsing and representation for styling.
 pub mod color;
+/// Font weight property and parsing
+pub mod font_weight;
 /// Gap properties for flex and grid layouts.
 pub mod gap;
 /// Grid-related properties (columns/rows/track sizing)
@@ -22,6 +24,7 @@ pub mod sides;
 
 pub use box_shadow::*;
 pub use color::*;
+pub use font_weight::*;
 pub use gap::*;
 pub use length_unit::*;
 pub use linear_gradient::*;
@@ -30,7 +33,7 @@ pub use sides::*;
 // grid module re-exports grid types
 pub use grid::*;
 
-use cosmic_text::{Align, FamilyOwned, Weight};
+use cosmic_text::{Align, FamilyOwned};
 use cssparser::{BasicParseError, ParseError, Parser};
 use image::imageops::FilterType;
 use serde::{Deserialize, Serialize};
@@ -47,27 +50,6 @@ pub trait FromCss<'i> {
   fn from_css(input: &mut Parser<'i, '_>) -> ParseResult<'i, Self>
   where
     Self: Sized;
-}
-
-/// Represents font weight as a numeric value.
-///
-/// This wraps a u16 value that corresponds to CSS font-weight values.
-/// Common values include 100 (thin), 200 (extra light), 300 (light),
-/// 400 (normal), 500 (medium), 600 (semi bold), 700 (bold),
-/// 800 (extra bold), 900 (black).
-#[derive(Debug, Copy, Clone, Deserialize, Serialize, TS, PartialEq)]
-pub struct FontWeight(pub u16);
-
-impl Default for FontWeight {
-  fn default() -> Self {
-    FontWeight(Weight::NORMAL.0)
-  }
-}
-
-impl From<FontWeight> for Weight {
-  fn from(weight: FontWeight) -> Self {
-    Weight(weight.0)
-  }
 }
 
 /// Defines how an image should be resized to fit its container.
