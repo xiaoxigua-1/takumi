@@ -16,11 +16,11 @@ export type InheritableStyle = {
 /**
  * How text should be overflowed.
  */
-text_overflow?: TextOverflow, 
+textOverflow?: TextOverflow, 
 /**
  * Color of the element's border.
  */
-border_color?: Color, 
+borderColor?: Color, 
 /**
  * Text color for child text elements.
  */
@@ -28,52 +28,52 @@ color?: LinearGradientOrColor,
 /**
  * Font size for text rendering.
  */
-font_size?: LengthUnit, 
+fontSize?: LengthUnit, 
 /**
  * Font family name for text rendering.
  */
-font_family?: FontFamily, 
+fontFamily?: FontFamily, 
 /**
  * Line height for text spacing.
  */
-line_height?: LengthUnit, 
+lineHeight?: LengthUnit, 
 /**
  * Font weight for text rendering.
  */
-font_weight?: FontWeight, 
+fontWeight?: FontWeight, 
 /**
  * Maximum number of lines for text before truncation.
  */
-line_clamp?: number, 
+lineClamp?: number, 
 /**
  * Shorthand border radius (top, right, bottom, left).
  */
-border_radius?: Sides<LengthUnit>, 
+borderRadius?: Sides<LengthUnit>, 
 /**
  * Longhand: top border radius. Overrides `border_radius` top value.
  */
-border_radius_top?: LengthUnit, 
+borderRadiusTop?: LengthUnit, 
 /**
  * Longhand: right border radius. Overrides `border_radius` right value.
  */
-border_radius_right?: LengthUnit, 
+borderRadiusRight?: LengthUnit, 
 /**
  * Longhand: bottom border radius. Overrides `border_radius` bottom value.
  */
-border_radius_bottom?: LengthUnit, 
+borderRadiusBottom?: LengthUnit, 
 /**
  * Longhand: left border radius. Overrides `border_radius` left value.
  */
-border_radius_left?: LengthUnit, 
+borderRadiusLeft?: LengthUnit, 
 /**
  * Text alignment within the element.
  */
-text_align?: TextAlign, 
+textAlign?: TextAlign, 
 /**
  * Additional spacing between characters in text.
  */
-letter_spacing?: LengthUnit, 
+letterSpacing?: LengthUnit, 
 /**
  * Controls how images are scaled when rendered.
  */
-image_rendering?: ImageScalingAlgorithm, };
+imageRendering?: ImageScalingAlgorithm, };

@@ -33,7 +33,7 @@ pub struct FontStyle {
 
 /// Main styling structure that contains all layout and visual properties.
 #[derive(Debug, Clone, Deserialize, Serialize, TS)]
-#[serde(default)]
+#[serde(default, rename_all = "camelCase")]
 #[ts(export, optional_fields)]
 pub struct Style {
   /// Display algorithm to use for the element.
@@ -209,6 +209,7 @@ impl Default for Style {
 #[derive(Debug, Clone, Deserialize, Serialize, Default, TS, Merge)]
 #[merge(strategy = overwrite_none)]
 #[ts(optional_fields, export)]
+#[serde(rename_all = "camelCase")]
 pub struct InheritableStyle {
   /// How text should be overflowed.
   pub text_overflow: Option<TextOverflow>,

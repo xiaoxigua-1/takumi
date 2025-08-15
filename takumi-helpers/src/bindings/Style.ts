@@ -42,23 +42,23 @@ height: LengthUnit,
 /**
  * Max width of the element.
  */
-max_width: LengthUnit, 
+maxWidth: LengthUnit, 
 /**
  * Max height of the element.
  */
-max_height: LengthUnit, 
+maxHeight: LengthUnit, 
 /**
  * Min width of the element.
  */
-min_width: LengthUnit, 
+minWidth: LengthUnit, 
 /**
  * Min height of the element.
  */
-min_height: LengthUnit, 
+minHeight: LengthUnit, 
 /**
  * Aspect ratio of the element (width/height).
  */
-aspect_ratio?: number, 
+aspectRatio?: number, 
 /**
  * Internal spacing around the element's content (top, right, bottom, left).
  */
@@ -66,19 +66,19 @@ padding: Sides<LengthUnit>,
 /**
  * Longhand: top padding. Overrides `padding` top value.
  */
-padding_top?: LengthUnit, 
+paddingTop?: LengthUnit, 
 /**
  * Longhand: right padding. Overrides `padding` right value.
  */
-padding_right?: LengthUnit, 
+paddingRight?: LengthUnit, 
 /**
  * Longhand: bottom padding. Overrides `padding` bottom value.
  */
-padding_bottom?: LengthUnit, 
+paddingBottom?: LengthUnit, 
 /**
  * Longhand: left padding. Overrides `padding` left value.
  */
-padding_left?: LengthUnit, 
+paddingLeft?: LengthUnit, 
 /**
  * External spacing around the element (top, right, bottom, left).
  */
@@ -86,19 +86,19 @@ margin: Sides<LengthUnit>,
 /**
  * Longhand: top margin. Overrides `margin` top value.
  */
-margin_top?: LengthUnit, 
+marginTop?: LengthUnit, 
 /**
  * Longhand: right margin. Overrides `margin` right value.
  */
-margin_right?: LengthUnit, 
+marginRight?: LengthUnit, 
 /**
  * Longhand: bottom margin. Overrides `margin` bottom value.
  */
-margin_bottom?: LengthUnit, 
+marginBottom?: LengthUnit, 
 /**
  * Longhand: left margin. Overrides `margin` left value.
  */
-margin_left?: LengthUnit, 
+marginLeft?: LengthUnit, 
 /**
  * Positioning offsets (top, right, bottom, left) from the element's normal position.
  */
@@ -122,39 +122,39 @@ left?: LengthUnit,
 /**
  * Direction of flex layout (row or column).
  */
-flex_direction: FlexDirection, 
+flexDirection: FlexDirection, 
 /**
  * How a single grid item is aligned along the inline (row) axis, overriding the container's justify-items value.
  */
-justify_self?: AlignItems, 
+justifySelf?: AlignItems, 
 /**
  * How items are aligned along the main axis.
  */
-justify_content?: JustifyContent, 
+justifyContent?: JustifyContent, 
 /**
  * How lines are aligned within the flex container when there's extra space in the cross axis.
  */
-align_content?: JustifyContent, 
+alignContent?: JustifyContent, 
 /**
  * How grid items are aligned along the inline (row) axis within their grid areas.
  */
-justify_items?: AlignItems, 
+justifyItems?: AlignItems, 
 /**
  * How items are aligned along the cross axis.
  */
-align_items?: AlignItems, 
+alignItems?: AlignItems, 
 /**
  * How a single item is aligned along the cross axis, overriding the container's align-items value.
  */
-align_self?: AlignItems, 
+alignSelf?: AlignItems, 
 /**
  * How flex items should wrap.
  */
-flex_wrap: FlexWrap, 
+flexWrap: FlexWrap, 
 /**
  * The initial main size of the flex item before growing or shrinking.
  */
-flex_basis: LengthUnit, 
+flexBasis: LengthUnit, 
 /**
  * Positioning method (relative, absolute, etc.).
  */
@@ -166,83 +166,83 @@ gap: Gap,
 /**
  * How much the flex item should grow relative to other flex items when positive free space is distributed.
  */
-flex_grow: number, 
+flexGrow: number, 
 /**
  * How much the flex item should shrink relative to other flex items when negative free space is distributed.
  */
-flex_shrink: number, 
+flexShrink: number, 
 /**
  * Width of the element's border on each side (top, right, bottom, left).
  */
-border_width: Sides<LengthUnit>, 
+borderWidth: Sides<LengthUnit>, 
 /**
  * Longhand: top border width. Overrides `border_width` top value.
  */
-border_width_top?: LengthUnit, 
+borderWidthTop?: LengthUnit, 
 /**
  * Longhand: right border width. Overrides `border_width` right value.
  */
-border_width_right?: LengthUnit, 
+borderWidthRight?: LengthUnit, 
 /**
  * Longhand: bottom border width. Overrides `border_width` bottom value.
  */
-border_width_bottom?: LengthUnit, 
+borderWidthBottom?: LengthUnit, 
 /**
  * Longhand: left border width. Overrides `border_width` left value.
  */
-border_width_left?: LengthUnit, 
+borderWidthLeft?: LengthUnit, 
 /**
  * How images should be fitted within their container.
  */
-object_fit: ObjectFit, 
+objectFit: ObjectFit, 
 /**
  * Background gradient(s).
  */
-background_image?: LinearGradients, 
+backgroundImage?: LinearGradients, 
 /**
  * Background color for the element.
  */
-background_color?: Color, 
+backgroundColor?: Color, 
 /**
  * Box shadow effect for the element.
  */
-box_shadow?: BoxShadows, 
+boxShadow?: BoxShadows, 
 /**
  * Controls the size of implicitly-created grid columns.
  */
-grid_auto_columns?: Array<GridTrackSize>, 
+gridAutoColumns?: Array<GridTrackSize>, 
 /**
  * Controls the size of implicitly-created grid rows.
  */
-grid_auto_rows?: Array<GridTrackSize>, 
+gridAutoRows?: Array<GridTrackSize>, 
 /**
  * Controls how auto-placed items are inserted in the grid.
  */
-grid_auto_flow?: GridAutoFlow, 
+gridAutoFlow?: GridAutoFlow, 
 /**
  * Specifies a grid item's size and location within the grid column.
  */
-grid_column?: GridLine, 
+gridColumn?: GridLine, 
 /**
  * Specifies a grid item's size and location within the grid row.
  */
-grid_row?: GridLine, 
+gridRow?: GridLine, 
 /**
  * Defines the line names and track sizing functions of the grid columns.
  */
-grid_template_columns?: Array<GridTemplateComponent>, 
+gridTemplateColumns?: Array<GridTemplateComponent>, 
 /**
  * Defines the line names and track sizing functions of the grid rows.
  */
-grid_template_rows?: Array<GridTemplateComponent>, 
+gridTemplateRows?: Array<GridTemplateComponent>, 
 /**
  * How text should be overflowed.
  */
-text_overflow?: TextOverflow, 
+textOverflow?: TextOverflow, 
 /**
  * Color of the element's border.
  */
-border_color?: Color, 
+borderColor?: Color, 
 /**
  * Text color for child text elements.
  */
@@ -250,52 +250,52 @@ color?: LinearGradientOrColor,
 /**
  * Font size for text rendering.
  */
-font_size?: LengthUnit, 
+fontSize?: LengthUnit, 
 /**
  * Font family name for text rendering.
  */
-font_family?: FontFamily, 
+fontFamily?: FontFamily, 
 /**
  * Line height for text spacing.
  */
-line_height?: LengthUnit, 
+lineHeight?: LengthUnit, 
 /**
  * Font weight for text rendering.
  */
-font_weight?: FontWeight, 
+fontWeight?: FontWeight, 
 /**
  * Maximum number of lines for text before truncation.
  */
-line_clamp?: number, 
+lineClamp?: number, 
 /**
  * Shorthand border radius (top, right, bottom, left).
  */
-border_radius?: Sides<LengthUnit>, 
+borderRadius?: Sides<LengthUnit>, 
 /**
  * Longhand: top border radius. Overrides `border_radius` top value.
  */
-border_radius_top?: LengthUnit, 
+borderRadiusTop?: LengthUnit, 
 /**
  * Longhand: right border radius. Overrides `border_radius` right value.
  */
-border_radius_right?: LengthUnit, 
+borderRadiusRight?: LengthUnit, 
 /**
  * Longhand: bottom border radius. Overrides `border_radius` bottom value.
  */
-border_radius_bottom?: LengthUnit, 
+borderRadiusBottom?: LengthUnit, 
 /**
  * Longhand: left border radius. Overrides `border_radius` left value.
  */
-border_radius_left?: LengthUnit, 
+borderRadiusLeft?: LengthUnit, 
 /**
  * Text alignment within the element.
  */
-text_align?: TextAlign, 
+textAlign?: TextAlign, 
 /**
  * Additional spacing between characters in text.
  */
-letter_spacing?: LengthUnit, 
+letterSpacing?: LengthUnit, 
 /**
  * Controls how images are scaled when rendered.
  */
-image_rendering?: ImageScalingAlgorithm, };
+imageRendering?: ImageScalingAlgorithm, };
