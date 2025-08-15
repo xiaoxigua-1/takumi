@@ -316,8 +316,10 @@ pub enum GridAutoFlow {
   /// Places grid items by filling each column in turn, adding new columns as needed
   Column,
   /// Places grid items by filling each row in turn, using dense packing to fill gaps
+  #[serde(rename = "row dense")]
   RowDense,
   /// Places grid items by filling each column in turn, using dense packing to fill gaps
+  #[serde(rename = "column dense")]
   ColumnDense,
 }
 
@@ -355,5 +357,3 @@ impl From<ImageScalingAlgorithm> for FilterType {
     }
   }
 }
-
-// Style, InheritableStyle, and FontStyle moved to `style/stylesheets.rs`

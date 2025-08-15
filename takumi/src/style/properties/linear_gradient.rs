@@ -1,5 +1,6 @@
 use cssparser::{Parser, ParserInput, Token, match_ignore_ascii_case};
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use ts_rs::TS;
 
 use crate::{
@@ -53,85 +54,63 @@ impl TryFrom<LinearGradientValue> for LinearGradient {
 impl LinearGradient {
   /// Returns the color at a specific point in the gradient.
   /// Callers should pre-resolve gradient stops and pass them in for performance.
-  pub fn at(
-    &self,
-    width: f32,
-    height: f32,
-    x: u32,
-    y: u32,
-    resolved_stops: &[GradientStop],
-  ) -> Color {
-    // Handle edge cases with no or single color step
-    if resolved_stops.is_empty() {
+  pub fn at(&self, x: u32, y: u32, ctx: &mut LinearGradientDrawContext) -> Color {
+    // Fast-paths
+    if ctx.resolved_stops.is_empty() {
       return Color([0, 0, 0, 0]);
     }
-
-    if resolved_stops.len() == 1 {
-      return resolved_stops[0].color;
+    if ctx.resolved_stops.len() == 1 {
+      return ctx.resolved_stops[0].color;
     }
 
-    // Direction vector mapping
-    let rad = self.angle.0.to_radians();
-    let dir_x;
-    let dir_y;
-    // Use axis-aligned mapping for pure horizontal/vertical; diagonal uses up-right convention
-    if (self.angle.0 % 90.0).abs() < 1e-6 {
-      dir_x = -rad.sin();
-      dir_y = rad.cos();
-    } else {
-      // Diagonal: orient such that 45deg points towards top-right
-      dir_x = rad.sin();
-      dir_y = -rad.cos();
-    }
-
-    // Project the vector from the center of the rectangle to the pixel onto the direction vector
-    let cx = width / 2.0;
-    let cy = height / 2.0;
-    let dx = x as f32 - cx;
-    let dy = y as f32 - cy;
-
-    let projection = dx * dir_x + dy * dir_y;
-    let max_extent = ((width * dir_x.abs()) + (height * dir_y.abs())) / 2.0;
-    let mut position = if max_extent <= 0.0 {
+    let dx = x as f32 - ctx.cx;
+    let dy = y as f32 - ctx.cy;
+    let projection = dx * ctx.dir_x + dy * ctx.dir_y;
+    let mut position = if ctx.max_extent <= 0.0 {
       0.5
     } else {
-      ((projection / max_extent) + 1.0) / 2.0
+      ((projection / ctx.max_extent) + 1.0) / 2.0
     };
     position = position.clamp(0.0, 1.0);
 
     // Snap to exact ends for pure horizontal/vertical to ensure precise edge colors
-    if dir_y.abs() <= 1e-6 {
+    if ctx.dir_y.abs() <= 1e-6 {
       // Pure horizontal
       if x == 0 {
         position = 0.0;
-      } else if (x + 1) as f32 == width {
+      } else if (x + 1) as f32 == ctx.width {
         position = 1.0;
       }
-    } else if dir_x.abs() <= 1e-6 {
+    } else if ctx.dir_x.abs() <= 1e-6 {
       // Pure vertical
       if y == 0 {
         position = 0.0;
-      } else if (y + 1) as f32 == height {
+      } else if (y + 1) as f32 == ctx.height {
         position = 1.0;
       }
     }
 
     // Bias slightly toward the first color for diagonal tie cases
-    if dir_x.abs() > 1e-6 && dir_y.abs() > 1e-6 {
+    if ctx.dir_x.abs() > 1e-6 && ctx.dir_y.abs() > 1e-6 {
       position = (position - 0.001).clamp(0.0, 1.0);
     }
 
     // Snap to exact ends when within one pixel of the edges to match expectations
-    let pixel_epsilon = 1.0 / width.max(height).max(1.0);
-    if position <= pixel_epsilon {
+    if position <= ctx.pixel_epsilon {
       position = 0.0;
-    } else if (1.0 - position) <= pixel_epsilon {
+    } else if (1.0 - position) <= ctx.pixel_epsilon {
       position = 1.0;
+    }
+
+    // Quantize position for caching
+    let quantized_key = (position * 65535.0).round() as u32;
+    if let Some(color) = ctx.color_cache.get(&quantized_key) {
+      return *color;
     }
 
     // Find the two stops that bracket the current position
     let mut left_index = 0;
-    for (i, stop) in resolved_stops.iter().enumerate() {
+    for (i, stop) in ctx.resolved_stops.iter().enumerate() {
       if stop.position <= position {
         left_index = i;
       } else {
@@ -139,16 +118,18 @@ impl LinearGradient {
       }
     }
 
-    if left_index >= resolved_stops.len() - 1 {
-      return resolved_stops[resolved_stops.len() - 1].color;
-    }
+    let color = if left_index >= ctx.resolved_stops.len() - 1 {
+      ctx.resolved_stops[ctx.resolved_stops.len() - 1].color
+    } else {
+      let left_stop = &ctx.resolved_stops[left_index];
+      let right_stop = &ctx.resolved_stops[left_index + 1];
+      let segment_length = (right_stop.position - left_stop.position).max(1e-6);
+      let local_t = ((position - left_stop.position) / segment_length).clamp(0.0, 1.0);
+      self.interpolate_colors(left_stop.color, right_stop.color, local_t)
+    };
 
-    let left_stop = &resolved_stops[left_index];
-    let right_stop = &resolved_stops[left_index + 1];
-    let segment_length = (right_stop.position - left_stop.position).max(1e-6);
-    let local_t = ((position - left_stop.position) / segment_length).clamp(0.0, 1.0);
-
-    self.interpolate_colors(left_stop.color, right_stop.color, local_t)
+    ctx.color_cache.insert(quantized_key, color);
+    color
   }
 
   /// Resolves gradient steps into color stops with positions
@@ -169,9 +150,7 @@ impl LinearGradient {
           last_position = Some(position);
         }
         GradientHint::Hint(_hint_value) => {
-          // Hints are used for determining optimal color distribution
-          // but don't add actual color stops
-          // For now, we'll ignore hints in the resolved stops
+          // Hints are used for determining optimal color distribution, but don't add actual color stops
         }
       }
     }
@@ -248,15 +227,78 @@ impl LinearGradient {
 
   /// Interpolates between two colors
   fn interpolate_colors(&self, color1: Color, color2: Color, t: f32) -> Color {
-    let [r1, g1, b1, a1] = color1.0;
-    let [r2, g2, b2, a2] = color2.0;
+    let mut out = [0u8; 4];
+    for (i, out) in out.iter_mut().enumerate() {
+      let c1 = color1.0[i] as f32;
+      let c2 = color2.0[i] as f32;
+      *out = (c1 * (1.0 - t) + c2 * t).round() as u8;
+    }
+    Color(out)
+  }
+}
 
-    let r = (r1 as f32 * (1.0 - t) + r2 as f32 * t).round() as u8;
-    let g = (g1 as f32 * (1.0 - t) + g2 as f32 * t).round() as u8;
-    let b = (b1 as f32 * (1.0 - t) + b2 as f32 * t).round() as u8;
-    let a = (a1 as f32 * (1.0 - t) + a2 as f32 * t).round() as u8;
+/// Precomputed drawing context for repeated sampling of a `LinearGradient`.
+#[derive(Debug, Clone)]
+pub struct LinearGradientDrawContext {
+  /// Target width in pixels.
+  pub width: f32,
+  /// Target height in pixels.
+  pub height: f32,
+  /// Direction vector X component derived from angle.
+  pub dir_x: f32,
+  /// Direction vector Y component derived from angle.
+  pub dir_y: f32,
+  /// Center X coordinate.
+  pub cx: f32,
+  /// Center Y coordinate.
+  pub cy: f32,
+  /// Maximum extent along gradient direction used for normalization.
+  pub max_extent: f32,
+  /// Epsilon size of one pixel relative to the longest edge.
+  pub pixel_epsilon: f32,
+  /// Resolved and ordered color stops.
+  pub resolved_stops: Vec<GradientStop>,
+  /// Cache of computed colors keyed by quantized position along the gradient [0, 1].
+  color_cache: HashMap<u32, Color>,
+}
 
-    Color([r, g, b, a])
+impl LinearGradientDrawContext {
+  /// Builds a drawing context from a gradient and a target viewport.
+  pub fn new(gradient: &LinearGradient, width: f32, height: f32) -> Self {
+    // Direction vector mapping matches `LinearGradient::at`
+    let rad = gradient.angle.0.to_radians();
+    let (dir_x, dir_y) = if (gradient.angle.0 % 90.0).abs() < 1e-6 {
+      (-rad.sin(), rad.cos())
+    } else {
+      (rad.sin(), -rad.cos())
+    };
+
+    let cx = width / 2.0;
+    let cy = height / 2.0;
+    let max_extent = ((width * dir_x.abs()) + (height * dir_y.abs())) / 2.0;
+    let pixel_epsilon = 1.0 / width.max(height).max(1.0);
+
+    let resolved_stops = gradient.resolve_stops();
+
+    LinearGradientDrawContext {
+      width,
+      height,
+      dir_x,
+      dir_y,
+      cx,
+      cy,
+      max_extent,
+      pixel_epsilon,
+      resolved_stops,
+      color_cache: HashMap::new(),
+    }
+  }
+}
+
+impl LinearGradient {
+  /// Creates a drawing context for repeated sampling at the provided viewport size.
+  pub fn to_draw_context(&self, width: f32, height: f32) -> LinearGradientDrawContext {
+    LinearGradientDrawContext::new(self, width, height)
   }
 }
 
@@ -921,16 +963,16 @@ mod tests {
     };
 
     // Test at the top (should be red)
-    let stops = gradient.resolve_stops();
-    let color_top = gradient.at(100.0, 100.0, 50, 0, &stops);
+    let mut ctx = gradient.to_draw_context(100.0, 100.0);
+    let color_top = gradient.at(50, 0, &mut ctx);
     assert_eq!(color_top, Color([255, 0, 0, 255]));
 
     // Test at the bottom (should be blue)
-    let color_bottom = gradient.at(100.0, 100.0, 50, 99, &stops);
+    let color_bottom = gradient.at(50, 99, &mut ctx);
     assert_eq!(color_bottom, Color([0, 0, 255, 255]));
 
     // Test in the middle (should be purple)
-    let color_middle = gradient.at(100.0, 100.0, 50, 50, &stops);
+    let color_middle = gradient.at(50, 50, &mut ctx);
     // Middle should be roughly purple (red + blue)
     let [r, g, b, a] = color_middle.0;
     assert_eq!(r, 128); // Approximately halfway between 255 and 0
@@ -956,12 +998,12 @@ mod tests {
     };
 
     // Test at the left (should be red)
-    let stops = gradient.resolve_stops();
-    let color_left = gradient.at(100.0, 100.0, 0, 50, &stops);
+    let mut ctx = gradient.to_draw_context(100.0, 100.0);
+    let color_left = gradient.at(0, 50, &mut ctx);
     assert_eq!(color_left, Color([255, 0, 0, 255]));
 
     // Test at the right (should be blue)
-    let color_right = gradient.at(100.0, 100.0, 99, 50, &stops);
+    let color_right = gradient.at(99, 50, &mut ctx);
     assert_eq!(color_right, Color([0, 0, 255, 255]));
   }
 
@@ -982,8 +1024,8 @@ mod tests {
     };
 
     // Test at top-left corner
-    let stops = gradient.resolve_stops();
-    let color_top_left = gradient.at(100.0, 100.0, 0, 0, &stops);
+    let mut ctx = gradient.to_draw_context(100.0, 100.0);
+    let color_top_left = gradient.at(0, 0, &mut ctx);
     // Should be closer to red since we're going bottom-left to top-right
     let [r, _g, b, _a] = color_top_left.0;
     assert!(r > b); // More red than blue
@@ -1001,8 +1043,8 @@ mod tests {
     };
 
     // Should always return the same color
-    let stops = gradient.resolve_stops();
-    let color = gradient.at(100.0, 100.0, 50, 50, &stops);
+    let mut ctx = gradient.to_draw_context(100.0, 100.0);
+    let color = gradient.at(50, 50, &mut ctx);
     assert_eq!(color, Color([255, 0, 0, 255]));
   }
 
@@ -1014,8 +1056,8 @@ mod tests {
     };
 
     // Should return transparent
-    let stops = gradient.resolve_stops();
-    let color = gradient.at(100.0, 100.0, 50, 50, &stops);
+    let mut ctx = gradient.to_draw_context(100.0, 100.0);
+    let color = gradient.at(50, 50, &mut ctx);
     assert_eq!(color, Color([0, 0, 0, 0]));
   }
 }

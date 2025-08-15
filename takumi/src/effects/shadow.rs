@@ -94,22 +94,34 @@ pub fn draw_box_shadow(
       }
     }
     shadows => {
-      // Preserve existing stacking order (reverse iteration) while filtering by phase.
-      let images = shadows.par_iter().rev().filter_map(|shadow| {
+      let to_draw = shadows.iter().filter_map(|shadow| {
         let matches_phase = match phase {
           BoxShadowRenderPhase::Outset => !shadow.inset,
           BoxShadowRenderPhase::Inset => shadow.inset,
         };
 
         if matches_phase {
-          let resolved = BoxShadowResolved::from_box_shadow(shadow, context);
-          Some(draw_single_box_shadow(&resolved, border_radius, layout))
+          Some(BoxShadowResolved::from_box_shadow(shadow, context))
         } else {
           None
         }
       });
 
-      for draw in images.collect::<Vec<_>>() {
+      // Preserve existing stacking order (reverse iteration) while filtering by phase.
+      let images = if cfg!(feature = "rayon") {
+        to_draw
+          .rev()
+          .par_bridge()
+          .map(|shadow| draw_single_box_shadow(&shadow, border_radius, layout))
+          .collect::<Vec<_>>()
+      } else {
+        to_draw
+          .rev()
+          .map(|shadow| draw_single_box_shadow(&shadow, border_radius, layout))
+          .collect::<Vec<_>>()
+      };
+
+      for draw in images {
         canvas.overlay_image(
           &draw.image,
           (layout.location.x + draw.offset.x) as u32,
@@ -228,6 +240,10 @@ fn draw_outset_shadow(
   blur_image
 }
 
+fn get_pixel_index_from_axis(x: u32, y: u32, width: u32) -> usize {
+  (y * width + x) as usize
+}
+
 fn remove_inner_section(
   image: &mut RgbaImage,
   offset: Point<i32>,
@@ -235,14 +251,16 @@ fn remove_inner_section(
   border_radius: Option<BorderRadius>,
 ) {
   let Some(border_radius) = border_radius else {
-    let max_y = (offset.y + size.height as i32).min(image.height() as i32);
-    let max_x = (offset.x + size.width as i32).min(image.width() as i32);
+    let width = image.width();
+    let image_mut = image.as_mut();
 
-    image.par_enumerate_pixels_mut().for_each(|(x, y, pixel)| {
-      if x as i32 >= offset.x && (x as i32) < max_x && y as i32 >= offset.y && (y as i32) < max_y {
-        pixel.0[3] = 0;
+    for x in 0..size.width {
+      for y in 0..size.height {
+        let index = get_pixel_index_from_axis(x + offset.x as u32, y + offset.y as u32, width);
+
+        image_mut[index * 4 + 3] = 0;
       }
-    });
+    }
 
     return;
   };
@@ -251,21 +269,23 @@ fn remove_inner_section(
 
   apply_border_radius_antialiased(&mut mask, border_radius);
 
-  image.par_enumerate_pixels_mut().for_each(|(x, y, pixel)| {
-    let Some(masked_pixel) =
-      mask.get_pixel_checked((x as i32 - offset.x) as u32, (y as i32 - offset.y) as u32)
-    else {
-      return;
-    };
+  let width = image.width();
+  let pixels = image.as_mut();
 
-    match masked_pixel.0[3] {
+  for (x, y, mask_pixel) in mask.enumerate_pixels() {
+    match mask_pixel.0[3] {
       255 => {
-        pixel.0[3] = 0;
+        let index = get_pixel_index_from_axis(x + offset.x as u32, y + offset.y as u32, width);
+
+        pixels[index * 4 + 3] = 0;
       }
       0 => {}
       _ => {
-        pixel.0[3] *= masked_pixel.0[3] / 255;
+        let index = get_pixel_index_from_axis(x + offset.x as u32, y + offset.y as u32, width);
+
+        pixels[index * 4 + 3] =
+          (pixels[index * 4 + 3] as f32 * (mask_pixel.0[3] as f32 / 255.0)) as u8;
       }
     }
-  });
+  }
 }

@@ -104,8 +104,11 @@ fn draw_buffer(
   let mut font_system = context.global.font_context.font_system.lock().unwrap();
   let mut font_cache = context.global.font_context.font_cache.lock().unwrap();
 
-  // Pre-resolve gradient stops once if needed
-  let mut cached_stops: Option<(f32, f32, Vec<crate::style::GradientStop>)> = None;
+  let mut gradient_ctx = if let LinearGradientOrColor::Gradient(gradient) = color {
+    Some(gradient.to_draw_context(content_box.width, content_box.height))
+  } else {
+    None
+  };
 
   for run in buffer.layout_runs() {
     for glyph in run.glyphs.iter() {
@@ -136,28 +139,13 @@ fn draw_buffer(
                 glyph_color
               } else {
                 match color {
-                  LinearGradientOrColor::Gradient(gradient) => {
-                    // Cache stops per (width,height) pair
-                    let (w, h, stops_ref) = match &mut cached_stops {
-                      Some((w, h, stops))
-                        if *w == content_box.width && *h == content_box.height =>
-                      {
-                        (*w, *h, stops as &Vec<crate::style::GradientStop>)
-                      }
-                      _ => {
-                        let stops = gradient.resolve_stops();
-                        cached_stops = Some((content_box.width, content_box.height, stops));
-                        if let Some((w, h, stops)) = &cached_stops {
-                          (*w, *h, stops)
-                        } else {
-                          unreachable!()
-                        }
-                      }
-                    };
-                    gradient
-                      .at(w, h, final_x as u32, final_y as u32, stops_ref)
-                      .into()
-                  }
+                  LinearGradientOrColor::Gradient(gradient) => gradient
+                    .at(
+                      final_x as u32,
+                      final_y as u32,
+                      gradient_ctx.as_mut().unwrap(),
+                    )
+                    .into(),
                   LinearGradientOrColor::Color(_) => unreachable!(),
                 }
               };

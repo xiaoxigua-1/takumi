@@ -5,7 +5,8 @@
 
 use std::fmt::Debug;
 
-use rayon::iter::{ParallelBridge, ParallelIterator};
+#[cfg(feature = "rayon")]
+use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use serde::{Deserialize, Serialize};
 
 use crate::{core::GlobalContext, layout::trait_node::Node, style::Style};
@@ -52,11 +53,28 @@ impl<Nodes: Node<Nodes>> Node<Nodes> for ContainerNode<Nodes> {
       return Ok(());
     };
 
-    children
+    let should_hydrate = children
       .iter()
       .filter(|child| child.should_hydrate())
-      .par_bridge()
-      .try_for_each(|child| child.hydrate(context))
+      .collect::<Vec<_>>();
+
+    if should_hydrate.is_empty() {
+      return Ok(());
+    }
+
+    if should_hydrate.len() == 1 {
+      return should_hydrate[0].hydrate(context);
+    }
+
+    if cfg!(feature = "rayon") {
+      should_hydrate
+        .into_par_iter()
+        .try_for_each(|child| child.hydrate(context))
+    } else {
+      should_hydrate
+        .iter()
+        .try_for_each(|child| child.hydrate(context))
+    }
   }
 
   fn inherit_style_for_children(&mut self) {
