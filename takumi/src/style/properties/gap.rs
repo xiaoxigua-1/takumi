@@ -70,3 +70,42 @@ impl Gap {
     }
   }
 }
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn test_gap_try_from_variants() {
+    // Default value
+    assert_eq!(
+      Gap::default(),
+      Gap(LengthUnit::Px(0.0), LengthUnit::Px(0.0))
+    );
+
+    // TryFrom SingleValue
+    let single = GapValue::SingleValue(LengthUnit::Px(12.0));
+    let gap_single = Gap::try_from(single).expect("SingleValue should convert");
+    assert_eq!(gap_single, Gap(LengthUnit::Px(12.0), LengthUnit::Px(12.0)));
+
+    // TryFrom Array
+    let array = GapValue::Array(LengthUnit::Px(5.0), LengthUnit::Px(7.0));
+    let gap_array = Gap::try_from(array).expect("Array should convert");
+    assert_eq!(gap_array, Gap(LengthUnit::Px(5.0), LengthUnit::Px(7.0)));
+  }
+
+  #[test]
+  fn test_gap_from_css_parsing() {
+    let gap_single = Gap::try_from(GapValue::Css("10px".to_string())).expect("10px parses");
+    assert_eq!(gap_single, Gap(LengthUnit::Px(10.0), LengthUnit::Px(10.0)));
+
+    let gap_two = Gap::try_from(GapValue::Css("10px 20px".to_string())).expect("two values parse");
+    assert_eq!(gap_two, Gap(LengthUnit::Px(10.0), LengthUnit::Px(20.0)));
+  }
+
+  #[test]
+  fn test_gap_from_css_invalid() {
+    let res = Gap::try_from(GapValue::Css("invalid".to_string()));
+    assert!(res.is_err());
+  }
+}
