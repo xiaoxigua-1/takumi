@@ -260,6 +260,70 @@ pub struct InheritableStyle {
 
 impl Style {
   #[inline]
+  fn convert_template_components(
+    components: &Option<Vec<GridTemplateComponent>>,
+    context: &RenderContext,
+  ) -> (Vec<taffy::GridTemplateComponent<String>>, Vec<Vec<String>>) {
+    let mut track_components: Vec<taffy::GridTemplateComponent<String>> = Vec::new();
+    let mut line_name_sets: Vec<Vec<String>> = Vec::new();
+    let mut pending_line_names: Vec<String> = Vec::new();
+
+    if let Some(list) = components {
+      for comp in list.iter() {
+        match comp {
+          GridTemplateComponent::LineNames(names) => {
+            if !names.is_empty() {
+              pending_line_names.extend_from_slice(names);
+            }
+          }
+          GridTemplateComponent::Single(track_size) => {
+            // Push names for the line preceding this track
+            line_name_sets.push(std::mem::take(&mut pending_line_names));
+            // Push the track component
+            track_components.push(taffy::GridTemplateComponent::Single(
+              track_size.to_min_max(context),
+            ));
+          }
+          GridTemplateComponent::Repeat(repetition, tracks) => {
+            // Push names for the line preceding this repeat fragment
+            line_name_sets.push(std::mem::take(&mut pending_line_names));
+
+            // Build repetition
+            let track_sizes: Vec<taffy::TrackSizingFunction> =
+              tracks.iter().map(|t| t.size.to_min_max(context)).collect();
+
+            // Build inner line names: one per line inside the repeat, including a trailing set
+            let mut inner_line_names: Vec<Vec<String>> =
+              tracks.iter().map(|t| t.names.clone()).collect();
+            if let Some(last) = tracks.last() {
+              if let Some(end) = &last.end_names {
+                inner_line_names.push(end.clone());
+              } else {
+                inner_line_names.push(Vec::new());
+              }
+            } else {
+              inner_line_names.push(Vec::new());
+            }
+
+            track_components.push(taffy::GridTemplateComponent::Repeat(
+              taffy::GridTemplateRepetition {
+                count: (*repetition).into(),
+                tracks: track_sizes,
+                line_names: inner_line_names,
+              },
+            ));
+          }
+        }
+      }
+    }
+
+    // Trailing names after the last track
+    line_name_sets.push(pending_line_names);
+
+    (track_components, line_name_sets)
+  }
+
+  #[inline]
   fn resolve_rect_with_longhands(
     base: Sides<LengthUnit>,
     top: Option<LengthUnit>,
@@ -328,6 +392,12 @@ impl Style {
 
   /// Converts this style to a Taffy-compatible style for layout calculations.
   pub fn resolve_to_taffy_style(&self, context: &RenderContext) -> TaffyStyle {
+    // Convert grid templates and associated line names
+    let (grid_template_columns, grid_template_column_names) =
+      Self::convert_template_components(&self.grid_template_columns, context);
+    let (grid_template_rows, grid_template_row_names) =
+      Self::convert_template_components(&self.grid_template_rows, context);
+
     TaffyStyle {
       box_sizing: self.inheritable_style.box_sizing.unwrap_or_default().into(),
       size: Size {
@@ -373,15 +443,10 @@ impl Style {
         .grid_row
         .as_ref()
         .map_or_else(Default::default, |line| line.clone().into()),
-      grid_template_columns: self
-        .grid_template_columns
-        .as_ref()
-        .map_or_else(Vec::new, |v| {
-          v.iter().map(|s| s.to_taffy(context)).collect()
-        }),
-      grid_template_rows: self.grid_template_rows.as_ref().map_or_else(Vec::new, |v| {
-        v.iter().map(|s| s.to_taffy(context)).collect()
-      }),
+      grid_template_columns,
+      grid_template_rows,
+      grid_template_column_names,
+      grid_template_row_names,
       grid_template_areas: self
         .grid_template_areas
         .as_ref()

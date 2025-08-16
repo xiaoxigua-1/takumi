@@ -4,7 +4,7 @@ use cssparser::{BasicParseError, ParseError, Parser, ParserInput, Token};
 use serde::{Deserialize, Serialize};
 use taffy::{
   CompactLength, GridTemplateRepetition, MaxTrackSizingFunction, MinTrackSizingFunction,
-  TrackSizingFunction,
+  TrackSizingFunction, prelude::TaffyZero,
 };
 use ts_rs::TS;
 
@@ -84,8 +84,11 @@ impl From<GridLengthUnit> for GridTrackSize {
 pub struct GridRepeatTrack {
   /// The size of the grid track
   pub size: GridTrackSize,
-  /// The names of the grid lines
+  /// The names for the line preceding this track within the repeat() clause
   pub names: Vec<String>,
+  /// The names for the final line after the last track within the repeat() clause
+  /// Only set on the last track of the repeat fragment. For other tracks this is None.
+  pub end_names: Option<Vec<String>>,
 }
 
 impl GridLengthUnit {
@@ -189,10 +192,12 @@ impl From<GridRepetitionCount> for taffy::RepetitionCount {
   }
 }
 
-/// Represents a track sizing function
+/// Represents a track sizing function or a list of line names between tracks
 #[derive(Debug, Clone, Deserialize, Serialize, TS, PartialEq)]
 #[serde(rename_all = "kebab-case")]
 pub enum GridTemplateComponent {
+  /// A list of line names that apply to the current grid line (e.g., [a b])
+  LineNames(Vec<String>),
   /// A single non-repeated track
   Single(GridTrackSize),
   /// Automatically generate grid tracks to fit the available space using the specified definite track lengths
@@ -212,6 +217,14 @@ impl GridTemplateComponent {
   /// A `taffy::GridTemplateComponent` that can be used with the Taffy layout engine
   pub fn to_taffy(&self, context: &RenderContext) -> taffy::GridTemplateComponent<String> {
     match self {
+      Self::LineNames(_) => {
+        // Line name entries are not converted to Taffy track components
+        // Consumers should filter these out when constructing template tracks
+        // and instead feed them into grid_template_*_names on the Taffy style.
+        // As this method is only meaningful for track components, treat this as unreachable.
+        // However, to preserve a total function, return a zero-sized track which should not be used.
+        taffy::GridTemplateComponent::Single(taffy::TrackSizingFunction::ZERO)
+      }
       Self::Single(track_size) => {
         taffy::GridTemplateComponent::Single(track_size.to_min_max(context))
       }
@@ -499,12 +512,28 @@ impl<'i> FromCss<'i> for GridRepeatTrack {
       })?;
     }
 
-    Ok(GridRepeatTrack { size, names })
+    Ok(GridRepeatTrack {
+      size,
+      names,
+      end_names: None,
+    })
   }
 }
 
 impl<'i> FromCss<'i> for GridTemplateComponent {
   fn from_css(input: &mut Parser<'i, '_>) -> ParseResult<'i, Self> {
+    // Line name block: [name1 name2 ...]
+    if input.try_parse(Parser::expect_square_bracket_block).is_ok() {
+      let mut names: Vec<String> = Vec::new();
+      input.parse_nested_block(|i| {
+        while let Ok(name) = i.try_parse(Parser::expect_ident_cloned) {
+          names.push(name.as_ref().to_owned());
+        }
+        Ok(())
+      })?;
+      return Ok(GridTemplateComponent::LineNames(names));
+    }
+
     if input
       .try_parse(|i| i.expect_function_matching("repeat"))
       .is_ok()
@@ -547,7 +576,18 @@ impl<'i> FromCss<'i> for GridTemplateComponent {
             })?;
           }
 
-          tracks.push(GridRepeatTrack { size, names });
+          tracks.push(GridRepeatTrack {
+            size,
+            names,
+            end_names: None,
+          });
+        }
+
+        // Any remaining pending names after the final size are the trailing names of the repeat fragment
+        if !pending_leading_names.is_empty() {
+          if let Some(last) = tracks.last_mut() {
+            last.end_names = Some(std::mem::take(&mut pending_leading_names));
+          }
         }
 
         Ok(GridTemplateComponent::Repeat(repetition, tracks))
