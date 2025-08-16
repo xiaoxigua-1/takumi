@@ -144,6 +144,8 @@ pub struct Style {
   pub grid_template_columns: Option<Vec<GridTemplateComponent>>,
   /// Defines the line names and track sizing functions of the grid rows.
   pub grid_template_rows: Option<Vec<GridTemplateComponent>>,
+  /// Defines named grid areas specified via `grid-template-areas`.
+  pub grid_template_areas: Option<GridTemplateAreas>,
   /// Inheritable style properties that cascade to child elements.
   #[serde(flatten)]
   pub inheritable_style: InheritableStyle,
@@ -204,6 +206,7 @@ impl Default for Style {
       grid_row: None,
       grid_template_columns: None,
       grid_template_rows: None,
+      grid_template_areas: None,
       inheritable_style: Default::default(),
     }
   }
@@ -379,6 +382,12 @@ impl Style {
       grid_template_rows: self.grid_template_rows.as_ref().map_or_else(Vec::new, |v| {
         v.iter().map(|s| s.to_taffy(context)).collect()
       }),
+      grid_template_areas: self
+        .grid_template_areas
+        .as_ref()
+        .cloned()
+        .unwrap_or_default()
+        .into(),
       aspect_ratio: self.aspect_ratio,
       align_self: self.align_self.map(Into::into),
       justify_self: self.justify_self.map(Into::into),
