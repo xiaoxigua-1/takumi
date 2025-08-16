@@ -42,7 +42,8 @@ use ts_rs::TS;
 
 use crate::impl_from_taffy_enum;
 
-type ParseResult<'i, T, E = BasicParseError<'i>> = Result<T, ParseError<'i, E>>;
+/// Parser result type alias for CSS property parsers.
+pub type ParseResult<'i, T, E = BasicParseError<'i>> = Result<T, ParseError<'i, E>>;
 
 /// Trait for types that can be deserialized from CSS.
 pub trait FromCss<'i> {
