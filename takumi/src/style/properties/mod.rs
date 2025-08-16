@@ -71,6 +71,21 @@ pub enum ObjectFit {
   None,
 }
 
+/// Defines how the width and height of an element are calculated.
+///
+/// This enum determines whether the width and height properties include padding and border, or just the content area.
+#[derive(Default, Debug, Clone, Deserialize, Serialize, Copy, TS, PartialEq)]
+#[serde(rename_all = "kebab-case")]
+pub enum BoxSizing {
+  /// The width and height properties include padding and border, but not the content area
+  ContentBox,
+  /// The width and height properties include the content area, but not padding and border
+  #[default]
+  BorderBox,
+}
+
+impl_from_taffy_enum!(BoxSizing, taffy::BoxSizing, ContentBox, BorderBox);
+
 /// Text alignment options for text rendering.
 ///
 /// Corresponds to CSS text-align property values.

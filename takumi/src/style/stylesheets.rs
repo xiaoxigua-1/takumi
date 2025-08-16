@@ -215,6 +215,8 @@ impl Default for Style {
 #[ts(optional_fields, export)]
 #[serde(rename_all = "camelCase")]
 pub struct InheritableStyle {
+  /// How the width and height of an element are calculated.
+  pub box_sizing: Option<BoxSizing>,
   /// How text should be overflowed.
   pub text_overflow: Option<TextOverflow>,
   /// Controls text case transformation when rendering.
@@ -324,6 +326,7 @@ impl Style {
   /// Converts this style to a Taffy-compatible style for layout calculations.
   pub fn resolve_to_taffy_style(&self, context: &RenderContext) -> TaffyStyle {
     TaffyStyle {
+      box_sizing: self.inheritable_style.box_sizing.unwrap_or_default().into(),
       size: Size {
         width: self.width.resolve_to_dimension(context),
         height: self.height.resolve_to_dimension(context),
