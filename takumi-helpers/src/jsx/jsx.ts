@@ -80,31 +80,36 @@ function createImageElement(element: ReactElement<ComponentProps<"img">>) {
     throw new Error("Image element must have a 'src' prop.");
   }
 
-  const width = element.props.style?.width ?? element.props.width;
-  const height = element.props.style?.height ?? element.props.height;
+  const style = extractStyleFromProps(element.props);
 
   return [
     image(element.props.src, {
-      ...(element.props.style as PartialStyle),
-      width,
-      height,
+      ...(style as PartialStyle),
+      width: style?.width ?? element.props.width,
+      height: style?.height ?? element.props.height,
     }),
   ];
 }
 
 function createSvgElement(element: ReactElement<ComponentProps<"svg">>) {
-  return image(
-    renderToStaticMarkup(
-      cloneElement(
-        element,
-        {
-          xmlns: "http://www.w3.org/2000/svg",
-          ...element.props,
-        },
-        element.props.children,
-      ),
+  const style = extractStyleFromProps(element.props);
+
+  const svg = renderToStaticMarkup(
+    cloneElement(
+      element,
+      {
+        xmlns: "http://www.w3.org/2000/svg",
+        ...element.props,
+      },
+      element.props.children,
     ),
   );
+
+  return image(svg, {
+    ...(style as PartialStyle),
+    width: style?.width ?? element.props.width,
+    height: style?.height ?? element.props.height,
+  });
 }
 
 function extractStyleFromProps(props: unknown): CSSProperties | undefined {
