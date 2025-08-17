@@ -21,10 +21,6 @@ pub enum LengthUnit {
   /// Automatic sizing based on content
   #[default]
   Auto,
-  /// Minimum content size
-  MinContent,
-  /// Maximum content size
-  MaxContent,
   /// Percentage value relative to parent container (0-100)
   Percentage(f32),
   /// Rem value relative to the root font size
@@ -45,10 +41,6 @@ pub enum LengthUnit {
 pub enum LengthUnitValue {
   /// Automatic sizing based on content
   Auto,
-  /// Minimum content size
-  MinContent,
-  /// Maximum content size
-  MaxContent,
   /// Percentage value relative to parent container (0-100)
   Percentage(f32),
   /// Rem value relative to the root font size
@@ -73,8 +65,6 @@ impl TryFrom<LengthUnitValue> for LengthUnit {
   fn try_from(value: LengthUnitValue) -> Result<Self, Self::Error> {
     match value {
       LengthUnitValue::Auto => Ok(Self::Auto),
-      LengthUnitValue::MinContent => Ok(Self::MinContent),
-      LengthUnitValue::MaxContent => Ok(Self::MaxContent),
       LengthUnitValue::Percentage(v) => Ok(Self::Percentage(v)),
       LengthUnitValue::Rem(v) => Ok(Self::Rem(v)),
       LengthUnitValue::Em(v) => Ok(Self::Em(v)),
@@ -104,8 +94,6 @@ impl From<LengthUnit> for LengthUnitValue {
   fn from(value: LengthUnit) -> Self {
     match value {
       LengthUnit::Auto => LengthUnitValue::Auto,
-      LengthUnit::MinContent => LengthUnitValue::MinContent,
-      LengthUnit::MaxContent => LengthUnitValue::MaxContent,
       LengthUnit::Percentage(v) => LengthUnitValue::Percentage(v),
       LengthUnit::Rem(v) => LengthUnitValue::Rem(v),
       LengthUnit::Em(v) => LengthUnitValue::Em(v),
@@ -137,8 +125,6 @@ impl<'i> FromCss<'i> for LengthUnit {
     match *token {
       Token::Ident(ref unit) => match_ignore_ascii_case! {&unit,
         "auto" => Ok(Self::Auto),
-        "min-content" => Ok(Self::MinContent),
-        "max-content" => Ok(Self::MaxContent),
         _ => Err(location.new_basic_unexpected_token_error(token.clone()).into()),
       },
       Token::Dimension {
@@ -172,8 +158,6 @@ impl LengthUnit {
   pub fn to_compact_length(self, context: &RenderContext) -> CompactLength {
     match self {
       LengthUnit::Auto => CompactLength::auto(),
-      LengthUnit::MinContent => CompactLength::min_content(),
-      LengthUnit::MaxContent => CompactLength::max_content(),
       LengthUnit::Px(value) => CompactLength::length(value),
       LengthUnit::Percentage(value) => CompactLength::percent(value / 100.0),
       LengthUnit::Rem(value) => CompactLength::length(value * context.viewport.font_size),
@@ -200,7 +184,7 @@ impl LengthUnit {
   /// Resolves the length unit to a pixel value.
   pub fn resolve_to_px(self, context: &RenderContext) -> f32 {
     match self {
-      LengthUnit::Auto | LengthUnit::MinContent | LengthUnit::MaxContent => 0.0,
+      LengthUnit::Auto => 0.0,
       LengthUnit::Px(value) => value,
       LengthUnit::Percentage(value) => value * context.parent_font_size / 100.0,
       LengthUnit::Rem(value) => value * context.viewport.font_size,
@@ -218,8 +202,7 @@ impl LengthUnit {
 
   /// Resolves the length unit to a `Dimension`.
   pub fn resolve_to_dimension(self, context: &RenderContext) -> Dimension {
-    // SAFETY: only length/percentage/auto are allowed
-    unsafe { Dimension::from_raw(self.to_compact_length(context)) }
+    self.resolve_to_length_percentage_auto(context).into()
   }
 }
 /// Utility function to resolve a rect of length units to length percentages.

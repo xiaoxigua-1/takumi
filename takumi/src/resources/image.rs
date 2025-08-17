@@ -64,6 +64,40 @@ impl ImageSource {
   }
 }
 
+/// Try to load an image source from raw bytes.
+///
+/// - When the `svg` feature is enabled and the bytes look like SVG XML, they
+///   are parsed as an SVG using `resvg::usvg`.
+/// - Otherwise, the bytes are decoded as a raster image using the `image` crate.
+pub fn load_image_source_from_bytes(bytes: &[u8]) -> ImageResult {
+  #[cfg(feature = "svg")]
+  {
+    use std::str::from_utf8;
+
+    if let Ok(text) = from_utf8(bytes) {
+      if is_svg(text) {
+        return parse_svg(text);
+      }
+    }
+  }
+
+  let img = image::load_from_memory(bytes).map_err(ImageError::DecodeError)?;
+  Ok(img.into_rgba8().into())
+}
+
+/// Check if the bytes are an SVG image.
+pub(crate) fn is_svg(src: &str) -> bool {
+  src.trim_start().starts_with("<svg") && src.contains("xmlns=\"http://www.w3.org/2000/svg\"")
+}
+
+#[cfg(feature = "svg")]
+pub(crate) fn parse_svg(src: &str) -> ImageResult {
+  let tree = resvg::usvg::Tree::from_str(src, &resvg::usvg::Options::default())
+    .map_err(ImageError::SvgParseError)?;
+
+  Ok(ImageSource::Svg(Box::new(tree)))
+}
+
 /// Represents the state of an image in the rendering system.
 ///
 /// This enum tracks whether an image has been successfully loaded and decoded,

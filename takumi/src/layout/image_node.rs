@@ -13,7 +13,7 @@ use crate::{
   core::{GlobalContext, RenderContext},
   layout::{measure_image, trait_node::Node},
   rendering::{FastBlendImage, draw_image},
-  resources::{ImageError, ImageResult, ImageSource},
+  resources::{ImageError, ImageResult, ImageSource, is_svg, load_image_source_from_bytes},
   style::Style,
 };
 
@@ -84,10 +84,6 @@ fn is_data_uri(src: &str) -> bool {
   src.starts_with(DATA_URI_PREFIX)
 }
 
-fn is_svg(src: &str) -> bool {
-  src.starts_with("<svg") && src.contains("xmlns=\"http://www.w3.org/2000/svg\"")
-}
-
 #[cfg(feature = "image_data_uri")]
 fn parse_data_uri_image(src: &str) -> ImageResult {
   use base64::{Engine as _, engine::general_purpose};
@@ -107,9 +103,7 @@ fn parse_data_uri_image(src: &str) -> ImageResult {
     .decode(data)
     .map_err(|_| ImageError::MalformedDataUri)?;
 
-  let img = image::load_from_memory(&image_bytes).map_err(ImageError::DecodeError)?;
-
-  Ok(img.into_rgba8().into())
+  load_image_source_from_bytes(&image_bytes)
 }
 
 fn resolve_image(src: &str, context: &GlobalContext) -> ImageResult {
@@ -126,17 +120,9 @@ fn resolve_image(src: &str, context: &GlobalContext) -> ImageResult {
 
   if is_svg(src) {
     #[cfg(feature = "svg")]
-    {
-      use resvg::usvg::{Options, Tree};
-
-      let svg_tree = Tree::from_str(src, &Options::default()).map_err(ImageError::SvgParseError)?;
-
-      return Ok(ImageSource::Svg(Box::new(svg_tree)));
-    }
+    return crate::resources::parse_svg(src);
     #[cfg(not(feature = "svg"))]
-    {
-      return Err(ImageError::SvgParseNotSupported);
-    }
+    return Err(ImageError::SvgParseNotSupported);
   }
 
   if let Some(img) = context.persistent_image_store.get(src) {

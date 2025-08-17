@@ -4,7 +4,7 @@ use minreq::{Method::Get, Request};
 
 use crate::{
   ImageResult, ImageStore,
-  resources::{ImageError, ImageSource},
+  resources::{ImageError, ImageSource, load_image_source_from_bytes},
 };
 
 /// A default implementation of `ImageStore` that uses a LRU cache and minreq.
@@ -31,10 +31,7 @@ impl ImageStore for HttpImageStore {
     let body = Request::new(Get, key)
       .send()
       .map_err(|_| ImageError::NetworkError)?;
-
-    let image = image::load_from_memory(body.as_bytes()).map_err(ImageError::DecodeError)?;
-
-    Ok(image.into_rgba8().into())
+    load_image_source_from_bytes(body.as_bytes())
   }
 
   fn clear(&self) {

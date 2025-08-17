@@ -16,7 +16,7 @@ pub struct FastBlendImage(pub RgbaImage);
 impl FastBlendImage {
   /// Draws a pixel onto the canvas with color alpha blending.
   pub fn draw_pixel(&mut self, x: u32, y: u32, color: Rgba<u8>) {
-    if color.0[3] == 0 {
+    if color.0[3] == 0 || x >= self.width() || y >= self.height() {
       return;
     }
 
@@ -38,11 +38,13 @@ impl FastBlendImage {
   }
 
   /// Gets the width of the canvas.
+  #[inline]
   pub fn width(&self) -> u32 {
     self.0.width()
   }
 
   /// Gets the height of the canvas.
+  #[inline]
   pub fn height(&self) -> u32 {
     self.0.height()
   }
