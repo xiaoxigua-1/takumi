@@ -6,12 +6,12 @@ use slotmap::{DefaultKey, KeyData, SecondaryMap};
 use taffy::{AvailableSpace, NodeId, Point, TaffyTree, geometry::Size};
 
 use crate::{
-  core::{GlobalContext, Viewport},
-  layout::Node,
+  GlobalContext,
+  layout::{Viewport, node::Node},
   rendering::{FastBlendImage, draw_debug_border},
 };
 
-use crate::core::RenderContext;
+use crate::rendering::RenderContext;
 
 /// A renderer for creating images from a container node with specified dimensions.
 ///

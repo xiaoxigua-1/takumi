@@ -2,13 +2,9 @@ use image::imageops::crop_imm;
 use image::{RgbaImage, imageops::FilterType};
 use taffy::Layout;
 
-use crate::{
-  core::RenderContext,
-  effects::{BorderRadius, apply_border_radius_antialiased},
-  rendering::FastBlendImage,
-  resources::ImageSource,
-  style::{ObjectFit, Style},
-};
+use crate::layout::style::{ObjectFit, Style};
+use crate::rendering::{BorderRadius, FastBlendImage, RenderContext};
+use crate::resources::image::ImageSource;
 
 /// Process an image according to the specified object-fit style.
 ///
@@ -161,10 +157,8 @@ pub fn draw_image(
 
   // Apply border radius if specified
   if let Some(border_radius) = style.inheritable_style.resolved_border_radius() {
-    apply_border_radius_antialiased(
-      &mut image,
-      BorderRadius::from_layout(context, &layout, border_radius.into()),
-    );
+    let radius = BorderRadius::from_layout(context, &layout, border_radius.into());
+    radius.apply_to_image(&mut image);
   }
 
   canvas.overlay_image(&image, offset_x + x as u32, offset_y + y as u32);

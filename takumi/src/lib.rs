@@ -25,37 +25,46 @@
 #![allow(clippy::must_use_candidate)]
 #![allow(clippy::missing_const_for_fn)]
 
-/// Core types and traits for the takumi rendering system
-pub mod core;
-
-/// CSS-like styling system with colors, units, and properties
-pub mod style;
-
 /// Node-based layout system with flexbox support
 pub mod layout;
 
 /// High-performance image rendering and canvas operations
 pub mod rendering;
 
-/// Visual effects like borders, shadows, and radius
-pub mod effects;
-
 /// External resource management (fonts, images)
 pub mod resources;
-
-// Re-export commonly used types from each module
-pub use core::{Error, GlobalContext, ImageStore, RenderContext, Viewport};
-pub use effects::BorderRadius;
-pub use layout::{
-  ContainerNode, DefaultNodeKind, ImageNode, Node, TextNode, measure_image, measure_text,
-};
-pub use rendering::{FastBlendImage, ImageRenderer};
-pub use resources::{FontError, ImageError, ImageResult, ImageSource};
-pub use style::*;
-
-#[cfg(feature = "http_image_store")]
-pub use core::HttpImageStore;
 
 // Re-export external dependencies for convenience
 pub use image;
 pub use taffy;
+
+use crate::{
+  rendering::RenderError,
+  resources::{
+    font::FontContext,
+    image::{ImageResourceError, PersistentImageStore},
+  },
+};
+
+/// The main context for image rendering.
+///
+/// This struct holds all the necessary state for rendering images, including
+/// font management, image storage, and debug options.
+#[derive(Default)]
+pub struct GlobalContext {
+  /// Whether to draw debug borders around nodes
+  pub draw_debug_border: bool,
+  /// The font context for text rendering
+  pub font_context: FontContext,
+  /// The image store for persisting contents
+  pub persistent_image_store: PersistentImageStore,
+}
+
+/// Represents errors that can occur.
+#[derive(Debug)]
+pub enum Error {
+  /// Represents an error that occurs during image resolution.
+  ImageResolveError(ImageResourceError),
+  /// Represents an error that occurs during rendering.
+  RenderError(RenderError),
+}

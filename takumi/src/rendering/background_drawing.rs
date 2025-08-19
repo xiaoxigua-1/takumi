@@ -2,9 +2,8 @@ use image::RgbaImage;
 use taffy::{Point, Size};
 
 use crate::{
-  effects::{BorderRadius, apply_border_radius_antialiased},
-  properties::{color::Color, linear_gradient::LinearGradient},
-  rendering::FastBlendImage,
+  layout::style::{Color, LinearGradient},
+  rendering::{BorderRadius, FastBlendImage},
 };
 
 /// Draws a filled rectangle with a solid color.
@@ -29,7 +28,7 @@ pub fn draw_filled_rect_color(
 
   let mut image = RgbaImage::from_pixel(size.width as u32, size.height as u32, color);
 
-  apply_border_radius_antialiased(&mut image, radius);
+  radius.apply_to_image(&mut image);
 
   canvas.overlay_image(&image, offset.x as u32, offset.y as u32);
 }
@@ -45,7 +44,7 @@ pub fn draw_filled_rect_gradient(
   let mut gradient_image = create_gradient_image(gradient, size.width as u32, size.height as u32);
 
   if let Some(radius) = radius {
-    apply_border_radius_antialiased(&mut gradient_image, radius);
+    radius.apply_to_image(&mut gradient_image);
   }
 
   canvas.overlay_image(&gradient_image, offset.x as u32, offset.y as u32);

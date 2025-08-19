@@ -5,10 +5,8 @@ use image::{Pixel, Rgba};
 use taffy::{Layout, Size};
 
 use crate::{
-  core::RenderContext,
-  linear_gradient::LinearGradientOrColor,
-  rendering::FastBlendImage,
-  style::{FontStyle, TextOverflow, TextTransform},
+  layout::style::{FontStyle, LinearGradientOrColor, TextOverflow, TextTransform},
+  rendering::{FastBlendImage, RenderContext},
 };
 
 const ELLIPSIS_CHAR: &str = "…";

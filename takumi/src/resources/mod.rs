@@ -10,9 +10,3 @@
 pub mod font;
 /// Image state and resource management
 pub mod image;
-
-pub use font::*;
-pub use image::*;
-
-#[cfg(feature = "woff")]
-pub(crate) mod woff;

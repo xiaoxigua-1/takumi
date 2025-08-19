@@ -7,21 +7,36 @@
 //! - Performance-optimized rendering operations
 
 /// Background and color drawing functions
-pub mod background_drawing;
+mod background_drawing;
 /// Canvas operations and image blending
-pub mod canvas;
+mod canvas;
+mod components;
 /// Debug drawing utilities
-pub mod debug_drawing;
+mod debug_drawing;
 /// Image drawing functions
-pub mod image_drawing;
+mod image_drawing;
 /// Main image renderer and viewport management
-pub mod renderer;
+mod renderer;
 /// Text drawing functions
-pub mod text_drawing;
+mod text_drawing;
 
 pub use background_drawing::*;
 pub use canvas::*;
+pub use components::*;
 pub use debug_drawing::*;
 pub use image_drawing::*;
 pub use renderer::*;
 pub use text_drawing::*;
+
+use crate::{GlobalContext, layout::Viewport};
+
+/// The context for the image renderer.
+#[derive(Clone, Copy)]
+pub struct RenderContext<'a> {
+  /// The global context.
+  pub global: &'a GlobalContext,
+  /// The viewport for the image renderer.
+  pub viewport: Viewport,
+  /// The font size in pixels, used for em and rem units.
+  pub parent_font_size: f32,
+}

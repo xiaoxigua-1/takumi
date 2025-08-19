@@ -82,13 +82,7 @@ function createImageElement(element: ReactElement<ComponentProps<"img">>) {
 
   const style = extractStyleFromProps(element.props);
 
-  return [
-    image(element.props.src, {
-      ...(style as PartialStyle),
-      width: style?.width ?? element.props.width,
-      height: style?.height ?? element.props.height,
-    }),
-  ];
+  return [image(element.props.src, style as PartialStyle)];
 }
 
 function createSvgElement(element: ReactElement<ComponentProps<"svg">>) {
@@ -105,17 +99,31 @@ function createSvgElement(element: ReactElement<ComponentProps<"svg">>) {
     ),
   );
 
-  return image(svg, {
-    ...(style as PartialStyle),
-    width: style?.width ?? element.props.width,
-    height: style?.height ?? element.props.height,
-  });
+  return image(svg, style as PartialStyle);
 }
 
 function extractStyleFromProps(props: unknown): CSSProperties | undefined {
-  return typeof props === "object" && props && "style" in props
-    ? (props.style as CSSProperties)
-    : undefined;
+  if (typeof props !== "object" || props === null) return undefined;
+
+  const style: CSSProperties =
+    "style" in props ? (props.style as CSSProperties) : {};
+
+  const width =
+    "width" in props &&
+    (typeof props.width === "number" || typeof props.width === "string")
+      ? props.width
+      : undefined;
+
+  const height =
+    "height" in props &&
+    (typeof props.height === "number" || typeof props.height === "string")
+      ? props.height
+      : undefined;
+
+  if (width !== undefined && !("width" in style)) style.width = width;
+  if (height !== undefined && !("height" in style)) style.height = height;
+
+  return style;
 }
 
 function isHtmlElement<T extends keyof JSX.IntrinsicElements>(

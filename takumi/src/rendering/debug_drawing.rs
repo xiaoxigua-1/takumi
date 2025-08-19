@@ -1,10 +1,8 @@
 use taffy::{Layout, Point};
 
 use crate::{
-  effects::{BorderProperties, draw_border},
-  properties::color::Color,
-  rendering::FastBlendImage,
-  sides::Sides,
+  layout::style::{Color, Sides},
+  rendering::{BorderProperties, FastBlendImage, draw_border},
 };
 
 /// Draws debug borders around the node's layout areas.

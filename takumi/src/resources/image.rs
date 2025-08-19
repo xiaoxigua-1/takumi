@@ -3,13 +3,18 @@
 //! This module provides types and utilities for managing image resources,
 //! including loading states, error handling, and image processing operations.
 
+use std::{
+  collections::HashMap,
+  sync::{Arc, RwLock},
+};
+
 use image::{
   RgbaImage,
   imageops::{FilterType, resize},
 };
 
 /// Represents the state of an image resource.
-pub type ImageResult = Result<ImageSource, ImageError>;
+pub type ImageResult = Result<Arc<ImageSource>, ImageResourceError>;
 
 #[derive(Debug, Clone)]
 /// Represents the source of an image.
@@ -19,6 +24,31 @@ pub enum ImageSource {
   Svg(Box<resvg::usvg::Tree>),
   /// A bitmap image source
   Bitmap(RgbaImage),
+}
+
+/// Represents a persistent image store.
+#[derive(Default, Debug)]
+pub struct PersistentImageStore(RwLock<HashMap<String, Arc<ImageSource>>>);
+
+impl PersistentImageStore {
+  /// Get an image from the store.
+  pub fn get(&self, src: &str) -> Option<Arc<ImageSource>> {
+    self.0.read().unwrap().get(src).cloned()
+  }
+
+  /// Insert an image into the store.
+  pub fn insert(&self, src: &str, image: ImageSource) {
+    self
+      .0
+      .write()
+      .unwrap()
+      .insert(src.to_string(), Arc::new(image));
+  }
+
+  /// Clear the store.
+  pub fn clear(&self) {
+    self.0.write().unwrap().clear();
+  }
 }
 
 impl From<RgbaImage> for ImageSource {
@@ -81,8 +111,8 @@ pub fn load_image_source_from_bytes(bytes: &[u8]) -> ImageResult {
     }
   }
 
-  let img = image::load_from_memory(bytes).map_err(ImageError::DecodeError)?;
-  Ok(img.into_rgba8().into())
+  let img = image::load_from_memory(bytes).map_err(ImageResourceError::DecodeError)?;
+  Ok(Arc::new(img.into_rgba8().into()))
 }
 
 /// Check if the bytes are an SVG image.
@@ -93,9 +123,9 @@ pub(crate) fn is_svg(src: &str) -> bool {
 #[cfg(feature = "svg")]
 pub(crate) fn parse_svg(src: &str) -> ImageResult {
   let tree = resvg::usvg::Tree::from_str(src, &resvg::usvg::Options::default())
-    .map_err(ImageError::SvgParseError)?;
+    .map_err(ImageResourceError::SvgParseError)?;
 
-  Ok(ImageSource::Svg(Box::new(tree)))
+  Ok(Arc::new(ImageSource::Svg(Box::new(tree))))
 }
 
 /// Represents the state of an image in the rendering system.
@@ -103,9 +133,7 @@ pub(crate) fn parse_svg(src: &str) -> ImageResult {
 /// This enum tracks whether an image has been successfully loaded and decoded,
 /// or if there was an error during the process.
 #[derive(Debug)]
-pub enum ImageError {
-  /// An error occurred while fetching the image from the network
-  NetworkError,
+pub enum ImageResourceError {
   /// An error occurred while decoding the image data
   DecodeError(image::ImageError),
   /// The image data URI is in an invalid format
@@ -122,6 +150,6 @@ pub enum ImageError {
   /// SVG parsing is not supported in this build
   #[cfg(not(feature = "svg"))]
   SvgParseNotSupported,
-  /// Remote image store is not available
-  RemoteStoreNotAvailable,
+  /// The image source is unknown
+  Unknown,
 }
