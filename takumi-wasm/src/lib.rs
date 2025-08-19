@@ -1,12 +1,16 @@
-use std::io::Cursor;
+use std::{io::Cursor, sync::Arc};
 
 use base64::{Engine, prelude::BASE64_STANDARD};
 use serde_wasm_bindgen::from_value;
 use takumi::{
-  DefaultNodeKind, GlobalContext, ImageRenderer, ImageStore, Node, Viewport,
+  GlobalContext,
   image::load_from_memory,
-  rendering::{ImageOutputFormat, write_image},
-  resources::ImageSource,
+  layout::{
+    Viewport,
+    node::{Node, NodeKind},
+  },
+  rendering::{ImageOutputFormat, ImageRenderer, write_image},
+  resources::image::ImageSource,
 };
 use wasm_bindgen::prelude::*;
 
@@ -44,14 +48,16 @@ impl Renderer {
 
   #[wasm_bindgen(js_name = loadFont)]
   pub fn load_font(&self, font_data: Vec<u8>) {
-    self.context.font_context.load_font(font_data).unwrap();
+    self.context.font_context.load_and_store(font_data).unwrap();
   }
 
   #[wasm_bindgen(js_name = putPersistentImage)]
   pub fn put_persistent_image(&self, src: String, data: &[u8]) {
     self.context.persistent_image_store.insert(
-      src.to_string(),
-      ImageSource::Bitmap(load_from_memory(data).unwrap().into_rgba8()),
+      &src,
+      Arc::new(ImageSource::Bitmap(
+        load_from_memory(data).unwrap().into_rgba8(),
+      )),
     );
   }
 
@@ -70,10 +76,9 @@ impl Renderer {
     quality: Option<u8>,
   ) -> Vec<u8> {
     let node = node.dyn_into().unwrap();
-    let mut node: DefaultNodeKind = from_value(node).unwrap();
+    let mut node: NodeKind = from_value(node).unwrap();
 
     node.inherit_style_for_children();
-    node.hydrate(&self.context).unwrap();
 
     let viewport = Viewport::new(width, height);
     let mut renderer = ImageRenderer::new(viewport);

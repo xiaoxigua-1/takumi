@@ -6,4 +6,4 @@
  * This corresponds to CSS values that can be specified as pixels, percentages,
  * or the 'auto' keyword for automatic sizing.
  */
-export type LengthUnit = "auto" | "min-content" | "max-content" | { "percentage": number } | { "rem": number } | { "em": number } | { "vh": number } | { "vw": number } | number | string;
+export type LengthUnit = "auto" | { "percentage": number } | { "rem": number } | { "em": number } | { "vh": number } | { "vw": number } | number | string;

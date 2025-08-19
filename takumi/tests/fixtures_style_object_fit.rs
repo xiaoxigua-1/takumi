@@ -1,6 +1,7 @@
-use std::sync::Arc;
-
-use takumi::{ImageNode, LengthUnit::Percentage, ObjectFit, Style};
+use takumi::layout::{
+  node::ImageNode,
+  style::{LengthUnit::Percentage, ObjectFit, Style},
+};
 
 mod test_utils;
 use test_utils::run_style_width_test;
@@ -14,8 +15,9 @@ fn test_style_object_fit_contain() {
       object_fit: ObjectFit::Contain,
       ..Default::default()
     },
+    width: None,
+    height: None,
     src: "assets/images/yeecord.png".to_string(),
-    image: Arc::default(),
   };
 
   run_style_width_test(image.into(), "tests/fixtures/style_object_fit_contain.png");
@@ -30,8 +32,9 @@ fn test_style_object_fit_cover() {
       object_fit: ObjectFit::Cover,
       ..Default::default()
     },
+    width: None,
+    height: None,
     src: "assets/images/yeecord.png".to_string(),
-    image: Arc::default(),
   };
 
   run_style_width_test(image.into(), "tests/fixtures/style_object_fit_cover.png");
@@ -47,7 +50,8 @@ fn test_style_object_fit_fill() {
       ..Default::default()
     },
     src: "assets/images/yeecord.png".to_string(),
-    image: Arc::default(),
+    width: None,
+    height: None,
   };
 
   run_style_width_test(image.into(), "tests/fixtures/style_object_fit_fill.png");
@@ -63,7 +67,8 @@ fn test_style_object_fit_none() {
       ..Default::default()
     },
     src: "assets/images/yeecord.png".to_string(),
-    image: Arc::default(),
+    width: None,
+    height: None,
   };
 
   run_style_width_test(image.into(), "tests/fixtures/style_object_fit_none.png");
@@ -79,7 +84,8 @@ fn test_style_object_fit_scale_down() {
       ..Default::default()
     },
     src: "assets/images/yeecord.png".to_string(),
-    image: Arc::default(),
+    width: None,
+    height: None,
   };
 
   run_style_width_test(

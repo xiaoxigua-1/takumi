@@ -31,13 +31,15 @@ export default {
 
     const webp = renderer.render(
       container({
-        width: percentage(100),
-        height: percentage(100),
-        backgroundColor: 0,
-        color: 0xffffff,
-        padding: rem(4),
-        flexDirection: "column",
-        gap: rem(0.5),
+        style: {
+          width: percentage(100),
+          height: percentage(100),
+          backgroundColor: 0,
+          color: 0xffffff,
+          padding: rem(4),
+          flexDirection: "column",
+          gap: rem(0.5),
+        },
         children: [
           text(`Hello, ${name}!`, {
             fontSize: 64,
@@ -47,12 +49,15 @@ export default {
             fontSize: 32,
             color: rgba(255, 255, 255, 0.8),
           }),
-          image(logo, {
-            position: "absolute",
-            inset: ["auto", "auto", rem(4), rem(4)],
+          image({
+            src: logo,
             width: 96,
             height: 96,
-            borderRadius: percentage(50),
+            style: {
+              position: "absolute",
+              inset: ["auto", "auto", rem(4), rem(4)],
+              borderRadius: percentage(50),
+            },
           }),
         ],
       }),

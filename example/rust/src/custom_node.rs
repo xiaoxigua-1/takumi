@@ -1,5 +1,9 @@
 use serde::{Deserialize, Serialize};
-use takumi::{LengthUnit, Node, Style};
+
+use takumi::layout::{
+  node::Node,
+  style::{LengthUnit, Style},
+};
 
 use crate::NodeKind;
 
@@ -10,7 +14,7 @@ use crate::NodeKind;
 ///
 /// # Example
 /// ```rust
-/// use takumi::Style;
+/// use takumi::layout::style::Style;
 /// use example::custom_node::CircleNode;
 ///
 /// let circle = CircleNode {

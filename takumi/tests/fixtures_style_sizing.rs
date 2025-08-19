@@ -1,4 +1,11 @@
-use takumi::{Color, ContainerNode, LengthUnit::Percentage, Style};
+use takumi::layout::{
+  node::ContainerNode,
+  style::{
+    Color,
+    LengthUnit::{Percentage, Px},
+    Style,
+  },
+};
 
 mod test_utils;
 use test_utils::run_style_width_test;
@@ -37,7 +44,7 @@ fn test_style_height() {
 fn test_style_min_width() {
   let container = ContainerNode {
     style: Style {
-      min_width: takumi::LengthUnit::Px(50.0),
+      min_width: Px(50.0),
       width: Percentage(100.0),
       height: Percentage(100.0),
       background_color: Some(Color([255, 255, 255, 255])),
@@ -53,7 +60,7 @@ fn test_style_min_width() {
 fn test_style_min_height() {
   let container = ContainerNode {
     style: Style {
-      min_height: takumi::LengthUnit::Px(50.0),
+      min_height: Px(50.0),
       height: Percentage(100.0),
       width: Percentage(100.0),
       background_color: Some(Color([255, 255, 255, 255])),
@@ -69,7 +76,7 @@ fn test_style_min_height() {
 fn test_style_max_width() {
   let container = ContainerNode {
     style: Style {
-      max_width: takumi::LengthUnit::Px(100.0),
+      max_width: Px(100.0),
       width: Percentage(100.0),
       height: Percentage(100.0),
       background_color: Some(Color([255, 255, 255, 255])),
@@ -85,7 +92,7 @@ fn test_style_max_width() {
 fn test_style_max_height() {
   let container = ContainerNode {
     style: Style {
-      max_height: takumi::LengthUnit::Px(100.0),
+      max_height: Px(100.0),
       height: Percentage(100.0),
       width: Percentage(100.0),
       background_color: Some(Color([255, 255, 255, 255])),

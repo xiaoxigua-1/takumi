@@ -1,13 +1,17 @@
 use axum::extract::Query;
-use takumi::DefaultNodeKind;
+use takumi::{
+  GlobalContext,
+  layout::{
+    node::{ContainerNode, NodeKind},
+    style::Style,
+  },
+};
 
-use takumi::{ContainerNode, GlobalContext, Style};
-use takumi_server::{GenerateImageQuery, generate_image_handler};
-use takumi_server::{args::Args, create_state};
+use takumi_server::{GenerateImageQuery, args::Args, create_state, generate_image_handler};
 
 #[tokio::test]
 async fn test_generate_image_handler() {
-  let node: DefaultNodeKind = ContainerNode {
+  let node: NodeKind = ContainerNode {
     style: Style {
       width: 100.0.into(),
       height: 100.0.into(),
@@ -33,7 +37,7 @@ async fn test_generate_image_handler() {
 
 #[tokio::test]
 async fn test_generate_image_handler_invalid_width() {
-  let node: DefaultNodeKind = ContainerNode {
+  let node: NodeKind = ContainerNode {
     style: Style::default(),
     children: None,
   }

@@ -47,10 +47,16 @@ const helloText = text('Hello, Takumi!', {
 An image node displays an image from a URL or local path. Use the `image` function:
 
 ```typescript
-import { image } from '@takumi-rs/helpers';
+import { image, percentage } from '@takumi-rs/helpers';
 
-const logo = image('/logo.png', {
-  // extra styling goes here
+const logo = image({
+  src: '/logo.png',
+  width: 64,
+  height: 64,
+  style: {
+    borderRadius: percentage(50),
+    // extra styling goes here
+  },
 });
 ```
 
@@ -64,12 +70,17 @@ You can pass a style object as the second argument to `text` and `image`, or as 
 import { container } from "@takumi-rs/helpers";
 
 const root = container({
-  width: 400,
-  height: 200,
-  backgroundColor: 0xf0f0f0,
-  padding: 16,
-  alignItems: "center",
-  justifyContent: "center",
+  style: {
+    width: 400,
+    height: 200,
+    backgroundColor: 0xf0f0f0,
+    padding: 16,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  children: [
+    text("Hello, Takumi!"),
+  ],
 });
 ```
 
@@ -86,18 +97,6 @@ const heading = text("Hello, Takumi!", {
 });
 ```
 
-### Example: Styling an Image
-
-```typescript
-import { image } from "@takumi-rs/helpers";
-
-const logo = image("/logo.png", {
-  width: 64,
-  height: 64,
-  borderRadius: 8,
-});
-```
-
 ## Using Helper Functions
 
 The helpers package provides functions for common value types:
@@ -111,9 +110,11 @@ The helpers package provides functions for common value types:
 import { container, text, percentage, rem, rgba } from "@takumi-rs/helpers";
 
 const layout = container({
-  width: percentage(100),
-  height: rem(10),
-  backgroundColor: rgba(0, 128, 255, 0.1),
+  style: {
+    width: percentage(100),
+    height: rem(10),
+    backgroundColor: rgba(0, 128, 255, 0.1),
+  },
   children: [
     text("50% width, 10rem height", { color: 0x222222 })
   ],

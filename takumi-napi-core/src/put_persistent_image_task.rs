@@ -1,9 +1,5 @@
 use napi::Task;
-use takumi::{
-  GlobalContext, ImageStore,
-  image::{RgbaImage, load_from_memory},
-  resources::ImageSource,
-};
+use takumi::{GlobalContext, resources::image::load_image_source_from_bytes};
 
 pub struct PutPersistentImageTask<'ctx> {
   pub src: Option<String>,
@@ -16,12 +12,11 @@ impl<'ctx> Task for PutPersistentImageTask<'ctx> {
   type JsValue = ();
 
   fn compute(&mut self) -> napi::Result<Self::Output> {
-    let image: RgbaImage = load_from_memory(&self.buffer).unwrap().into();
-
+    let image = load_image_source_from_bytes(&self.buffer).unwrap();
     self
       .context
       .persistent_image_store
-      .insert(self.src.take().unwrap(), ImageSource::Bitmap(image));
+      .insert(&self.src.take().unwrap(), image);
 
     Ok(())
   }

@@ -1,6 +1,6 @@
 import type { Style } from "./bindings/Style";
 
-type JsonValue =
+export type JsonValue =
   | string
   | number
   | boolean
@@ -8,7 +8,7 @@ type JsonValue =
   | JsonValue[]
   | { [key: string]: JsonValue };
 
-type AnyNode = {
+export type AnyNode = {
   type: string;
   [key: string]: JsonValue;
 };
@@ -17,17 +17,22 @@ export type PartialStyle = Partial<Style>;
 
 export type Node = ContainerNode | TextNode | ImageNode | AnyNode;
 
-export type ContainerNode = PartialStyle & {
+export type ContainerNode = {
   type: "container";
+  style?: PartialStyle;
   children?: Node[];
 };
 
-export type TextNode = PartialStyle & {
+export type TextNode = {
   type: "text";
   text: string;
+  style?: PartialStyle;
 };
 
-export type ImageNode = PartialStyle & {
+export type ImageNode = {
   type: "image";
   src: string;
+  width?: number;
+  height?: number;
+  style?: PartialStyle;
 };

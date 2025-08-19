@@ -5,6 +5,7 @@ import type { FontFamily } from "./FontFamily";
 import type { FontWeight } from "./FontWeight";
 import type { ImageScalingAlgorithm } from "./ImageScalingAlgorithm";
 import type { LengthUnit } from "./LengthUnit";
+import type { LineHeight } from "./LineHeight";
 import type { LinearGradientOrColor } from "./LinearGradientOrColor";
 import type { Sides } from "./Sides";
 import type { TextAlign } from "./TextAlign";
@@ -49,9 +50,9 @@ fontSize?: LengthUnit,
  */
 fontFamily?: FontFamily, 
 /**
- * Line height for text spacing.
+ * Line height for text spacing, number is em.
  */
-lineHeight?: LengthUnit, 
+lineHeight?: LineHeight, 
 /**
  * Font weight for text rendering.
  */

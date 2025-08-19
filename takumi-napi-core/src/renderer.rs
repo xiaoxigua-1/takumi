@@ -1,8 +1,8 @@
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
 use takumi::{
-  GlobalContext, ImageSource, ImageStore, Viewport, image::load_from_memory,
-  rendering::ImageOutputFormat,
+  GlobalContext, layout::Viewport, rendering::ImageOutputFormat,
+  resources::image::load_image_source_from_bytes,
 };
 
 use crate::{
@@ -66,18 +66,22 @@ impl Renderer {
 
     if let Some(images) = options.persistent_images {
       for image in images {
-        let loaded = load_from_memory(&image.data).unwrap();
+        let image_source = load_image_source_from_bytes(&image.data).unwrap();
 
         renderer
           .0
           .persistent_image_store
-          .insert(image.src, ImageSource::Bitmap(loaded.into_rgba8()));
+          .insert(&image.src, image_source);
       }
     }
 
     if let Some(fonts) = options.fonts {
       for font in fonts {
-        renderer.0.font_context.load_font(font.to_vec()).unwrap();
+        renderer
+          .0
+          .font_context
+          .load_and_store(font.to_vec())
+          .unwrap();
       }
     }
 

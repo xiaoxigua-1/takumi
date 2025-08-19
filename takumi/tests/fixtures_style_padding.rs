@@ -1,7 +1,10 @@
-use takumi::{
-  Color, ContainerNode, InheritableStyle,
-  LengthUnit::{Percentage, Px},
-  Style,
+use takumi::layout::{
+  node::ContainerNode,
+  style::{
+    Color, InheritableStyle,
+    LengthUnit::{Percentage, Px},
+    Style,
+  },
 };
 
 mod test_utils;

@@ -1,27 +1,49 @@
 import type { Color } from "./bindings/Color";
-import type { ContainerNode, ImageNode, PartialStyle, TextNode } from "./types";
+import type {
+  AnyNode,
+  ContainerNode,
+  ImageNode,
+  PartialStyle,
+  TextNode,
+} from "./types";
+
+function applyStyle(node: AnyNode, style?: PartialStyle) {
+  if (style && Object.keys(style).length > 0) {
+    node.style = style;
+  }
+}
 
 export function container(props: Omit<ContainerNode, "type">): ContainerNode {
-  return {
+  const node: ContainerNode = {
     type: "container",
-    ...props,
+    children: props.children,
   };
+
+  applyStyle(node, props.style);
+
+  return node;
 }
 
 export function text(text: string, style?: PartialStyle): TextNode {
-  return {
-    ...style,
+  const node: TextNode = {
     type: "text",
     text,
   };
+
+  applyStyle(node, style);
+
+  return node;
 }
 
-export function image(src: string, style?: PartialStyle): ImageNode {
-  return {
-    ...style,
+export function image(props: Omit<ImageNode, "type">): ImageNode {
+  const node: ImageNode = {
     type: "image",
-    src,
+    src: props.src,
   };
+
+  applyStyle(node, props.style);
+
+  return node;
 }
 
 export function style(style: PartialStyle) {

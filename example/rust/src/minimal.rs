@@ -2,7 +2,13 @@
 use std::fs::File;
 
 use takumi::{
-  ContainerNode, GlobalContext, ImageRenderer, InheritableStyle, Style, TextNode, Viewport,
+  GlobalContext,
+  layout::{
+    Viewport,
+    node::{ContainerNode, TextNode},
+    style::{InheritableStyle, Style},
+  },
+  rendering::ImageRenderer,
   rendering::{ImageOutputFormat, write_image},
 };
 
@@ -22,7 +28,7 @@ pub fn say_hello_to(name: &str) {
   // by default, takumi WON'T load any system fonts.
   //
   // Example:
-  // context.font_context.load_font()
+  // context.font_context.load_and_store()
 
   // Create a text node with custom styling
   // Font size is set to 48.0 and other styles use default values

@@ -23,7 +23,7 @@ impl<'ctx> Task for LoadFontTask<'ctx> {
         self
           .context
           .font_context
-          .load_font(buffers.into_iter().next().unwrap())
+          .load_and_store(buffers.into_iter().next().unwrap())
           .map(|_| 1)
           .unwrap_or(0),
       );
@@ -31,7 +31,7 @@ impl<'ctx> Task for LoadFontTask<'ctx> {
 
     let loaded_count = buffers
       .into_par_iter()
-      .map(|buffer| self.context.font_context.load_font(buffer).is_ok() as usize)
+      .map(|buffer| self.context.font_context.load_and_store(buffer).is_ok() as usize)
       .sum();
 
     Ok(loaded_count)

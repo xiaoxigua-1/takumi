@@ -8,8 +8,12 @@ use axum::{
 use serde::Deserialize;
 use serde_json::from_str;
 use takumi::{
-  DefaultNodeKind, ImageRenderer, LengthUnit, Node, Viewport,
-  rendering::{ImageOutputFormat, write_image},
+  layout::{
+    Viewport,
+    node::{Node, NodeKind},
+    style::LengthUnit,
+  },
+  rendering::{ImageOutputFormat, ImageRenderer, write_image},
 };
 use tokio::task::spawn_blocking;
 
@@ -26,7 +30,7 @@ pub async fn generate_image_handler(
   Query(query): Query<GenerateImageQuery>,
   State(state): AxumState,
 ) -> AxumResult<Response> {
-  let mut root_node: DefaultNodeKind = from_str(&query.payload).map_err(|err| {
+  let mut root_node: NodeKind = from_str(&query.payload).map_err(|err| {
     (
       StatusCode::BAD_REQUEST,
       format!("Failed to parse node: {err}"),
@@ -51,12 +55,6 @@ pub async fn generate_image_handler(
 
   let buffer = spawn_blocking(move || -> AxumResult<Vec<u8>> {
     root_node.inherit_style_for_children();
-    root_node.hydrate(&state.context).map_err(|err| {
-      (
-        StatusCode::INTERNAL_SERVER_ERROR,
-        format!("Failed to hydrate node: {err:?}"),
-      )
-    })?;
 
     let mut renderer = ImageRenderer::new(Viewport::new(width as u32, height as u32));
 

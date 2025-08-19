@@ -22,7 +22,7 @@ impl FastBlendImage {
 
     let pix = self.0.get_pixel_mut(x, y);
 
-    if color.0[3] == 255 {
+    if color.0[3] == 255 || pix.0[3] == 0 {
       *pix = color;
       return;
     }
@@ -38,11 +38,13 @@ impl FastBlendImage {
   }
 
   /// Gets the width of the canvas.
+  #[inline]
   pub fn width(&self) -> u32 {
     self.0.width()
   }
 
   /// Gets the height of the canvas.
+  #[inline]
   pub fn height(&self) -> u32 {
     self.0.height()
   }

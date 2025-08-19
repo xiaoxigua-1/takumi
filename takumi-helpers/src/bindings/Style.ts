@@ -17,6 +17,7 @@ import type { GridTrackSize } from "./GridTrackSize";
 import type { ImageScalingAlgorithm } from "./ImageScalingAlgorithm";
 import type { JustifyContent } from "./JustifyContent";
 import type { LengthUnit } from "./LengthUnit";
+import type { LineHeight } from "./LineHeight";
 import type { LinearGradientOrColor } from "./LinearGradientOrColor";
 import type { LinearGradients } from "./LinearGradients";
 import type { ObjectFit } from "./ObjectFit";
@@ -276,9 +277,9 @@ fontSize?: LengthUnit,
  */
 fontFamily?: FontFamily, 
 /**
- * Line height for text spacing.
+ * Line height for text spacing, number is em.
  */
-lineHeight?: LengthUnit, 
+lineHeight?: LineHeight, 
 /**
  * Font weight for text rendering.
  */
