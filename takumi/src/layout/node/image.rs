@@ -51,12 +51,8 @@ impl<Nodes: Node<Nodes>> Node<Nodes> for ImageNode {
       return Size { width, height };
     }
 
-    let image = match resolve_image(&self.src, context.global) {
-      Ok(img) => img,
-      Err(_) => {
-        // If the image cannot be resolved, return zero size to avoid panics during layout.
-        return Size { width: 0.0, height: 0.0 };
-      }
+    let Ok(image) = resolve_image(&self.src, context.global) else {
+      return Size::zero();
     };
 
     let size = match &*image {
@@ -74,7 +70,9 @@ impl<Nodes: Node<Nodes>> Node<Nodes> for ImageNode {
   }
 
   fn draw_content(&self, context: &RenderContext, canvas: &mut FastBlendImage, layout: Layout) {
-    let image = resolve_image(&self.src, context.global).unwrap();
+    let Ok(image) = resolve_image(&self.src, context.global) else {
+      return;
+    };
 
     draw_image(&image, &self.style, context, canvas, layout);
   }
