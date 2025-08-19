@@ -62,6 +62,10 @@ impl<Nodes: Node<Nodes>> Node<Nodes> for TextNode {
       available_space,
     )
   }
+
+  fn has_draw_content(&self) -> bool {
+    true
+  }
 }
 
 /// Measures the size of text based on font style and available space.

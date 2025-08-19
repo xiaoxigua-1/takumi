@@ -182,6 +182,11 @@ pub trait Node<N: Node<N>>: Send + Sync + Clone {
     // Default implementation does nothing
   }
 
+  /// Returns true if `draw_content` is needed to be called.
+  fn has_draw_content(&self) -> bool {
+    false
+  }
+
   /// Draws the border of the node.
   fn draw_border(&self, context: &RenderContext, canvas: &mut FastBlendImage, layout: Layout) {
     use crate::rendering::{BorderProperties, draw_border};

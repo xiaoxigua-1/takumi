@@ -3,7 +3,7 @@ use std::io::{Seek, Write};
 use image::{ExtendedColorType, ImageFormat, RgbaImage, codecs::jpeg::JpegEncoder};
 use serde::{Deserialize, Serialize};
 use slotmap::{DefaultKey, KeyData, SecondaryMap};
-use taffy::{AvailableSpace, Layout, NodeId, Point, TaffyTree, geometry::Size};
+use taffy::{AvailableSpace, Layout, NodeId, Point, Rect, TaffyTree, geometry::Size};
 
 use crate::{
   GlobalContext,
@@ -249,25 +249,61 @@ impl<Nodes: Node<Nodes>> ImageRenderer<Nodes> {
       return Ok(canvas.0);
     }
 
-    // Render each task on a minimal canvas
+    // Classify tasks: decide which can be drawn directly (pure background color only)
+    let mut direct_flags: Vec<bool> = Vec::with_capacity(tasks.len());
+    let mut render_indices: Vec<usize> = Vec::new();
+
+    for (idx, task) in tasks.iter().enumerate() {
+      if qualifies_for_direct_bg_draw(&task.node, &task.layout) {
+        direct_flags.push(true);
+      } else {
+        direct_flags.push(false);
+        render_indices.push(idx);
+      }
+    }
+
+    // Render non-direct tasks on minimal canvases (potentially in parallel)
+    let mut jobs_by_index: Vec<Option<PaintJob>> = vec![None; tasks.len()];
+
     #[cfg(feature = "rayon")]
-    let jobs: Vec<PaintJob> = {
+    {
       use rayon::prelude::*;
-      tasks
+      let rendered: Vec<(usize, PaintJob)> = render_indices
         .par_iter()
-        .map(|task| render_task_to_job(task, global, viewport))
-        .collect()
-    };
+        .map(|&i| (i, render_task_to_job(&tasks[i], global, viewport)))
+        .collect();
+      for (i, job) in rendered {
+        jobs_by_index[i] = Some(job);
+      }
+    }
 
     #[cfg(not(feature = "rayon"))]
-    let jobs: Vec<PaintJob> = tasks
-      .iter()
-      .map(|task| render_task_to_job(task, global, viewport))
-      .collect();
+    {
+      for i in render_indices {
+        let job = render_task_to_job(&tasks[i], global, viewport);
+        jobs_by_index[i] = Some(job);
+      }
+    }
 
-    // Composite in order to preserve stacking
-    for job in jobs {
-      canvas.overlay_image(&job.image, job.overlay_left, job.overlay_top);
+    // Composite in paint order. Direct background draws go straight onto the main canvas.
+    for (idx, task) in tasks.iter().enumerate() {
+      if direct_flags[idx] {
+        let render_context = RenderContext {
+          global,
+          viewport,
+          parent_font_size: task.parent_font_size,
+        };
+
+        task
+          .node
+          .draw_background_color(&render_context, &mut canvas, task.layout);
+
+        if global.draw_debug_border {
+          draw_debug_border(&mut canvas, task.layout);
+        }
+      } else if let Some(job) = jobs_by_index[idx].take() {
+        canvas.overlay_image(&job.image, job.overlay_left, job.overlay_top);
+      }
     }
 
     Ok(canvas.0)
@@ -289,6 +325,7 @@ struct PaintTask<Nodes: Node<Nodes>> {
 }
 
 /// A rendered job result with an image and its overlay position.
+#[derive(Clone)]
 struct PaintJob {
   image: RgbaImage,
   overlay_left: u32,
@@ -376,15 +413,13 @@ fn render_task_to_job<Nodes: Node<Nodes>>(
   }
 }
 
-type UiRect = taffy::Rect<u32>;
-
-fn rect_from_layout_base(layout: &Layout) -> UiRect {
+fn rect_from_layout_base(layout: &Layout) -> Rect<u32> {
   let left = clamp_trunc_to_u32(layout.location.x);
   let top = clamp_trunc_to_u32(layout.location.y);
   let right = left + (layout.size.width.max(0.0) as u32);
   let bottom = top + (layout.size.height.max(0.0) as u32);
 
-  UiRect {
+  Rect {
     left,
     right,
     top,
@@ -392,7 +427,7 @@ fn rect_from_layout_base(layout: &Layout) -> UiRect {
   }
 }
 
-fn rect_union_in_place(a: &mut UiRect, b: &UiRect) {
+fn rect_union_in_place(a: &mut Rect<u32>, b: &Rect<u32>) {
   if b.left < a.left {
     a.left = b.left;
   }
@@ -408,7 +443,7 @@ fn rect_union_in_place(a: &mut UiRect, b: &UiRect) {
 }
 
 #[inline]
-fn rect_width_height(rect: &UiRect) -> (u32, u32) {
+fn rect_width_height(rect: &Rect<u32>) -> (u32, u32) {
   (
     rect.right.saturating_sub(rect.left),
     rect.bottom.saturating_sub(rect.top),
@@ -420,7 +455,7 @@ fn clamp_trunc_to_u32(value: f32) -> u32 {
   if value < 0.0 { 0 } else { value as u32 }
 }
 
-fn compute_outset_shadow_rect(resolved: &BoxShadowResolved, layout: &Layout) -> UiRect {
+fn compute_outset_shadow_rect(resolved: &BoxShadowResolved, layout: &Layout) -> Rect<u32> {
   let blur = resolved.blur_radius.max(0.0);
   let spread = resolved.spread_radius;
   let inflate = (blur + spread) * 2.0;
@@ -431,7 +466,7 @@ fn compute_outset_shadow_rect(resolved: &BoxShadowResolved, layout: &Layout) -> 
   let left = clamp_trunc_to_u32(layout.location.x + (resolved.offset_x - blur - spread));
   let top = clamp_trunc_to_u32(layout.location.y + (resolved.offset_y - blur - spread));
 
-  UiRect {
+  Rect {
     left,
     top,
     right: left + shadow_w,
@@ -462,4 +497,38 @@ fn compute_paint_canvas_bounds<Nodes: Node<Nodes>>(
 
   let (width, height) = rect_width_height(&bounds);
   (bounds.left, bounds.top, width, height)
+}
+
+// Returns true if the node draws only a solid background color with no radius,
+// no background images, no shadows, no borders, and no content.
+fn qualifies_for_direct_bg_draw<Nodes: Node<Nodes>>(node: &Nodes, layout: &Layout) -> bool {
+  let style = node.get_style();
+
+  // Must have background color
+  if style.background_color.is_none() {
+    return false;
+  }
+
+  // Must not have border radius (since rounded bg requires temp image)
+  if style.inheritable_style.resolved_border_radius().is_some() {
+    return false;
+  }
+
+  // Must not have any background images or shadows
+  if style.background_image.is_some() || style.box_shadow.is_some() {
+    return false;
+  }
+
+  // Must not have borders (non-zero width)
+  let b = layout.border;
+  if b.left > 0.0 || b.right > 0.0 || b.top > 0.0 || b.bottom > 0.0 {
+    return false;
+  }
+
+  // Leaf content draws? skip direct if the node draws content
+  if node.has_draw_content() {
+    return false;
+  }
+
+  true
 }

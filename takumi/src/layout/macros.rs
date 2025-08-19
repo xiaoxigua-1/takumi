@@ -103,6 +103,12 @@ macro_rules! impl_node_enum {
           $( $name::$variant(inner) => <_ as $crate::layout::node::Node<$name>>::draw_inset_box_shadow(inner, context, canvas, layout), )*
         }
       }
+
+      fn has_draw_content(&self) -> bool {
+        match self {
+          $( $name::$variant(inner) => <_ as $crate::layout::node::Node<$name>>::has_draw_content(inner), )*
+        }
+      }
     }
 
     $(

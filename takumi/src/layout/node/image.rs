@@ -76,6 +76,10 @@ impl<Nodes: Node<Nodes>> Node<Nodes> for ImageNode {
 
     draw_image(&image, &self.style, context, canvas, layout);
   }
+
+  fn has_draw_content(&self) -> bool {
+    true
+  }
 }
 
 const DATA_URI_PREFIX: &str = "data:";
