@@ -18,9 +18,8 @@ function SayHello({ name }: { name: string }) {
   );
 }
 
-// Since there's no fragment node support, an array is returned.
-// You should destructure the array to get the first node.
-const [node] = fromJsx(<SayHello name="Takumi" />);
+// await is required to handle async components
+const node = await fromJsx(<SayHello name="Takumi" />);
 
 // You can then pass the node as a "root node" to render function
 ```

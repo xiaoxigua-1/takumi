@@ -32,7 +32,7 @@ await renderer.loadFontAsync(
   ).arrayBuffer(),
 );
 
-const [component] = await fromJsx(<Component />);
+const component = await fromJsx(<Component />);
 
 if (!component) {
   throw new Error("Failed to convert component to Takumi node");
