@@ -12,17 +12,32 @@ static CONTEXT: LazyLock<GlobalContext> = LazyLock::new(GlobalContext::default);
 
 #[test]
 fn test_ttf_font_loading() {
-  assert!(CONTEXT.font_context.load_and_store(TTF_FONT.to_vec()).is_ok());
+  assert!(
+    CONTEXT
+      .font_context
+      .load_and_store(TTF_FONT.to_vec())
+      .is_ok()
+  );
 }
 
 #[test]
 fn test_woff_font_loading() {
-  assert!(CONTEXT.font_context.load_and_store(WOFF_FONT.to_vec()).is_ok());
+  assert!(
+    CONTEXT
+      .font_context
+      .load_and_store(WOFF_FONT.to_vec())
+      .is_ok()
+  );
 }
 
 #[test]
 fn test_woff2_font_loading() {
-  assert!(CONTEXT.font_context.load_and_store(WOFF2_FONT.to_vec()).is_ok());
+  assert!(
+    CONTEXT
+      .font_context
+      .load_and_store(WOFF2_FONT.to_vec())
+      .is_ok()
+  );
 }
 
 #[test]
