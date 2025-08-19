@@ -1,7 +1,10 @@
-use takumi::{
-  Color, ContainerNode, DefaultNodeKind, FontWeight, InheritableStyle,
-  LengthUnit::{Percentage, Px},
-  Style, TextAlign, TextNode, TextOverflow, TextTransform,
+use takumi::layout::{
+  node::{ContainerNode, NodeKind, TextNode},
+  style::{
+    Color, FontWeight, InheritableStyle,
+    LengthUnit::{Percentage, Px},
+    LineHeight, Style, TextAlign, TextOverflow, TextTransform,
+  },
 };
 
 mod test_utils;
@@ -18,7 +21,7 @@ fn fixtures_text_basic() {
     text: "The quick brown fox jumps over the lazy dog 12345".to_string(),
   };
 
-  run_style_width_test(DefaultNodeKind::Text(text), "tests/fixtures/text_basic.png");
+  run_style_width_test(NodeKind::Text(text), "tests/fixtures/text_basic.png");
 }
 
 #[test]
@@ -69,7 +72,7 @@ fn fixtures_text_typography_line_height_40px() {
       background_color: Some(Color([240, 240, 240, 255])),
       inheritable_style: InheritableStyle {
         font_size: Some(Px(24.0)),
-        line_height: Some(Px(40.0)),
+        line_height: Some(LineHeight(Px(40.0))),
         ..Default::default()
       },
       ..Default::default()
@@ -172,7 +175,7 @@ Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliqu
       background_color: Some(Color([240, 240, 240, 255])),
       inheritable_style: InheritableStyle {
         font_size: Some(Px(18.0)),
-        line_height: Some(Px(26.0)),
+        line_height: Some(LineHeight(Px(26.0))),
         text_align: Some(TextAlign::Justify),
         text_overflow: Some(TextOverflow::Clip),
         ..Default::default()
@@ -196,7 +199,7 @@ Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliqu
       background_color: Some(Color([240, 240, 240, 255])),
       inheritable_style: InheritableStyle {
         font_size: Some(Px(18.0)),
-        line_height: Some(Px(24.0)),
+        line_height: Some(LineHeight(Px(24.0))),
         text_overflow: Some(TextOverflow::Ellipsis),
         line_clamp: Some(2),
         ..Default::default()

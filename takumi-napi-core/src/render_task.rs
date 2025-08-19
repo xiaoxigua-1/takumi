@@ -2,12 +2,16 @@ use std::io::Cursor;
 
 use napi::bindgen_prelude::*;
 use takumi::{
-  DefaultNodeKind, GlobalContext, ImageRenderer, Node, Viewport,
-  rendering::{ImageOutputFormat, write_image},
+  GlobalContext,
+  layout::{
+    Viewport,
+    node::{Node, NodeKind},
+  },
+  rendering::{ImageOutputFormat, ImageRenderer, write_image},
 };
 
 pub struct RenderTask<'ctx> {
-  pub node: Option<DefaultNodeKind>,
+  pub node: Option<NodeKind>,
   pub context: &'ctx GlobalContext,
   pub viewport: Viewport,
   pub format: ImageOutputFormat,
@@ -22,9 +26,6 @@ impl<'ctx> Task for RenderTask<'ctx> {
     let mut node = self.node.take().unwrap();
 
     node.inherit_style_for_children();
-    node
-      .hydrate(self.context)
-      .map_err(|e| napi::Error::from_reason(format!("Failed to hydrate node: {e:?}")))?;
 
     let mut render = ImageRenderer::new(self.viewport);
 

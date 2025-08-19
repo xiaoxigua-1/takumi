@@ -1,8 +1,11 @@
-use takumi::{
-  Color, ContainerNode, Display, FlexDirection, Gap, GridLengthUnit, GridTemplateComponent,
-  GridTrackSize, InheritableStyle,
-  LengthUnit::{Percentage, Px},
-  Style,
+use takumi::layout::{
+  node::ContainerNode,
+  style::{
+    Color, Display, FlexDirection, Gap, GridLengthUnit, GridTemplateComponent, GridTrackSize,
+    InheritableStyle,
+    LengthUnit::{Percentage, Px},
+    Style,
+  },
 };
 
 mod test_utils;

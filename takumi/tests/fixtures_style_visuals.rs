@@ -1,7 +1,10 @@
-use takumi::{
-  BoxShadow, BoxShadows, Color, ContainerNode, InheritableStyle,
-  LengthUnit::{Percentage, Px},
-  Position, Style,
+use takumi::layout::{
+  node::ContainerNode,
+  style::{
+    BoxShadow, BoxShadows, Color, InheritableStyle,
+    LengthUnit::{Percentage, Px},
+    Position, Style,
+  },
 };
 
 mod test_utils;

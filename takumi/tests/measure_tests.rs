@@ -3,9 +3,14 @@ use std::sync::LazyLock;
 use cosmic_text::Weight;
 use taffy::{AvailableSpace, geometry::Size};
 use takumi::{
-  Color, FontFamily, LinearGradientOrColor,
-  core::{DEFAULT_FONT_SIZE, DEFAULT_LINE_HEIGHT_SCALER, GlobalContext, RenderContext},
-  style::{FontStyle, TextOverflow, TextStyle, TextTransform},
+  GlobalContext,
+  layout::{
+    DEFAULT_FONT_SIZE, DEFAULT_LINE_HEIGHT_SCALER, Viewport,
+    style::{
+      Color, FontFamily, FontStyle, LinearGradientOrColor, TextOverflow, TextStyle, TextTransform,
+    },
+  },
+  rendering::RenderContext,
 };
 
 const NOTO_SANS_REGULAR_BUFFER: &[u8] =
@@ -24,7 +29,7 @@ static SHARED_GLOBAL_CONTEXT: LazyLock<GlobalContext> = LazyLock::new(|| {
 
   global_context
     .font_context
-    .load_font(NOTO_SANS_REGULAR_BUFFER.to_vec())
+    .load_and_store(NOTO_SANS_REGULAR_BUFFER.to_vec())
     .unwrap();
 
   global_context
@@ -35,7 +40,7 @@ fn create_test_context() -> RenderContext<'static> {
   RenderContext {
     global: &SHARED_GLOBAL_CONTEXT,
     parent_font_size: DEFAULT_FONT_SIZE,
-    viewport: takumi::Viewport {
+    viewport: Viewport {
       width: VIEWPORT_WIDTH,
       height: VIEWPORT_HEIGHT,
       font_size: DEFAULT_FONT_SIZE,
@@ -76,8 +81,9 @@ fn create_available_space(width: AvailableSpace, height: AvailableSpace) -> Size
 }
 
 mod measure_image_tests {
+  use takumi::layout::node::measure_image;
+
   use super::*;
-  use takumi::layout::measure::measure_image;
 
   #[test]
   fn test_measure_image_with_known_dimensions() {
@@ -230,7 +236,7 @@ mod measure_image_tests {
 
 mod measure_text_tests {
   use super::*;
-  use takumi::layout::measure::measure_text;
+  use takumi::layout::node::measure_text;
 
   // Helper function to create text measurement parameters
   fn measure_text_helper(

@@ -1,5 +1,5 @@
 use napi::Task;
-use takumi::{GlobalContext, ImageStore, resources::load_image_source_from_bytes};
+use takumi::{GlobalContext, resources::image::load_image_source_from_bytes};
 
 pub struct PutPersistentImageTask<'ctx> {
   pub src: Option<String>,
@@ -16,7 +16,7 @@ impl<'ctx> Task for PutPersistentImageTask<'ctx> {
     self
       .context
       .persistent_image_store
-      .insert(self.src.take().unwrap(), image);
+      .insert(&self.src.take().unwrap(), image);
 
     Ok(())
   }

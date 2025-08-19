@@ -1,7 +1,10 @@
-use takumi::{
-  Angle, Color, ContainerNode, GradientStop, InheritableStyle,
-  LengthUnit::{Percentage, Px},
-  LinearGradient, LinearGradients, Style,
+use takumi::layout::{
+  node::ContainerNode,
+  style::{
+    Angle, Color, GradientStop, InheritableStyle,
+    LengthUnit::{Percentage, Px},
+    LinearGradient, LinearGradients, Style,
+  },
 };
 
 mod test_utils;

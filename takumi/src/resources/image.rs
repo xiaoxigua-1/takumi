@@ -37,12 +37,8 @@ impl PersistentImageStore {
   }
 
   /// Insert an image into the store.
-  pub fn insert(&self, src: &str, image: ImageSource) {
-    self
-      .0
-      .write()
-      .unwrap()
-      .insert(src.to_string(), Arc::new(image));
+  pub fn insert(&self, src: &str, image: Arc<ImageSource>) {
+    self.0.write().unwrap().insert(src.to_string(), image);
   }
 
   /// Clear the store.

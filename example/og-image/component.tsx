@@ -27,7 +27,6 @@ export function Component() {
             style={{
               fontSize: "96px",
               fontWeight: 700,
-              lineHeight
             }}
           >
             Takumi
