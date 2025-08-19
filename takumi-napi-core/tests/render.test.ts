@@ -18,31 +18,42 @@ const dataUri = `data:image/png;base64,${Buffer.from(localImage).toString(
 
 const node = container({
   children: [
-    image(remoteUrl, {
+    image({
+      src: remoteUrl,
       width: 96,
       height: 96,
-      borderRadius: percentage(50),
+      style: {
+        borderRadius: percentage(50),
+      },
     }),
     text("Remote"),
-    image(localImagePath, {
+    image({
+      src: localImagePath,
       width: 96,
       height: 96,
-      borderRadius: percentage(25),
+      style: {
+        borderRadius: percentage(25),
+      },
     }),
     text("Local"),
-    image(dataUri, {
+    image({
+      src: dataUri,
       width: 96,
       height: 96,
-      borderRadius: percentage(25),
+      style: {
+        borderRadius: percentage(25),
+      },
     }),
     text("Data URI"),
   ],
-  justifyContent: "center",
-  alignItems: "center",
-  gap: rem(1.5),
-  backgroundColor: 0xffffff,
-  width: percentage(100),
-  height: percentage(100),
+  style: {
+    justifyContent: "center",
+    alignItems: "center",
+    gap: rem(1.5),
+    backgroundColor: 0xffffff,
+    width: percentage(100),
+    height: percentage(100),
+  },
 });
 
 test("Renderer initialization with fonts and images", async () => {

@@ -9,18 +9,22 @@ export function container(props: Omit<ContainerNode, "type">): ContainerNode {
 }
 
 export function text(text: string, style?: PartialStyle): TextNode {
-  return {
-    ...style,
+  const node: TextNode = {
     type: "text",
     text,
   };
+
+  if (style) {
+    node.style = style;
+  }
+
+  return node;
 }
 
-export function image(src: string, style?: PartialStyle): ImageNode {
+export function image(props: Omit<ImageNode, "type">): ImageNode {
   return {
-    ...style,
     type: "image",
-    src,
+    ...props,
   };
 }
 

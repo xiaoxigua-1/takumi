@@ -7,7 +7,7 @@ import {
   type ReactNode,
 } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { container, image, text } from "../helpers";
+import { container, image, percentage, text } from "../helpers";
 import type { Node, PartialStyle } from "../types";
 import { stylePresets } from "./style-presets";
 
@@ -22,13 +22,33 @@ function isValidElement(object: unknown): object is ReactElement {
   );
 }
 
-export async function fromJsx(element: ReactNode): Promise<Node[]> {
+export async function fromJsx(element: ReactNode): Promise<Node> {
+  const result = await fromJsxInternal(element);
+
+  if (result.length === 0) {
+    return container({});
+  }
+
+  if (result.length === 1 && result[0] !== undefined) {
+    return result[0];
+  }
+
+  return container({
+    children: result,
+    style: {
+      width: percentage(100),
+      height: percentage(100),
+    },
+  });
+}
+
+async function fromJsxInternal(element: ReactNode): Promise<Node[]> {
   if (element === undefined || element === null) return [];
 
   // If element is a server component, wait for it to resolve first
-  if (element instanceof Promise) return fromJsx(await element);
+  if (element instanceof Promise) return fromJsxInternal(await element);
 
-  //
+  // If element is an iterable, collect the children
   if (typeof element === "object" && Symbol.iterator in element)
     return collectIterable(element);
 
@@ -43,7 +63,7 @@ export async function fromJsx(element: ReactNode): Promise<Node[]> {
 async function processReactElement(element: ReactElement): Promise<Node[]> {
   if (typeof element.type === "function") {
     const FunctionComponent = element.type as (props: unknown) => ReactNode;
-    return fromJsx(FunctionComponent(element.props));
+    return fromJsxInternal(FunctionComponent(element.props));
   }
 
   // Handle React fragments
@@ -56,7 +76,7 @@ async function processReactElement(element: ReactElement): Promise<Node[]> {
   }
 
   if (isHtmlElement(element, "img")) {
-    return createImageElement(element);
+    return [createImageElement(element)];
   }
 
   if (isHtmlElement(element, "svg")) {
@@ -82,7 +102,10 @@ function createImageElement(element: ReactElement<ComponentProps<"img">>) {
 
   const style = extractStyleFromProps(element.props);
 
-  return [image(element.props.src, style as PartialStyle)];
+  return image({
+    src: element.props.src,
+    style: style as PartialStyle,
+  });
 }
 
 function createSvgElement(element: ReactElement<ComponentProps<"svg">>) {
@@ -99,7 +122,10 @@ function createSvgElement(element: ReactElement<ComponentProps<"svg">>) {
     ),
   );
 
-  return image(svg, style as PartialStyle);
+  return image({
+    src: svg,
+    style: style as PartialStyle,
+  });
 }
 
 function extractStyleFromProps(props: unknown): CSSProperties | undefined {
@@ -133,20 +159,19 @@ function isHtmlElement<T extends keyof JSX.IntrinsicElements>(
   return element.type === type;
 }
 
-async function collectChildren(element: ReactElement): Promise<Node[]> {
+function collectChildren(element: ReactElement): Promise<Node[]> {
   if (
     typeof element.props !== "object" ||
     element.props === null ||
     !("children" in element.props)
   )
-    return [];
+    return Promise.resolve([]);
 
-  const result = await fromJsx(element.props.children as ReactNode);
-  return result;
+  return fromJsxInternal(element.props.children as ReactNode);
 }
 
 async function collectIterable(iterable: Iterable<ReactNode>): Promise<Node[]> {
-  const children = await Promise.all(Array.from(iterable).map(fromJsx));
+  const children = await Promise.all(Array.from(iterable).map(fromJsxInternal));
 
   return children.flat();
 }
