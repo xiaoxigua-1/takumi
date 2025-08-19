@@ -125,7 +125,6 @@ describe("fromJsx", () => {
     expect(result).toEqual({
       type: "image",
       src: "https://example.com/image.jpg",
-      style: {},
     } satisfies ImageNode);
   });
 
@@ -157,9 +156,11 @@ describe("fromJsx", () => {
         {
           type: "container",
           children: [{ type: "text", text: "Title" }],
-          fontSize: { em: 2 },
-          fontWeight: 700,
-          margin: [{ em: 0.67 }, 0],
+          style: {
+            fontSize: { em: 2 },
+            fontWeight: 700,
+            margin: [{ em: 0.67 }, 0],
+          },
         },
         {
           type: "container",
@@ -171,11 +172,15 @@ describe("fromJsx", () => {
                 {
                   type: "container",
                   children: [{ type: "text", text: "bold" }],
-                  fontWeight: 700,
+                  style: {
+                    fontWeight: 700,
+                  },
                 },
                 { type: "text", text: " text" },
               ],
-              margin: [{ em: 1 }, 0],
+              style: {
+                margin: [{ em: 1 }, 0],
+              },
             },
             {
               type: "container",
@@ -281,9 +286,11 @@ describe("fromJsx", () => {
             {
               type: "container",
               children: [{ type: "text", text: "Welcome" }],
-              fontSize: { em: 2 },
-              fontWeight: 700,
-              margin: [{ em: 0.67 }, 0],
+              style: {
+                fontSize: { em: 2 },
+                fontWeight: 700,
+                margin: [{ em: 0.67 }, 0],
+              },
             },
             {
               type: "container",
@@ -301,7 +308,6 @@ describe("fromJsx", () => {
             {
               type: "image",
               src: "https://example.com/logo.png",
-              style: {},
             },
           ],
         },
@@ -344,10 +350,6 @@ describe("fromJsx", () => {
     expect(result).toEqual({
       type: "image",
       src: renderToStaticMarkup(component),
-      style: {
-        height: "60",
-        width: "60",
-      },
     });
   });
 });
