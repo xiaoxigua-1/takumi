@@ -129,13 +129,25 @@ fn draw_buffer(
             LinearGradientOrColor::Gradient(_) => None,
           });
 
+      let base_x = physical_glyph.x + image.placement.left + start_x as i32;
+      let base_y = run.line_y as i32 + physical_glyph.y - image.placement.top + start_y as i32;
+
       match image.content {
         cosmic_text::SwashContent::Mask => {
           let mut i = 0;
           for off_y in 0..image.placement.height as i32 {
+            let final_y = base_y + off_y;
+
+            if final_y < 0 || final_y >= canvas.height() as i32 {
+              continue;
+            }
+
             for off_x in 0..image.placement.width as i32 {
-              let final_y = run.line_y as i32 + physical_glyph.y - image.placement.top + off_y;
-              let final_x = physical_glyph.x + image.placement.left + off_x;
+              let final_x = base_x + off_x;
+
+              if final_x < 0 || final_x >= canvas.width() as i32 {
+                continue;
+              }
 
               let picked_color = if let Some(glyph_color) = glyph_color {
                 glyph_color
@@ -163,11 +175,7 @@ fn draw_buffer(
                 }
               };
 
-              canvas.draw_pixel(
-                final_x as u32 + start_x as u32,
-                final_y as u32 + start_y as u32,
-                blended_color,
-              );
+              canvas.draw_pixel(final_x as u32, final_y as u32, blended_color);
 
               i += 1;
             }
@@ -176,9 +184,18 @@ fn draw_buffer(
         cosmic_text::SwashContent::Color => {
           let mut i = 0;
           for off_y in 0..image.placement.height as i32 {
+            let final_y = base_y + off_y;
+
+            if final_y < 0 || final_y >= canvas.height() as i32 {
+              continue;
+            }
+
             for off_x in 0..image.placement.width as i32 {
-              let final_y = run.line_y as i32 + physical_glyph.y - image.placement.top + off_y;
-              let final_x = physical_glyph.x + image.placement.left + off_x;
+              let final_x = base_x + off_x;
+
+              if final_x < 0 || final_x >= canvas.width() as i32 {
+                continue;
+              }
 
               let picked_color = *Rgba::from_slice(image.data[i..i + 4].into());
 
@@ -193,11 +210,7 @@ fn draw_buffer(
                 }
               };
 
-              canvas.draw_pixel(
-                final_x as u32 + start_x as u32,
-                final_y as u32 + start_y as u32,
-                blended_color,
-              );
+              canvas.draw_pixel(final_x as u32, final_y as u32, blended_color);
 
               i += 4;
             }
