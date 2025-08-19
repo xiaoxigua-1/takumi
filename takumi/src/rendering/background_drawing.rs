@@ -1,4 +1,4 @@
-use image::RgbaImage;
+use image::{Rgba, RgbaImage};
 use taffy::{Point, Size};
 
 use crate::{
@@ -14,19 +14,41 @@ pub fn draw_filled_rect_color(
   color: Color,
   radius: Option<BorderRadius>,
 ) {
-  let color = color.into();
+  let color: Rgba<u8> = color.into();
+  let size = Size {
+    width: size.width as u32,
+    height: size.height as u32,
+  };
 
   let Some(radius) = radius else {
-    for y in (offset.y as u32)..(size.height + offset.y) as u32 {
-      for x in (offset.x as u32)..(size.width + offset.x) as u32 {
-        canvas.draw_pixel(x, y, color);
+    // Fast path: if drawing on the entire canvas, we can just replace the entire canvas with the color
+    if color.0[3] == 255
+      && offset.x == 0.0
+      && offset.y == 0.0
+      && size.width == canvas.width()
+      && size.height == canvas.height()
+    {
+      let canvas_mut = canvas.0.as_mut();
+
+      let canvas_len = canvas_mut.len();
+
+      for i in (0..canvas_len).step_by(4) {
+        canvas_mut[i..i + 4].copy_from_slice(&color.0);
+      }
+
+      return;
+    }
+
+    for y in 0..size.height {
+      for x in 0..size.width {
+        canvas.draw_pixel(x + offset.x as u32, y + offset.y as u32, color);
       }
     }
 
     return;
   };
 
-  let mut image = RgbaImage::from_pixel(size.width as u32, size.height as u32, color);
+  let mut image = RgbaImage::from_pixel(size.width, size.height, color);
 
   radius.apply_to_image(&mut image);
 
