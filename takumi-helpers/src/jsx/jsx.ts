@@ -11,14 +11,30 @@ import { container, image, percentage, text } from "../helpers";
 import type { Node, PartialStyle } from "../types";
 import { stylePresets } from "./style-presets";
 
-const REACT_ELEMENT_TYPE = Symbol.for("react.transitional.element");
+const REACT_ELEMENT_TYPE_TRANSITIONAL = Symbol.for(
+  "react.transitional.element",
+);
+const REACT_ELEMENT_TYPE_LEGACY = Symbol.for("react.element");
+const REACT_FORWARD_REF_TYPE = Symbol.for("react.forward_ref");
+const REACT_MEMO_TYPE = Symbol.for("react.memo");
+
+type ForwardRefLike = {
+  $$typeof: symbol;
+  render: (props: unknown, ref: unknown) => ReactNode;
+};
+
+type MemoLike = {
+  $$typeof: symbol;
+  type: unknown;
+};
 
 function isValidElement(object: unknown): object is ReactElement {
   return (
     typeof object === "object" &&
     object !== null &&
     "$$typeof" in object &&
-    object.$$typeof === REACT_ELEMENT_TYPE
+    (object.$$typeof === REACT_ELEMENT_TYPE_TRANSITIONAL ||
+      object.$$typeof === REACT_ELEMENT_TYPE_LEGACY)
   );
 }
 
@@ -60,11 +76,54 @@ async function fromJsxInternal(element: ReactNode): Promise<Node[]> {
   return [text(String(element))];
 }
 
-async function processReactElement(element: ReactElement): Promise<Node[]> {
-  if (typeof element.type === "function") {
-    const FunctionComponent = element.type as (props: unknown) => ReactNode;
-    return fromJsxInternal(FunctionComponent(element.props));
+function isFunctionComponent(
+  value: unknown,
+): value is (props: unknown) => ReactNode {
+  return typeof value === "function";
+}
+
+function tryHandleForwardRef(
+  element: ReactElement,
+): Promise<Node[]> | undefined {
+  if (typeof element.type !== "object" || element.type === null)
+    return undefined;
+
+  const typeObject = element.type as unknown as Partial<ForwardRefLike>;
+  if (typeObject.$$typeof === REACT_FORWARD_REF_TYPE && typeObject.render) {
+    return fromJsxInternal(typeObject.render(element.props, null));
   }
+}
+
+function tryHandleMemo(element: ReactElement): Promise<Node[]> | undefined {
+  if (typeof element.type !== "object" || element.type === null)
+    return undefined;
+
+  const typeObject = element.type as unknown as Partial<MemoLike>;
+  if (typeObject.$$typeof !== REACT_MEMO_TYPE) return undefined;
+
+  const innerType = typeObject.type;
+  if (isFunctionComponent(innerType)) {
+    return fromJsxInternal(innerType(element.props));
+  }
+
+  const cloned: ReactElement = {
+    ...element,
+    type: innerType as ReactElement["type"],
+  } as ReactElement;
+
+  return processReactElement(cloned);
+}
+
+async function processReactElement(element: ReactElement): Promise<Node[]> {
+  if (isFunctionComponent(element.type)) {
+    return fromJsxInternal(element.type(element.props));
+  }
+
+  const forwardRefResult = tryHandleForwardRef(element);
+  if (forwardRefResult !== undefined) return forwardRefResult;
+
+  const memoResult = tryHandleMemo(element);
+  if (memoResult !== undefined) return memoResult;
 
   // Handle React fragments
   if (
@@ -86,7 +145,7 @@ async function processReactElement(element: ReactElement): Promise<Node[]> {
   const children = await collectChildren(element);
   const style = extractStyleFromProps(element.props) as PartialStyle;
 
-  if (element.type in stylePresets) {
+  if (typeof element.type === "string" && element.type in stylePresets) {
     Object.assign(
       style,
       stylePresets[element.type as keyof JSX.IntrinsicElements],

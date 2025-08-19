@@ -116,13 +116,13 @@ pub struct Style {
   /// Width of the element's border on each side (top, right, bottom, left).
   pub border_width: Sides<LengthUnit>,
   /// Longhand: top border width. Overrides `border_width` top value.
-  pub border_width_top: Option<LengthUnit>,
+  pub border_top_width: Option<LengthUnit>,
   /// Longhand: right border width. Overrides `border_width` right value.
-  pub border_width_right: Option<LengthUnit>,
+  pub border_right_width: Option<LengthUnit>,
   /// Longhand: bottom border width. Overrides `border_width` bottom value.
-  pub border_width_bottom: Option<LengthUnit>,
+  pub border_bottom_width: Option<LengthUnit>,
   /// Longhand: left border width. Overrides `border_width` left value.
-  pub border_width_left: Option<LengthUnit>,
+  pub border_left_width: Option<LengthUnit>,
   /// How images should be fitted within their container.
   pub object_fit: ObjectFit,
   /// Background gradient(s).
@@ -132,9 +132,9 @@ pub struct Style {
   /// Box shadow effect for the element.
   pub box_shadow: Option<BoxShadows>,
   /// Controls the size of implicitly-created grid columns.
-  pub grid_auto_columns: Option<Vec<GridTrackSize>>,
+  pub grid_auto_columns: Option<GridTrackSizes>,
   /// Controls the size of implicitly-created grid rows.
-  pub grid_auto_rows: Option<Vec<GridTrackSize>>,
+  pub grid_auto_rows: Option<GridTrackSizes>,
   /// Controls how auto-placed items are inserted in the grid.
   pub grid_auto_flow: Option<GridAutoFlow>,
   /// Specifies a grid item's size and location within the grid column.
@@ -142,9 +142,9 @@ pub struct Style {
   /// Specifies a grid item's size and location within the grid row.
   pub grid_row: Option<GridLine>,
   /// Defines the line names and track sizing functions of the grid columns.
-  pub grid_template_columns: Option<Vec<GridTemplateComponent>>,
+  pub grid_template_columns: Option<GridTemplateComponents>,
   /// Defines the line names and track sizing functions of the grid rows.
-  pub grid_template_rows: Option<Vec<GridTemplateComponent>>,
+  pub grid_template_rows: Option<GridTemplateComponents>,
   /// Defines named grid areas specified via `grid-template-areas`.
   pub grid_template_areas: Option<GridTemplateAreas>,
   /// Inheritable style properties that cascade to child elements.
@@ -192,10 +192,10 @@ impl Default for Style {
       flex_basis: Default::default(),
       flex_wrap: FlexWrap::NoWrap,
       border_width: Sides([LengthUnit::zero(); 4]),
-      border_width_top: None,
-      border_width_right: None,
-      border_width_bottom: None,
-      border_width_left: None,
+      border_top_width: None,
+      border_right_width: None,
+      border_bottom_width: None,
+      border_left_width: None,
       object_fit: Default::default(),
       box_shadow: Default::default(),
       background_color: None,
@@ -262,7 +262,7 @@ pub struct InheritableStyle {
 impl Style {
   #[inline]
   fn convert_template_components(
-    components: &Option<Vec<GridTemplateComponent>>,
+    components: &Option<GridTemplateComponents>,
     context: &RenderContext,
   ) -> (Vec<taffy::GridTemplateComponent<String>>, Vec<Vec<String>>) {
     let mut track_components: Vec<taffy::GridTemplateComponent<String>> = Vec::new();
@@ -270,11 +270,11 @@ impl Style {
     let mut pending_line_names: Vec<String> = Vec::new();
 
     if let Some(list) = components {
-      for comp in list.iter() {
+      for comp in list.0.iter() {
         match comp {
           GridTemplateComponent::LineNames(names) => {
             if !names.is_empty() {
-              pending_line_names.extend_from_slice(names);
+              pending_line_names.extend_from_slice(&names[..]);
             }
           }
           GridTemplateComponent::Single(track_size) => {
@@ -384,10 +384,10 @@ impl Style {
   fn resolved_border_width(&self) -> taffy::Rect<LengthUnit> {
     Self::resolve_rect_with_longhands(
       self.border_width,
-      self.border_width_top,
-      self.border_width_right,
-      self.border_width_bottom,
-      self.border_width_left,
+      self.border_top_width,
+      self.border_right_width,
+      self.border_bottom_width,
+      self.border_left_width,
     )
   }
 
@@ -430,10 +430,10 @@ impl Style {
         height: self.max_height.resolve_to_dimension(context),
       },
       grid_auto_columns: self.grid_auto_columns.as_ref().map_or_else(Vec::new, |v| {
-        v.iter().map(|s| s.to_min_max(context)).collect()
+        v.0.iter().map(|s| s.to_min_max(context)).collect()
       }),
       grid_auto_rows: self.grid_auto_rows.as_ref().map_or_else(Vec::new, |v| {
-        v.iter().map(|s| s.to_min_max(context)).collect()
+        v.0.iter().map(|s| s.to_min_max(context)).collect()
       }),
       grid_auto_flow: self.grid_auto_flow.unwrap_or_default().into(),
       grid_column: self

@@ -25,18 +25,18 @@ for await (const font of glob.scan(
   );
 }
 
-await renderer.loadFontAsync(
-  await file(
-    "../../assets/fonts/noto-sans/google-sans-code-v11-latin-regular.woff2",
-  ).arrayBuffer(),
-);
-
 const component = await fromJsx(<Component />);
+
+const start = performance.now();
 
 const buffer = await renderer.renderAsync(component, {
   width: 1200,
   height: 630,
   format: "WebP" as OutputFormat.WebP,
 });
+
+const end = performance.now();
+
+console.log(`Rendered in ${Math.round(end - start)}ms`);
 
 await write("./og-image.webp", buffer);

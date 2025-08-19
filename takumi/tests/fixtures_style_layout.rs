@@ -1,8 +1,8 @@
 use takumi::layout::{
   node::ContainerNode,
   style::{
-    Color, Display, FlexDirection, Gap, GridLengthUnit, GridTemplateComponent, GridTrackSize,
-    InheritableStyle,
+    Color, Display, FlexDirection, Gap, GridLengthUnit, GridTemplateComponent,
+    GridTemplateComponents, GridTrackSize, InheritableStyle,
     LengthUnit::{Percentage, Px},
     Style,
   },
@@ -192,10 +192,10 @@ fn test_style_grid_template_columns() {
       width: 200.0.into(),
       height: 200.0.into(),
       display: Display::Grid,
-      grid_template_columns: Some(vec![
+      grid_template_columns: Some(GridTemplateComponents(vec![
         GridTemplateComponent::Single(GridTrackSize::Fixed(GridLengthUnit::Unit(Px(50.0)))),
         GridTemplateComponent::Single(GridTrackSize::Fixed(GridLengthUnit::Unit(Px(100.0)))),
-      ]),
+      ])),
       background_color: Some(Color([0, 0, 255, 255])), // Blue background
       ..Default::default()
     },
@@ -232,10 +232,10 @@ fn test_style_grid_template_rows() {
       width: 200.0.into(),
       height: 200.0.into(),
       display: Display::Grid,
-      grid_template_rows: Some(vec![
+      grid_template_rows: Some(GridTemplateComponents(vec![
         GridTemplateComponent::Single(GridTrackSize::Fixed(GridLengthUnit::Unit(Px(50.0)))),
         GridTemplateComponent::Single(GridTrackSize::Fixed(GridLengthUnit::Unit(Px(100.0)))),
-      ]),
+      ])),
       background_color: Some(Color([0, 0, 255, 255])), // Blue background
       ..Default::default()
     },

@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { User2 } from "lucide-react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { container } from "../../src/helpers";
 import { fromJsx } from "../../src/jsx/jsx";
@@ -132,6 +133,10 @@ describe("fromJsx", () => {
     expect(fromJsx(<img alt="No src" />)).rejects.toThrowError(
       "Image element must have a 'src' prop.",
     );
+  });
+
+  test("handles external lucide-react icon", async () => {
+    expect((await fromJsx(<User2 />)).type).toBe("image");
   });
 
   test("handles deeply nested structures", async () => {

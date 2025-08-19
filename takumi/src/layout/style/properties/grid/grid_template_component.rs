@@ -1,10 +1,52 @@
-use cssparser::Parser;
+use cssparser::{Parser, ParserInput};
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
 use crate::layout::style::{FromCss, ParseResult};
 
 use super::{GridRepeatTrack, GridRepetitionCount, GridTrackSize};
+
+/// A transparent wrapper around a list of `GridTemplateComponent`.
+///
+/// This exists to provide a distinct type for template component lists while
+/// preserving JSON compatibility (serialized as a plain array) and clean TS types.
+#[derive(Debug, Clone, Deserialize, Serialize, TS, PartialEq)]
+#[serde(try_from = "GridTemplateComponentsValue")]
+#[ts(as = "GridTemplateComponentsValue")]
+pub struct GridTemplateComponents(pub Vec<GridTemplateComponent>);
+
+/// Serializable input for `GridTemplateComponents` that accepts either a
+/// pre-parsed component list or a CSS string to be parsed at runtime.
+#[derive(Debug, Clone, Deserialize, Serialize, TS, PartialEq)]
+#[serde(untagged)]
+pub enum GridTemplateComponentsValue {
+  /// Explicit list of template components.
+  Components(Vec<GridTemplateComponent>),
+  /// CSS value to parse (e.g. "[a] 1fr [b] 2fr" or "repeat(3, 1fr)").
+  Css(String),
+}
+
+impl TryFrom<GridTemplateComponentsValue> for GridTemplateComponents {
+  type Error = &'static str;
+
+  fn try_from(value: GridTemplateComponentsValue) -> Result<Self, Self::Error> {
+    match value {
+      GridTemplateComponentsValue::Components(components) => Ok(GridTemplateComponents(components)),
+      GridTemplateComponentsValue::Css(css) => {
+        let mut input = ParserInput::new(&css);
+        let mut parser = Parser::new(&mut input);
+
+        let mut components = Vec::new();
+
+        while let Ok(component) = GridTemplateComponent::from_css(&mut parser) {
+          components.push(component);
+        }
+
+        Ok(GridTemplateComponents(components))
+      }
+    }
+  }
+}
 
 /// Represents a track sizing function or a list of line names between tracks
 #[derive(Debug, Clone, Deserialize, Serialize, TS, PartialEq)]
