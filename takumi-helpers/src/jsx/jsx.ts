@@ -84,13 +84,19 @@ async function processReactElement(element: ReactElement): Promise<Node[]> {
   }
 
   const children = await collectChildren(element);
-  const style = extractStyleFromProps(element.props);
+  const style = extractStyleFromProps(element.props) as PartialStyle;
+
+  if (element.type in stylePresets) {
+    Object.assign(
+      style,
+      stylePresets[element.type as keyof JSX.IntrinsicElements],
+    );
+  }
 
   return [
     container({
       children,
-      ...stylePresets[element.type as keyof JSX.IntrinsicElements],
-      ...(style as PartialStyle),
+      style,
     }),
   ];
 }
@@ -100,16 +106,16 @@ function createImageElement(element: ReactElement<ComponentProps<"img">>) {
     throw new Error("Image element must have a 'src' prop.");
   }
 
-  const style = extractStyleFromProps(element.props);
+  const style = extractStyleFromProps(element.props) as PartialStyle;
 
   return image({
     src: element.props.src,
-    style: style as PartialStyle,
+    style,
   });
 }
 
 function createSvgElement(element: ReactElement<ComponentProps<"svg">>) {
-  const style = extractStyleFromProps(element.props);
+  const style = extractStyleFromProps(element.props) as PartialStyle;
 
   const svg = renderToStaticMarkup(
     cloneElement(
@@ -124,32 +130,16 @@ function createSvgElement(element: ReactElement<ComponentProps<"svg">>) {
 
   return image({
     src: svg,
-    style: style as PartialStyle,
+    style,
   });
 }
 
-function extractStyleFromProps(props: unknown): CSSProperties | undefined {
-  if (typeof props !== "object" || props === null) return undefined;
+function extractStyleFromProps(props: unknown): CSSProperties {
+  if (typeof props !== "object" || props === null) return {};
 
-  const style: CSSProperties =
-    "style" in props ? (props.style as CSSProperties) : {};
-
-  const width =
-    "width" in props &&
-    (typeof props.width === "number" || typeof props.width === "string")
-      ? props.width
-      : undefined;
-
-  const height =
-    "height" in props &&
-    (typeof props.height === "number" || typeof props.height === "string")
-      ? props.height
-      : undefined;
-
-  if (width !== undefined && !("width" in style)) style.width = width;
-  if (height !== undefined && !("height" in style)) style.height = height;
-
-  return style;
+  return "style" in props && typeof props.style === "object"
+    ? (props.style as CSSProperties)
+    : {};
 }
 
 function isHtmlElement<T extends keyof JSX.IntrinsicElements>(

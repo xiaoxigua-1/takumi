@@ -11,7 +11,6 @@ const renderer = new Renderer({
       data: await file("../../assets/images/takumi.svg").arrayBuffer(),
     },
   ],
-  debug: true,
 });
 
 const glob = new Glob("*.woff2");
@@ -33,10 +32,6 @@ await renderer.loadFontAsync(
 );
 
 const component = await fromJsx(<Component />);
-
-if (!component) {
-  throw new Error("Failed to convert component to Takumi node");
-}
 
 const buffer = await renderer.renderAsync(component, {
   width: 1200,
