@@ -51,7 +51,13 @@ impl<Nodes: Node<Nodes>> Node<Nodes> for ImageNode {
       return Size { width, height };
     }
 
-    let image = resolve_image(&self.src, context.global).unwrap();
+    let image = match resolve_image(&self.src, context.global) {
+      Ok(img) => img,
+      Err(_) => {
+        // If the image cannot be resolved, return zero size to avoid panics during layout.
+        return Size { width: 0.0, height: 0.0 };
+      }
+    };
 
     let size = match &*image {
       ImageSource::Svg(svg) => Size {
