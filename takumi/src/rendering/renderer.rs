@@ -3,12 +3,12 @@ use std::io::{Seek, Write};
 use image::{ExtendedColorType, ImageFormat, RgbaImage, codecs::jpeg::JpegEncoder};
 use serde::{Deserialize, Serialize};
 use slotmap::{DefaultKey, KeyData, SecondaryMap};
-use taffy::{AvailableSpace, NodeId, Point, TaffyTree, geometry::Size};
+use taffy::{AvailableSpace, Layout, NodeId, Point, TaffyTree, geometry::Size};
 
 use crate::{
   GlobalContext,
   layout::{Viewport, node::Node},
-  rendering::{FastBlendImage, draw_debug_border},
+  rendering::{BoxShadowResolved, FastBlendImage, draw_debug_border},
 };
 
 use crate::rendering::RenderContext;
@@ -222,14 +222,53 @@ impl<Nodes: Node<Nodes>> ImageRenderer<Nodes> {
       )
       .unwrap();
 
-    draw_node_with_layout(
-      taffy_context,
-      global,
-      viewport,
-      &mut canvas,
-      taffy_context.root_node_id,
-      Point::zero(),
-    );
+    // When the `rayon` feature is enabled, draw nodes in parallel onto minimal per-node canvases
+    // and then composite them back to the main canvas in the original paint order.
+    // Fallback to the original sequential renderer otherwise.
+
+    // Collect paint tasks in paint order (preorder: parent then children)
+    let tasks = collect_paint_tasks(taffy_context);
+
+    // Fast path: single node can draw directly onto the main canvas to preserve
+    // exact pixel parity with the legacy sequential renderer.
+    if tasks.len() == 1 {
+      let t = &tasks[0];
+      let render_context = RenderContext {
+        global,
+        viewport,
+        parent_font_size: t.parent_font_size,
+      };
+
+      t.node
+        .draw_on_canvas(&render_context, &mut canvas, t.layout);
+
+      if global.draw_debug_border {
+        draw_debug_border(&mut canvas, t.layout);
+      }
+
+      return Ok(canvas.0);
+    }
+
+    // Render each task on a minimal canvas
+    #[cfg(feature = "rayon")]
+    let jobs: Vec<PaintJob> = {
+      use rayon::prelude::*;
+      tasks
+        .par_iter()
+        .map(|task| render_task_to_job(task, global, viewport))
+        .collect()
+    };
+
+    #[cfg(not(feature = "rayon"))]
+    let jobs: Vec<PaintJob> = tasks
+      .iter()
+      .map(|task| render_task_to_job(task, global, viewport))
+      .collect();
+
+    // Composite in order to preserve stacking
+    for job in jobs {
+      canvas.overlay_image(&job.image, job.overlay_left, job.overlay_top);
+    }
 
     Ok(canvas.0)
   }
@@ -242,46 +281,185 @@ impl<Nodes: Node<Nodes>> ImageRenderer<Nodes> {
   }
 }
 
-fn draw_node_with_layout<Nodes: Node<Nodes>>(
+/// A collected paint task representing a single node draw with absolute layout.
+struct PaintTask<Nodes: Node<Nodes>> {
+  node: Nodes,
+  layout: Layout,
+  parent_font_size: f32,
+}
+
+/// A rendered job result with an image and its overlay position.
+struct PaintJob {
+  image: RgbaImage,
+  overlay_left: u32,
+  overlay_top: u32,
+}
+
+fn collect_paint_tasks<Nodes: Node<Nodes>>(
   taffy_context: &TaffyContext<Nodes>,
+) -> Vec<PaintTask<Nodes>> {
+  let mut tasks: Vec<PaintTask<Nodes>> = Vec::new();
+
+  fn walk<Nodes: Node<Nodes>>(
+    taffy_context: &TaffyContext<Nodes>,
+    node_id: NodeId,
+    accumulated_offset: Point<f32>,
+    tasks: &mut Vec<PaintTask<Nodes>>,
+  ) {
+    let node_render = taffy_context
+      .node_map
+      .get(KeyData::from_ffi(node_id.into()).into())
+      .unwrap();
+
+    let mut layout = *taffy_context.taffy.layout(node_id).unwrap();
+    layout.location.x += accumulated_offset.x;
+    layout.location.y += accumulated_offset.y;
+
+    tasks.push(PaintTask {
+      node: node_render.node.clone(),
+      layout,
+      parent_font_size: node_render.parent_font_size,
+    });
+
+    for child in taffy_context.taffy.children(node_id).unwrap() {
+      walk(taffy_context, child, layout.location, tasks);
+    }
+  }
+
+  walk(
+    taffy_context,
+    taffy_context.root_node_id,
+    Point::zero(),
+    &mut tasks,
+  );
+
+  tasks
+}
+
+fn render_task_to_job<Nodes: Node<Nodes>>(
+  task: &PaintTask<Nodes>,
   global: &GlobalContext,
   viewport: Viewport,
-  canvas: &mut FastBlendImage,
-  node_id: NodeId,
-  relative_offset: Point<f32>,
-) {
-  let node_render = taffy_context
-    .node_map
-    .get(KeyData::from_ffi(node_id.into()).into())
-    .unwrap();
-
-  let mut node_layout = *taffy_context.taffy.layout(node_id).unwrap();
-
-  node_layout.location.x += relative_offset.x;
-  node_layout.location.y += relative_offset.y;
-
+) -> PaintJob {
   let render_context = RenderContext {
     global,
     viewport,
-    parent_font_size: node_render.parent_font_size,
+    parent_font_size: task.parent_font_size,
   };
 
-  node_render
+  // Compute minimal integer canvas bounds matching runtime truncation behavior
+  let (overlay_left, overlay_top, width, height) =
+    compute_paint_canvas_bounds(&task.node, &task.layout, &render_context);
+
+  // Create minimal canvas
+  let mut local_canvas = FastBlendImage(RgbaImage::new(width, height));
+
+  // Shift layout into local space
+  let mut local_layout = task.layout;
+  local_layout.location.x -= overlay_left as f32;
+  local_layout.location.y -= overlay_top as f32;
+
+  // Draw node
+  task
     .node
-    .draw_on_canvas(&render_context, canvas, node_layout);
+    .draw_on_canvas(&render_context, &mut local_canvas, local_layout);
 
+  // Optional debug border
   if global.draw_debug_border {
-    draw_debug_border(canvas, node_layout);
+    draw_debug_border(&mut local_canvas, local_layout);
   }
 
-  for child in taffy_context.taffy.children(node_id).unwrap() {
-    draw_node_with_layout(
-      taffy_context,
-      global,
-      viewport,
-      canvas,
-      child,
-      node_layout.location,
-    );
+  PaintJob {
+    image: local_canvas.0,
+    overlay_left,
+    overlay_top,
   }
+}
+
+type UiRect = taffy::Rect<u32>;
+
+fn rect_from_layout_base(layout: &Layout) -> UiRect {
+  let left = clamp_trunc_to_u32(layout.location.x);
+  let top = clamp_trunc_to_u32(layout.location.y);
+  let right = left + (layout.size.width.max(0.0) as u32);
+  let bottom = top + (layout.size.height.max(0.0) as u32);
+
+  UiRect {
+    left,
+    right,
+    top,
+    bottom,
+  }
+}
+
+fn rect_union_in_place(a: &mut UiRect, b: &UiRect) {
+  if b.left < a.left {
+    a.left = b.left;
+  }
+  if b.top < a.top {
+    a.top = b.top;
+  }
+  if b.right > a.right {
+    a.right = b.right;
+  }
+  if b.bottom > a.bottom {
+    a.bottom = b.bottom;
+  }
+}
+
+#[inline]
+fn rect_width_height(rect: &UiRect) -> (u32, u32) {
+  (
+    rect.right.saturating_sub(rect.left),
+    rect.bottom.saturating_sub(rect.top),
+  )
+}
+
+#[inline]
+fn clamp_trunc_to_u32(value: f32) -> u32 {
+  if value < 0.0 { 0 } else { value as u32 }
+}
+
+fn compute_outset_shadow_rect(resolved: &BoxShadowResolved, layout: &Layout) -> UiRect {
+  let blur = resolved.blur_radius.max(0.0);
+  let spread = resolved.spread_radius;
+  let inflate = (blur + spread) * 2.0;
+
+  let shadow_w = (layout.size.width + inflate).max(0.0) as u32;
+  let shadow_h = (layout.size.height + inflate).max(0.0) as u32;
+
+  let left = clamp_trunc_to_u32(layout.location.x + (resolved.offset_x - blur - spread));
+  let top = clamp_trunc_to_u32(layout.location.y + (resolved.offset_y - blur - spread));
+
+  UiRect {
+    left,
+    top,
+    right: left + shadow_w,
+    bottom: top + shadow_h,
+  }
+}
+
+fn compute_paint_canvas_bounds<Nodes: Node<Nodes>>(
+  node: &Nodes,
+  layout: &Layout,
+  context: &RenderContext,
+) -> (u32, u32, u32, u32) {
+  // Base bounds
+  let mut bounds = rect_from_layout_base(layout);
+
+  if let Some(shadows) = &node.get_style().box_shadow {
+    for shadow in &shadows.0 {
+      if shadow.inset {
+        continue;
+      }
+
+      let resolved = BoxShadowResolved::from_box_shadow(shadow, context);
+      let shadow_rect = compute_outset_shadow_rect(&resolved, layout);
+
+      rect_union_in_place(&mut bounds, &shadow_rect);
+    }
+  }
+
+  let (width, height) = rect_width_height(&bounds);
+  (bounds.left, bounds.top, width, height)
 }
