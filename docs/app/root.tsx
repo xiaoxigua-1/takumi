@@ -31,6 +31,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta
+          name="og:image"
+          content="https://raw.githubusercontent.com/kane50613/takumi/master/example/og-image/og-image.png"
+        />
+        <meta name="twitter:card" content="summary_large_image" />
         <Meta />
         <Links />
       </head>
