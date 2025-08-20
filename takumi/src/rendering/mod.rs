@@ -1,11 +1,3 @@
-//! Rendering system for the takumi image generation library.
-//!
-//! This module contains all rendering-related functionality including:
-//! - Canvas operations and image blending
-//! - Drawing utilities for shapes and primitives
-//! - Image renderer and viewport management
-//! - Performance-optimized rendering operations
-
 /// Background and color drawing functions
 mod background_drawing;
 /// Canvas operations and image blending
