@@ -2,9 +2,9 @@
 
 # Takumi
 
-_Takumi <sub>(匠 🪓)</sub> means "artisan" or "craftsman" in Japanese._
+_Takumi (匠 in Japanese) means craftsman 🪓_. It's a library for rendering your React components to images.
 
-For newcomers, check out the [Overview](https://takumi.kane.tw/docs/) documentation for installation and usage.
+For newcomers, check out the [Getting Started](https://takumi.kane.tw/docs/getting-started) documentation for installation and usage.
 
 ## Why building another satori alternative?
 
@@ -14,6 +14,12 @@ For newcomers, check out the [Overview](https://takumi.kane.tw/docs/) documentat
 - RTL support.
 - WOFF2 font support. Trims your bundle size.
 - PNG, JPEG, WebP output support.
+
+## Showcase
+
+Takumi's Open Graph image is generated with Takumi.
+
+[![Takumi OG Image](./example/og-image/og-image.png)](example/og-image/index.tsx)
 
 ## License
 
