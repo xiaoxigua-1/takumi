@@ -8,7 +8,7 @@ Checkout the [Getting Started](https://takumi.kane.tw/docs/getting-started) page
 
 ## Walkthrough
 
-Everything starts with a `ImageRenderer` instance, it takes [`Node`](https://docs.rs/takumi/latest/takumi/layout/node/trait.Node.html) tree as input then calculate the layout.
+Everything starts with a [`ImageRenderer`](https://docs.rs/takumi/latest/takumi/rendering/renderer/struct.ImageRenderer.html) instance, it takes [`Node`](https://docs.rs/takumi/latest/takumi/layout/node/trait.Node.html) tree as input then calculate the layout.
 
 You can then draw the layout to an [`RgbaImage`](image::RgbaImage).
 

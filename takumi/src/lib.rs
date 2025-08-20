@@ -19,7 +19,7 @@
 //!
 //! # Walkthrough
 //!
-//! Everything starts with a [`ImageRenderer`](crate::rendering::ImageRenderer) instance, it takes [`Node`](crate::layout::node::Node) tree as input then calculate the layout.
+//! Everything starts with a [`ImageRenderer`](crate::rendering::renderer::ImageRenderer) instance, it takes [`Node`](crate::layout::node::Node) tree as input then calculate the layout.
 //!
 //! You can then draw the layout to an [`RgbaImage`](image::RgbaImage).
 //!
