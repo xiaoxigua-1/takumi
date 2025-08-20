@@ -3,8 +3,8 @@
   "root": true,
   "pages": [
     "--- For LLMs ---",
-    "[Leaf][llms.txt](/llms.txt)",
-    "[Brain][llms-full.txt](/llms-full.txt)",
+    "[Leaf][llms.txt](https://takumi.kane.tw/llms.txt)",
+    "[Brain][llms-full.txt](https://takumi.kane.tw/llms-full.txt)",
     "--- For Human ---",
     "index",
     "getting-started",

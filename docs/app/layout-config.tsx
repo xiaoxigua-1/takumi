@@ -1,17 +1,6 @@
+import { NavigationMenuLink } from "fumadocs-ui/components/ui/navigation-menu";
+import { BaseLinkItem } from "fumadocs-ui/layouts/links";
 import type { BaseLayoutProps } from "fumadocs-ui/layouts/shared";
-
-export const llmLinks = [
-  {
-    text: "llms.txt",
-    description: "Outline of the documentation",
-    url: "/llms.txt",
-  },
-  {
-    text: "llms-full.txt",
-    description: "Full text of the documentation",
-    url: "/llms-full.txt",
-  },
-];
 
 export const baseOptions: BaseLayoutProps = {
   githubUrl: "https://github.com/kane50613/takumi",
@@ -34,9 +23,22 @@ export const baseOptions: BaseLayoutProps = {
       url: "/playground",
     },
     {
-      text: "LLMs",
+      text: "For LLMs",
       type: "menu",
-      items: llmLinks,
+      items: [
+        {
+          text: "llms.txt",
+          url: "/llms.txt",
+          description: "Outline of the documentation",
+          external: true,
+        },
+        {
+          text: "llms-full.txt",
+          url: "/llms-full.txt",
+          description: "Full text of the documentation",
+          external: true,
+        },
+      ],
     },
   ],
 };
