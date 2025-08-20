@@ -17,8 +17,9 @@ You can then draw the layout to an [`RgbaImage`](image::RgbaImage).
 ```rust
 use takumi::{
   layout::{
-    node::{ContainerNode, TextNode},
+    node::{ContainerNode, TextNode, NodeKind, Node},
     Viewport,
+    style::Style,
   },
   rendering::ImageRenderer,
   GlobalContext,
@@ -26,11 +27,13 @@ use takumi::{
 
 // Create a node tree with `ContainerNode` and `TextNode`
 let mut node = ContainerNode {
-  children: vec![
+  children: Some(vec![
     TextNode {
       text: "Hello, world!".to_string(),
-    }
-  ]
+      style: Style::default(),
+    }.into(),
+  ]),
+  style: Style::default(),
 };
 
 // Inherit styles for children
@@ -41,14 +44,14 @@ node.inherit_style_for_children();
 let context = GlobalContext::default();
 
 // Load fonts
-context.font_context.load_and_store(include_bytes!("font.woff2").to_vec());
+context.font_context.load_and_store(include_bytes!("../../assets/fonts/noto-sans/google-sans-code-v11-latin-regular.woff2").to_vec());
 
 // Create a renderer with a viewport
 // You should create a new renderer for each render.
-let mut renderer = ImageRenderer::new(Viewport::new(1200, 630));
+let mut renderer: ImageRenderer<NodeKind> = ImageRenderer::new(Viewport::new(1200, 630));
 
 // Construct the taffy tree, this will calculate the layout and store the result in the renderer.
-renderer.construct_taffy_tree(node);
+renderer.construct_taffy_tree(node.into(), &context);
 
 // Draw the layout to an `RgbaImage`
 let image = renderer.draw(&context).unwrap();
