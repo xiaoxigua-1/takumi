@@ -1,5 +1,13 @@
 {
   "title": "Documentation for Takumi",
   "root": true,
-  "pages": ["index", "getting-started", "deep-dives"]
+  "pages": [
+    "--- For LLMs ---",
+    "[Leaf][llms.txt](/llms.txt)",
+    "[Brain][llms-full.txt](/llms-full.txt)",
+    "--- For Human ---",
+    "index",
+    "getting-started",
+    "deep-dives"
+  ]
 }

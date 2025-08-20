@@ -1,4 +1,5 @@
 {
   "pages": ["nodejs", "wasm-web", "..."],
-  "defaultOpen": true
+  "defaultOpen": true,
+  "icon": "Book"
 }
