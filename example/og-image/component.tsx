@@ -1,7 +1,7 @@
 import { Box, Brain, Globe, type LucideIcon, Zap } from "lucide-react";
 import { createElement } from "react";
 
-const secondaryForeground = "rgba(241, 245, 249, 0.9)";
+const secondaryForeground = "rgba(241, 245, 249, 0.75)";
 const primaryForeground = "#F1F5F9";
 const borderColor = "rgba(215, 29, 54, 0.5)";
 const accentColor = "#ff3535";
@@ -16,13 +16,13 @@ export function Component() {
         height: "100%",
         fontFamily: "Plus Jakarta Sans",
         display: "grid",
-        gridTemplateColumns: "3fr 4fr",
+        gridTemplateColumns: "3fr 5fr",
         borderColor,
       }}
     >
       <div
         style={{
-          padding: "4rem",
+          paddingLeft: "4rem",
           display: "flex",
           flexDirection: "column",
           borderRightWidth: 1,
@@ -66,7 +66,7 @@ export function Component() {
             style={{
               color: accentColor,
               fontWeight: 800,
-              fontSize: "1.5rem",
+              fontSize: "1.75rem",
               padding: "0.5rem 1rem",
             }}
           >
@@ -88,7 +88,7 @@ export function Component() {
               fontSize: "1rem",
             }}
           >
-            This image was rendered with Takumi.
+            This image is rendered with Takumi.
           </span>
         </div>
       </div>
@@ -174,11 +174,11 @@ function Feature({
           width: 24,
           height: 24,
         })}
-        <span style={{ fontSize: "1.25rem", fontWeight: 600 }}>{title}</span>
+        <span style={{ fontSize: "1.5rem", fontWeight: 600 }}>{title}</span>
       </div>
       <span
         style={{
-          fontSize: "1.5rem",
+          fontSize: "1.75rem",
           color: primaryForeground,
           fontWeight: 600,
           lineHeight: 1.5,

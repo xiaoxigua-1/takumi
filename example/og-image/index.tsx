@@ -1,5 +1,5 @@
 import { join } from "node:path";
-import { type OutputFormat, Renderer } from "@takumi-rs/core";
+import { Renderer } from "@takumi-rs/core";
 import { fromJsx } from "@takumi-rs/helpers/jsx";
 import { file, Glob, write } from "bun";
 import { Component } from "./component";
@@ -29,9 +29,10 @@ const component = await fromJsx(<Component />);
 
 const start = performance.now();
 
+// github og image size
 const buffer = await renderer.renderAsync(component, {
-  width: 1200,
-  height: 630,
+  width: 1280,
+  height: 640,
 });
 
 const end = performance.now();
