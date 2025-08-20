@@ -22,7 +22,7 @@ pub struct GridTemplateComponents(pub Vec<GridTemplateComponent>);
 pub enum GridTemplateComponentsValue {
   /// Explicit list of template components.
   Components(Vec<GridTemplateComponent>),
-  /// CSS value to parse (e.g. "[a] 1fr [b] 2fr" or "repeat(3, 1fr)").
+  /// CSS value to parse (e.g. "\[a\] 1fr \[b\] 2fr" or "repeat(3, 1fr)").
   Css(String),
 }
 

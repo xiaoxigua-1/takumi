@@ -1,19 +1,7 @@
-//! # takumi
-//!
-//! High-performance Rust library for generating images with CSS Flexbox-like layouts.
-//!
-//! _Takumi (匠) means "artisan" or "craftsman" in Japanese - reflecting the precision and artistry required to craft beautiful images through code._
-//!
-//! Checkout the [minimal example](https://github.com/kane50613/takumi/blob/master/example/src/minimal.rs) for a quick start.
-//!
-//! ## Credits
-//!
-//! - [taffy](https://github.com/DioxusLabs/taffy) for the layout system.
-//! - [image](https://github.com/image-rs/image) for the image processing.
-//! - [cosmic-text](https://github.com/kornelski/cosmic-text) for the text rendering.
-//! - [woff2-patched](https://github.com/zimond/woff2-rs) for the font processing.
-//! - [ts-rs](https://github.com/AlephAlpha/ts-rs) for the type-safe serialization.
-
+#![doc(
+  html_logo_url = "https://raw.githubusercontent.com/kane50613/takumi/master/assets/images/takumi.svg",
+  html_favicon_url = "https://raw.githubusercontent.com/kane50613/takumi/master/assets/images/takumi.svg"
+)]
 #![deny(missing_docs)]
 #![deny(clippy::all)]
 #![deny(clippy::redundant_closure_for_method_calls)]
@@ -25,16 +13,76 @@
 #![allow(clippy::must_use_candidate)]
 #![allow(clippy::missing_const_for_fn)]
 
-/// Node-based layout system with flexbox support
+//! Takumi is a library with different parts to render your React components to images. This crate contains the core logic for layout, rendering.
+//!
+//! Checkout the [Getting Started](https://takumi.kane.tw/docs/getting-started) page if you are looking for Node.js / WASM bindings.
+//!
+//! # Walkthrough
+//!
+//! Everything starts with a [`ImageRenderer`](crate::rendering::ImageRenderer) instance, it takes [`Node`](crate::layout::node::Node) tree as input then calculate the layout.
+//!
+//! You can then draw the layout to an [`RgbaImage`](image::RgbaImage).
+//!
+//! # Example
+//!
+//! ```rust
+//! use takumi::{
+//!   layout::{
+//!     node::{ContainerNode, TextNode},
+//!     Viewport,
+//!   },
+//!   rendering::ImageRenderer,
+//!   GlobalContext,
+//! };
+//!
+//! // Create a node tree with `ContainerNode` and `TextNode`
+//! let mut node = ContainerNode {
+//!   children: vec![
+//!     TextNode {
+//!       text: "Hello, world!".to_string(),
+//!     }
+//!   ]
+//! };
+//!
+//! // Inherit styles for children
+//! node.inherit_style_for_children();
+//!
+//! // Create a context for storing resources, font caches.
+//! // You should reuse the context to speed up the rendering.
+//! let context = GlobalContext::default();
+//!
+//! // Load fonts
+//! context.font_context.load_and_store(include_bytes!("font.woff2").to_vec());
+//!
+//! // Create a renderer with a viewport
+//! // You should create a new renderer for each render.
+//! let mut renderer = ImageRenderer::new(Viewport::new(1200, 630));
+//!
+//! // Construct the taffy tree, this will calculate the layout and store the result in the renderer.
+//! renderer.construct_taffy_tree(node);
+//!
+//! // Draw the layout to an `RgbaImage`
+//! let image = renderer.draw(&context).unwrap();
+//! ```
+//!
+//! # Credits
+//!
+//! - [taffy](https://github.com/DioxusLabs/taffy) for the layout system.
+//! - [image](https://github.com/image-rs/image) for the image processing.
+//! - [cosmic-text](https://github.com/kornelski/cosmic-text) for the text rendering.
+//! - [woff2-patched](https://github.com/zimond/woff2-rs) for the font processing.
+//! - [ts-rs](https://github.com/AlephAlpha/ts-rs) for the type-safe serialization.
+//! - [resvg](https://github.com/linebender/resvg) for SVG parsing and rendering.
+
+/// Layout related modules, including the node tree, style parsing, and layout calculation.
 pub mod layout;
 
-/// High-performance image rendering and canvas operations
+/// Rendering related modules, including the image renderer, canvas operations.
 pub mod rendering;
 
 /// External resource management (fonts, images)
 pub mod resources;
 
-// Re-export external dependencies for convenience
 pub use image;
 pub use taffy;
 

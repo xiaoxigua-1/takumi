@@ -46,7 +46,7 @@ jobs:
       - name: Setup Rust
         uses: ./.github/actions/setup-rust
         with:
-          binstall: cargo-audit,cargo-llvm-cov
+          binstall: cargo-audit,cargo-llvm-cov,cargo-rdme
           components: rustfmt,clippy
           stage: test
 
@@ -61,6 +61,10 @@ jobs:
 
       - name: Run doc tests
         run: cargo test --doc --all-features --workspace
+
+      - name: Test README.md is up to date
+        working-directory: takumi
+        run: cargo rdme --check
 
       - name: Run security audit
         run: cargo audit

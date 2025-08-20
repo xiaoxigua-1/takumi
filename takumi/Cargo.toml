@@ -3,9 +3,10 @@ name = "takumi"
 version = "0.26.0"
 edition = "2024"
 license = "MIT"
-description = "High-performance Rust library for generating images with CSS Flexbox-like layouts."
-keywords = ["image", "css", "flexbox", "layout", "rendering"]
+description = "Render your React components to images."
+keywords = ["react", "image", "css", "flexbox", "layout", "rendering"]
 repository = "https://github.com/kane50613/takumi"
+homepage = "https://takumi.kane.tw"
 readme = "README.md"
 rust-version = "1.85.1"
 
