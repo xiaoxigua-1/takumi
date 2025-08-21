@@ -3,17 +3,21 @@
 //! This module contains CSS-like properties including layout properties,
 //! typography settings, positioning, and visual effects.
 
+mod background_image;
 mod box_shadow;
 mod color;
 mod font_weight;
 mod gap;
+mod gradient_utils;
 mod grid;
 mod length_unit;
 mod line_height;
 mod linear_gradient;
 mod parser;
+mod radial_gradient;
 mod sides;
 
+pub use background_image::*;
 pub use box_shadow::*;
 pub use color::*;
 pub use font_weight::*;
@@ -23,6 +27,7 @@ pub use length_unit::*;
 pub use line_height::*;
 pub use linear_gradient::*;
 pub use parser::*;
+pub use radial_gradient::*;
 pub use sides::*;
 
 use cosmic_text::{Align, FamilyOwned};

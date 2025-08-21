@@ -11,10 +11,10 @@ use taffy::{AvailableSpace, Layout, Size};
 
 use crate::{
   impl_node_enum,
-  layout::style::Style,
+  layout::style::{BackgroundImage, Style},
   rendering::{
     BorderRadius, BoxShadowRenderPhase, FastBlendImage, RenderContext, draw_box_shadow,
-    draw_filled_rect_color, draw_filled_rect_gradient,
+    draw_filled_rect_color, draw_filled_rect_gradient, draw_filled_rect_radial_gradient,
   },
 };
 
@@ -172,7 +172,20 @@ pub trait Node<N: Node<N>>: Send + Sync + Clone {
         .map(|radius| BorderRadius::from_layout(context, &layout, radius.into()));
 
       for image in background_image.0.iter() {
-        draw_filled_rect_gradient(canvas, layout.size, layout.location, image, radius);
+        match image {
+          BackgroundImage::Linear(gradient) => {
+            draw_filled_rect_gradient(canvas, layout.size, layout.location, gradient, radius);
+          }
+          BackgroundImage::Radial(gradient) => {
+            draw_filled_rect_radial_gradient(
+              canvas,
+              layout.size,
+              layout.location,
+              gradient,
+              radius,
+            );
+          }
+        }
       }
     }
   }

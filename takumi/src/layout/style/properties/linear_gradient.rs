@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use ts_rs::TS;
 
+use super::gradient_utils::{color_from_stops, resolve_gradient_stops};
 use crate::layout::style::{Color, FromCss, ParseResult, parse_length_percentage};
 
 /// Represents a linear gradient.
@@ -91,145 +92,17 @@ impl LinearGradient {
       position = (position - 0.001).clamp(0.0, 1.0);
     }
 
-    // Snap to exact ends when within one pixel of the edges to match expectations
-    if position <= ctx.pixel_epsilon {
-      position = 0.0;
-    } else if (1.0 - position) <= ctx.pixel_epsilon {
-      position = 1.0;
-    }
-
-    // Quantize position for caching
-    let quantized_key = (position * 65535.0).round() as u32;
-    if let Some(color) = ctx.color_cache.get(&quantized_key) {
-      return *color;
-    }
-
-    // Find the two stops that bracket the current position
-    let mut left_index = 0;
-    for (i, stop) in ctx.resolved_stops.iter().enumerate() {
-      if stop.position <= position {
-        left_index = i;
-      } else {
-        break;
-      }
-    }
-
-    let color = if left_index >= ctx.resolved_stops.len() - 1 {
-      ctx.resolved_stops[ctx.resolved_stops.len() - 1].color
-    } else {
-      let left_stop = &ctx.resolved_stops[left_index];
-      let right_stop = &ctx.resolved_stops[left_index + 1];
-      let segment_length = (right_stop.position - left_stop.position).max(1e-6);
-      let local_t = ((position - left_stop.position) / segment_length).clamp(0.0, 1.0);
-      self.interpolate_colors(left_stop.color, right_stop.color, local_t)
-    };
-
-    ctx.color_cache.insert(quantized_key, color);
-    color
+    color_from_stops(
+      position,
+      ctx.pixel_epsilon,
+      &ctx.resolved_stops,
+      &mut ctx.color_cache,
+    )
   }
 
   /// Resolves gradient steps into color stops with positions
   pub fn resolve_stops(&self) -> Vec<ResolvedGradientStop> {
-    let mut resolved_stops = Vec::new();
-    let mut last_position: Option<f32> = None;
-
-    for step in &self.stops {
-      match step {
-        GradientStop::ColorHint { color, hint: stop } => {
-          let position = stop.or(last_position).unwrap_or(0.0);
-
-          resolved_stops.push(ResolvedGradientStop {
-            color: *color,
-            position,
-          });
-
-          last_position = Some(position);
-        }
-        GradientStop::Hint(_hint_value) => {
-          // Hints are used for determining optimal color distribution, but don't add actual color stops
-        }
-      }
-    }
-
-    // Handle stops without explicit positions
-    if resolved_stops.len() > 1 {
-      // Set last stop to 1.0 if it wasn't explicitly set
-      if resolved_stops.last().map(|s| s.position) != Some(1.0)
-        && self
-          .stops
-          .last()
-          .map(|s| matches!(s, GradientStop::ColorHint { hint, .. } if hint.is_none()))
-          .unwrap_or(false)
-      {
-        if let Some(last) = resolved_stops.last_mut() {
-          last.position = 1.0;
-        }
-      }
-
-      // Distribute evenly any stops without positions
-      let mut i = 0;
-      while i < resolved_stops.len() {
-        if resolved_stops[i].position < 0.0
-          || (i > 0 && resolved_stops[i].position <= resolved_stops[i - 1].position)
-        {
-          // Find next defined position
-          let mut next_defined_index = i + 1;
-          while next_defined_index < resolved_stops.len()
-            && (resolved_stops[next_defined_index].position < 0.0
-              || resolved_stops[next_defined_index].position
-                <= resolved_stops[next_defined_index - 1].position)
-          {
-            next_defined_index += 1;
-          }
-
-          if next_defined_index < resolved_stops.len() {
-            let start_pos = resolved_stops[i - 1].position;
-            let end_pos = resolved_stops[next_defined_index].position;
-            let segments = next_defined_index - i + 1;
-
-            for j in 0..(next_defined_index - i) {
-              let t = (j + 1) as f32 / segments as f32;
-              resolved_stops[i + j].position = start_pos + t * (end_pos - start_pos);
-            }
-          } else {
-            // No more defined positions, distribute to 1.0
-            let start_pos = resolved_stops[i - 1].position;
-            let segments = resolved_stops.len() - i + 1;
-
-            for j in 0..(resolved_stops.len() - i) {
-              let t = (j + 1) as f32 / segments as f32;
-              resolved_stops[i + j].position = start_pos + t * (1.0 - start_pos);
-            }
-            break;
-          }
-
-          i = next_defined_index;
-        } else {
-          i += 1;
-        }
-      }
-    } else if resolved_stops.len() == 1 && resolved_stops[0].position < 0.0 {
-      // Only one stop, set to 0.0
-      resolved_stops[0].position = 0.0;
-    }
-
-    // Ensure first stop is at 0.0 if not already
-    if !resolved_stops.is_empty() && resolved_stops[0].position != 0.0 {
-      resolved_stops[0].position = 0.0;
-    }
-
-    resolved_stops
-  }
-
-  /// Interpolates between two colors
-  fn interpolate_colors(&self, color1: Color, color2: Color, t: f32) -> Color {
-    let mut out = [0u8; 4];
-    for (i, out) in out.iter_mut().enumerate() {
-      let c1 = color1.0[i] as f32;
-      let c2 = color2.0[i] as f32;
-      *out = (c1 * (1.0 - t) + c2 * t).round() as u8;
-    }
-    Color(out)
+    resolve_gradient_stops(&self.stops)
   }
 }
 
@@ -297,47 +170,6 @@ impl LinearGradient {
     LinearGradientDrawContext::new(self, width, height)
   }
 }
-
-/// `LinearGradients` proxy type to deserialize CSS linear gradients.
-#[derive(Debug, Clone, PartialEq, TS, Deserialize)]
-#[serde(untagged)]
-pub enum LinearGradientsValue {
-  /// Original deserialization
-  Gradients(Vec<LinearGradient>),
-  /// CSS string representation
-  Css(String),
-}
-
-impl TryFrom<LinearGradientsValue> for LinearGradients {
-  type Error = &'static str;
-
-  fn try_from(value: LinearGradientsValue) -> Result<Self, Self::Error> {
-    match value {
-      LinearGradientsValue::Gradients(gradients) => Ok(Self(gradients)),
-      LinearGradientsValue::Css(css) => {
-        let mut input = ParserInput::new(&css);
-        let mut parser = Parser::new(&mut input);
-
-        let mut gradients = vec![
-          LinearGradient::from_css(&mut parser).map_err(|_| "Failed to parse first gradient")?,
-        ];
-
-        while parser.expect_comma().is_ok() {
-          gradients
-            .push(LinearGradient::from_css(&mut parser).map_err(|_| "Failed to parse gradient")?);
-        }
-
-        Ok(Self(gradients))
-      }
-    }
-  }
-}
-
-/// A collection of linear gradients.
-#[derive(Debug, Deserialize, Serialize, Clone, PartialEq, TS)]
-#[ts(as = "LinearGradientsValue")]
-#[serde(try_from = "LinearGradientsValue")]
-pub struct LinearGradients(pub Vec<LinearGradient>);
 
 /// Represents either a linear gradient or a solid color.
 #[derive(Debug, Clone, PartialEq, TS, Serialize, Deserialize)]

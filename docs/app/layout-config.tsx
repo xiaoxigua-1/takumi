@@ -1,5 +1,3 @@
-import { NavigationMenuLink } from "fumadocs-ui/components/ui/navigation-menu";
-import { BaseLinkItem } from "fumadocs-ui/layouts/links";
 import type { BaseLayoutProps } from "fumadocs-ui/layouts/shared";
 
 export const baseOptions: BaseLayoutProps = {

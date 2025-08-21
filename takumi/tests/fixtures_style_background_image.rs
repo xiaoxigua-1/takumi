@@ -1,47 +1,29 @@
 use takumi::layout::{
-  node::ContainerNode,
-  style::{
-    Angle, Color, GradientStop, InheritableStyle,
-    LengthUnit::{Percentage, Px},
-    LinearGradient, LinearGradients, Style,
-  },
+  node::{ContainerNode, NodeKind},
+  style::{BackgroundImagesValue, LengthUnit::Percentage, Style},
 };
 
 mod test_utils;
 use test_utils::run_style_width_test;
 
-#[test]
-fn test_style_background_image_gradient_basic() {
-  // linear-gradient(45deg, #007aff, #34c759)
-  let gradient = LinearGradient {
-    stops: vec![
-      GradientStop::ColorHint {
-        color: Color([0, 122, 255, 255]),
-        hint: None,
-      },
-      GradientStop::ColorHint {
-        color: Color([52, 199, 89, 255]),
-        hint: None,
-      },
-    ],
-    angle: Angle(45.0),
-  };
-
-  let container = ContainerNode {
+fn create_container(background_images: BackgroundImagesValue) -> ContainerNode<NodeKind> {
+  ContainerNode {
     style: Style {
       width: Percentage(100.0),
       height: Percentage(100.0),
-      // Gradient used as background_image (per API it supports Gradient)
-      background_image: Some(LinearGradients(vec![gradient])),
-      // Add radius to exercise rounded background composition path
-      inheritable_style: InheritableStyle {
-        border_radius: Some(Px(12.0).into()),
-        ..Default::default()
-      },
+      background_image: Some(background_images.try_into().unwrap()),
       ..Default::default()
     },
     children: None,
-  };
+  }
+}
+
+#[test]
+fn test_style_background_image_gradient_basic() {
+  let background_images =
+    BackgroundImagesValue::Css("linear-gradient(45deg, #007aff, #34c759)".to_string());
+
+  let container = create_container(background_images);
 
   run_style_width_test(
     container.into(),
@@ -52,32 +34,52 @@ fn test_style_background_image_gradient_basic() {
 #[test]
 fn test_style_background_image_gradient_alt() {
   // linear-gradient(0deg, #ff3b30, #5856d6)
-  let gradient = LinearGradient {
-    stops: vec![
-      GradientStop::ColorHint {
-        color: Color([255, 59, 48, 255]),
-        hint: None,
-      },
-      GradientStop::ColorHint {
-        color: Color([88, 86, 214, 255]),
-        hint: Some(1.0),
-      },
-    ],
-    angle: Angle(0.0),
-  };
+  let background_images =
+    BackgroundImagesValue::Css("linear-gradient(0deg, #ff3b30, #5856d6)".to_string());
 
-  let container = ContainerNode {
-    style: Style {
-      width: Percentage(100.0),
-      height: Percentage(100.0),
-      background_image: Some(LinearGradients(vec![gradient])),
-      ..Default::default()
-    },
-    children: None,
-  };
+  let container = create_container(background_images);
 
   run_style_width_test(
     container.into(),
     "tests/fixtures/style_background_image_gradient_alt.png",
+  );
+}
+
+#[test]
+fn test_style_background_image_radial_basic() {
+  let background_images =
+    BackgroundImagesValue::Css("radial-gradient(#e66465, #9198e5)".to_string());
+
+  let container = create_container(background_images);
+
+  run_style_width_test(
+    container.into(),
+    "tests/fixtures/style_background_image_radial_basic.png",
+  );
+}
+
+#[test]
+fn test_style_background_image_radial_mixed() {
+  let background_images = BackgroundImagesValue::Css("radial-gradient(ellipse at top, #e66465, transparent), radial-gradient(ellipse at bottom, #4d9f0c, transparent)".to_string());
+
+  let container = create_container(background_images);
+
+  run_style_width_test(
+    container.into(),
+    "tests/fixtures/style_background_image_radial_mixed.png",
+  );
+}
+
+#[test]
+fn test_style_background_image_linear_radial_mixed() {
+  let background_images = BackgroundImagesValue::Css(
+    "radial-gradient(ellipse at top, #e66465, transparent), radial-gradient(ellipse at bottom, #4d9f0c, transparent)".to_string(),
+  );
+
+  let container = create_container(background_images);
+
+  run_style_width_test(
+    container.into(),
+    "tests/fixtures/style_background_image_linear_radial_mixed.png",
   );
 }

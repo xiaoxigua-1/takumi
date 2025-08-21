@@ -125,8 +125,8 @@ pub struct Style {
   pub border_left_width: Option<LengthUnit>,
   /// How images should be fitted within their container.
   pub object_fit: ObjectFit,
-  /// Background gradient(s).
-  pub background_image: Option<LinearGradients>,
+  /// Background image(s): linear or radial gradients.
+  pub background_image: Option<BackgroundImages>,
   /// Background color for the element.
   pub background_color: Option<Color>,
   /// Box shadow effect for the element.

@@ -1,0 +1,72 @@
+use cssparser::{Parser, ParserInput};
+use serde::{Deserialize, Serialize};
+use ts_rs::TS;
+
+use crate::layout::style::{FromCss, LinearGradient, ParseResult, RadialGradient};
+
+/// Background image variants supported by Takumi.
+#[derive(Debug, Clone, PartialEq, TS, Deserialize, Serialize)]
+#[serde(untagged)]
+pub enum BackgroundImage {
+  /// CSS linear-gradient(...)
+  Linear(LinearGradient),
+  /// CSS radial-gradient(...)
+  Radial(RadialGradient),
+}
+
+impl<'i> FromCss<'i> for BackgroundImage {
+  fn from_css(input: &mut Parser<'i, '_>) -> ParseResult<'i, BackgroundImage> {
+    if let Ok(gradient) = input.try_parse(LinearGradient::from_css) {
+      return Ok(BackgroundImage::Linear(gradient));
+    }
+    if let Ok(gradient) = input.try_parse(RadialGradient::from_css) {
+      return Ok(BackgroundImage::Radial(gradient));
+    }
+    // TODO: url(...) images can be supported here later
+    Err(input.new_error(cssparser::BasicParseErrorKind::QualifiedRuleInvalid))
+  }
+}
+
+/// Proxy type to deserialize CSS background images as either a list or CSS string
+#[derive(Debug, Clone, PartialEq, TS, Deserialize)]
+#[serde(untagged)]
+pub enum BackgroundImagesValue {
+  /// Structured variant: explicit list of background images
+  Images(Vec<BackgroundImage>),
+  /// CSS string variant
+  Css(String),
+}
+
+/// A collection of background images.
+#[derive(Debug, Deserialize, Serialize, Clone, PartialEq, TS)]
+#[ts(as = "BackgroundImagesValue")]
+#[serde(try_from = "BackgroundImagesValue")]
+pub struct BackgroundImages(pub Vec<BackgroundImage>);
+
+impl TryFrom<BackgroundImagesValue> for BackgroundImages {
+  type Error = &'static str;
+
+  fn try_from(value: BackgroundImagesValue) -> Result<Self, Self::Error> {
+    match value {
+      BackgroundImagesValue::Images(images) => Ok(Self(images)),
+      BackgroundImagesValue::Css(css) => {
+        let mut input = ParserInput::new(&css);
+        let mut parser = Parser::new(&mut input);
+
+        let mut images = vec![
+          BackgroundImage::from_css(&mut parser)
+            .map_err(|_| "Failed to parse first background image")?,
+        ];
+
+        while parser.expect_comma().is_ok() {
+          images.push(
+            BackgroundImage::from_css(&mut parser)
+              .map_err(|_| "Failed to parse background image")?,
+          );
+        }
+
+        Ok(Self(images))
+      }
+    }
+  }
+}

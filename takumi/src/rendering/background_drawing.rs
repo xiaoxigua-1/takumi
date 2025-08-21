@@ -2,7 +2,7 @@ use image::{Rgba, RgbaImage};
 use taffy::{Point, Size};
 
 use crate::{
-  layout::style::{Color, LinearGradient},
+  layout::style::{Color, LinearGradient, RadialGradient},
   rendering::{BorderRadius, FastBlendImage},
 };
 
@@ -76,4 +76,32 @@ pub fn draw_filled_rect_gradient(
 pub fn create_gradient_image(color: &LinearGradient, width: u32, height: u32) -> RgbaImage {
   let mut ctx = color.to_draw_context(width as f32, height as f32);
   RgbaImage::from_fn(width, height, |x, y| color.at(x, y, &mut ctx).into())
+}
+
+/// Draws a filled rectangle with a radial gradient.
+pub fn draw_filled_rect_radial_gradient(
+  canvas: &mut FastBlendImage,
+  size: Size<f32>,
+  offset: Point<f32>,
+  gradient: &RadialGradient,
+  radius: Option<BorderRadius>,
+) {
+  let mut gradient_image =
+    create_radial_gradient_image(gradient, size.width as u32, size.height as u32);
+
+  if let Some(radius) = radius {
+    radius.apply_to_image(&mut gradient_image);
+  }
+
+  canvas.overlay_image(&gradient_image, offset.x as u32, offset.y as u32);
+}
+
+/// Creates an image from a radial gradient.
+pub fn create_radial_gradient_image(
+  gradient: &RadialGradient,
+  width: u32,
+  height: u32,
+) -> RgbaImage {
+  let mut ctx = gradient.to_draw_context(width as f32, height as f32);
+  RgbaImage::from_fn(width, height, |x, y| gradient.at(x, y, &mut ctx).into())
 }
