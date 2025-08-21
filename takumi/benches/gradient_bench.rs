@@ -1,6 +1,8 @@
 use criterion::{BatchSize, BenchmarkId, Criterion, Throughput, criterion_group, criterion_main};
-use takumi::layout::style::{Color, GradientStop, LinearGradient};
-use takumi::rendering::create_gradient_image;
+use takumi::{
+  layout::style::{Angle, BackgroundImage, Color, GradientStop, LinearGradient},
+  rendering::render_gradient_tile,
+};
 
 fn bench_sizes() -> Vec<(u32, u32)> {
   vec![(256, 256), (512, 512), (1200, 630), (1920, 1080)]
@@ -8,7 +10,7 @@ fn bench_sizes() -> Vec<(u32, u32)> {
 
 fn sample_gradient() -> LinearGradient {
   LinearGradient {
-    angle: takumi::layout::style::Angle(45.0),
+    angle: Angle(45.0),
     stops: vec![
       GradientStop::ColorHint {
         color: Color([255, 0, 0, 255]),
@@ -28,7 +30,6 @@ fn sample_gradient() -> LinearGradient {
 
 fn bench_takumi(c: &mut Criterion) {
   let mut group = c.benchmark_group("linear_gradient");
-  let gradient = sample_gradient();
 
   for (w, h) in bench_sizes() {
     group.throughput(Throughput::Bytes((w as u64) * (h as u64) * 4));
@@ -37,9 +38,9 @@ fn bench_takumi(c: &mut Criterion) {
       &(w, h),
       |b, &(w, h)| {
         b.iter_batched(
-          || (),
-          |_| {
-            create_gradient_image(&gradient, w, h);
+          || (sample_gradient(), w, h),
+          |(gradient, w, h)| {
+            render_gradient_tile(&BackgroundImage::Linear(gradient), w, h);
           },
           BatchSize::SmallInput,
         )
