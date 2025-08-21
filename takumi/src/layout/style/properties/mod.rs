@@ -4,6 +4,9 @@
 //! typography settings, positioning, and visual effects.
 
 mod background_image;
+mod background_position;
+mod background_repeat;
+mod background_size;
 mod box_shadow;
 mod color;
 mod font_weight;
@@ -18,6 +21,9 @@ mod radial_gradient;
 mod sides;
 
 pub use background_image::*;
+pub use background_position::*;
+pub use background_repeat::*;
+pub use background_size::*;
 pub use box_shadow::*;
 pub use color::*;
 pub use font_weight::*;

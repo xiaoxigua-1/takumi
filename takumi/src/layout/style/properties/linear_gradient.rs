@@ -70,28 +70,6 @@ impl LinearGradient {
     };
     position = position.clamp(0.0, 1.0);
 
-    // Snap to exact ends for pure horizontal/vertical to ensure precise edge colors
-    if ctx.dir_y.abs() <= 1e-6 {
-      // Pure horizontal
-      if x == 0 {
-        position = 0.0;
-      } else if (x + 1) as f32 == ctx.width {
-        position = 1.0;
-      }
-    } else if ctx.dir_x.abs() <= 1e-6 {
-      // Pure vertical
-      if y == 0 {
-        position = 0.0;
-      } else if (y + 1) as f32 == ctx.height {
-        position = 1.0;
-      }
-    }
-
-    // Bias slightly toward the first color for diagonal tie cases
-    if ctx.dir_x.abs() > 1e-6 && ctx.dir_y.abs() > 1e-6 {
-      position = (position - 0.001).clamp(0.0, 1.0);
-    }
-
     color_from_stops(
       position,
       ctx.pixel_epsilon,
@@ -836,31 +814,6 @@ mod tests {
     // Test at the right (should be blue)
     let color_right = gradient.at(99, 50, &mut ctx);
     assert_eq!(color_right, Color([0, 0, 255, 255]));
-  }
-
-  #[test]
-  fn test_linear_gradient_at_diagonal() {
-    let gradient = LinearGradient {
-      angle: Angle(45.0), // Diagonal
-      stops: vec![
-        GradientStop::ColorHint {
-          color: Color([255, 0, 0, 255]), // Red
-          hint: Some(0.0),
-        },
-        GradientStop::ColorHint {
-          color: Color([0, 0, 255, 255]), // Blue
-          hint: Some(1.0),
-        },
-      ],
-    };
-
-    // Test at top-left corner
-    let mut ctx = gradient.to_draw_context(100.0, 100.0);
-    let color_top_left = gradient.at(0, 0, &mut ctx);
-    // Should be closer to red since we're going bottom-left to top-right
-    let [r, _g, b, _a] = color_top_left.0;
-    assert!(r > b); // More red than blue
-    assert_eq!(_a, 255);
   }
 
   #[test]
