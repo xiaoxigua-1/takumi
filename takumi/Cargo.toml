@@ -67,7 +67,7 @@ version = "0.45"
 default-features = false
 optional = true
 
-[dependencies.tiny-skia]
+[dev-dependencies.tiny-skia]
 version = "0.11"
 default-features = false
 features = ["std", "simd"]
