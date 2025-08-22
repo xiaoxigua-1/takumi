@@ -16,13 +16,13 @@ features = ["woff2", "woff", "image_data_uri", "svg", "rayon"]
 default-features = false
 
 [dependencies.napi]
-version = "3.1"
+version = "3"
 default-features = false
 features = ["napi10", "serde-json"]
 
 [dependencies.napi-derive]
-version = "3.1"
+version = "3"
 features = ["type-def"]
 
 [build-dependencies]
-napi-build = "2.2"
+napi-build = "2"
