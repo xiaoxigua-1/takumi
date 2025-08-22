@@ -224,6 +224,12 @@ fn collect_stretched_tile_positions(area_size: u32, tile_size: u32) -> (Vec<i32>
   (positions, new_tile_size)
 }
 
+/// Pads a vector to `target_len` by repeating its last element, or `default` if empty.
+fn pad_with_last<T: Copy>(values: &mut Vec<T>, target_len: usize, default: T) {
+  let fill = values.last().copied().unwrap_or(default);
+  values.resize(target_len, fill);
+}
+
 /// Draw layered backgrounds (gradients) with support for background-size, -position, and -repeat.
 pub fn draw_background_layers(
   style: &Style,
@@ -243,7 +249,7 @@ pub fn draw_background_layers(
   let area_w = layout.size.width as u32;
   let area_h = layout.size.height as u32;
 
-  // Resolve per-layer lists with last-value semantics
+  // Resolve per-layer lists with last-value semantics (repeat the last provided value)
   let mut positions = style
     .background_position
     .as_ref()
@@ -262,9 +268,10 @@ pub fn draw_background_layers(
     .map(|v| v.0.clone())
     .unwrap_or_default();
 
-  positions.resize(images.0.len(), BackgroundPosition::default());
-  sizes.resize(images.0.len(), BackgroundSize::Auto);
-  repeats.resize(images.0.len(), BackgroundRepeat::repeat());
+  let target_len = images.0.len();
+  pad_with_last(&mut positions, target_len, BackgroundPosition::default());
+  pad_with_last(&mut sizes, target_len, BackgroundSize::Auto);
+  pad_with_last(&mut repeats, target_len, BackgroundRepeat::repeat());
 
   // Paint each background layer in order
   for (i, image) in images.0.iter().enumerate() {
