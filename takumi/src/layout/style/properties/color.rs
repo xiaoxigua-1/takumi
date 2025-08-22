@@ -79,7 +79,7 @@ impl<'i> FromCss<'i> for Color {
         })
       }
       Token::Ident(ref ident) => {
-        if ident.as_ref() == "transparent" {
+        if ident.eq_ignore_ascii_case("transparent") {
           return Ok(Color([0, 0, 0, 0]));
         }
 
@@ -184,6 +184,12 @@ mod tests {
     // Test parsing rgb() function with alpha value using slash
     let result = parse_color_str("rgb(255 0 153 / 0.5)").unwrap();
     assert_eq!(result, Color([255, 0, 153, 128]));
+  }
+
+  #[test]
+  fn test_parse_named_color_grey() {
+    let result = parse_color_str("grey").unwrap();
+    assert_eq!(result, Color([128, 128, 128, 255]));
   }
 
   #[test]

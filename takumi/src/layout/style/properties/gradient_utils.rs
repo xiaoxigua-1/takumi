@@ -1,101 +1,18 @@
-use super::{Color, GradientStop, ResolvedGradientStop};
+use super::{Color, GradientStop, LengthUnit, ResolvedGradientStop};
+use crate::rendering::RenderContext;
 use std::collections::HashMap;
 
-/// Resolves gradient steps into color stops with positions
-pub(crate) fn resolve_gradient_stops(steps: &[GradientStop]) -> Vec<ResolvedGradientStop> {
-  let mut resolved_stops = Vec::new();
-  let mut last_position: Option<f32> = None;
-
-  for step in steps {
-    match step {
-      GradientStop::ColorHint { color, hint: stop } => {
-        let position = stop.or(last_position).unwrap_or(0.0);
-
-        resolved_stops.push(ResolvedGradientStop {
-          color: *color,
-          position,
-        });
-
-        last_position = Some(position);
-      }
-      GradientStop::Hint(_hint_value) => {
-        // Hints influence distribution but aren't color stops
-      }
-    }
-  }
-
-  // Handle stops without explicit positions
-  if resolved_stops.len() > 1 {
-    // Set last stop to 1.0 if it wasn't explicitly set
-    if resolved_stops.last().map(|s| s.position) != Some(1.0)
-      && steps
-        .last()
-        .map(|s| matches!(s, GradientStop::ColorHint { hint, .. } if hint.is_none()))
-        .unwrap_or(false)
-    {
-      if let Some(last) = resolved_stops.last_mut() {
-        last.position = 1.0;
-      }
-    }
-
-    // Distribute evenly any stops without positions
-    let mut i = 0;
-    while i < resolved_stops.len() {
-      if resolved_stops[i].position < 0.0
-        || (i > 0 && resolved_stops[i].position <= resolved_stops[i - 1].position)
-      {
-        // Find next defined position
-        let mut next_defined_index = i + 1;
-        while next_defined_index < resolved_stops.len()
-          && (resolved_stops[next_defined_index].position < 0.0
-            || resolved_stops[next_defined_index].position
-              <= resolved_stops[next_defined_index - 1].position)
-        {
-          next_defined_index += 1;
-        }
-
-        if next_defined_index < resolved_stops.len() {
-          let start_pos = resolved_stops[i - 1].position;
-          let end_pos = resolved_stops[next_defined_index].position;
-          let segments = next_defined_index - i + 1;
-
-          for j in 0..(next_defined_index - i) {
-            let t = (j + 1) as f32 / segments as f32;
-            resolved_stops[i + j].position = start_pos + t * (end_pos - start_pos);
-          }
-        } else {
-          // No more defined positions, distribute to 1.0
-          let start_pos = resolved_stops[i - 1].position;
-          let segments = resolved_stops.len() - i + 1;
-
-          for j in 0..(resolved_stops.len() - i) {
-            let t = (j + 1) as f32 / segments as f32;
-            resolved_stops[i + j].position = start_pos + t * (1.0 - start_pos);
-          }
-          break;
-        }
-
-        i = next_defined_index;
-      } else {
-        i += 1;
-      }
-    }
-  } else if resolved_stops.len() == 1 && resolved_stops[0].position < 0.0 {
-    // Only one stop, set to 0.0
-    resolved_stops[0].position = 0.0;
-  }
-
-  // Ensure first stop is at 0.0 if not already
-  if !resolved_stops.is_empty() && resolved_stops[0].position != 0.0 {
-    resolved_stops[0].position = 0.0;
-  }
-
-  resolved_stops
-}
-
-/// Interpolates between two colors in RGBA space.
+/// Interpolates between two colors in RGBA space, if t is 0.0 or 1.0, returns the first or second color.
 pub(crate) fn interpolate_rgba(c1: Color, c2: Color, t: f32) -> Color {
+  if t <= f32::EPSILON {
+    return c1;
+  }
+  if t >= 1.0 - f32::EPSILON {
+    return c2;
+  }
+
   let mut out = [0u8; 4];
+
   for ((&a_u8, &b_u8), out_i) in c1.0.iter().zip(c2.0.iter()).zip(out.iter_mut()) {
     let a = a_u8 as f32;
     let b = b_u8 as f32;
@@ -104,56 +21,338 @@ pub(crate) fn interpolate_rgba(c1: Color, c2: Color, t: f32) -> Color {
   Color(out)
 }
 
-/// Returns the color for a normalized position [0, 1] along the resolved stops.
-/// Handles pixel-edge snapping, quantization caching, and bracketed interpolation.
+/// Returns the color for a pixel-space position along the resolved stops.
 pub(crate) fn color_from_stops(
-  mut position: f32,
-  pixel_epsilon: f32,
+  position: f32,
   resolved_stops: &[ResolvedGradientStop],
   cache: &mut HashMap<u32, Color>,
 ) -> Color {
   if resolved_stops.is_empty() {
-    return Color([0, 0, 0, 0]);
+    return Color::transparent();
   }
+
   if resolved_stops.len() == 1 {
     return resolved_stops[0].color;
   }
 
-  position = position.clamp(0.0, 1.0);
-
-  // Snap to exact ends when within one pixel of the edges to match expectations
-  if position <= pixel_epsilon {
-    position = 0.0;
-  } else if (1.0 - position) <= pixel_epsilon {
-    position = 1.0;
-  }
-
-  // Quantize position for caching
-  let quantized_key = (position * 65535.0).round() as u32;
-  if let Some(color) = cache.get(&quantized_key) {
+  let cache_key = position.round().max(0.0) as u32;
+  if let Some(color) = cache.get(&cache_key) {
     return *color;
   }
 
-  // Find the two stops that bracket the current position
-  let mut left_index = 0usize;
-  for (i, stop) in resolved_stops.iter().enumerate() {
-    if stop.position <= position {
-      left_index = i;
+  // Find the two stops that bracket the current position.
+  // We want the last stop with position <= current position.
+  let left_index = resolved_stops
+    .iter()
+    .rposition(|stop| stop.position <= position)
+    .unwrap_or(0);
+
+  let right_index = resolved_stops
+    .iter()
+    .enumerate()
+    .position(|(i, stop)| i > left_index && stop.position >= position)
+    .unwrap_or(resolved_stops.len() - 1);
+
+  let color = if left_index == right_index {
+    // if the left and right indices are the same, we should return a hard stop
+    resolved_stops[left_index].color
+  } else {
+    let left_stop = &resolved_stops[left_index];
+    let right_stop = &resolved_stops[right_index];
+
+    let denom = right_stop.position - left_stop.position;
+    let interpolation_position = if denom.abs() < f32::EPSILON {
+      0.0
     } else {
-      break;
+      ((position - left_stop.position) / denom).clamp(0.0, 1.0)
+    };
+
+    interpolate_rgba(left_stop.color, right_stop.color, interpolation_position)
+  };
+
+  cache.insert(cache_key, color);
+  color
+}
+
+/// Resolve a length value used in a gradient stop to an absolute pixel position along an axis.
+pub(crate) fn stop_length_to_axis_px(
+  length: LengthUnit,
+  axis_size_px: f32,
+  context: &RenderContext,
+) -> f32 {
+  match length {
+    LengthUnit::Percentage(pct) => (pct / 100.0) * axis_size_px,
+    LengthUnit::Px(px) => px,
+    _ => length.resolve_to_px(context),
+  }
+  .max(0.0)
+}
+
+/// Resolves gradient steps into color stops with positions expressed in pixels along an axis.
+/// The `treat_equal_as_non_increasing` flag controls whether equal neighbor positions should be
+/// treated as non-increasing (and thus distributed). Linear gradients allow equal positions to
+/// create hard color jumps, while radial gradients previously distributed equals.
+pub(crate) fn resolve_stops_along_axis(
+  stops: &[GradientStop],
+  axis_size_px: f32,
+  context: &RenderContext,
+) -> Vec<ResolvedGradientStop> {
+  let mut resolved: Vec<ResolvedGradientStop> = Vec::new();
+  for (i, step) in stops.iter().enumerate() {
+    match step {
+      GradientStop::ColorHint { color, hint } => {
+        let position = hint
+          .map(|sp| stop_length_to_axis_px(sp.0, axis_size_px, context))
+          .unwrap_or(-1.0);
+
+        resolved.push(ResolvedGradientStop {
+          color: *color,
+          position,
+        });
+      }
+      GradientStop::Hint(hint) => {
+        let before_color = resolved
+          .get(i - 1)
+          .expect("There should be a color before a hint")
+          .color;
+
+        let after_color = stops
+          .get(i + 1)
+          .and_then(|stop| match stop {
+            GradientStop::ColorHint { color, hint: _ } => Some(*color),
+            GradientStop::Hint(_) => None,
+          })
+          .expect("There should be a color after a hint");
+
+        let interpolated_color = interpolate_rgba(before_color, after_color, 0.5);
+
+        resolved.push(ResolvedGradientStop {
+          color: interpolated_color,
+          position: stop_length_to_axis_px(hint.0, axis_size_px, context),
+        });
+      }
     }
   }
 
-  let color = if left_index >= resolved_stops.len() - 1 {
-    resolved_stops[resolved_stops.len() - 1].color
-  } else {
-    let left_stop = &resolved_stops[left_index];
-    let right_stop = &resolved_stops[left_index + 1];
-    let segment_length = (right_stop.position - left_stop.position).max(1e-6);
-    let local_t = ((position - left_stop.position) / segment_length).clamp(0.0, 1.0);
-    interpolate_rgba(left_stop.color, right_stop.color, local_t)
+  // If there are no color stops, return an empty vector
+  if resolved.is_empty() {
+    return resolved;
+  }
+
+  if resolved[0].position == -1.0 {
+    resolved[0].position = 0.0;
+  }
+
+  // If there is only one stop, set its position to 0.0
+  if resolved.len() == 1 {
+    return resolved;
+  }
+
+  // Distribute unspecified or non-increasing positions in pixel domain
+  let mut i = 0usize;
+  while i < resolved.len() {
+    // if the position is defined, skip it
+    if resolved[i].position >= 0.0 {
+      i += 1;
+      continue;
+    }
+
+    let last_defined_position = if i == 0 {
+      0.0
+    } else {
+      resolved
+        .get(i - 1)
+        .map(|s| s.position)
+        .unwrap_or(0.0)
+        .max(0.0)
+    };
+
+    // try to find next defined position, if not found, use the axis size
+    let next_index = match resolved.iter().skip(i + 1).position(|s| s.position >= 0.0) {
+      Some(rel_idx) => i + 1 + rel_idx,
+      None => resolved.len() - 1,
+    };
+
+    let next_position = if resolved[next_index].position < 0.0 {
+      axis_size_px
+    } else {
+      resolved[next_index].position
+    };
+
+    // number of segments between last defined and next position includes the next slot
+    let segments_count = (next_index - i + 1) as f32;
+    let step_for_each_segment = (next_position - last_defined_position) / segments_count;
+
+    // distribute the step evenly between the stops, ensuring the last stop reaches next_position
+    for (stop_index, stop) in resolved
+      .iter_mut()
+      .enumerate()
+      .skip(i)
+      .take(next_index - i + 1)
+    {
+      stop.position = last_defined_position + step_for_each_segment * ((stop_index - i + 1) as f32);
+    }
+
+    i = next_index + 1;
+  }
+
+  resolved
+}
+
+#[cfg(test)]
+mod tests {
+  use crate::{
+    GlobalContext,
+    layout::{DEFAULT_FONT_SIZE, Viewport, style::StopPosition},
   };
 
-  cache.insert(quantized_key, color);
-  color
+  use super::*;
+
+  #[test]
+  fn test_resolve_stops_along_axis() {
+    let stops = vec![
+      GradientStop::ColorHint {
+        color: Color([255, 0, 0, 255]),
+        hint: Some(StopPosition(LengthUnit::Px(10.0))),
+      },
+      GradientStop::ColorHint {
+        color: Color([0, 255, 0, 255]),
+        hint: Some(StopPosition(LengthUnit::Px(20.0))),
+      },
+      GradientStop::ColorHint {
+        color: Color([0, 0, 255, 255]),
+        hint: Some(StopPosition(LengthUnit::Percentage(30.0))),
+      },
+    ];
+
+    let ctx = RenderContext {
+      global: &GlobalContext::default(),
+      viewport: Viewport::new(40, 40),
+      parent_font_size: DEFAULT_FONT_SIZE,
+    };
+
+    let resolved = resolve_stops_along_axis(&stops, ctx.viewport.width as f32, &ctx);
+
+    assert_eq!(
+      resolved[0],
+      ResolvedGradientStop {
+        color: Color([255, 0, 0, 255]),
+        position: 10.0,
+      },
+    );
+
+    assert_eq!(
+      resolved[1],
+      ResolvedGradientStop {
+        color: Color([0, 255, 0, 255]),
+        position: 20.0,
+      },
+    );
+
+    assert_eq!(
+      resolved[2],
+      ResolvedGradientStop {
+        color: Color([0, 0, 255, 255]),
+        position: ctx.viewport.width as f32 * 0.3,
+      },
+    );
+  }
+
+  #[test]
+  fn test_distribute_evenly_between_positions() {
+    let stops = vec![
+      GradientStop::ColorHint {
+        color: Color([255, 0, 0, 255]),
+        hint: None,
+      },
+      GradientStop::ColorHint {
+        color: Color([0, 255, 0, 255]),
+        hint: None,
+      },
+      GradientStop::ColorHint {
+        color: Color([0, 0, 255, 255]),
+        hint: None,
+      },
+    ];
+
+    let ctx = RenderContext {
+      global: &GlobalContext::default(),
+      viewport: Viewport::new(40, 40),
+      parent_font_size: DEFAULT_FONT_SIZE,
+    };
+
+    let resolved = resolve_stops_along_axis(&stops, ctx.viewport.width as f32, &ctx);
+
+    assert_eq!(
+      resolved[0],
+      ResolvedGradientStop {
+        color: Color([255, 0, 0, 255]),
+        position: 0.0,
+      },
+    );
+
+    assert_eq!(
+      resolved[1],
+      ResolvedGradientStop {
+        color: Color([0, 255, 0, 255]),
+        position: ctx.viewport.width as f32 / 2.0,
+      },
+    );
+
+    assert_eq!(
+      resolved[2],
+      ResolvedGradientStop {
+        color: Color([0, 0, 255, 255]),
+        position: ctx.viewport.width as f32,
+      },
+    );
+  }
+
+  #[test]
+  fn test_hint_only() {
+    let stops = vec![
+      GradientStop::ColorHint {
+        color: Color([255, 0, 0, 255]),
+        hint: None,
+      },
+      GradientStop::Hint(StopPosition(LengthUnit::Percentage(10.0))),
+      GradientStop::ColorHint {
+        color: Color([0, 0, 255, 255]),
+        hint: None,
+      },
+    ];
+
+    let ctx = RenderContext {
+      global: &GlobalContext::default(),
+      viewport: Viewport::new(100, 40),
+      parent_font_size: DEFAULT_FONT_SIZE,
+    };
+
+    let resolved = resolve_stops_along_axis(&stops, ctx.viewport.width as f32, &ctx);
+
+    assert_eq!(
+      resolved[0],
+      ResolvedGradientStop {
+        color: Color([255, 0, 0, 255]),
+        position: 0.0,
+      },
+    );
+
+    // the mid color between red and blue should be at 10%
+    assert_eq!(
+      resolved[1],
+      ResolvedGradientStop {
+        color: interpolate_rgba(Color([255, 0, 0, 255]), Color([0, 0, 255, 255]), 0.5),
+        position: ctx.viewport.width as f32 * 0.1,
+      },
+    );
+
+    assert_eq!(
+      resolved[2],
+      ResolvedGradientStop {
+        color: Color([0, 0, 255, 255]),
+        position: ctx.viewport.width as f32,
+      },
+    );
+  }
 }

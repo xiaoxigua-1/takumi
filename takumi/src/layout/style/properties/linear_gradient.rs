@@ -1,10 +1,13 @@
 use cssparser::{Parser, ParserInput, Token, match_ignore_ascii_case};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::{collections::HashMap, ops::Deref};
 use ts_rs::TS;
 
-use super::gradient_utils::{color_from_stops, resolve_gradient_stops};
-use crate::layout::style::{Color, FromCss, ParseResult, parse_length_percentage};
+use super::gradient_utils::{color_from_stops, resolve_stops_along_axis};
+use crate::{
+  layout::style::{Color, FromCss, LengthUnit, ParseResult},
+  rendering::RenderContext,
+};
 
 /// Represents a linear gradient.
 #[derive(Debug, Clone, PartialEq, TS, Deserialize, Serialize)]
@@ -63,24 +66,19 @@ impl LinearGradient {
     let dx = x as f32 - ctx.cx;
     let dy = y as f32 - ctx.cy;
     let projection = dx * ctx.dir_x + dy * ctx.dir_y;
-    let mut position = if ctx.max_extent <= 0.0 {
-      0.5
-    } else {
-      ((projection / ctx.max_extent) + 1.0) / 2.0
-    };
-    position = position.clamp(0.0, 1.0);
+    let position_px = (projection + ctx.max_extent).clamp(0.0, ctx.axis_length);
 
-    color_from_stops(
-      position,
-      ctx.pixel_epsilon,
-      &ctx.resolved_stops,
-      &mut ctx.color_cache,
-    )
+    color_from_stops(position_px, &ctx.resolved_stops, &mut ctx.color_cache)
   }
 
-  /// Resolves gradient steps into color stops with positions
-  pub fn resolve_stops(&self) -> Vec<ResolvedGradientStop> {
-    resolve_gradient_stops(&self.stops)
+  /// Resolves gradient steps into color stops with positions expressed in pixels along the gradient axis.
+  /// Supports non-px length units when a `RenderContext` is provided.
+  pub fn resolve_stops_for_axis_size(
+    &self,
+    axis_size_px: f32,
+    context: &RenderContext,
+  ) -> Vec<ResolvedGradientStop> {
+    resolve_stops_along_axis(&self.stops, axis_size_px, context)
   }
 }
 
@@ -99,33 +97,28 @@ pub struct LinearGradientDrawContext {
   pub cx: f32,
   /// Center Y coordinate.
   pub cy: f32,
-  /// Maximum extent along gradient direction used for normalization.
+  /// Half of axis length along gradient direction in pixels.
   pub max_extent: f32,
-  /// Epsilon size of one pixel relative to the longest edge.
-  pub pixel_epsilon: f32,
-  /// Resolved and ordered color stops.
+  /// Full axis length along gradient direction in pixels.
+  pub axis_length: f32,
+  /// Resolved and ordered color stops (positions in pixels).
   pub resolved_stops: Vec<ResolvedGradientStop>,
-  /// Cache of computed colors keyed by quantized position along the gradient [0, 1].
+  /// Cache of computed colors keyed by quantized position along the gradient axis.
   color_cache: HashMap<u32, Color>,
 }
 
 impl LinearGradientDrawContext {
   /// Builds a drawing context from a gradient and a target viewport.
-  pub fn new(gradient: &LinearGradient, width: f32, height: f32) -> Self {
-    // Direction vector mapping matches `LinearGradient::at`
+  pub fn new(gradient: &LinearGradient, width: f32, height: f32, context: &RenderContext) -> Self {
     let rad = gradient.angle.0.to_radians();
-    let (dir_x, dir_y) = if (gradient.angle.0 % 90.0).abs() < 1e-6 {
-      (-rad.sin(), rad.cos())
-    } else {
-      (rad.sin(), -rad.cos())
-    };
+    let (dir_x, dir_y) = (rad.sin(), -rad.cos());
 
     let cx = width / 2.0;
     let cy = height / 2.0;
     let max_extent = ((width * dir_x.abs()) + (height * dir_y.abs())) / 2.0;
-    let pixel_epsilon = 1.0 / width.max(height).max(1.0);
+    let axis_length = 2.0 * max_extent;
 
-    let resolved_stops = gradient.resolve_stops();
+    let resolved_stops = gradient.resolve_stops_for_axis_size(axis_length.max(1e-6), context);
 
     LinearGradientDrawContext {
       width,
@@ -135,7 +128,7 @@ impl LinearGradientDrawContext {
       cx,
       cy,
       max_extent,
-      pixel_epsilon,
+      axis_length,
       resolved_stops,
       color_cache: HashMap::new(),
     }
@@ -144,8 +137,13 @@ impl LinearGradientDrawContext {
 
 impl LinearGradient {
   /// Creates a drawing context for repeated sampling at the provided viewport size.
-  pub fn to_draw_context(&self, width: f32, height: f32) -> LinearGradientDrawContext {
-    LinearGradientDrawContext::new(self, width, height)
+  pub fn to_draw_context(
+    &self,
+    width: f32,
+    height: f32,
+    context: &RenderContext,
+  ) -> LinearGradientDrawContext {
+    LinearGradientDrawContext::new(self, width, height, context)
   }
 }
 
@@ -165,6 +163,23 @@ impl Default for LinearGradientOrColor {
   }
 }
 
+/// Represents a gradient stop position.
+/// If a percentage or number (0.0-1.0) is provided, it is treated as a percentage.
+#[derive(Debug, Clone, Copy, PartialEq, TS, Deserialize, Serialize)]
+#[ts(as = "StopPositionValue")]
+#[serde(try_from = "StopPositionValue")]
+pub struct StopPosition(pub LengthUnit);
+
+/// Proxy type for `StopPosition` Css deserialization.
+#[derive(Debug, Clone, PartialEq, TS, Deserialize, Serialize)]
+#[serde(untagged)]
+pub enum StopPositionValue {
+  /// Length value, percentage or number (0.0-1.0) is treated as a percentage.
+  Length(LengthUnit),
+  /// CSS string
+  Css(String),
+}
+
 /// Represents a gradient stop.
 #[derive(Debug, Clone, PartialEq, TS, Deserialize, Serialize)]
 #[serde(untagged)]
@@ -173,11 +188,11 @@ pub enum GradientStop {
   ColorHint {
     /// The color of the gradient stop.
     color: Color,
-    /// The position of the gradient stop (0% to 100%).
-    hint: Option<f32>,
+    /// The position of the gradient stop.
+    hint: Option<StopPosition>,
   },
   /// A numeric gradient stop.
-  Hint(f32),
+  Hint(StopPosition),
 }
 
 /// Represents a resolved gradient stop with a position.
@@ -185,19 +200,62 @@ pub enum GradientStop {
 pub struct ResolvedGradientStop {
   /// The color of the gradient stop.
   pub color: Color,
-  /// The position of the gradient stop (0.0 to 1.0).
+  /// The position of the gradient stop in pixels from the start of the axis.
   pub position: f32,
+}
+
+impl<'i> FromCss<'i> for StopPosition {
+  fn from_css(input: &mut Parser<'i, '_>) -> ParseResult<'i, StopPosition> {
+    let location = input.current_source_location();
+    if let Ok(num) = input.try_parse(Parser::expect_number) {
+      return Ok(StopPosition(LengthUnit::Percentage(
+        num.clamp(0.0, 1.0) * 100.0,
+      )));
+    }
+
+    if let Ok(unit_value) = input.try_parse(Parser::expect_percentage) {
+      return Ok(StopPosition(LengthUnit::Percentage(unit_value * 100.0)));
+    }
+
+    let Ok(length) = input.try_parse(LengthUnit::from_css) else {
+      return Err(
+        location
+          .new_basic_unexpected_token_error(input.next()?.clone())
+          .into(),
+      );
+    };
+
+    Ok(StopPosition(length))
+  }
+}
+
+impl TryFrom<StopPositionValue> for StopPosition {
+  type Error = &'static str;
+
+  fn try_from(value: StopPositionValue) -> Result<Self, Self::Error> {
+    match value {
+      StopPositionValue::Length(length) => Ok(StopPosition(length)),
+      StopPositionValue::Css(s) => {
+        let mut input = ParserInput::new(&s);
+        let mut parser = Parser::new(&mut input);
+
+        StopPosition::from_css(&mut parser).map_err(
+          |_| "Failed to parse stop position, expected a number, percentage, or length unit",
+        )
+      }
+    }
+  }
 }
 
 impl<'i> FromCss<'i> for GradientStop {
   /// Parses a gradient hint from the input.
   fn from_css(input: &mut Parser<'i, '_>) -> ParseResult<'i, GradientStop> {
-    if let Ok(hint) = input.try_parse(parse_length_percentage) {
+    if let Ok(hint) = input.try_parse(StopPosition::from_css) {
       return Ok(GradientStop::Hint(hint));
     };
 
     let color = Color::from_css(input)?;
-    let hint = input.try_parse(parse_length_percentage).ok();
+    let hint = input.try_parse(StopPosition::from_css).ok();
 
     Ok(GradientStop::ColorHint { color, hint })
   }
@@ -205,7 +263,21 @@ impl<'i> FromCss<'i> for GradientStop {
 
 /// Represents an angle value in degrees.
 #[derive(Debug, Clone, Copy, PartialEq, TS, Deserialize, Serialize)]
-pub struct Angle(pub f32);
+pub struct Angle(f32);
+
+impl Deref for Angle {
+  type Target = f32;
+  fn deref(&self) -> &Self::Target {
+    &self.0
+  }
+}
+
+impl Angle {
+  /// Creates a new angle value, normalizing it to the range [0, 360).
+  pub fn new(value: f32) -> Self {
+    Angle(value.rem_euclid(360.0))
+  }
+}
 
 /// Represents a horizontal keyword.
 pub enum HorizontalKeyword {
@@ -241,16 +313,16 @@ impl HorizontalKeyword {
   /// Returns the angle in degrees.
   pub fn degrees(&self) -> f32 {
     match self {
-      HorizontalKeyword::Left => 90.0,
-      HorizontalKeyword::Right => 270.0,
+      HorizontalKeyword::Left => 270.0, // "to left" = 270deg
+      HorizontalKeyword::Right => 90.0, // "to right" = 90deg
     }
   }
 
   /// Returns the mixed angle in degrees.
   pub fn vertical_mixed_degrees(&self) -> f32 {
     match self {
-      HorizontalKeyword::Left => -45.0,
-      HorizontalKeyword::Right => 45.0,
+      HorizontalKeyword::Left => -45.0, // For diagonals with left
+      HorizontalKeyword::Right => 45.0, // For diagonals with right
     }
   }
 }
@@ -286,7 +358,7 @@ impl<'i> FromCss<'i> for LinearGradient {
       let angle = if let Ok(angle) = Angle::from_css(input) {
         angle
       } else {
-        Angle(180.0)
+        Angle::new(180.0)
       };
 
       let mut steps = Vec::new();
@@ -314,13 +386,14 @@ impl Angle {
     vertical: Option<VerticalKeyword>,
   ) -> Angle {
     match (horizontal, vertical) {
-      (None, None) => Angle(180.0),
-      (Some(horizontal), None) => Angle(horizontal.degrees()),
-      (None, Some(vertical)) => Angle(vertical.degrees()),
-      (Some(horizontal), Some(vertical)) => {
-        let sum = horizontal.vertical_mixed_degrees() + vertical.degrees();
-
-        Angle(sum.rem_euclid(360.0))
+      (None, None) => Angle::new(180.0),
+      (Some(horizontal), None) => Angle::new(horizontal.degrees()),
+      (None, Some(vertical)) => Angle::new(vertical.degrees()),
+      (Some(horizontal), Some(VerticalKeyword::Top)) => {
+        Angle::new(horizontal.vertical_mixed_degrees())
+      }
+      (Some(horizontal), Some(VerticalKeyword::Bottom)) => {
+        Angle::new(180.0 - horizontal.vertical_mixed_degrees())
       }
     }
   }
@@ -341,11 +414,11 @@ impl<'i> FromCss<'i> for Angle {
           ));
         }
 
-        return Ok(Angle(vertical.degrees()));
+        return Ok(Angle::new(vertical.degrees()));
       }
 
       if let Ok(horizontal) = input.try_parse(HorizontalKeyword::from_css) {
-        return Ok(Angle(horizontal.degrees()));
+        return Ok(Angle::new(horizontal.degrees()));
       }
 
       let location = input.current_source_location();
@@ -358,21 +431,12 @@ impl<'i> FromCss<'i> for Angle {
     let token = input.next()?;
 
     match token {
-      Token::Number { value, .. } => Ok(Angle(*value)),
+      Token::Number { value, .. } => Ok(Angle::new(*value)),
       Token::Dimension { value, unit, .. } => match unit.as_ref() {
-        "deg" => Ok(Angle(*value)),
-        "grad" => {
-          let radians = *value * (std::f32::consts::PI / 200.0);
-          Ok(Angle(radians.to_degrees()))
-        }
-        "turn" => {
-          let radians = *value * (std::f32::consts::PI * 2.0);
-          Ok(Angle(radians.to_degrees()))
-        }
-        "rad" => {
-          let degrees = *value * (180.0 / std::f32::consts::PI);
-          Ok(Angle(degrees))
-        }
+        "deg" => Ok(Angle::new(*value)),
+        "grad" => Ok(Angle::new(*value / 400.0 * 360.0)),
+        "turn" => Ok(Angle::new(*value * 360.0)),
+        "rad" => Ok(Angle::new(value.to_degrees())),
         _ => Err(
           location
             .new_basic_unexpected_token_error(token.clone())
@@ -390,6 +454,11 @@ impl<'i> FromCss<'i> for Angle {
 
 #[cfg(test)]
 mod tests {
+  use crate::{
+    GlobalContext,
+    layout::{Viewport, viewport::DEFAULT_FONT_SIZE},
+  };
+
   use super::*;
 
   #[test]
@@ -401,7 +470,7 @@ mod tests {
     assert_eq!(
       gradient,
       Ok(LinearGradient {
-        angle: Angle(45.0),
+        angle: Angle::new(45.0),
         stops: vec![
           GradientStop::ColorHint {
             color: Color([255, 0, 0, 255]),
@@ -421,7 +490,7 @@ mod tests {
     let mut input = ParserInput::new("45deg");
     let mut parser = Parser::new(&mut input);
     let angle = Angle::from_css(&mut parser);
-    assert_eq!(angle, Ok(Angle(45.0)));
+    assert_eq!(angle, Ok(Angle::new(45.0)));
   }
 
   #[test]
@@ -431,7 +500,7 @@ mod tests {
     let angle = Angle::from_css(&mut parser);
 
     // 200 grad = 200 * (π/200) = π radians = 180 degrees
-    assert_eq!(angle, Ok(Angle(180.0)));
+    assert_eq!(angle, Ok(Angle::new(180.0)));
   }
 
   #[test]
@@ -441,7 +510,7 @@ mod tests {
     let angle = Angle::from_css(&mut parser);
 
     // 0.5 turn = 0.5 * 2π = π radians = 180 degrees
-    assert_eq!(angle, Ok(Angle(180.0)));
+    assert_eq!(angle, Ok(Angle::new(180.0)));
   }
 
   #[test]
@@ -452,8 +521,8 @@ mod tests {
 
     // π radians = 180 degrees
     // Use approximate equality due to floating point precision
-    if let Ok(Angle(degrees)) = angle {
-      assert!((degrees - 180.0).abs() < 0.001);
+    if let Ok(angle) = angle {
+      assert!((*angle - 180.0).abs() < 0.001);
     } else {
       panic!("Expected Ok(Angle(180.0)), got {:?}", angle);
     }
@@ -465,7 +534,7 @@ mod tests {
     let mut parser = Parser::new(&mut input);
     let angle = Angle::from_css(&mut parser);
 
-    assert_eq!(angle, Ok(Angle(90.0)));
+    assert_eq!(angle, Ok(Angle::new(90.0)));
   }
 
   #[test]
@@ -474,7 +543,7 @@ mod tests {
     let mut parser = Parser::new(&mut input);
     let angle = Angle::from_css(&mut parser);
 
-    assert_eq!(angle, Ok(Angle(0.0)));
+    assert_eq!(angle, Ok(Angle::new(0.0)));
   }
 
   #[test]
@@ -483,7 +552,7 @@ mod tests {
     let mut parser = Parser::new(&mut input);
     let angle = Angle::from_css(&mut parser);
 
-    assert_eq!(angle, Ok(Angle(270.0)));
+    assert_eq!(angle, Ok(Angle::new(90.0))); // "to right" = 90deg
   }
 
   #[test]
@@ -492,7 +561,7 @@ mod tests {
     let mut parser = Parser::new(&mut input);
     let angle = Angle::from_css(&mut parser);
 
-    assert_eq!(angle, Ok(Angle(180.0)));
+    assert_eq!(angle, Ok(Angle::new(180.0)));
   }
 
   #[test]
@@ -501,7 +570,7 @@ mod tests {
     let mut parser = Parser::new(&mut input);
     let angle = Angle::from_css(&mut parser);
 
-    assert_eq!(angle, Ok(Angle(90.0)));
+    assert_eq!(angle, Ok(Angle::new(270.0)));
   }
 
   #[test]
@@ -510,7 +579,7 @@ mod tests {
     let mut parser = Parser::new(&mut input);
     let angle = Angle::from_css(&mut parser);
 
-    assert_eq!(angle, Ok(Angle(45.0)));
+    assert_eq!(angle, Ok(Angle::new(45.0)));
   }
 
   #[test]
@@ -519,8 +588,8 @@ mod tests {
     let mut parser = Parser::new(&mut input);
     let angle = Angle::from_css(&mut parser);
 
-    // -45 + 180 = 135 degrees
-    assert_eq!(angle, Ok(Angle(135.0)));
+    // 45 + 180 = 225 degrees
+    assert_eq!(angle, Ok(Angle::new(225.0)));
   }
 
   #[test]
@@ -529,8 +598,7 @@ mod tests {
     let mut parser = Parser::new(&mut input);
     let angle = Angle::from_css(&mut parser);
 
-    // -45 + 0 = -45 degrees, but rem_euclid makes it 315 degrees
-    assert_eq!(angle, Ok(Angle(315.0)));
+    assert_eq!(angle, Ok(Angle::new(315.0)));
   }
 
   #[test]
@@ -539,8 +607,7 @@ mod tests {
     let mut parser = Parser::new(&mut input);
     let angle = Angle::from_css(&mut parser);
 
-    // 45 + 180 = 225 degrees
-    assert_eq!(angle, Ok(Angle(225.0)));
+    assert_eq!(angle, Ok(Angle::new(135.0)));
   }
 
   #[test]
@@ -552,7 +619,7 @@ mod tests {
     assert_eq!(
       gradient,
       Ok(LinearGradient {
-        angle: Angle(45.0),
+        angle: Angle::new(45.0),
         stops: vec![
           GradientStop::ColorHint {
             color: Color([255, 0, 0, 255]),
@@ -576,15 +643,15 @@ mod tests {
     assert_eq!(
       gradient,
       Ok(LinearGradient {
-        angle: Angle(270.0),
+        angle: Angle::new(90.0), // "to right" = 90deg
         stops: vec![
           GradientStop::ColorHint {
             color: Color([255, 0, 0, 255]),
-            hint: Some(0.0),
+            hint: Some(StopPosition(LengthUnit::Percentage(0.0))),
           },
           GradientStop::ColorHint {
             color: Color([0, 0, 255, 255]),
-            hint: Some(1.0),
+            hint: Some(StopPosition(LengthUnit::Percentage(100.0))),
           },
         ]
       })
@@ -600,13 +667,13 @@ mod tests {
     assert_eq!(
       gradient,
       Ok(LinearGradient {
-        angle: Angle(270.0),
+        angle: Angle::new(90.0), // "to right" = 90deg
         stops: vec![
           GradientStop::ColorHint {
             color: Color([255, 0, 0, 255]),
             hint: None,
           },
-          GradientStop::Hint(0.5),
+          GradientStop::Hint(StopPosition(LengthUnit::Percentage(50.0))),
           GradientStop::ColorHint {
             color: Color([0, 0, 255, 255]),
             hint: None,
@@ -625,7 +692,7 @@ mod tests {
     assert_eq!(
       gradient,
       Ok(LinearGradient {
-        angle: Angle(180.0),
+        angle: Angle::new(180.0),
         stops: vec![GradientStop::ColorHint {
           color: Color([255, 0, 0, 255]),
           hint: None,
@@ -645,7 +712,7 @@ mod tests {
     assert_eq!(
       gradient,
       Ok(LinearGradient {
-        angle: Angle(180.0),
+        angle: Angle::new(180.0),
         stops: vec![GradientStop::ColorHint {
           color: Color([0, 0, 255, 255]), // Only the last color is parsed due to the parsing logic
           hint: None,
@@ -675,53 +742,58 @@ mod tests {
     let mut parser = Parser::new(&mut input);
     let gradient_hint = GradientStop::from_css(&mut parser);
 
-    assert_eq!(gradient_hint, Ok(GradientStop::Hint(0.5)));
+    assert_eq!(
+      gradient_hint,
+      Ok(GradientStop::Hint(StopPosition(LengthUnit::Percentage(
+        50.0
+      ))))
+    );
   }
 
   #[test]
   fn test_angle_degrees_from_keywords() {
     // None, None
-    assert_eq!(Angle::degrees_from_keywords(None, None), Angle(180.0));
+    assert_eq!(Angle::degrees_from_keywords(None, None), Angle::new(180.0));
 
     // Some horizontal, None
     assert_eq!(
       Angle::degrees_from_keywords(Some(HorizontalKeyword::Left), None),
-      Angle(90.0)
+      Angle::new(270.0) // "to left" = 270deg
     );
     assert_eq!(
       Angle::degrees_from_keywords(Some(HorizontalKeyword::Right), None),
-      Angle(270.0)
+      Angle::new(90.0) // "to right" = 90deg
     );
 
     // None, Some vertical
     assert_eq!(
       Angle::degrees_from_keywords(None, Some(VerticalKeyword::Top)),
-      Angle(0.0)
+      Angle::new(0.0)
     );
     assert_eq!(
       Angle::degrees_from_keywords(None, Some(VerticalKeyword::Bottom)),
-      Angle(180.0)
+      Angle::new(180.0)
     );
 
     // Some horizontal, Some vertical
     assert_eq!(
       Angle::degrees_from_keywords(Some(HorizontalKeyword::Left), Some(VerticalKeyword::Top)),
-      Angle(315.0)
+      Angle::new(315.0)
     );
     assert_eq!(
       Angle::degrees_from_keywords(Some(HorizontalKeyword::Right), Some(VerticalKeyword::Top)),
-      Angle(45.0)
+      Angle::new(45.0)
     );
     assert_eq!(
       Angle::degrees_from_keywords(Some(HorizontalKeyword::Left), Some(VerticalKeyword::Bottom)),
-      Angle(135.0)
+      Angle::new(225.0)
     );
     assert_eq!(
       Angle::degrees_from_keywords(
         Some(HorizontalKeyword::Right),
         Some(VerticalKeyword::Bottom)
       ),
-      Angle(225.0)
+      Angle::new(135.0)
     );
   }
 
@@ -734,18 +806,18 @@ mod tests {
     assert_eq!(
       gradient,
       Ok(LinearGradient {
-        angle: Angle(45.0),
+        angle: Angle::new(45.0),
         stops: vec![
           GradientStop::ColorHint {
             color: Color([255, 0, 0, 255]),
             hint: None,
           },
-          GradientStop::Hint(0.25),
+          GradientStop::Hint(StopPosition(LengthUnit::Percentage(25.0))),
           GradientStop::ColorHint {
             color: Color([0, 255, 0, 255]),
             hint: None,
           },
-          GradientStop::Hint(0.75),
+          GradientStop::Hint(StopPosition(LengthUnit::Percentage(75.0))),
           GradientStop::ColorHint {
             color: Color([0, 0, 255, 255]),
             hint: None,
@@ -758,26 +830,31 @@ mod tests {
   #[test]
   fn test_linear_gradient_at_simple() {
     let gradient = LinearGradient {
-      angle: Angle(0.0), // Top to bottom
+      angle: Angle::new(180.0), // "to bottom" (default) - Top to bottom
       stops: vec![
         GradientStop::ColorHint {
           color: Color([255, 0, 0, 255]), // Red
-          hint: Some(0.0),
+          hint: Some(StopPosition(LengthUnit::Percentage(0.0))),
         },
         GradientStop::ColorHint {
           color: Color([0, 0, 255, 255]), // Blue
-          hint: Some(1.0),
+          hint: Some(StopPosition(LengthUnit::Percentage(100.0))),
         },
       ],
     };
 
     // Test at the top (should be red)
-    let mut ctx = gradient.to_draw_context(100.0, 100.0);
+    let dummy_context = RenderContext {
+      global: &GlobalContext::default(),
+      viewport: Viewport::new(100, 100),
+      parent_font_size: DEFAULT_FONT_SIZE,
+    };
+    let mut ctx = gradient.to_draw_context(100.0, 100.0, &dummy_context);
     let color_top = gradient.at(50, 0, &mut ctx);
     assert_eq!(color_top, Color([255, 0, 0, 255]));
 
     // Test at the bottom (should be blue)
-    let color_bottom = gradient.at(50, 99, &mut ctx);
+    let color_bottom = gradient.at(50, 100, &mut ctx);
     assert_eq!(color_bottom, Color([0, 0, 255, 255]));
 
     // Test in the middle (should be purple)
@@ -793,33 +870,38 @@ mod tests {
   #[test]
   fn test_linear_gradient_at_horizontal() {
     let gradient = LinearGradient {
-      angle: Angle(270.0), // Left to right
+      angle: Angle::new(90.0), // "to right" - Left to right
       stops: vec![
         GradientStop::ColorHint {
           color: Color([255, 0, 0, 255]), // Red
-          hint: Some(0.0),
+          hint: Some(StopPosition(LengthUnit::Percentage(0.0))),
         },
         GradientStop::ColorHint {
           color: Color([0, 0, 255, 255]), // Blue
-          hint: Some(1.0),
+          hint: Some(StopPosition(LengthUnit::Percentage(100.0))),
         },
       ],
     };
 
     // Test at the left (should be red)
-    let mut ctx = gradient.to_draw_context(100.0, 100.0);
+    let dummy_context = RenderContext {
+      global: &GlobalContext::default(),
+      viewport: Viewport::new(100, 100),
+      parent_font_size: DEFAULT_FONT_SIZE,
+    };
+    let mut ctx = gradient.to_draw_context(100.0, 100.0, &dummy_context);
     let color_left = gradient.at(0, 50, &mut ctx);
     assert_eq!(color_left, Color([255, 0, 0, 255]));
 
     // Test at the right (should be blue)
-    let color_right = gradient.at(99, 50, &mut ctx);
+    let color_right = gradient.at(100, 50, &mut ctx);
     assert_eq!(color_right, Color([0, 0, 255, 255]));
   }
 
   #[test]
   fn test_linear_gradient_at_single_color() {
     let gradient = LinearGradient {
-      angle: Angle(0.0),
+      angle: Angle::new(0.0),
       stops: vec![GradientStop::ColorHint {
         color: Color([255, 0, 0, 255]), // Red
         hint: None,
@@ -827,7 +909,12 @@ mod tests {
     };
 
     // Should always return the same color
-    let mut ctx = gradient.to_draw_context(100.0, 100.0);
+    let dummy_context = RenderContext {
+      global: &GlobalContext::default(),
+      viewport: Viewport::new(100, 100),
+      parent_font_size: DEFAULT_FONT_SIZE,
+    };
+    let mut ctx = gradient.to_draw_context(100.0, 100.0, &dummy_context);
     let color = gradient.at(50, 50, &mut ctx);
     assert_eq!(color, Color([255, 0, 0, 255]));
   }
@@ -835,13 +922,157 @@ mod tests {
   #[test]
   fn test_linear_gradient_at_no_steps() {
     let gradient = LinearGradient {
-      angle: Angle(0.0),
+      angle: Angle::new(0.0),
       stops: vec![],
     };
 
     // Should return transparent
-    let mut ctx = gradient.to_draw_context(100.0, 100.0);
+    let dummy_context = RenderContext {
+      global: &GlobalContext::default(),
+      viewport: Viewport::new(100, 100),
+      parent_font_size: DEFAULT_FONT_SIZE,
+    };
+    let mut ctx = gradient.to_draw_context(100.0, 100.0, &dummy_context);
     let color = gradient.at(50, 50, &mut ctx);
     assert_eq!(color, Color([0, 0, 0, 0]));
+  }
+
+  #[test]
+  fn test_linear_gradient_px_stops_crisp_line() {
+    let mut input = ParserInput::new("linear-gradient(to right, grey 1px, transparent 1px)");
+    let mut parser = Parser::new(&mut input);
+    let gradient = LinearGradient::from_css(&mut parser).unwrap();
+
+    let dummy_context = RenderContext {
+      global: &GlobalContext::default(),
+      viewport: Viewport::new(40, 40),
+      parent_font_size: DEFAULT_FONT_SIZE,
+    };
+    let mut ctx = gradient.to_draw_context(40.0, 40.0, &dummy_context);
+
+    // grey at 0,0
+    let c0 = gradient.at(0, 0, &mut ctx);
+    assert_eq!(c0, Color([128, 128, 128, 255]));
+
+    // transparent at 1,0
+    let c1 = gradient.at(1, 0, &mut ctx);
+    assert_eq!(c1, Color([0, 0, 0, 0]));
+
+    // transparent till the end
+    let c2 = gradient.at(40, 0, &mut ctx);
+    assert_eq!(c2, Color([0, 0, 0, 0]));
+  }
+
+  #[test]
+  fn test_linear_gradient_vertical_px_stops_top_pixel() {
+    let mut input = ParserInput::new("linear-gradient(to bottom, grey 1px, transparent 1px)");
+    let mut parser = Parser::new(&mut input);
+    let gradient = LinearGradient::from_css(&mut parser).unwrap();
+
+    let dummy_context = RenderContext {
+      global: &GlobalContext::default(),
+      viewport: Viewport::new(40, 40),
+      parent_font_size: DEFAULT_FONT_SIZE,
+    };
+    let mut ctx = gradient.to_draw_context(40.0, 40.0, &dummy_context);
+
+    // color at top-left (0, 0) should be grey (1px hard stop)
+    assert_eq!(gradient.at(0, 0, &mut ctx), Color([128, 128, 128, 255]));
+  }
+
+  #[test]
+  fn test_stop_position_parsing_fraction_number() {
+    let mut input = ParserInput::new("0.25");
+    let mut parser = Parser::new(&mut input);
+    let pos = StopPosition::from_css(&mut parser).unwrap();
+    assert_eq!(pos, StopPosition(LengthUnit::Percentage(25.0)));
+  }
+
+  #[test]
+  fn test_stop_position_parsing_percentage() {
+    let mut input = ParserInput::new("75%");
+    let mut parser = Parser::new(&mut input);
+    let pos = StopPosition::from_css(&mut parser).unwrap();
+    assert_eq!(pos, StopPosition(LengthUnit::Percentage(75.0)));
+  }
+
+  #[test]
+  fn test_stop_position_parsing_length_px() {
+    let mut input = ParserInput::new("12px");
+    let mut parser = Parser::new(&mut input);
+    let pos = StopPosition::from_css(&mut parser).unwrap();
+    assert_eq!(pos, StopPosition(LengthUnit::Px(12.0)));
+  }
+
+  #[test]
+  fn test_stop_position_value_css_roundtrip() {
+    let value = StopPositionValue::Css("50%".to_string());
+    let parsed: StopPosition = value.try_into().unwrap();
+    assert_eq!(parsed, StopPosition(LengthUnit::Percentage(50.0)));
+
+    let value = StopPositionValue::Css("8px".to_string());
+    let parsed: StopPosition = value.try_into().unwrap();
+    assert_eq!(parsed, StopPosition(LengthUnit::Px(8.0)));
+  }
+
+  #[test]
+  fn resolve_stops_percentage_and_px_linear() {
+    let gradient = LinearGradient {
+      angle: Angle::new(0.0),
+      stops: vec![
+        GradientStop::ColorHint {
+          color: Color([0, 0, 0, 255]),
+          hint: Some(StopPosition(LengthUnit::Percentage(0.0))),
+        },
+        GradientStop::ColorHint {
+          color: Color([0, 0, 0, 255]),
+          hint: Some(StopPosition(LengthUnit::Percentage(50.0))),
+        },
+        GradientStop::ColorHint {
+          color: Color([0, 0, 0, 255]),
+          hint: Some(StopPosition(LengthUnit::Px(100.0))),
+        },
+      ],
+    };
+
+    let ctx = RenderContext {
+      global: &GlobalContext::default(),
+      viewport: Viewport::new(200, 100),
+      parent_font_size: DEFAULT_FONT_SIZE,
+    };
+
+    let resolved = gradient.resolve_stops_for_axis_size(ctx.viewport.width as f32, &ctx);
+    assert_eq!(resolved.len(), 3);
+    assert!((resolved[0].position - 0.0).abs() < 1e-3);
+    assert!((resolved[1].position - 100.0).abs() < 1e-3);
+    assert!((resolved[2].position - 100.0).abs() < 1e-3);
+  }
+
+  #[test]
+  fn resolve_stops_equal_positions_allowed_linear() {
+    let gradient = LinearGradient {
+      angle: Angle::new(0.0),
+      stops: vec![
+        GradientStop::ColorHint {
+          color: Color([0, 0, 0, 255]),
+          hint: Some(StopPosition(LengthUnit::Px(0.0))),
+        },
+        GradientStop::ColorHint {
+          color: Color([0, 0, 0, 255]),
+          hint: Some(StopPosition(LengthUnit::Px(0.0))),
+        },
+      ],
+    };
+
+    let ctx = RenderContext {
+      global: &GlobalContext::default(),
+      viewport: Viewport::new(200, 100),
+      parent_font_size: DEFAULT_FONT_SIZE,
+    };
+
+    let resolved = gradient.resolve_stops_for_axis_size(ctx.viewport.width as f32, &ctx);
+    assert_eq!(resolved.len(), 2);
+    assert!((resolved[0].position - 0.0).abs() < 1e-3);
+    assert!((resolved[1].position - 0.0).abs() < 1e-3);
   }
 }

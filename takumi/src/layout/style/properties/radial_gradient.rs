@@ -2,9 +2,12 @@ use cssparser::{Parser, ParserInput, Token, match_ignore_ascii_case};
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
-use super::gradient_utils::{color_from_stops, resolve_gradient_stops};
-use crate::layout::style::{
-  Color, FromCss, GradientStop, ParseResult, ResolvedGradientStop, parse_length_percentage,
+use super::gradient_utils::{color_from_stops, resolve_stops_along_axis};
+use crate::{
+  layout::style::{
+    Color, FromCss, GradientStop, ParseResult, ResolvedGradientStop, parse_length_percentage,
+  },
+  rendering::RenderContext,
 };
 
 use std::collections::HashMap;
@@ -63,8 +66,6 @@ pub struct RadialGradientDrawContext {
   pub radius_x: f32,
   /// Radius Y in pixels (for circle, equals radius_x)
   pub radius_y: f32,
-  /// Epsilon size of one pixel relative to the longest edge.
-  pub pixel_epsilon: f32,
   /// Resolved and ordered color stops.
   pub resolved_stops: Vec<ResolvedGradientStop>,
   /// Cache of computed colors keyed by quantized position along the gradient [0, 1].
@@ -73,13 +74,23 @@ pub struct RadialGradientDrawContext {
 
 impl RadialGradient {
   /// Creates a drawing context for repeated sampling at the provided viewport size.
-  pub fn to_draw_context(&self, width: f32, height: f32) -> RadialGradientDrawContext {
-    RadialGradientDrawContext::new(self, width, height)
+  pub fn to_draw_context(
+    &self,
+    width: f32,
+    height: f32,
+    context: &RenderContext,
+  ) -> RadialGradientDrawContext {
+    RadialGradientDrawContext::new(self, width, height, context)
   }
 
-  /// Resolves gradient steps into color stops with positions
-  pub fn resolve_stops(&self) -> Vec<ResolvedGradientStop> {
-    resolve_gradient_stops(&self.stops)
+  /// Resolves gradient steps into color stops with positions expressed in pixels along the radial axis.
+  /// Supports non-px units when a `RenderContext` is provided.
+  pub fn resolve_stops_for_radius(
+    &self,
+    radius_scale_px: f32,
+    context: &RenderContext,
+  ) -> Vec<ResolvedGradientStop> {
+    resolve_stops_along_axis(&self.stops, radius_scale_px, context)
   }
 
   /// Returns the color at a specific point in the gradient.
@@ -95,20 +106,15 @@ impl RadialGradient {
 
     let dx = (x as f32 - ctx.cx) / ctx.radius_x.max(1e-6);
     let dy = (y as f32 - ctx.cy) / ctx.radius_y.max(1e-6);
-    let position = (dx * dx + dy * dy).sqrt().clamp(0.0, 1.0);
+    let position = (dx * dx + dy * dy).sqrt() * ctx.radius_x.max(ctx.radius_y);
 
-    color_from_stops(
-      position,
-      ctx.pixel_epsilon,
-      &ctx.resolved_stops,
-      &mut ctx.color_cache,
-    )
+    color_from_stops(position, &ctx.resolved_stops, &mut ctx.color_cache)
   }
 }
 
 impl RadialGradientDrawContext {
   /// Builds a drawing context from a gradient and a target viewport.
-  pub fn new(gradient: &RadialGradient, width: f32, height: f32) -> Self {
+  pub fn new(gradient: &RadialGradient, width: f32, height: f32, context: &RenderContext) -> Self {
     let cx = (gradient.center.0.clamp(0.0, 1.0)) * width;
     let cy = (gradient.center.1.clamp(0.0, 1.0)) * height;
 
@@ -166,14 +172,16 @@ impl RadialGradientDrawContext {
         let r = candidates
           .iter()
           .map(|(dx, dy)| (dx * dx + dy * dy).sqrt())
-          .fold(0.0_f32, f32::min);
-        let r = if r.is_finite() && r > 0.0 { r } else { 0.0 };
+          .fold(f32::INFINITY, f32::min);
         (r, r)
       }
     };
 
-    let pixel_epsilon = 1.0 / width.max(height).max(1.0);
-    let resolved_stops = gradient.resolve_stops();
+    let radius_scale = match gradient.shape {
+      RadialShape::Circle => radius_x.max(radius_y),
+      RadialShape::Ellipse => radius_x.max(radius_y),
+    };
+    let resolved_stops = gradient.resolve_stops_for_radius(radius_scale.max(1e-6), context);
 
     RadialGradientDrawContext {
       width,
@@ -182,7 +190,6 @@ impl RadialGradientDrawContext {
       cy,
       radius_x,
       radius_y,
-      pixel_epsilon,
       resolved_stops,
       color_cache: HashMap::new(),
     }
@@ -394,6 +401,9 @@ impl TryFrom<RadialGradientValue> for RadialGradient {
 #[cfg(test)]
 mod tests {
   use super::*;
+  use crate::layout::DEFAULT_FONT_SIZE;
+  use crate::layout::style::{LengthUnit, StopPosition};
+  use crate::{GlobalContext, layout::Viewport, rendering::RenderContext};
 
   #[test]
   fn test_parse_radial_gradient_basic() {
@@ -516,18 +526,87 @@ mod tests {
         stops: vec![
           GradientStop::ColorHint {
             color: Color([255, 0, 0, 255]),
-            hint: Some(0.0),
+            hint: Some(StopPosition(LengthUnit::Percentage(0.0))),
           },
           GradientStop::ColorHint {
             color: Color([0, 255, 0, 255]),
-            hint: Some(0.5),
+            hint: Some(StopPosition(LengthUnit::Percentage(50.0))),
           },
           GradientStop::ColorHint {
             color: Color([0, 0, 255, 255]),
-            hint: Some(1.0),
+            hint: Some(StopPosition(LengthUnit::Percentage(100.0))),
           },
         ],
       })
     );
+  }
+
+  #[test]
+  fn resolve_stops_percentage_and_px_radial() {
+    let gradient = RadialGradient {
+      shape: RadialShape::Ellipse,
+      size: RadialSize::FarthestCorner,
+      center: (0.5, 0.5),
+      stops: vec![
+        GradientStop::ColorHint {
+          color: Color([0, 0, 0, 255]),
+          hint: Some(StopPosition(LengthUnit::Percentage(0.0))),
+        },
+        GradientStop::ColorHint {
+          color: Color([0, 0, 0, 255]),
+          hint: Some(StopPosition(LengthUnit::Percentage(50.0))),
+        },
+        GradientStop::ColorHint {
+          color: Color([0, 0, 0, 255]),
+          hint: Some(StopPosition(LengthUnit::Px(100.0))),
+        },
+      ],
+    };
+
+    let ctx = RenderContext {
+      global: &GlobalContext::default(),
+      viewport: Viewport::new(200, 100),
+      parent_font_size: DEFAULT_FONT_SIZE,
+    };
+    let resolved = gradient.resolve_stops_for_radius(ctx.viewport.width as f32, &ctx);
+
+    assert_eq!(resolved.len(), 3);
+    assert!((resolved[0].position - 0.0).abs() < 1e-3);
+    assert_eq!(resolved[1].position, resolved[2].position);
+  }
+
+  #[test]
+  fn resolve_stops_equal_positions_distributed_radial() {
+    let gradient = RadialGradient {
+      shape: RadialShape::Ellipse,
+      size: RadialSize::FarthestCorner,
+      center: (0.5, 0.5),
+      stops: vec![
+        GradientStop::ColorHint {
+          color: Color([0, 0, 0, 255]),
+          hint: Some(StopPosition(LengthUnit::Px(0.0))),
+        },
+        GradientStop::ColorHint {
+          color: Color([0, 0, 0, 255]),
+          hint: Some(StopPosition(LengthUnit::Px(0.0))),
+        },
+        GradientStop::ColorHint {
+          color: Color([0, 0, 0, 255]),
+          hint: Some(StopPosition(LengthUnit::Px(0.0))),
+        },
+      ],
+    };
+
+    let ctx = RenderContext {
+      global: &GlobalContext::default(),
+      viewport: Viewport::new(200, 100),
+      parent_font_size: DEFAULT_FONT_SIZE,
+    };
+    let resolved = gradient.resolve_stops_for_radius(ctx.viewport.width as f32, &ctx);
+
+    assert_eq!(resolved.len(), 3);
+    assert!(resolved[0].position >= 0.0);
+    assert!(resolved[1].position >= resolved[0].position);
+    assert!(resolved[2].position >= resolved[1].position);
   }
 }

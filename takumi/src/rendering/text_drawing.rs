@@ -107,7 +107,7 @@ fn draw_buffer(
   let mut font_cache = context.global.font_context.font_cache.lock().unwrap();
 
   let mut gradient_ctx = if let LinearGradientOrColor::Gradient(gradient) = color {
-    Some(gradient.to_draw_context(content_box.width, content_box.height))
+    Some(gradient.to_draw_context(content_box.width, content_box.height, context))
   } else {
     None
   };

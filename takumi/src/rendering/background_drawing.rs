@@ -141,14 +141,21 @@ fn resolve_position_component_y(
 }
 
 /// Rasterize a single background image (gradient) into a tile of the given size.
-pub fn render_gradient_tile(image: &BackgroundImage, tile_w: u32, tile_h: u32) -> RgbaImage {
+/// Rasterize a single background image (gradient) into a tile of the given size,
+/// resolving non-px stop units using the provided `RenderContext`.
+pub fn render_gradient_tile(
+  image: &BackgroundImage,
+  tile_w: u32,
+  tile_h: u32,
+  context: &RenderContext,
+) -> RgbaImage {
   match image {
     BackgroundImage::Linear(gradient) => {
-      let mut ctx = gradient.to_draw_context(tile_w as f32, tile_h as f32);
+      let mut ctx = gradient.to_draw_context(tile_w as f32, tile_h as f32, context);
       RgbaImage::from_fn(tile_w, tile_h, |x, y| gradient.at(x, y, &mut ctx).into())
     }
     BackgroundImage::Radial(gradient) => {
-      let mut ctx = gradient.to_draw_context(tile_w as f32, tile_h as f32);
+      let mut ctx = gradient.to_draw_context(tile_w as f32, tile_h as f32, context);
       RgbaImage::from_fn(tile_w, tile_h, |x, y| gradient.at(x, y, &mut ctx).into())
     }
   }
@@ -272,8 +279,8 @@ pub fn draw_background_layers(
       continue;
     }
 
-    // Build tile image
-    let mut tile_image = render_gradient_tile(image, tile_w, tile_h);
+    // Build tile image (use context-aware resolver where possible)
+    let mut tile_image = render_gradient_tile(image, tile_w, tile_h, context);
 
     // Handle round adjustment (rescale per axis)
     let xs: Vec<i32> = match repeat.x {

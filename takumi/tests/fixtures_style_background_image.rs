@@ -1,8 +1,8 @@
 use takumi::layout::{
   node::{ContainerNode, NodeKind},
   style::{
-    BackgroundImagesValue, BackgroundPositionsValue, BackgroundRepeatsValue, BackgroundSizesValue,
-    LengthUnit::Percentage, Style,
+    BackgroundImagesValue, BackgroundPositionsValue, BackgroundRepeat, BackgroundRepeats,
+    BackgroundRepeatsValue, BackgroundSizesValue, Color, LengthUnit::Percentage, Style,
   },
 };
 
@@ -213,5 +213,34 @@ fn test_background_size_percentage_with_repeat() {
   run_style_width_test(
     container.into(),
     "tests/fixtures/style_background_size_percent_20_20.png",
+  );
+}
+
+#[test]
+fn test_background_image_grid_pattern() {
+  let images = BackgroundImagesValue::Css(
+    "linear-gradient(to right, grey 1px, transparent 1px), linear-gradient(to bottom, grey 1px, transparent 1px)".to_string(),
+  );
+
+  let mut container = create_container_with(
+    images,
+    Some(BackgroundSizesValue::Css("40px 40px".to_string())),
+    Some(BackgroundPositionsValue::Css("0 0, 0 0".to_string())),
+    Some(BackgroundRepeatsValue::Css("repeat, repeat".to_string())),
+  );
+
+  container.style.background_color = Some(Color([255, 255, 255, 255]));
+
+  assert_eq!(
+    container.style.background_repeat,
+    Some(BackgroundRepeats(vec![
+      BackgroundRepeat::repeat(),
+      BackgroundRepeat::repeat()
+    ]))
+  );
+
+  run_style_width_test(
+    container.into(),
+    "tests/fixtures/style_background_image_grid_pattern.png",
   );
 }
