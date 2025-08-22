@@ -11,10 +11,10 @@ use taffy::{AvailableSpace, Layout, Size};
 
 use crate::{
   impl_node_enum,
-  layout::style::{BackgroundImage, Style},
+  layout::style::Style,
   rendering::{
-    BorderRadius, BoxShadowRenderPhase, FastBlendImage, RenderContext, draw_box_shadow,
-    draw_filled_rect_color, draw_filled_rect_gradient, draw_filled_rect_radial_gradient,
+    BorderRadius, BoxShadowRenderPhase, FastBlendImage, RenderContext, draw_background_layers,
+    draw_box_shadow, draw_filled_rect_color,
   },
 };
 
@@ -164,30 +164,7 @@ pub trait Node<N: Node<N>>: Send + Sync + Clone {
     canvas: &mut FastBlendImage,
     layout: Layout,
   ) {
-    if let Some(background_image) = &self.get_style().background_image {
-      let radius = self
-        .get_style()
-        .inheritable_style
-        .resolved_border_radius()
-        .map(|radius| BorderRadius::from_layout(context, &layout, radius.into()));
-
-      for image in background_image.0.iter() {
-        match image {
-          BackgroundImage::Linear(gradient) => {
-            draw_filled_rect_gradient(canvas, layout.size, layout.location, gradient, radius);
-          }
-          BackgroundImage::Radial(gradient) => {
-            draw_filled_rect_radial_gradient(
-              canvas,
-              layout.size,
-              layout.location,
-              gradient,
-              radius,
-            );
-          }
-        }
-      }
-    }
+    draw_background_layers(self.get_style(), context, canvas, layout);
   }
 
   /// Draws the main content of the node.

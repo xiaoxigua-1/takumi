@@ -1,6 +1,12 @@
 use criterion::{BatchSize, BenchmarkId, Criterion, Throughput, criterion_group, criterion_main};
-use takumi::layout::style::{Color, GradientStop, LinearGradient};
-use takumi::rendering::create_gradient_image;
+use takumi::{
+  GlobalContext,
+  layout::Viewport,
+  layout::style::{
+    Angle, BackgroundImage, Color, GradientStop, LengthUnit, LinearGradient, StopPosition,
+  },
+  rendering::{RenderContext, render_gradient_tile},
+};
 
 fn bench_sizes() -> Vec<(u32, u32)> {
   vec![(256, 256), (512, 512), (1200, 630), (1920, 1080)]
@@ -8,19 +14,19 @@ fn bench_sizes() -> Vec<(u32, u32)> {
 
 fn sample_gradient() -> LinearGradient {
   LinearGradient {
-    angle: takumi::layout::style::Angle(45.0),
+    angle: Angle::new(45.0),
     stops: vec![
       GradientStop::ColorHint {
         color: Color([255, 0, 0, 255]),
-        hint: Some(0.0),
+        hint: Some(StopPosition(LengthUnit::Percentage(0.0))),
       },
       GradientStop::ColorHint {
         color: Color([0, 255, 0, 255]),
-        hint: Some(0.5),
+        hint: Some(StopPosition(LengthUnit::Percentage(50.0))),
       },
       GradientStop::ColorHint {
         color: Color([0, 0, 255, 255]),
-        hint: Some(1.0),
+        hint: Some(StopPosition(LengthUnit::Percentage(100.0))),
       },
     ],
   }
@@ -28,7 +34,7 @@ fn sample_gradient() -> LinearGradient {
 
 fn bench_takumi(c: &mut Criterion) {
   let mut group = c.benchmark_group("linear_gradient");
-  let gradient = sample_gradient();
+  let global = GlobalContext::default();
 
   for (w, h) in bench_sizes() {
     group.throughput(Throughput::Bytes((w as u64) * (h as u64) * 4));
@@ -37,9 +43,17 @@ fn bench_takumi(c: &mut Criterion) {
       &(w, h),
       |b, &(w, h)| {
         b.iter_batched(
-          || (),
-          |_| {
-            create_gradient_image(&gradient, w, h);
+          || {
+            let viewport = Viewport::new(w, h);
+            let context = RenderContext {
+              global: &global,
+              viewport,
+              parent_font_size: viewport.font_size,
+            };
+            (sample_gradient(), w, h, context)
+          },
+          |(gradient, w, h, context)| {
+            render_gradient_tile(&BackgroundImage::Linear(gradient), w, h, &context);
           },
           BatchSize::SmallInput,
         )

@@ -414,8 +414,8 @@ fn render_task_to_job<Nodes: Node<Nodes>>(
 }
 
 fn rect_from_layout_base(layout: &Layout) -> Rect<u32> {
-  let left = clamp_trunc_to_u32(layout.location.x);
-  let top = clamp_trunc_to_u32(layout.location.y);
+  let left = layout.location.x.max(0.0) as u32;
+  let top = layout.location.y.max(0.0) as u32;
   let right = left + (layout.size.width.max(0.0) as u32);
   let bottom = top + (layout.size.height.max(0.0) as u32);
 
@@ -450,11 +450,6 @@ fn rect_width_height(rect: &Rect<u32>) -> (u32, u32) {
   )
 }
 
-#[inline]
-fn clamp_trunc_to_u32(value: f32) -> u32 {
-  if value < 0.0 { 0 } else { value as u32 }
-}
-
 fn compute_outset_shadow_rect(resolved: &BoxShadowResolved, layout: &Layout) -> Rect<u32> {
   let blur = resolved.blur_radius.max(0.0);
   let spread = resolved.spread_radius;
@@ -463,8 +458,8 @@ fn compute_outset_shadow_rect(resolved: &BoxShadowResolved, layout: &Layout) -> 
   let shadow_w = (layout.size.width + inflate).max(0.0) as u32;
   let shadow_h = (layout.size.height + inflate).max(0.0) as u32;
 
-  let left = clamp_trunc_to_u32(layout.location.x + (resolved.offset_x - blur - spread));
-  let top = clamp_trunc_to_u32(layout.location.y + (resolved.offset_y - blur - spread));
+  let left = (layout.location.x + (resolved.offset_x - blur - spread)).max(0.0) as u32;
+  let top = (layout.location.y + (resolved.offset_y - blur - spread)).max(0.0) as u32;
 
   Rect {
     left,

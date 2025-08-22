@@ -127,6 +127,12 @@ pub struct Style {
   pub object_fit: ObjectFit,
   /// Background image(s): linear or radial gradients.
   pub background_image: Option<BackgroundImages>,
+  /// Background positions per layer.
+  pub background_position: Option<BackgroundPositions>,
+  /// Background sizes per layer.
+  pub background_size: Option<BackgroundSizes>,
+  /// Background repeat per layer.
+  pub background_repeat: Option<BackgroundRepeats>,
   /// Background color for the element.
   pub background_color: Option<Color>,
   /// Box shadow effect for the element.
@@ -200,6 +206,9 @@ impl Default for Style {
       box_shadow: Default::default(),
       background_color: None,
       background_image: None,
+      background_position: None,
+      background_size: None,
+      background_repeat: None,
       grid_auto_columns: None,
       grid_auto_rows: None,
       grid_auto_flow: None,
