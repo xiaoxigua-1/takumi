@@ -153,7 +153,7 @@ jobs:
           - host: windows-2025
             target: x86_64-pc-windows-msvc
             build: bun run build --target x86_64-pc-windows-msvc
-          - host: windows-2025
+          - host: windows-11-arm
             target: aarch64-pc-windows-msvc
             build: bun run build --target aarch64-pc-windows-msvc
           - host: macos-15
@@ -220,7 +220,7 @@ jobs:
         settings:
           - host: windows-2025
             target: x86_64-pc-windows-msvc
-          - host: windows-2025
+          - host: windows-11-arm
             target: aarch64-pc-windows-msvc
           - host: macos-15
             target: aarch64-apple-darwin
