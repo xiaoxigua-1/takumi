@@ -2,7 +2,7 @@ use std::iter::successors;
 
 use image::{
   Rgba, RgbaImage,
-  imageops::{FilterType, overlay, resize},
+  imageops::{FilterType, resize},
 };
 use taffy::{Layout, Point, Size};
 
@@ -332,29 +332,24 @@ pub fn draw_background_layers(
     };
 
     // Compose a layer-sized buffer
-    let mut layer_img = RgbaImage::from_pixel(area_w, area_h, Rgba([0, 0, 0, 0]));
+    let mut layer_img = FastBlendImage(RgbaImage::new(area_w, area_h));
     for y in &ys {
       for x in &xs {
         if *x >= area_w as i32 || *y >= area_h as i32 {
           continue;
         }
 
-        overlay(
-          &mut layer_img,
-          &tile_image,
-          (*x).max(0) as i64,
-          (*y).max(0) as i64,
-        );
+        layer_img.overlay_image(&tile_image, (*x).max(0) as u32, (*y).max(0) as u32);
       }
     }
 
     // Apply radius and overlay
     if let Some(r) = radius {
-      r.apply_to_image(&mut layer_img);
+      r.apply_to_image(&mut layer_img.0);
     }
 
     canvas.overlay_image(
-      &layer_img,
+      &layer_img.0,
       layout.location.x as u32,
       layout.location.y as u32,
     );

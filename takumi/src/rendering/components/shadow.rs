@@ -1,7 +1,4 @@
-use image::{
-  Rgba, RgbaImage,
-  imageops::{fast_blur, overlay},
-};
+use image::{Rgba, RgbaImage, imageops::fast_blur};
 use taffy::{Layout, Point, Size};
 
 use crate::{
@@ -223,21 +220,20 @@ fn draw_outset_shadow(
 
   let box_shadow_size = (shadow.blur_radius + shadow.spread_radius) * 2.0;
 
-  let mut blur_image = RgbaImage::new(
+  let mut blur_image = FastBlendImage(RgbaImage::new(
     (layout.size.width + box_shadow_size) as u32,
     (layout.size.height + box_shadow_size) as u32,
-  );
+  ));
 
-  overlay(
-    &mut blur_image,
+  blur_image.overlay_image(
     &spread_image,
-    shadow.blur_radius as i64,
-    shadow.blur_radius as i64,
+    shadow.blur_radius as u32,
+    shadow.blur_radius as u32,
   );
 
-  apply_fast_blur(&mut blur_image, shadow.blur_radius);
+  apply_fast_blur(&mut blur_image.0, shadow.blur_radius);
 
-  blur_image
+  blur_image.0
 }
 
 fn get_pixel_index_from_axis(x: u32, y: u32, width: u32) -> usize {
