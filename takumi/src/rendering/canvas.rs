@@ -50,16 +50,41 @@ impl FastBlendImage {
   }
 
   /// Draws an image onto the canvas with an offset.
-  ///
-  /// This function enables rayon for parallel processing when the overlay size is greater than 50% of the image size.
-  pub fn overlay_image(&mut self, image: &RgbaImage, left: u32, top: u32) {
-    let target_width = image.width().min(self.width().saturating_sub(left));
-    let target_height = image.height().min(self.height().saturating_sub(top));
+  pub fn overlay_image(&mut self, image: &RgbaImage, left: i32, top: i32) {
+    let drawable_width = if left < 0 {
+      image.width().saturating_sub(left as u32)
+    } else {
+      image.width().min(self.width().saturating_sub(left as u32))
+    };
 
-    for y in 0..target_height {
-      for x in 0..target_width {
-        let pixel = *image.get_pixel(x, y);
-        self.draw_pixel(x + left, y + top, pixel);
+    let drawable_height = if top < 0 {
+      image.height().saturating_sub(top as u32)
+    } else {
+      image.height().min(self.height().saturating_sub(top as u32))
+    };
+
+    if drawable_width == 0 || drawable_height == 0 {
+      return;
+    }
+
+    let overlay_x = if left < 0 {
+      left.saturating_neg() as u32
+    } else {
+      0
+    };
+    let overlay_y = if top < 0 {
+      top.saturating_neg() as u32
+    } else {
+      0
+    };
+
+    let draw_x = left.max(0) as u32;
+    let draw_y = top.max(0) as u32;
+
+    for y in 0..drawable_height {
+      for x in 0..drawable_width {
+        let pixel = *image.get_pixel(x + overlay_x, y + overlay_y);
+        self.draw_pixel(x + draw_x, y + draw_y, pixel);
       }
     }
   }

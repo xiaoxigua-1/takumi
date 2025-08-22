@@ -81,8 +81,8 @@ pub fn draw_box_shadow(
 
         canvas.overlay_image(
           &draw.image,
-          (layout.location.x + draw.offset.x) as u32,
-          (layout.location.y + draw.offset.y) as u32,
+          (layout.location.x + draw.offset.x) as i32,
+          (layout.location.y + draw.offset.y) as i32,
         );
       }
     }
@@ -121,8 +121,8 @@ pub fn draw_box_shadow(
       for draw in images {
         canvas.overlay_image(
           &draw.image,
-          (layout.location.x + draw.offset.x) as u32,
-          (layout.location.y + draw.offset.y) as u32,
+          (layout.location.x + draw.offset.x) as i32,
+          (layout.location.y + draw.offset.y) as i32,
         );
       }
     }
@@ -227,8 +227,8 @@ fn draw_outset_shadow(
 
   blur_image.overlay_image(
     &spread_image,
-    shadow.blur_radius as u32,
-    shadow.blur_radius as u32,
+    shadow.blur_radius as i32,
+    shadow.blur_radius as i32,
   );
 
   apply_fast_blur(&mut blur_image.0, shadow.blur_radius);

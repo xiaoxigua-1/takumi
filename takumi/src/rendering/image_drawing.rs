@@ -161,5 +161,9 @@ pub fn draw_image(
     radius.apply_to_image(&mut image);
   }
 
-  canvas.overlay_image(&image, offset_x + x as u32, offset_y + y as u32);
+  canvas.overlay_image(
+    &image,
+    offset_x as i32 + x as i32,
+    offset_y as i32 + y as i32,
+  );
 }

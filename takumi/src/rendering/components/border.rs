@@ -205,7 +205,7 @@ fn draw_rounded_border(
   // Overlay the border image onto the canvas
   canvas.overlay_image(
     &border_image,
-    border.offset.x as u32,
-    border.offset.y as u32,
+    border.offset.x as i32,
+    border.offset.y as i32,
   );
 }

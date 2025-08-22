@@ -59,7 +59,7 @@ pub fn draw_filled_rect_color(
 
   radius.apply_to_image(&mut image);
 
-  canvas.overlay_image(&image, offset.x as u32, offset.y as u32);
+  canvas.overlay_image(&image, offset.x as i32, offset.y as i32);
 }
 
 fn resolve_length_against_area(unit: LengthUnit, area: u32, context: &RenderContext) -> u32 {
@@ -349,7 +349,7 @@ pub fn draw_background_layers(
           continue;
         }
 
-        layer_img.overlay_image(&tile_image, (*x).max(0) as u32, (*y).max(0) as u32);
+        layer_img.overlay_image(&tile_image, *x, *y);
       }
     }
 
@@ -360,8 +360,8 @@ pub fn draw_background_layers(
 
     canvas.overlay_image(
       &layer_img.0,
-      layout.location.x as u32,
-      layout.location.y as u32,
+      layout.location.x as i32,
+      layout.location.y as i32,
     );
   }
 }

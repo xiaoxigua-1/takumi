@@ -302,7 +302,7 @@ impl<Nodes: Node<Nodes>> ImageRenderer<Nodes> {
           draw_debug_border(&mut canvas, task.layout);
         }
       } else if let Some(job) = jobs_by_index[idx].take() {
-        canvas.overlay_image(&job.image, job.overlay_left, job.overlay_top);
+        canvas.overlay_image(&job.image, job.overlay_left as i32, job.overlay_top as i32);
       }
     }
 
