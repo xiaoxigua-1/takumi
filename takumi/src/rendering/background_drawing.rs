@@ -84,6 +84,8 @@ fn resolve_background_size(
       resolve_length_against_area(width, area.0, context),
       resolve_length_against_area(height, area.1, context),
     ),
+    // as we only support gradients for now, we can just use the area size
+    // if we want to support images, we need to resolve based on the image size
     _ => area,
   }
 }
@@ -141,7 +143,6 @@ fn resolve_position_component_y(
 }
 
 /// Rasterize a single background image (gradient) into a tile of the given size.
-/// Rasterize a single background image (gradient) into a tile of the given size,
 /// resolving non-px stop units using the provided `RenderContext`.
 pub fn render_gradient_tile(
   image: &BackgroundImage,
@@ -270,7 +271,7 @@ pub fn draw_background_layers(
 
   let target_len = images.0.len();
   pad_with_last(&mut positions, target_len, BackgroundPosition::default());
-  pad_with_last(&mut sizes, target_len, BackgroundSize::Auto);
+  pad_with_last(&mut sizes, target_len, BackgroundSize::default());
   pad_with_last(&mut repeats, target_len, BackgroundRepeat::repeat());
 
   // Paint each background layer in order

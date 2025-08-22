@@ -113,7 +113,7 @@ pub(crate) fn resolve_stops_along_axis(
       GradientStop::Hint(hint) => {
         let before_color = resolved
           .get(i - 1)
-          .expect("There should be a color before a hint")
+          .expect("Gradient hint found without a preceding color stop. Each hint must follow a color stop.")
           .color;
 
         let after_color = stops
@@ -122,7 +122,7 @@ pub(crate) fn resolve_stops_along_axis(
             GradientStop::ColorHint { color, hint: _ } => Some(*color),
             GradientStop::Hint(_) => None,
           })
-          .expect("There should be a color after a hint");
+          .expect("Gradient hint found without a following color stop. Each hint must be followed by a color stop.");
 
         let interpolated_color = interpolate_rgba(before_color, after_color, 0.5);
 
