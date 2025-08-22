@@ -150,6 +150,12 @@ jobs:
       fail-fast: false
       matrix:
         settings:
+          - host: windows-2025
+            target: x86_64-pc-windows-msvc
+            build: bun run build --target x86_64-pc-windows-msvc
+          - host: windows-2025
+            target: aarch64-pc-windows-msvc
+            build: bun run build --target aarch64-pc-windows-msvc
           - host: macos-15
             target: aarch64-apple-darwin
             build: bun run build --target aarch64-apple-darwin
@@ -194,15 +200,6 @@ jobs:
       - name: Build
         working-directory: takumi-napi-core
         run: ${{ matrix.settings.build }}
-
-      - name: Patch causes logging
-        run: |
-          # Replace { cause: loadErrors } with a JSON stringified version of loadErrors
-          # This is to avoid runtime printing as `[Array]`
-          awk '{
-            gsub(/\{ cause: loadErrors \}/, "{ cause: JSON.stringify(loadErrors, (k, v) => v instanceof Error ? (Object.getOwnPropertyNames(v).reduce((o, n) => (o[n] = v[n], o), {})) : v, 2) }");
-            print;
-          }' takumi-napi-core/index.js > takumi-napi-core/index.js.tmp && mv takumi-napi-core/index.js.tmp takumi-napi-core/index.js
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
