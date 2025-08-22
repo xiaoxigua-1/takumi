@@ -290,6 +290,16 @@ pub fn draw_background_layers(
     // Build tile image (use context-aware resolver where possible)
     let mut tile_image = render_gradient_tile(image, tile_w, tile_h, context);
 
+    // Fast path: if the tile size is the same as the area size, we can just draw the tile image directly
+    if tile_w == area_w && tile_h == area_h {
+      if let Some(r) = radius {
+        r.apply_to_image(&mut tile_image);
+      }
+
+      canvas.overlay_image(&tile_image, 0, 0);
+      continue;
+    }
+
     // Handle round adjustment (rescale per axis)
     let xs: Vec<i32> = match repeat.x {
       BackgroundRepeatStyle::Repeat => {
