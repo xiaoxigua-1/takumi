@@ -1,4 +1,4 @@
-use cssparser::{Parser, ParserInput, Token, match_ignore_ascii_case};
+use cssparser::{Parser, ParserInput};
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
@@ -31,25 +31,19 @@ impl Default for BackgroundSize {
 
 impl<'i> FromCss<'i> for BackgroundSize {
   fn from_css(input: &mut Parser<'i, '_>) -> ParseResult<'i, Self> {
-    // skip "auto" as it could have a second value, and it should be treated as a LengthUnit
-    if let Ok(ident) = input.try_parse(Parser::expect_ident_cloned)
-      && !ident.eq_ignore_ascii_case("auto")
+    if input
+      .try_parse(|input| input.expect_ident_matching("cover"))
+      .is_ok()
     {
-      if let Some(v) = match_ignore_ascii_case! {&ident,
-        "cover" => Some(BackgroundSize::Cover),
-        "contain" => Some(BackgroundSize::Contain),
-        _ => None,
-      } {
-        return Ok(v);
-      }
-      // fallback to treating ident as error
-      let location = input.current_source_location();
-      return Err(
-        location
-          .new_basic_unexpected_token_error(Token::Ident(ident))
-          .into(),
-      );
-    };
+      return Ok(BackgroundSize::Cover);
+    }
+
+    if input
+      .try_parse(|input| input.expect_ident_matching("contain"))
+      .is_ok()
+    {
+      return Ok(BackgroundSize::Contain);
+    }
 
     let first = LengthUnit::from_css(input)?;
     let Ok(second) = input.try_parse(LengthUnit::from_css) else {
@@ -103,5 +97,109 @@ impl TryFrom<BackgroundSizesValue> for BackgroundSizes {
         Ok(Self(values))
       }
     }
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use cssparser::{Parser, ParserInput};
+
+  fn parse_bg_size(input: &str) -> ParseResult<'_, BackgroundSize> {
+    let mut parser_input = ParserInput::new(input);
+    let mut parser = Parser::new(&mut parser_input);
+    BackgroundSize::from_css(&mut parser)
+  }
+
+  #[test]
+  fn parses_cover_keyword() {
+    let result = parse_bg_size("cover").unwrap();
+    assert_eq!(result, BackgroundSize::Cover);
+  }
+
+  #[test]
+  fn parses_contain_keyword() {
+    let result = parse_bg_size("contain").unwrap();
+    assert_eq!(result, BackgroundSize::Contain);
+  }
+
+  #[test]
+  fn parses_single_percentage_value_as_both_dimensions() {
+    let result = parse_bg_size("50%\t").unwrap();
+    assert_eq!(
+      result,
+      BackgroundSize::Explicit {
+        width: LengthUnit::Percentage(50.0),
+        height: LengthUnit::Percentage(50.0),
+      }
+    );
+  }
+
+  #[test]
+  fn parses_single_auto_value_as_both_dimensions() {
+    let result = parse_bg_size("auto").unwrap();
+    assert_eq!(
+      result,
+      BackgroundSize::Explicit {
+        width: LengthUnit::Auto,
+        height: LengthUnit::Auto,
+      }
+    );
+  }
+
+  #[test]
+  fn parses_two_values_mixed_units() {
+    let result = parse_bg_size("100px auto").unwrap();
+    assert_eq!(
+      result,
+      BackgroundSize::Explicit {
+        width: LengthUnit::Px(100.0),
+        height: LengthUnit::Auto,
+      }
+    );
+  }
+
+  #[test]
+  fn errors_on_unknown_identifier() {
+    let result = parse_bg_size("bogus");
+    assert!(result.is_err());
+  }
+
+  fn parse_bg_sizes(input: &str) -> Result<BackgroundSizes, &'static str> {
+    BackgroundSizes::try_from(BackgroundSizesValue::Css(input.to_string()))
+  }
+
+  #[test]
+  fn parses_multiple_layers_with_keywords_and_values() {
+    let parsed = parse_bg_sizes("cover, 50% auto").unwrap();
+    assert_eq!(parsed.0.len(), 2);
+    assert_eq!(parsed.0[0], BackgroundSize::Cover);
+    assert_eq!(
+      parsed.0[1],
+      BackgroundSize::Explicit {
+        width: LengthUnit::Percentage(50.0),
+        height: LengthUnit::Auto,
+      }
+    );
+  }
+
+  #[test]
+  fn parses_multiple_layers_with_single_value_duplication() {
+    let parsed = parse_bg_sizes("25%, contain").unwrap();
+    assert_eq!(parsed.0.len(), 2);
+    assert_eq!(
+      parsed.0[0],
+      BackgroundSize::Explicit {
+        width: LengthUnit::Percentage(25.0),
+        height: LengthUnit::Percentage(25.0),
+      }
+    );
+    assert_eq!(parsed.0[1], BackgroundSize::Contain);
+  }
+
+  #[test]
+  fn errors_on_invalid_first_layer() {
+    let result = parse_bg_sizes("nope");
+    assert!(result.is_err());
   }
 }
