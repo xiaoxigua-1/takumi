@@ -56,6 +56,7 @@ impl<Nodes: Node<Nodes>> Node<Nodes> for ImageNode {
     };
 
     let size = match &*image {
+      #[cfg(feature = "svg")]
       ImageSource::Svg(svg) => Size {
         width: svg.size().width(),
         height: svg.size().height(),
