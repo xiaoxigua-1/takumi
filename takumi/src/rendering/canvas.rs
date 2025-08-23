@@ -52,13 +52,13 @@ impl FastBlendImage {
   /// Draws an image onto the canvas with an offset.
   pub fn overlay_image(&mut self, image: &RgbaImage, left: i32, top: i32) {
     let drawable_width = if left < 0 {
-      image.width().saturating_sub(left as u32)
+      image.width().saturating_sub(left.saturating_neg() as u32)
     } else {
       image.width().min(self.width().saturating_sub(left as u32))
     };
 
     let drawable_height = if top < 0 {
-      image.height().saturating_sub(top as u32)
+      image.height().saturating_sub(top.saturating_neg() as u32)
     } else {
       image.height().min(self.height().saturating_sub(top as u32))
     };

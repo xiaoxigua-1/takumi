@@ -1,5 +1,5 @@
 use cosmic_text::Weight;
-use cssparser::{Parser, Token, match_ignore_ascii_case};
+use cssparser::{Parser, ParserInput, Token, match_ignore_ascii_case};
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
@@ -12,7 +12,36 @@ use crate::layout::style::{FromCss, ParseResult};
 /// 400 (normal), 500 (medium), 600 (semi bold), 700 (bold),
 /// 800 (extra bold), 900 (black).
 #[derive(Debug, Copy, Clone, Deserialize, Serialize, TS, PartialEq)]
+#[serde(try_from = "FontWeightValue")]
+#[ts(as = "FontWeightValue")]
 pub struct FontWeight(pub u16);
+
+/// Proxy type for `FontWeight` to parse from CSS.
+#[derive(Debug, Clone, Deserialize, Serialize, TS, PartialEq)]
+#[serde(untagged)]
+enum FontWeightValue {
+  /// A number value between 100 and 900.
+  Number(u16),
+  /// CSS string value.
+  Css(String),
+}
+
+impl TryFrom<FontWeightValue> for FontWeight {
+  type Error = &'static str;
+
+  fn try_from(value: FontWeightValue) -> Result<Self, Self::Error> {
+    match value {
+      FontWeightValue::Number(n) => Ok(FontWeight(n)),
+      FontWeightValue::Css(ident) => {
+        let mut input = ParserInput::new(&ident);
+        let mut parser = Parser::new(&mut input);
+
+        FontWeight::from_css(&mut parser)
+          .map_err(|_| "Expected a valid font weight keyword or number")
+      }
+    }
+  }
+}
 
 impl Default for FontWeight {
   fn default() -> Self {
