@@ -52,10 +52,10 @@ fn test_style_border_radius_per_corner() {
       height: Percentage(100.0),
       background_color: Some(Color([255, 0, 0, 255])),
       // Per-corner radii
-      border_radius_top_left: Some(Px(40.0)),
-      border_radius_top_right: Some(Px(10.0)),
-      border_radius_bottom_right: Some(Px(80.0)),
-      border_radius_bottom_left: Some(Px(0.0)),
+      border_top_left_radius: Some(Px(40.0)),
+      border_top_right_radius: Some(Px(10.0)),
+      border_bottom_right_radius: Some(Px(80.0)),
+      border_bottom_left_radius: Some(Px(0.0)),
       ..Default::default()
     },
     children: None,

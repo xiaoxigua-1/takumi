@@ -116,13 +116,13 @@ pub struct Style {
   /// Shorthand border radius (top-left, top-right, bottom-right, bottom-left).
   pub border_radius: Option<Sides<LengthUnit>>,
   /// Longhand: top-left border radius. Overrides `border_radius` top-left value.
-  pub border_radius_top_left: Option<LengthUnit>,
+  pub border_top_left_radius: Option<LengthUnit>,
   /// Longhand: top-right border radius. Overrides `border_radius` top-right value.
-  pub border_radius_top_right: Option<LengthUnit>,
+  pub border_top_right_radius: Option<LengthUnit>,
   /// Longhand: bottom-right border radius. Overrides `border_radius` bottom-right value.
-  pub border_radius_bottom_right: Option<LengthUnit>,
+  pub border_bottom_right_radius: Option<LengthUnit>,
   /// Longhand: bottom-left border radius. Overrides `border_radius` bottom-left value.
-  pub border_radius_bottom_left: Option<LengthUnit>,
+  pub border_bottom_left_radius: Option<LengthUnit>,
   /// Width of the element's border on each side (top, right, bottom, left).
   pub border_width: Sides<LengthUnit>,
   /// Longhand: top border width. Overrides `border_width` top value.
@@ -213,10 +213,10 @@ impl Default for Style {
       border_bottom_width: None,
       border_left_width: None,
       border_radius: None,
-      border_radius_top_left: None,
-      border_radius_top_right: None,
-      border_radius_bottom_right: None,
-      border_radius_bottom_left: None,
+      border_top_left_radius: None,
+      border_top_right_radius: None,
+      border_bottom_right_radius: None,
+      border_bottom_left_radius: None,
       object_fit: Default::default(),
       box_shadow: Default::default(),
       background_color: None,
@@ -409,10 +409,10 @@ impl Style {
   fn resolved_border_radius(&self) -> taffy::Rect<LengthUnit> {
     Self::resolve_rect_with_longhands(
       self.border_radius.unwrap_or_default(),
-      self.border_radius_top_left,
-      self.border_radius_top_right,
-      self.border_radius_bottom_right,
-      self.border_radius_bottom_left,
+      self.border_top_left_radius,
+      self.border_top_right_radius,
+      self.border_bottom_right_radius,
+      self.border_bottom_left_radius,
     )
   }
 
