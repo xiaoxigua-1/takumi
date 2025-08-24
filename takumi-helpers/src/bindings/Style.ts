@@ -186,19 +186,19 @@ borderRadius?: Sides<LengthUnit>,
 /**
  * Longhand: top-left border radius. Overrides `border_radius` top-left value.
  */
-borderRadiusTopLeft?: LengthUnit, 
+borderTopLeftRadius?: LengthUnit, 
 /**
  * Longhand: top-right border radius. Overrides `border_radius` top-right value.
  */
-borderRadiusTopRight?: LengthUnit, 
+borderTopRightRadius?: LengthUnit, 
 /**
  * Longhand: bottom-right border radius. Overrides `border_radius` bottom-right value.
  */
-borderRadiusBottomRight?: LengthUnit, 
+borderBottomRightRadius?: LengthUnit, 
 /**
  * Longhand: bottom-left border radius. Overrides `border_radius` bottom-left value.
  */
-borderRadiusBottomLeft?: LengthUnit, 
+borderBottomLeftRadius?: LengthUnit, 
 /**
  * Width of the element's border on each side (top, right, bottom, left).
  */
