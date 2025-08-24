@@ -208,6 +208,7 @@ pub enum GradientStop {
     /// The color of the gradient stop.
     color: Color,
     /// The position of the gradient stop.
+    #[ts(optional)]
     hint: Option<StopPosition>,
   },
   /// A numeric gradient stop.

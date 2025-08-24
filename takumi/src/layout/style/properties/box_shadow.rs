@@ -1,6 +1,6 @@
-use std::fmt::Debug;
+use std::{borrow::Cow, fmt::Debug};
 
-use cssparser::{BasicParseError, BasicParseErrorKind, ParseError, Parser, ParserInput};
+use cssparser::{BasicParseErrorKind, ParseError, Parser, ParserInput};
 use serde::{Deserialize, Deserializer, Serialize};
 use ts_rs::TS;
 
@@ -150,7 +150,7 @@ impl<'i> FromCss<'i> for BoxShadow {
 
       // Try to parse length values (offsets, blur radius, spread radius)
       if lengths.is_none() {
-        let value = input.try_parse::<_, _, ParseError<BasicParseError<'i>>>(|input| {
+        let value = input.try_parse::<_, _, ParseError<Cow<'i, str>>>(|input| {
           // Parse the required horizontal and vertical offsets
           let horizontal = LengthUnit::from_css(input)?;
           let vertical = LengthUnit::from_css(input)?;

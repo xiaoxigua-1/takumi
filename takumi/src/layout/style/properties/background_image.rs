@@ -49,7 +49,7 @@ pub enum BackgroundImagesValue {
 pub struct BackgroundImages(pub Vec<BackgroundImage>);
 
 impl TryFrom<BackgroundImagesValue> for BackgroundImages {
-  type Error = &'static str;
+  type Error = String;
 
   fn try_from(value: BackgroundImagesValue) -> Result<Self, Self::Error> {
     match value {
@@ -58,16 +58,10 @@ impl TryFrom<BackgroundImagesValue> for BackgroundImages {
         let mut input = ParserInput::new(&css);
         let mut parser = Parser::new(&mut input);
 
-        let mut images = vec![
-          BackgroundImage::from_css(&mut parser)
-            .map_err(|_| "Failed to parse first background image")?,
-        ];
+        let mut images = vec![BackgroundImage::from_css(&mut parser).map_err(|e| e.to_string())?];
 
         while parser.expect_comma().is_ok() {
-          images.push(
-            BackgroundImage::from_css(&mut parser)
-              .map_err(|_| "Failed to parse background image")?,
-          );
+          images.push(BackgroundImage::from_css(&mut parser).map_err(|e| e.to_string())?);
         }
 
         Ok(Self(images))

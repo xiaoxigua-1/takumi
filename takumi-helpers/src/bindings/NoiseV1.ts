@@ -9,20 +9,24 @@ export type NoiseV1 = {
 /**
  * Controls the scale of the noise pattern. Higher values create finer, more detailed patterns
  */
-frequency: number | null, 
+frequency?: number, 
 /**
  * Random seed value that determines the unique noise pattern generated
  */
-seed: number | null, 
+seed?: number, 
 /**
  * Number of noise layers combined to create complex patterns. More octaves add detail
  */
-octaves: number | null, 
+octaves?: number, 
 /**
  * Controls how much each octave contributes to the final pattern. Lower values create smoother patterns
  */
-persistence: number | null, 
+persistence?: number, 
 /**
  * Controls the frequency multiplier between octaves. Higher values create more varied patterns
  */
-lacunarity: number | null, };
+lacunarity?: number, 
+/**
+ * Controls the opacity of the noise pattern. 0.0 is fully transparent, 1.0 is fully opaque
+ */
+opacity?: number, };

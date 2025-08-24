@@ -9,8 +9,6 @@ use image::{Pixel, Rgba, RgbaImage};
 ///
 /// This implementation provides faster blending by skipping pixel operations when the source color is fully transparent
 /// and using direct pixel assignment when the source color is fully opaque.
-///
-/// Based on the implementation from [imageproc's Blend](https://docs.rs/imageproc/latest/imageproc/drawing/struct.Blend.html).
 pub struct FastBlendImage(pub RgbaImage);
 
 impl FastBlendImage {
@@ -20,14 +18,8 @@ impl FastBlendImage {
       return;
     }
 
-    let pix = self.0.get_pixel_mut(x, y);
-
-    if color.0[3] == 255 || pix.0[3] == 0 {
-      *pix = color;
-      return;
-    }
-
-    pix.blend(&color);
+    // image-rs blend will skip the operation if the source color is fully transparent
+    self.0.get_pixel_mut(x, y).blend(&color);
   }
 }
 
