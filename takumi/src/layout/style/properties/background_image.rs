@@ -2,7 +2,7 @@ use cssparser::{Parser, ParserInput};
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
-use crate::layout::style::{FromCss, LinearGradient, ParseResult, RadialGradient};
+use crate::layout::style::{FromCss, LinearGradient, NoiseV1, ParseResult, RadialGradient};
 
 /// Background image variants supported by Takumi.
 #[derive(Debug, Clone, PartialEq, TS, Deserialize, Serialize)]
@@ -12,6 +12,8 @@ pub enum BackgroundImage {
   Linear(LinearGradient),
   /// CSS radial-gradient(...)
   Radial(RadialGradient),
+  /// Custom noise-v1(...)
+  Noise(NoiseV1),
 }
 
 impl<'i> FromCss<'i> for BackgroundImage {
@@ -21,6 +23,9 @@ impl<'i> FromCss<'i> for BackgroundImage {
     }
     if let Ok(gradient) = input.try_parse(RadialGradient::from_css) {
       return Ok(BackgroundImage::Radial(gradient));
+    }
+    if let Ok(noise) = input.try_parse(NoiseV1::from_css) {
+      return Ok(BackgroundImage::Noise(noise));
     }
     // TODO: url(...) images can be supported here later
     Err(input.new_error(cssparser::BasicParseErrorKind::QualifiedRuleInvalid))
