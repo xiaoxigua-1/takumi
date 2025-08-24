@@ -62,7 +62,7 @@ impl BoxShadowResolved {
 pub fn draw_box_shadow(
   context: &RenderContext,
   box_shadows: &BoxShadows,
-  border_radius: Option<BorderRadius>,
+  border_radius: BorderRadius,
   canvas: &mut FastBlendImage,
   layout: Layout,
   phase: BoxShadowRenderPhase,
@@ -136,7 +136,7 @@ struct ShadowDraw {
 
 fn draw_single_box_shadow(
   shadow: &BoxShadowResolved,
-  border_radius: Option<BorderRadius>,
+  border_radius: BorderRadius,
   layout: Layout,
 ) -> ShadowDraw {
   if shadow.inset {
@@ -157,7 +157,7 @@ fn draw_single_box_shadow(
 
 fn draw_inset_shadow(
   shadow: &BoxShadowResolved,
-  border_radius: Option<BorderRadius>,
+  border_radius: BorderRadius,
   layout: Layout,
 ) -> RgbaImage {
   let mut shadow_image = RgbaImage::from_pixel(
@@ -180,7 +180,7 @@ fn draw_inset_shadow(
   );
 
   if shadow.blur_radius <= 0.0 {
-    if let Some(border_radius) = border_radius {
+    if !border_radius.is_zero() {
       border_radius.apply_to_image(&mut shadow_image);
     }
 
@@ -189,7 +189,7 @@ fn draw_inset_shadow(
 
   apply_fast_blur(&mut shadow_image, shadow.blur_radius);
 
-  if let Some(border_radius) = border_radius {
+  if !border_radius.is_zero() {
     border_radius.apply_to_image(&mut shadow_image);
   }
 
@@ -199,7 +199,7 @@ fn draw_inset_shadow(
 /// Draws an outset (external) box shadow.
 fn draw_outset_shadow(
   shadow: &BoxShadowResolved,
-  border_radius: Option<BorderRadius>,
+  mut border_radius: BorderRadius,
   layout: Layout,
 ) -> RgbaImage {
   let mut spread_image = RgbaImage::from_pixel(
@@ -208,9 +208,8 @@ fn draw_outset_shadow(
     shadow.color,
   );
 
-  if let Some(mut border_radius) = border_radius {
+  if !border_radius.is_zero() {
     border_radius.offset_px(shadow.spread_radius);
-
     border_radius.apply_to_image(&mut spread_image);
   }
 
@@ -244,9 +243,9 @@ fn remove_inner_section(
   image: &mut RgbaImage,
   offset: Point<i32>,
   size: Size<u32>,
-  border_radius: Option<BorderRadius>,
+  border_radius: BorderRadius,
 ) {
-  let Some(border_radius) = border_radius else {
+  if border_radius.is_zero() {
     let width = image.width();
     let image_mut = image.as_mut();
 

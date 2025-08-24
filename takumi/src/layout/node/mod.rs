@@ -13,8 +13,8 @@ use crate::{
   impl_node_enum,
   layout::style::Style,
   rendering::{
-    BorderRadius, BoxShadowRenderPhase, FastBlendImage, RenderContext, draw_background_layers,
-    draw_box_shadow, draw_filled_rect_color,
+    BoxShadowRenderPhase, FastBlendImage, RenderContext, draw_background_layers, draw_box_shadow,
+    draw_filled_rect_color,
   },
 };
 
@@ -91,11 +91,7 @@ pub trait Node<N: Node<N>>: Send + Sync + Clone {
     layout: Layout,
   ) {
     if let Some(box_shadow) = &self.get_style().box_shadow {
-      let border_radius = self
-        .get_style()
-        .inheritable_style
-        .resolved_border_radius()
-        .map(|radius| BorderRadius::from_layout(context, &layout, radius.into()));
+      let border_radius = self.get_style().create_border_radius(&layout, context);
 
       draw_box_shadow(
         context,
@@ -116,11 +112,7 @@ pub trait Node<N: Node<N>>: Send + Sync + Clone {
     layout: Layout,
   ) {
     if let Some(box_shadow) = &self.get_style().box_shadow {
-      let border_radius = self
-        .get_style()
-        .inheritable_style
-        .resolved_border_radius()
-        .map(|radius| BorderRadius::from_layout(context, &layout, radius.into()));
+      let border_radius = self.get_style().create_border_radius(&layout, context);
 
       draw_box_shadow(
         context,
@@ -141,11 +133,7 @@ pub trait Node<N: Node<N>>: Send + Sync + Clone {
     layout: Layout,
   ) {
     if let Some(background_color) = &self.get_style().background_color {
-      let radius = self
-        .get_style()
-        .inheritable_style
-        .resolved_border_radius()
-        .map(|radius| BorderRadius::from_layout(context, &layout, radius.into()));
+      let radius = self.get_style().create_border_radius(&layout, context);
 
       draw_filled_rect_color(
         canvas,

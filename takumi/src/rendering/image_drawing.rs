@@ -3,7 +3,7 @@ use image::{RgbaImage, imageops::FilterType};
 use taffy::Layout;
 
 use crate::layout::style::{ObjectFit, Style};
-use crate::rendering::{BorderRadius, FastBlendImage, RenderContext};
+use crate::rendering::{FastBlendImage, RenderContext};
 use crate::resources::image::ImageSource;
 
 /// Process an image according to the specified object-fit style.
@@ -156,8 +156,8 @@ pub fn draw_image(
   );
 
   // Apply border radius if specified
-  if let Some(border_radius) = style.inheritable_style.resolved_border_radius() {
-    let radius = BorderRadius::from_layout(context, &layout, border_radius.into());
+  let radius = style.create_border_radius(&layout, context);
+  if !radius.is_zero() {
     radius.apply_to_image(&mut image);
   }
 

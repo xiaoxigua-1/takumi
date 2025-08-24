@@ -4,7 +4,7 @@ use taffy::{Layout, Point, Rect};
 use crate::{layout::style::LengthUnit, rendering::RenderContext};
 
 /// Represents the four corners of an image for border radius processing.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Default, Clone, Copy)]
 pub struct BorderRadius {
   /// The radius of the top-left corner
   pub top_left: f32,
@@ -17,6 +17,15 @@ pub struct BorderRadius {
 }
 
 impl BorderRadius {
+  /// Returns true if all corners have a radius of 0.
+  #[inline]
+  pub fn is_zero(&self) -> bool {
+    self.top_left == 0.0
+      && self.top_right == 0.0
+      && self.bottom_right == 0.0
+      && self.bottom_left == 0.0
+  }
+
   /// Creates a new `BorderRadius` from a `Layout` and a `Rect` of `LengthUnit`s.
   pub fn from_layout(context: &RenderContext, layout: &Layout, radius: Rect<LengthUnit>) -> Self {
     // CSS border-radius percentages: use smaller of width/height for circular corners
@@ -43,6 +52,7 @@ impl BorderRadius {
   }
 
   /// Applies the border radius to an image.
+  #[inline]
   pub fn apply_to_image(&self, img: &mut RgbaImage) {
     apply_border_radius_antialiased(img, *self);
   }
@@ -64,6 +74,10 @@ fn resolve_border_radius_from_percentage_css(
 /// This function processes the corners of the image to create smooth, antialiased rounded corners.
 /// The border radius is automatically clamped to half the minimum dimension of the image.
 fn apply_border_radius_antialiased(img: &mut RgbaImage, radius: BorderRadius) {
+  if radius.is_zero() {
+    return;
+  }
+
   let (width, height) = img.dimensions();
   let max_radius = width.min(height) as f32 / 2.0;
 

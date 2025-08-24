@@ -1,12 +1,12 @@
 use cosmic_text::{Align, FamilyOwned, Weight};
 use merge::{Merge, option::overwrite_none};
 use serde::{Deserialize, Serialize};
-use taffy::{Size, Style as TaffyStyle};
+use taffy::{Layout, Size, Style as TaffyStyle};
 use ts_rs::TS;
 
 use crate::{
   layout::{DEFAULT_FONT_SIZE, DEFAULT_LINE_HEIGHT_SCALER, style::properties::*},
-  rendering::RenderContext,
+  rendering::{BorderRadius, RenderContext},
 };
 
 /// Represents the resolved font style for a text node.
@@ -113,6 +113,16 @@ pub struct Style {
   pub flex_grow: f32,
   /// How much the flex item should shrink relative to other flex items when negative free space is distributed.
   pub flex_shrink: f32,
+  /// Shorthand border radius (top-left, top-right, bottom-right, bottom-left).
+  pub border_radius: Option<Sides<LengthUnit>>,
+  /// Longhand: top-left border radius. Overrides `border_radius` top-left value.
+  pub border_radius_top_left: Option<LengthUnit>,
+  /// Longhand: top-right border radius. Overrides `border_radius` top-right value.
+  pub border_radius_top_right: Option<LengthUnit>,
+  /// Longhand: bottom-right border radius. Overrides `border_radius` bottom-right value.
+  pub border_radius_bottom_right: Option<LengthUnit>,
+  /// Longhand: bottom-left border radius. Overrides `border_radius` bottom-left value.
+  pub border_radius_bottom_left: Option<LengthUnit>,
   /// Width of the element's border on each side (top, right, bottom, left).
   pub border_width: Sides<LengthUnit>,
   /// Longhand: top border width. Overrides `border_width` top value.
@@ -202,6 +212,11 @@ impl Default for Style {
       border_right_width: None,
       border_bottom_width: None,
       border_left_width: None,
+      border_radius: None,
+      border_radius_top_left: None,
+      border_radius_top_right: None,
+      border_radius_bottom_right: None,
+      border_radius_bottom_left: None,
       object_fit: Default::default(),
       box_shadow: Default::default(),
       background_color: None,
@@ -250,16 +265,6 @@ pub struct InheritableStyle {
   pub font_weight: Option<FontWeight>,
   /// Maximum number of lines for text before truncation.
   pub line_clamp: Option<u32>,
-  /// Shorthand border radius (top, right, bottom, left).
-  pub border_radius: Option<Sides<LengthUnit>>,
-  /// Longhand: top border radius. Overrides `border_radius` top value.
-  pub border_radius_top: Option<LengthUnit>,
-  /// Longhand: right border radius. Overrides `border_radius` right value.
-  pub border_radius_right: Option<LengthUnit>,
-  /// Longhand: bottom border radius. Overrides `border_radius` bottom value.
-  pub border_radius_bottom: Option<LengthUnit>,
-  /// Longhand: left border radius. Overrides `border_radius` left value.
-  pub border_radius_left: Option<LengthUnit>,
   /// Text alignment within the element.
   pub text_align: Option<TextAlign>,
   /// Additional spacing between characters in text.
@@ -400,6 +405,23 @@ impl Style {
     )
   }
 
+  #[inline]
+  fn resolved_border_radius(&self) -> taffy::Rect<LengthUnit> {
+    Self::resolve_rect_with_longhands(
+      self.border_radius.unwrap_or_default(),
+      self.border_radius_top_left,
+      self.border_radius_top_right,
+      self.border_radius_bottom_right,
+      self.border_radius_bottom_left,
+    )
+  }
+
+  /// Creates a `BorderRadius` from the style's border radius properties.
+  #[inline]
+  pub fn create_border_radius(&self, layout: &Layout, context: &RenderContext) -> BorderRadius {
+    BorderRadius::from_layout(context, layout, self.resolved_border_radius())
+  }
+
   /// Converts this style to a Taffy-compatible style for layout calculations.
   pub fn resolve_to_taffy_style(&self, context: &RenderContext) -> TaffyStyle {
     // Convert grid templates and associated line names
@@ -510,41 +532,6 @@ impl Style {
         .text_overflow
         .unwrap_or(TextOverflow::Clip),
       text_transform: self.inheritable_style.text_transform.unwrap_or_default(),
-    }
-  }
-}
-
-impl InheritableStyle {
-  /// Returns the final border radius considering longhands overriding shorthand.
-  pub fn resolved_border_radius(&self) -> Option<Sides<LengthUnit>> {
-    let mut any_longhand = false;
-    let mut values = if let Some(s) = self.border_radius {
-      s.0
-    } else {
-      [LengthUnit::zero(); 4]
-    };
-
-    if let Some(v) = self.border_radius_top {
-      values[0] = v;
-      any_longhand = true;
-    }
-    if let Some(v) = self.border_radius_right {
-      values[1] = v;
-      any_longhand = true;
-    }
-    if let Some(v) = self.border_radius_bottom {
-      values[2] = v;
-      any_longhand = true;
-    }
-    if let Some(v) = self.border_radius_left {
-      values[3] = v;
-      any_longhand = true;
-    }
-
-    if self.border_radius.is_some() || any_longhand {
-      Some(Sides(values))
-    } else {
-      None
     }
   }
 }

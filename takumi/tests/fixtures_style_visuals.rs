@@ -35,16 +35,36 @@ fn test_style_border_radius() {
       width: Percentage(100.0),
       height: Percentage(100.0),
       background_color: Some(Color([255, 0, 0, 255])), // Red background to show rounded corners
-      inheritable_style: InheritableStyle {
-        border_radius: Some(Px(20.0).into()), // Uniform rounded corners of 20px
-        ..Default::default()
-      },
+      border_radius: Some(Px(20.0).into()),            // Uniform rounded corners of 20px
       ..Default::default()
     },
     children: None,
   };
 
   run_style_width_test(container.into(), "tests/fixtures/style_border_radius.png");
+}
+
+#[test]
+fn test_style_border_radius_per_corner() {
+  let container = ContainerNode {
+    style: Style {
+      width: Percentage(100.0),
+      height: Percentage(100.0),
+      background_color: Some(Color([255, 0, 0, 255])),
+      // Per-corner radii
+      border_radius_top_left: Some(Px(40.0)),
+      border_radius_top_right: Some(Px(10.0)),
+      border_radius_bottom_right: Some(Px(80.0)),
+      border_radius_bottom_left: Some(Px(0.0)),
+      ..Default::default()
+    },
+    children: None,
+  };
+
+  run_style_width_test(
+    container.into(),
+    "tests/fixtures/style_border_radius_per_corner.png",
+  );
 }
 
 #[test]
@@ -116,10 +136,7 @@ fn test_style_box_shadow_inset() {
           width: Px(120.0),
           height: Px(80.0),
           background_color: Some(Color([255, 255, 255, 255])), // White child for inset visibility
-          inheritable_style: InheritableStyle {
-            border_radius: Some(Px(16.0).into()),
-            ..Default::default()
-          },
+          border_radius: Some(Px(16.0).into()),
           box_shadow: Some(BoxShadows(vec![BoxShadow {
             color: Color([0, 0, 0, 153]),
             offset_x: Px(4.0),

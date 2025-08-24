@@ -7,7 +7,6 @@ import type { ImageScalingAlgorithm } from "./ImageScalingAlgorithm";
 import type { LengthUnit } from "./LengthUnit";
 import type { LineHeight } from "./LineHeight";
 import type { LinearGradientOrColor } from "./LinearGradientOrColor";
-import type { Sides } from "./Sides";
 import type { TextAlign } from "./TextAlign";
 import type { TextOverflow } from "./TextOverflow";
 import type { TextStyle } from "./TextStyle";
@@ -61,26 +60,6 @@ fontWeight?: FontWeight,
  * Maximum number of lines for text before truncation.
  */
 lineClamp?: number, 
-/**
- * Shorthand border radius (top, right, bottom, left).
- */
-borderRadius?: Sides<LengthUnit>, 
-/**
- * Longhand: top border radius. Overrides `border_radius` top value.
- */
-borderRadiusTop?: LengthUnit, 
-/**
- * Longhand: right border radius. Overrides `border_radius` right value.
- */
-borderRadiusRight?: LengthUnit, 
-/**
- * Longhand: bottom border radius. Overrides `border_radius` bottom value.
- */
-borderRadiusBottom?: LengthUnit, 
-/**
- * Longhand: left border radius. Overrides `border_radius` left value.
- */
-borderRadiusLeft?: LengthUnit, 
 /**
  * Text alignment within the element.
  */

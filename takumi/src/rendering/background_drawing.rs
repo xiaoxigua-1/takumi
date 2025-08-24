@@ -20,7 +20,7 @@ pub fn draw_filled_rect_color(
   size: Size<f32>,
   offset: Point<f32>,
   color: Color,
-  radius: Option<BorderRadius>,
+  radius: BorderRadius,
 ) {
   let color: Rgba<u8> = color.into();
   let size = Size {
@@ -28,7 +28,7 @@ pub fn draw_filled_rect_color(
     height: size.height as u32,
   };
 
-  let Some(radius) = radius else {
+  if radius.is_zero() {
     // Fast path: if drawing on the entire canvas, we can just replace the entire canvas with the color
     if color.0[3] == 255
       && offset.x == 0.0
@@ -242,10 +242,7 @@ pub fn draw_background_layers(
     return;
   };
 
-  let radius = style
-    .inheritable_style
-    .resolved_border_radius()
-    .map(|r| BorderRadius::from_layout(context, &layout, r.into()));
+  let radius = style.create_border_radius(&layout, context);
 
   let area_w = layout.size.width as u32;
   let area_h = layout.size.height as u32;
@@ -337,8 +334,8 @@ pub fn draw_background_layers(
       (&ys[..], &xs[..], tile_w == area_w, tile_h == area_h),
       ([0], [0], true, true)
     ) {
-      if let Some(r) = radius {
-        r.apply_to_image(&mut tile_image);
+      if !radius.is_zero() {
+        radius.apply_to_image(&mut tile_image);
       }
 
       canvas.overlay_image(&tile_image, 0, 0);
@@ -358,8 +355,8 @@ pub fn draw_background_layers(
     }
 
     // Apply radius and overlay
-    if let Some(r) = radius {
-      r.apply_to_image(&mut layer_img.0);
+    if !radius.is_zero() {
+      radius.apply_to_image(&mut layer_img.0);
     }
 
     canvas.overlay_image(

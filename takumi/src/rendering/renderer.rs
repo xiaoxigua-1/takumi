@@ -254,7 +254,13 @@ impl<Nodes: Node<Nodes>> ImageRenderer<Nodes> {
     let mut render_indices: Vec<usize> = Vec::new();
 
     for (idx, task) in tasks.iter().enumerate() {
-      if qualifies_for_direct_bg_draw(&task.node, &task.layout) {
+      let render_context = RenderContext {
+        global,
+        viewport,
+        parent_font_size: task.parent_font_size,
+      };
+
+      if qualifies_for_direct_bg_draw(&task.node, &task.layout, &render_context) {
         direct_flags.push(true);
       } else {
         direct_flags.push(false);
@@ -496,7 +502,11 @@ fn compute_paint_canvas_bounds<Nodes: Node<Nodes>>(
 
 // Returns true if the node draws only a solid background color with no radius,
 // no background images, no shadows, no borders, and no content.
-fn qualifies_for_direct_bg_draw<Nodes: Node<Nodes>>(node: &Nodes, layout: &Layout) -> bool {
+fn qualifies_for_direct_bg_draw<Nodes: Node<Nodes>>(
+  node: &Nodes,
+  layout: &Layout,
+  context: &RenderContext,
+) -> bool {
   let style = node.get_style();
 
   // Must have background color
@@ -505,7 +515,7 @@ fn qualifies_for_direct_bg_draw<Nodes: Node<Nodes>>(node: &Nodes, layout: &Layou
   }
 
   // Must not have border radius (since rounded bg requires temp image)
-  if style.inheritable_style.resolved_border_radius().is_some() {
+  if !style.create_border_radius(layout, context).is_zero() {
     return false;
   }
 

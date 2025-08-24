@@ -180,6 +180,26 @@ flexGrow: number,
  */
 flexShrink: number, 
 /**
+ * Shorthand border radius (top-left, top-right, bottom-right, bottom-left).
+ */
+borderRadius?: Sides<LengthUnit>, 
+/**
+ * Longhand: top-left border radius. Overrides `border_radius` top-left value.
+ */
+borderRadiusTopLeft?: LengthUnit, 
+/**
+ * Longhand: top-right border radius. Overrides `border_radius` top-right value.
+ */
+borderRadiusTopRight?: LengthUnit, 
+/**
+ * Longhand: bottom-right border radius. Overrides `border_radius` bottom-right value.
+ */
+borderRadiusBottomRight?: LengthUnit, 
+/**
+ * Longhand: bottom-left border radius. Overrides `border_radius` bottom-left value.
+ */
+borderRadiusBottomLeft?: LengthUnit, 
+/**
  * Width of the element's border on each side (top, right, bottom, left).
  */
 borderWidth: Sides<LengthUnit>, 
@@ -303,26 +323,6 @@ fontWeight?: FontWeight,
  * Maximum number of lines for text before truncation.
  */
 lineClamp?: number, 
-/**
- * Shorthand border radius (top, right, bottom, left).
- */
-borderRadius?: Sides<LengthUnit>, 
-/**
- * Longhand: top border radius. Overrides `border_radius` top value.
- */
-borderRadiusTop?: LengthUnit, 
-/**
- * Longhand: right border radius. Overrides `border_radius` right value.
- */
-borderRadiusRight?: LengthUnit, 
-/**
- * Longhand: bottom border radius. Overrides `border_radius` bottom value.
- */
-borderRadiusBottom?: LengthUnit, 
-/**
- * Longhand: left border radius. Overrides `border_radius` left value.
- */
-borderRadiusLeft?: LengthUnit, 
 /**
  * Text alignment within the element.
  */

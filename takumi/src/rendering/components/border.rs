@@ -18,7 +18,7 @@ pub struct BorderProperties {
   /// The color of the border.
   pub color: Color,
   /// The radius of the border.
-  pub radius: Option<BorderRadius>,
+  pub radius: BorderRadius,
 }
 
 impl BorderProperties {
@@ -29,10 +29,7 @@ impl BorderProperties {
       offset: layout.location,
       size: layout.size,
       color: style.inheritable_style.border_color.unwrap_or_default(),
-      radius: style
-        .inheritable_style
-        .resolved_border_radius()
-        .map(|radius| BorderRadius::from_layout(context, layout, radius.into())),
+      radius: style.create_border_radius(layout, context),
     }
   }
 }
@@ -42,10 +39,8 @@ impl BorderProperties {
 /// This function draws borders with specified size and color. If border_radius is specified,
 /// it creates a rounded border using a custom drawing approach.
 pub fn draw_border(canvas: &mut FastBlendImage, border: BorderProperties) {
-  let radius = border.radius;
-
-  if let Some(radius) = radius {
-    draw_rounded_border(canvas, border, radius);
+  if !border.radius.is_zero() {
+    draw_rounded_border(canvas, border);
   } else {
     draw_rectangular_border(canvas, border);
   }
@@ -66,7 +61,7 @@ fn draw_rectangular_border(canvas: &mut FastBlendImage, border: BorderProperties
         y: border.offset.y,
       },
       border.color,
-      None,
+      BorderRadius::default(),
     );
   }
 
@@ -83,7 +78,7 @@ fn draw_rectangular_border(canvas: &mut FastBlendImage, border: BorderProperties
         y: border.offset.y + border.size.height - border.width.bottom,
       },
       border.color,
-      None,
+      BorderRadius::default(),
     );
   }
 
@@ -100,7 +95,7 @@ fn draw_rectangular_border(canvas: &mut FastBlendImage, border: BorderProperties
         y: border.offset.y + border.width.top,
       },
       border.color,
-      None,
+      BorderRadius::default(),
     );
   }
 
@@ -117,17 +112,13 @@ fn draw_rectangular_border(canvas: &mut FastBlendImage, border: BorderProperties
         y: border.offset.y + border.width.top,
       },
       border.color,
-      None,
+      BorderRadius::default(),
     );
   }
 }
 
 /// Draws a rounded border with border radius.
-fn draw_rounded_border(
-  canvas: &mut FastBlendImage,
-  border: BorderProperties,
-  radius: BorderRadius,
-) {
+fn draw_rounded_border(canvas: &mut FastBlendImage, border: BorderProperties) {
   if border.width.left == 0.0
     && border.width.right == 0.0
     && border.width.top == 0.0
@@ -144,7 +135,7 @@ fn draw_rounded_border(
   );
 
   // Apply antialiased border radius to the outer edge
-  radius.apply_to_image(&mut border_image);
+  border.radius.apply_to_image(&mut border_image);
 
   // Calculate inner bounds (content area)
   let inner_left = border.width.left as u32;
@@ -156,10 +147,10 @@ fn draw_rounded_border(
   let avg_border_width =
     (border.width.left + border.width.right + border.width.top + border.width.bottom) / 4.0;
   let inner_radius = BorderRadius {
-    top_left: (radius.top_left - avg_border_width).max(0.0),
-    top_right: (radius.top_right - avg_border_width).max(0.0),
-    bottom_right: (radius.bottom_right - avg_border_width).max(0.0),
-    bottom_left: (radius.bottom_left - avg_border_width).max(0.0),
+    top_left: (border.radius.top_left - avg_border_width).max(0.0),
+    top_right: (border.radius.top_right - avg_border_width).max(0.0),
+    bottom_right: (border.radius.bottom_right - avg_border_width).max(0.0),
+    bottom_left: (border.radius.bottom_left - avg_border_width).max(0.0),
   };
 
   // Cut out the inner area if there's space for content
