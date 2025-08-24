@@ -9,7 +9,7 @@ use takumi::{
 };
 
 fn bench_sizes() -> Vec<(u32, u32)> {
-  vec![(256, 256), (512, 512), (1200, 630), (1920, 1080)]
+  vec![(1920, 1080)]
 }
 
 fn sample_gradient() -> LinearGradient {

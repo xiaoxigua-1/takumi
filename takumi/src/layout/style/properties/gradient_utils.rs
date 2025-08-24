@@ -1,6 +1,5 @@
 use super::{Color, GradientStop, LengthUnit, ResolvedGradientStop};
 use crate::rendering::RenderContext;
-use std::collections::HashMap;
 
 /// Interpolates between two colors in RGBA space, if t is 0.0 or 1.0, returns the first or second color.
 pub(crate) fn interpolate_rgba(c1: Color, c2: Color, t: f32) -> Color {
@@ -22,24 +21,7 @@ pub(crate) fn interpolate_rgba(c1: Color, c2: Color, t: f32) -> Color {
 }
 
 /// Returns the color for a pixel-space position along the resolved stops.
-pub(crate) fn color_from_stops(
-  position: f32,
-  resolved_stops: &[ResolvedGradientStop],
-  cache: &mut HashMap<u32, Color>,
-) -> Color {
-  if resolved_stops.is_empty() {
-    return Color::transparent();
-  }
-
-  if resolved_stops.len() == 1 {
-    return resolved_stops[0].color;
-  }
-
-  let cache_key = position.round().max(0.0) as u32;
-  if let Some(color) = cache.get(&cache_key) {
-    return *color;
-  }
-
+pub(crate) fn color_from_stops(position: f32, resolved_stops: &[ResolvedGradientStop]) -> Color {
   // Find the two stops that bracket the current position.
   // We want the last stop with position <= current position.
   let left_index = resolved_stops
@@ -53,7 +35,7 @@ pub(crate) fn color_from_stops(
     .position(|(i, stop)| i > left_index && stop.position >= position)
     .unwrap_or(resolved_stops.len() - 1);
 
-  let color = if left_index == right_index {
+  if left_index == right_index {
     // if the left and right indices are the same, we should return a hard stop
     resolved_stops[left_index].color
   } else {
@@ -68,10 +50,7 @@ pub(crate) fn color_from_stops(
     };
 
     interpolate_rgba(left_stop.color, right_stop.color, interpolation_position)
-  };
-
-  cache.insert(cache_key, color);
-  color
+  }
 }
 
 /// Resolve a length value used in a gradient stop to an absolute pixel position along an axis.

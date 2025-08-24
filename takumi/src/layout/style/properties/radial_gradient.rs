@@ -5,12 +5,11 @@ use ts_rs::TS;
 use super::gradient_utils::{color_from_stops, resolve_stops_along_axis};
 use crate::{
   layout::style::{
-    Color, FromCss, GradientStop, ParseResult, ResolvedGradientStop, parse_length_percentage,
+    Color, FromCss, Gradient, GradientStop, ParseResult, ResolvedGradientStop,
+    parse_length_percentage,
   },
   rendering::RenderContext,
 };
-
-use std::collections::HashMap;
 
 /// Represents a radial gradient.
 #[derive(Debug, Clone, PartialEq, TS, Deserialize, Serialize)]
@@ -68,8 +67,18 @@ pub struct RadialGradientDrawContext {
   pub radius_y: f32,
   /// Resolved and ordered color stops.
   pub resolved_stops: Vec<ResolvedGradientStop>,
-  /// Cache of computed colors keyed by quantized position along the gradient [0, 1].
-  color_cache: HashMap<u32, Color>,
+}
+
+impl Gradient for RadialGradient {
+  type DrawContext = RadialGradientDrawContext;
+
+  fn at(&self, x: u32, y: u32, ctx: &Self::DrawContext) -> Color {
+    self.at(x, y, ctx)
+  }
+
+  fn to_draw_context(&self, width: f32, height: f32, context: &RenderContext) -> Self::DrawContext {
+    RadialGradientDrawContext::new(self, width, height, context)
+  }
 }
 
 impl RadialGradient {
@@ -95,7 +104,7 @@ impl RadialGradient {
 
   /// Returns the color at a specific point in the gradient.
   /// Callers should pre-resolve gradient stops and pass them in for performance.
-  pub fn at(&self, x: u32, y: u32, ctx: &mut RadialGradientDrawContext) -> Color {
+  pub fn at(&self, x: u32, y: u32, ctx: &RadialGradientDrawContext) -> Color {
     // Fast-paths
     if ctx.resolved_stops.is_empty() {
       return Color([0, 0, 0, 0]);
@@ -108,7 +117,7 @@ impl RadialGradient {
     let dy = (y as f32 - ctx.cy) / ctx.radius_y.max(1e-6);
     let position = (dx * dx + dy * dy).sqrt() * ctx.radius_x.max(ctx.radius_y);
 
-    color_from_stops(position, &ctx.resolved_stops, &mut ctx.color_cache)
+    color_from_stops(position, &ctx.resolved_stops)
   }
 }
 
@@ -191,7 +200,6 @@ impl RadialGradientDrawContext {
       radius_x,
       radius_y,
       resolved_stops,
-      color_cache: HashMap::new(),
     }
   }
 }

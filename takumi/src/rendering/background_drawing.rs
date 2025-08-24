@@ -9,7 +9,7 @@ use taffy::{Layout, Point, Size};
 use crate::{
   layout::style::{
     BackgroundImage, BackgroundPosition, BackgroundRepeat, BackgroundRepeatStyle, BackgroundSize,
-    Color, LengthUnit, PositionComponent, PositionKeywordX, PositionKeywordY, Style,
+    Color, Gradient, LengthUnit, PositionComponent, PositionKeywordX, PositionKeywordY, Style,
   },
   rendering::{BorderRadius, FastBlendImage, RenderContext},
 };
@@ -151,14 +151,8 @@ pub fn render_gradient_tile(
   context: &RenderContext,
 ) -> RgbaImage {
   match image {
-    BackgroundImage::Linear(gradient) => {
-      let mut ctx = gradient.to_draw_context(tile_w as f32, tile_h as f32, context);
-      RgbaImage::from_fn(tile_w, tile_h, |x, y| gradient.at(x, y, &mut ctx).into())
-    }
-    BackgroundImage::Radial(gradient) => {
-      let mut ctx = gradient.to_draw_context(tile_w as f32, tile_h as f32, context);
-      RgbaImage::from_fn(tile_w, tile_h, |x, y| gradient.at(x, y, &mut ctx).into())
-    }
+    BackgroundImage::Linear(gradient) => gradient.to_image(tile_w, tile_h, context),
+    BackgroundImage::Radial(gradient) => gradient.to_image(tile_w, tile_h, context),
   }
 }
 

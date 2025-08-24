@@ -56,7 +56,6 @@ fn test_style_background_image_gradient_basic() {
 
 #[test]
 fn test_style_background_image_gradient_alt() {
-  // linear-gradient(0deg, #ff3b30, #5856d6)
   let background_images =
     BackgroundImagesValue::Css("linear-gradient(0deg, #ff3b30, #5856d6)".to_string());
 
@@ -65,6 +64,19 @@ fn test_style_background_image_gradient_alt() {
   run_style_width_test(
     container.into(),
     "tests/fixtures/style_background_image_gradient_alt.png",
+  );
+}
+
+#[test]
+fn test_style_background_image_gradient_hard_stop() {
+  let background_images =
+    BackgroundImagesValue::Css("linear-gradient(to left, #252525 0%, #252525 20%, #f5f5f5 20%, #f5f5f5 40%, #00b7b7 40%, #00b7b7 60%, #b70000 60%, #b70000 80%, #fcd50e 80%)".to_string());
+
+  let container = create_container(background_images);
+
+  run_style_width_test(
+    container.into(),
+    "tests/fixtures/style_background_image_gradient_hard_stop.png",
   );
 }
 

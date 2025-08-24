@@ -1,6 +1,7 @@
 use cssparser::{Parser, ParserInput, Token, match_ignore_ascii_case};
+use image::RgbaImage;
 use serde::{Deserialize, Serialize};
-use std::{collections::HashMap, ops::Deref};
+use std::ops::Deref;
 use ts_rs::TS;
 
 use super::gradient_utils::{color_from_stops, resolve_stops_along_axis};
@@ -8,6 +9,31 @@ use crate::{
   layout::style::{Color, FromCss, LengthUnit, ParseResult},
   rendering::RenderContext,
 };
+
+/// A trait for gradients that can be sampled at a specific point.
+/// This trait is used to avoid trait objects in the rendering pipeline.
+pub trait Gradient: Send + Sync {
+  /// The type of the draw context.
+  type DrawContext: Send + Sync;
+
+  /// Returns the color at a specific point in the gradient.
+  fn at(&self, x: u32, y: u32, ctx: &Self::DrawContext) -> Color;
+
+  /// Creates a draw context for the gradient.
+  fn to_draw_context(&self, width: f32, height: f32, context: &RenderContext) -> Self::DrawContext;
+
+  /// Creates an image of the gradient.
+  fn to_image(&self, width: u32, height: u32, context: &RenderContext) -> RgbaImage {
+    let ctx = self.to_draw_context(width as f32, height as f32, context);
+
+    #[cfg(feature = "rayon")]
+    {
+      RgbaImage::from_par_fn(width, height, |x, y| self.at(x, y, &ctx).into())
+    }
+    #[cfg(not(feature = "rayon"))]
+    RgbaImage::from_fn(width, height, |x, y| self.at(x, y, &ctx).into())
+  }
+}
 
 /// Represents a linear gradient.
 #[derive(Debug, Clone, PartialEq, TS, Deserialize, Serialize)]
@@ -51,15 +77,17 @@ impl TryFrom<LinearGradientValue> for LinearGradient {
   }
 }
 
-impl LinearGradient {
-  /// Returns the color at a specific point in the gradient.
-  /// Callers should pre-resolve gradient stops and pass them in for performance.
-  pub fn at(&self, x: u32, y: u32, ctx: &mut LinearGradientDrawContext) -> Color {
+impl Gradient for LinearGradient {
+  type DrawContext = LinearGradientDrawContext;
+
+  fn at(&self, x: u32, y: u32, ctx: &Self::DrawContext) -> Color {
+    let stops_len = self.stops.len();
+
     // Fast-paths
-    if ctx.resolved_stops.is_empty() {
+    if stops_len == 0 {
       return Color([0, 0, 0, 0]);
     }
-    if ctx.resolved_stops.len() == 1 {
+    if stops_len == 1 {
       return ctx.resolved_stops[0].color;
     }
 
@@ -68,9 +96,15 @@ impl LinearGradient {
     let projection = dx * ctx.dir_x + dy * ctx.dir_y;
     let position_px = (projection + ctx.max_extent).clamp(0.0, ctx.axis_length);
 
-    color_from_stops(position_px, &ctx.resolved_stops, &mut ctx.color_cache)
+    color_from_stops(position_px, &ctx.resolved_stops)
   }
 
+  fn to_draw_context(&self, width: f32, height: f32, context: &RenderContext) -> Self::DrawContext {
+    LinearGradientDrawContext::new(self, width, height, context)
+  }
+}
+
+impl LinearGradient {
   /// Resolves gradient steps into color stops with positions expressed in pixels along the gradient axis.
   /// Supports non-px length units when a `RenderContext` is provided.
   pub fn resolve_stops_for_axis_size(
@@ -103,8 +137,6 @@ pub struct LinearGradientDrawContext {
   pub axis_length: f32,
   /// Resolved and ordered color stops (positions in pixels).
   pub resolved_stops: Vec<ResolvedGradientStop>,
-  /// Cache of computed colors keyed by quantized position along the gradient axis.
-  color_cache: HashMap<u32, Color>,
 }
 
 impl LinearGradientDrawContext {
@@ -130,20 +162,7 @@ impl LinearGradientDrawContext {
       max_extent,
       axis_length,
       resolved_stops,
-      color_cache: HashMap::new(),
     }
-  }
-}
-
-impl LinearGradient {
-  /// Creates a drawing context for repeated sampling at the provided viewport size.
-  pub fn to_draw_context(
-    &self,
-    width: f32,
-    height: f32,
-    context: &RenderContext,
-  ) -> LinearGradientDrawContext {
-    LinearGradientDrawContext::new(self, width, height, context)
   }
 }
 
@@ -849,16 +868,16 @@ mod tests {
       viewport: Viewport::new(100, 100),
       parent_font_size: DEFAULT_FONT_SIZE,
     };
-    let mut ctx = gradient.to_draw_context(100.0, 100.0, &dummy_context);
-    let color_top = gradient.at(50, 0, &mut ctx);
+    let ctx = gradient.to_draw_context(100.0, 100.0, &dummy_context);
+    let color_top = gradient.at(50, 0, &ctx);
     assert_eq!(color_top, Color([255, 0, 0, 255]));
 
     // Test at the bottom (should be blue)
-    let color_bottom = gradient.at(50, 100, &mut ctx);
+    let color_bottom = gradient.at(50, 100, &ctx);
     assert_eq!(color_bottom, Color([0, 0, 255, 255]));
 
     // Test in the middle (should be purple)
-    let color_middle = gradient.at(50, 50, &mut ctx);
+    let color_middle = gradient.at(50, 50, &ctx);
     // Middle should be roughly purple (red + blue)
     let [r, g, b, a] = color_middle.0;
     assert_eq!(r, 128); // Approximately halfway between 255 and 0
@@ -889,12 +908,12 @@ mod tests {
       viewport: Viewport::new(100, 100),
       parent_font_size: DEFAULT_FONT_SIZE,
     };
-    let mut ctx = gradient.to_draw_context(100.0, 100.0, &dummy_context);
-    let color_left = gradient.at(0, 50, &mut ctx);
+    let ctx = gradient.to_draw_context(100.0, 100.0, &dummy_context);
+    let color_left = gradient.at(0, 50, &ctx);
     assert_eq!(color_left, Color([255, 0, 0, 255]));
 
     // Test at the right (should be blue)
-    let color_right = gradient.at(100, 50, &mut ctx);
+    let color_right = gradient.at(100, 50, &ctx);
     assert_eq!(color_right, Color([0, 0, 255, 255]));
   }
 
@@ -914,8 +933,8 @@ mod tests {
       viewport: Viewport::new(100, 100),
       parent_font_size: DEFAULT_FONT_SIZE,
     };
-    let mut ctx = gradient.to_draw_context(100.0, 100.0, &dummy_context);
-    let color = gradient.at(50, 50, &mut ctx);
+    let ctx = gradient.to_draw_context(100.0, 100.0, &dummy_context);
+    let color = gradient.at(50, 50, &ctx);
     assert_eq!(color, Color([255, 0, 0, 255]));
   }
 
@@ -932,8 +951,8 @@ mod tests {
       viewport: Viewport::new(100, 100),
       parent_font_size: DEFAULT_FONT_SIZE,
     };
-    let mut ctx = gradient.to_draw_context(100.0, 100.0, &dummy_context);
-    let color = gradient.at(50, 50, &mut ctx);
+    let ctx = gradient.to_draw_context(100.0, 100.0, &dummy_context);
+    let color = gradient.at(50, 50, &ctx);
     assert_eq!(color, Color([0, 0, 0, 0]));
   }
 
@@ -948,18 +967,18 @@ mod tests {
       viewport: Viewport::new(40, 40),
       parent_font_size: DEFAULT_FONT_SIZE,
     };
-    let mut ctx = gradient.to_draw_context(40.0, 40.0, &dummy_context);
+    let ctx = gradient.to_draw_context(40.0, 40.0, &dummy_context);
 
     // grey at 0,0
-    let c0 = gradient.at(0, 0, &mut ctx);
+    let c0 = gradient.at(0, 0, &ctx);
     assert_eq!(c0, Color([128, 128, 128, 255]));
 
     // transparent at 1,0
-    let c1 = gradient.at(1, 0, &mut ctx);
+    let c1 = gradient.at(1, 0, &ctx);
     assert_eq!(c1, Color([0, 0, 0, 0]));
 
     // transparent till the end
-    let c2 = gradient.at(40, 0, &mut ctx);
+    let c2 = gradient.at(40, 0, &ctx);
     assert_eq!(c2, Color([0, 0, 0, 0]));
   }
 
@@ -974,10 +993,10 @@ mod tests {
       viewport: Viewport::new(40, 40),
       parent_font_size: DEFAULT_FONT_SIZE,
     };
-    let mut ctx = gradient.to_draw_context(40.0, 40.0, &dummy_context);
+    let ctx = gradient.to_draw_context(40.0, 40.0, &dummy_context);
 
     // color at top-left (0, 0) should be grey (1px hard stop)
-    assert_eq!(gradient.at(0, 0, &mut ctx), Color([128, 128, 128, 255]));
+    assert_eq!(gradient.at(0, 0, &ctx), Color([128, 128, 128, 255]));
   }
 
   #[test]

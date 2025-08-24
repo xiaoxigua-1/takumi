@@ -5,7 +5,7 @@ use image::{Pixel, Rgba};
 use taffy::{Layout, Size};
 
 use crate::{
-  layout::style::{FontStyle, LinearGradientOrColor, TextOverflow, TextTransform},
+  layout::style::{FontStyle, Gradient, LinearGradientOrColor, TextOverflow, TextTransform},
   rendering::{FastBlendImage, RenderContext},
 };
 
