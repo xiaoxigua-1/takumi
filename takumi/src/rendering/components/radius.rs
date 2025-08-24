@@ -82,10 +82,10 @@ fn apply_border_radius_antialiased(img: &mut RgbaImage, radius: BorderRadius) {
   let max_radius = width.min(height) as f32 / 2.0;
 
   let clamped_radius = BorderRadius {
-    top_left: radius.top_left.min(max_radius),
-    top_right: radius.top_right.min(max_radius),
-    bottom_right: radius.bottom_right.min(max_radius),
-    bottom_left: radius.bottom_left.min(max_radius),
+    top_left: radius.top_left.min(max_radius).round(),
+    top_right: radius.top_right.min(max_radius).round(),
+    bottom_right: radius.bottom_right.min(max_radius).round(),
+    bottom_left: radius.bottom_left.min(max_radius).round(),
   };
 
   let transition_width = 1.0;
