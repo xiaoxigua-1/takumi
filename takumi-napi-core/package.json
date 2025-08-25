@@ -34,7 +34,7 @@
     ]
   },
   "scripts": {
-    "build": "napi build --release --platform --strip",
+    "build": "napi build --release --platform --strip --no-const-enum",
     "build:debug": "napi build",
     "prepublishOnly": "bunx napi prepublish -t npm --no-gh-release",
     "artifacts": "napi create-npm-dirs && napi artifacts",
