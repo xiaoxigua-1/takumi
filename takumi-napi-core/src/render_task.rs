@@ -3,11 +3,8 @@ use std::io::Cursor;
 use napi::bindgen_prelude::*;
 use takumi::{
   GlobalContext,
-  layout::{
-    Viewport,
-    node::{Node, NodeKind},
-  },
-  rendering::{ImageOutputFormat, ImageRenderer, write_image},
+  layout::{Viewport, node::NodeKind},
+  rendering::{ImageOutputFormat, render, write_image},
 };
 
 pub struct RenderTask<'ctx> {
@@ -23,17 +20,10 @@ impl<'ctx> Task for RenderTask<'ctx> {
   type JsValue = Buffer;
 
   fn compute(&mut self) -> Result<Self::Output> {
-    let mut node = self.node.take().unwrap();
+    let node = self.node.take().unwrap();
 
-    node.inherit_style_for_children();
-
-    let mut render = ImageRenderer::new(self.viewport);
-
-    render.construct_taffy_tree(node, self.context);
-
-    let image = render
-      .draw(self.context)
-      .map_err(|e| napi::Error::from_reason(format!("Failed to draw: {e:?}")))?;
+    let image = render(self.viewport, self.context, node)
+      .map_err(|e| napi::Error::from_reason(format!("Failed to render: {e:?}")))?;
 
     let mut buffer = Vec::new();
     let mut cursor = Cursor::new(&mut buffer);

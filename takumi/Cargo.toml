@@ -12,7 +12,6 @@ rust-version = "1.85.1"
 
 [dependencies]
 merge = "0.2"
-slotmap = "1.0"
 cssparser = "0.35"
 csscolorparser = "0.7"
 noise = "0.9.0"

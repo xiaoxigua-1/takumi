@@ -8,8 +8,7 @@ use takumi::{
     node::{ContainerNode, TextNode},
     style::{InheritableStyle, Style},
   },
-  rendering::ImageRenderer,
-  rendering::{ImageOutputFormat, write_image},
+  rendering::{ImageOutputFormat, render, write_image},
 };
 
 use crate::NodeKind;
@@ -51,13 +50,7 @@ pub fn say_hello_to(name: &str) {
   };
 
   // Create an image renderer from the root node
-  let mut renderer: ImageRenderer<NodeKind> = ImageRenderer::new(Viewport::new(1200, 630));
-
-  // Generate the layout tree using Taffy (layout engine)
-  renderer.construct_taffy_tree(root.into(), &context);
-
-  // Render the image using the context and layout tree
-  let image = renderer.draw(&context).unwrap();
+  let image = render::<NodeKind>(Viewport::new(1200, 630), &context, root.into()).unwrap();
 
   // Create a new file to save the rendered image
   let mut file = File::create("output.webp").unwrap();

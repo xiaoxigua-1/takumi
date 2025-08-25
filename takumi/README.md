@@ -8,9 +8,11 @@ Checkout the [Getting Started](https://takumi.kane.tw/docs/getting-started) page
 
 ## Walkthrough
 
-Everything starts with a [`ImageRenderer`](https://docs.rs/takumi/latest/takumi/rendering/renderer/struct.ImageRenderer.html) instance, it takes [`Node`](https://docs.rs/takumi/latest/takumi/layout/node/trait.Node.html) tree as input then calculate the layout.
+Create a [`GlobalContext`](https://docs.rs/takumi/latest/takumi/struct.GlobalContext.html) to store image resources, font caches, the instance should be reused to speed up the rendering.
 
-You can then draw the layout to an [`RgbaImage`](image::RgbaImage).
+Then call [`render`](https://docs.rs/takumi/latest/takumi/rendering/render/) with [`Node`](https://docs.rs/takumi/latest/takumi/layout/node/trait.Node.html) and [`Viewport`](https://docs.rs/takumi/latest/takumi/layout/viewport/struct.Viewport.html) to get [`RgbaImage`](image::RgbaImage).
+
+Theres a helper function [`write_image`](https://docs.rs/takumi/latest/takumi/rendering/render/fn.write_image.html) to write the image to a destination implements [`Write`](std::io::Write) and [`Seek`](std::io::Seek).
 
 ## Example
 
@@ -21,23 +23,20 @@ use takumi::{
     Viewport,
     style::Style,
   },
-  rendering::ImageRenderer,
+  rendering::render,
   GlobalContext,
 };
 
 // Create a node tree with `ContainerNode` and `TextNode`
-let mut node = ContainerNode {
+let mut node = NodeKind::Container(ContainerNode {
   children: Some(vec![
-    TextNode {
+    NodeKind::Text(TextNode {
       text: "Hello, world!".to_string(),
       style: Style::default(),
-    }.into(),
+    }),
   ]),
   style: Style::default(),
-};
-
-// Inherit styles for children
-node.inherit_style_for_children();
+});
 
 // Create a context for storing resources, font caches.
 // You should reuse the context to speed up the rendering.
@@ -46,15 +45,11 @@ let context = GlobalContext::default();
 // Load fonts
 context.font_context.load_and_store(include_bytes!("../../assets/fonts/noto-sans/google-sans-code-v11-latin-regular.woff2").to_vec());
 
-// Create a renderer with a viewport
-// You should create a new renderer for each render.
-let mut renderer: ImageRenderer<NodeKind> = ImageRenderer::new(Viewport::new(1200, 630));
+// Create a viewport
+let viewport = Viewport::new(1200, 630);
 
-// Construct the taffy tree, this will calculate the layout and store the result in the renderer.
-renderer.construct_taffy_tree(node.into(), &context);
-
-// Draw the layout to an `RgbaImage`
-let image = renderer.draw(&context).unwrap();
+// Render the layout to an `RgbaImage`
+let image = render(viewport, &context, node).unwrap();
 ```
 
 ## Credits

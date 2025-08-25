@@ -3,11 +3,8 @@ use std::{fs::read, path::Path, sync::Arc};
 use image::{ColorType::Rgba8, load_from_memory, save_buffer};
 use takumi::{
   GlobalContext,
-  layout::{
-    Viewport,
-    node::{Node, NodeKind},
-  },
-  rendering::ImageRenderer,
+  layout::{Viewport, node::NodeKind},
+  rendering::render,
   resources::image::ImageSource,
 };
 
@@ -36,8 +33,8 @@ fn create_test_context() -> GlobalContext {
   context
 }
 
-fn create_test_renderer() -> ImageRenderer<NodeKind> {
-  ImageRenderer::new(Viewport::new(1200, 630))
+fn create_test_viewport() -> Viewport {
+  Viewport::new(1200, 630)
 }
 
 fn assert_pixels_eq(fixture_image: image::RgbaImage, image: image::RgbaImage) {
@@ -50,15 +47,11 @@ fn assert_pixels_eq(fixture_image: image::RgbaImage, image: image::RgbaImage) {
 }
 
 /// Helper function to run style width tests
-pub fn run_style_width_test(mut node: NodeKind, fixture_path: &str) {
+pub fn run_style_width_test(node: NodeKind, fixture_path: &str) {
   let context = create_test_context();
-  let mut renderer = create_test_renderer();
+  let viewport = create_test_viewport();
 
-  node.inherit_style_for_children();
-
-  renderer.construct_taffy_tree(node, &context);
-
-  let image = renderer.draw(&context).unwrap();
+  let image = render(viewport, &context, node).unwrap();
 
   let path = Path::new(fixture_path);
 

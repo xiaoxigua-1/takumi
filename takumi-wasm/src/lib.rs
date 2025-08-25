@@ -5,11 +5,8 @@ use serde_wasm_bindgen::from_value;
 use takumi::{
   GlobalContext,
   image::load_from_memory,
-  layout::{
-    Viewport,
-    node::{Node, NodeKind},
-  },
-  rendering::{ImageOutputFormat, ImageRenderer, write_image},
+  layout::{Viewport, node::NodeKind},
+  rendering::{ImageOutputFormat, render, write_image},
   resources::image::ImageSource,
 };
 use wasm_bindgen::prelude::*;
@@ -76,15 +73,10 @@ impl Renderer {
     quality: Option<u8>,
   ) -> Vec<u8> {
     let node = node.dyn_into().unwrap();
-    let mut node: NodeKind = from_value(node).unwrap();
-
-    node.inherit_style_for_children();
+    let node: NodeKind = from_value(node).unwrap();
 
     let viewport = Viewport::new(width, height);
-    let mut renderer = ImageRenderer::new(viewport);
-
-    renderer.construct_taffy_tree(node, &self.context);
-    let image = renderer.draw(&self.context).unwrap();
+    let image = render(viewport, &self.context, node).unwrap();
 
     let mut buffer = Vec::new();
     let mut cursor = Cursor::new(&mut buffer);
