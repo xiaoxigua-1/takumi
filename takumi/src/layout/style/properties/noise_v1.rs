@@ -70,7 +70,7 @@ impl Gradient for NoiseV1 {
 
 impl<'i> FromCss<'i> for NoiseV1 {
   /// Example: noise-v1(frequency(0.01) octaves(4) persistence(0.7) lacunarity(2.0) seed(42) opacity(0.5))
-  /// Syntax: noise-v1([<frequency>] [<octaves>] [<persistence>] [<lacunarity>] [<seed>] [<opacity>])
+  /// Syntax: noise-v1([<frequency>] | [<octaves>] | [<persistence>] | [<lacunarity>] | [<seed>] | [<opacity>])
   fn from_css(input: &mut Parser<'i, '_>) -> ParseResult<'i, NoiseV1> {
     input.expect_function_matching("noise-v1")?;
 
