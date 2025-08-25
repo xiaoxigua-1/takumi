@@ -16,9 +16,12 @@ mod grid;
 mod length_unit;
 mod line_height;
 mod linear_gradient;
+mod noise_v1;
 mod parser;
 mod radial_gradient;
 mod sides;
+
+use std::borrow::Cow;
 
 pub use background_image::*;
 pub use background_position::*;
@@ -32,12 +35,13 @@ pub use grid::*;
 pub use length_unit::*;
 pub use line_height::*;
 pub use linear_gradient::*;
+pub use noise_v1::*;
 pub use parser::*;
 pub use radial_gradient::*;
 pub use sides::*;
 
 use cosmic_text::{Align, FamilyOwned};
-use cssparser::{BasicParseError, ParseError, Parser};
+use cssparser::{ParseError, Parser};
 use image::imageops::FilterType;
 use serde::{Deserialize, Serialize};
 // Grid-specific taffy types moved to `properties::grid`
@@ -46,7 +50,7 @@ use ts_rs::TS;
 use crate::impl_from_taffy_enum;
 
 /// Parser result type alias for CSS property parsers.
-pub type ParseResult<'i, T, E = BasicParseError<'i>> = Result<T, ParseError<'i, E>>;
+pub type ParseResult<'i, T> = Result<T, ParseError<'i, Cow<'i, str>>>;
 
 /// Trait for types that can be deserialized from CSS.
 pub trait FromCss<'i> {

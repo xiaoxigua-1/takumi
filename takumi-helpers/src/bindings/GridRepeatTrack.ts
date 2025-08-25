@@ -17,4 +17,4 @@ names: Array<string>,
  * The names for the final line after the last track within the repeat() clause
  * Only set on the last track of the repeat fragment. For other tracks this is None.
  */
-endNames: Array<string> | null, };
+endNames?: Array<string>, };

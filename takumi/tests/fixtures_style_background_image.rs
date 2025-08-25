@@ -256,3 +256,30 @@ fn test_background_image_grid_pattern() {
     "tests/fixtures/style_background_image_grid_pattern.png",
   );
 }
+
+#[test]
+fn test_background_image_noise_v1_with_gradient() {
+  let images = BackgroundImagesValue::Css(
+    "radial-gradient(circle at 25% 25%, rgba(255, 0, 128, 0.6), transparent 50%), radial-gradient(circle at 75% 75%, rgba(0, 128, 255, 0.6), transparent 50%), linear-gradient(135deg, rgba(138, 43, 226, 0.4), rgba(30, 144, 255, 0.4), rgba(255, 20, 147, 0.4)), noise-v1(frequency(1.4) octaves(4) opacity(0.8))".to_string(),
+  );
+
+  let mut container = create_container_with(
+    images,
+    Some(BackgroundSizesValue::Css(
+      "100% 100%, 100% 100%, 100% 100%, 100% 100%".to_string(),
+    )),
+    Some(BackgroundPositionsValue::Css(
+      "0 0, 0 0, 0 0, 0 0".to_string(),
+    )),
+    Some(BackgroundRepeatsValue::Css(
+      "no-repeat, no-repeat, no-repeat, no-repeat".to_string(),
+    )),
+  );
+
+  container.style.background_color = Some(Color([255, 255, 255, 255]));
+
+  run_style_width_test(
+    container.into(),
+    "tests/fixtures/style_background_image_noise_v1_blend.png",
+  );
+}

@@ -13,4 +13,4 @@ color: Color,
 /**
  * The position of the gradient stop.
  */
-hint: StopPosition | null, } | StopPosition;
+hint?: StopPosition, } | StopPosition;

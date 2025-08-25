@@ -8,8 +8,8 @@ export type GridLine = {
 /**
  * The start line placement
  */
-start: GridPlacement | null, 
+start?: GridPlacement, 
 /**
  * The end line placement
  */
-end: GridPlacement | null, };
+end?: GridPlacement, };

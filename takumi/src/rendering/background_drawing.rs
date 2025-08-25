@@ -153,6 +153,7 @@ pub fn render_gradient_tile(
   match image {
     BackgroundImage::Linear(gradient) => gradient.to_image(tile_w, tile_h, context),
     BackgroundImage::Radial(gradient) => gradient.to_image(tile_w, tile_h, context),
+    BackgroundImage::Noise(noise) => noise.to_image(tile_w, tile_h, context),
   }
 }
 

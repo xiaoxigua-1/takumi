@@ -8,6 +8,7 @@ use super::GridPlacement;
 
 /// Represents a grid line placement with serde support
 #[derive(Debug, Clone, Deserialize, Serialize, TS, Default, PartialEq)]
+#[ts(optional_fields)]
 pub struct GridLine {
   /// The start line placement
   pub start: Option<GridPlacement>,

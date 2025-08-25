@@ -2,7 +2,7 @@ use cssparser::{Parser, ParserInput};
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
-use crate::layout::style::{FromCss, LinearGradient, ParseResult, RadialGradient};
+use crate::layout::style::{FromCss, LinearGradient, NoiseV1, ParseResult, RadialGradient};
 
 /// Background image variants supported by Takumi.
 #[derive(Debug, Clone, PartialEq, TS, Deserialize, Serialize)]
@@ -12,6 +12,8 @@ pub enum BackgroundImage {
   Linear(LinearGradient),
   /// CSS radial-gradient(...)
   Radial(RadialGradient),
+  /// Custom noise-v1(...)
+  Noise(NoiseV1),
 }
 
 impl<'i> FromCss<'i> for BackgroundImage {
@@ -21,6 +23,9 @@ impl<'i> FromCss<'i> for BackgroundImage {
     }
     if let Ok(gradient) = input.try_parse(RadialGradient::from_css) {
       return Ok(BackgroundImage::Radial(gradient));
+    }
+    if let Ok(noise) = input.try_parse(NoiseV1::from_css) {
+      return Ok(BackgroundImage::Noise(noise));
     }
     // TODO: url(...) images can be supported here later
     Err(input.new_error(cssparser::BasicParseErrorKind::QualifiedRuleInvalid))
@@ -44,7 +49,7 @@ pub enum BackgroundImagesValue {
 pub struct BackgroundImages(pub Vec<BackgroundImage>);
 
 impl TryFrom<BackgroundImagesValue> for BackgroundImages {
-  type Error = &'static str;
+  type Error = String;
 
   fn try_from(value: BackgroundImagesValue) -> Result<Self, Self::Error> {
     match value {
@@ -53,16 +58,10 @@ impl TryFrom<BackgroundImagesValue> for BackgroundImages {
         let mut input = ParserInput::new(&css);
         let mut parser = Parser::new(&mut input);
 
-        let mut images = vec![
-          BackgroundImage::from_css(&mut parser)
-            .map_err(|_| "Failed to parse first background image")?,
-        ];
+        let mut images = vec![BackgroundImage::from_css(&mut parser).map_err(|e| e.to_string())?];
 
         while parser.expect_comma().is_ok() {
-          images.push(
-            BackgroundImage::from_css(&mut parser)
-              .map_err(|_| "Failed to parse background image")?,
-          );
+          images.push(BackgroundImage::from_css(&mut parser).map_err(|e| e.to_string())?);
         }
 
         Ok(Self(images))
