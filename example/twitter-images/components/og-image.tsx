@@ -1,3 +1,5 @@
+import { join } from "node:path";
+import { file } from "bun";
 import { Box, Brain, Globe, type LucideIcon, Zap } from "lucide-react";
 import { createElement } from "react";
 
@@ -6,7 +8,28 @@ const primaryForeground = "#F1F5F9";
 const borderColor = "rgba(215, 29, 54, 0.5)";
 const accentColor = "#ff3535";
 
-export function Component() {
+export const persistentImages = [
+  {
+    src: "takumi.svg",
+    data: await file("../../assets/images/takumi.svg").arrayBuffer(),
+  },
+];
+
+const weights = ["500", "600", "700", "800"];
+
+export const name = "og-image";
+
+export const width = 1280;
+export const height = 640;
+
+export const fonts = weights.map((weight) =>
+  join(
+    "../../assets/fonts/plus-jakarta-sans-v11-latin",
+    `plus-jakarta-sans-v11-latin-${weight}.woff2`,
+  ),
+);
+
+export default function OgImage() {
   return (
     <div
       style={{
@@ -33,7 +56,7 @@ export function Component() {
         }}
       >
         <img
-          src="takumi.svg"
+          src={persistentImages[0]?.src}
           alt="Takumi logo"
           style={{
             width: "6rem",
