@@ -17,9 +17,9 @@ For newcomers, check out the [Getting Started](https://takumi.kane.tw/docs/getti
 
 ## Showcase
 
-Takumi's Open Graph image is generated with Takumi.
+Takumi's Open Graph image is generated with Takumi [(source)](./example/twitter-images/components/og-image.tsx).
 
-[![Takumi OG Image](./example/og-image/og-image.png)](example/og-image/index.tsx)
+![Takumi OG Image](./example/twitter-images/output/og-image.png)
 
 ## License
 
