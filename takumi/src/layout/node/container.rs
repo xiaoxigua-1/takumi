@@ -23,11 +23,8 @@ pub struct ContainerNode<Nodes: Node<Nodes>> {
 }
 
 impl<Nodes: Node<Nodes>> Node<Nodes> for ContainerNode<Nodes> {
-  fn get_children(&self) -> Option<Vec<&Nodes>> {
-    self
-      .children
-      .as_ref()
-      .map(|children| children.iter().collect())
+  fn take_children(&mut self) -> Option<Vec<Nodes>> {
+    self.children.take()
   }
 
   fn get_style(&self) -> &Style {

@@ -24,7 +24,7 @@ use crate::{
 /// rendered in the layout system, including containers, text, and images.
 pub trait Node<N: Node<N>>: Send + Sync + Clone {
   /// Return reference to children nodes.
-  fn get_children(&self) -> Option<Vec<&N>> {
+  fn take_children(&mut self) -> Option<Vec<N>> {
     None
   }
 

@@ -118,20 +118,19 @@ pub enum RenderError {
 fn insert_taffy_node<Nodes: Node<Nodes>>(
   taffy: &mut TaffyTree<()>,
   node_map: &mut SecondaryMap<DefaultKey, NodeRender<Nodes>>,
-  node: Nodes,
+  mut node: Nodes,
   render_context: &RenderContext,
 ) -> NodeId {
-  let style = node.get_style();
-
   let node_id = taffy
-    .new_leaf(style.resolve_to_taffy_style(render_context))
+    .new_leaf(node.get_style().resolve_to_taffy_style(render_context))
     .unwrap();
 
-  if let Some(children) = &node.get_children() {
+  if let Some(children) = node.take_children() {
     let render_context = RenderContext {
       global: render_context.global,
       viewport: render_context.viewport,
-      parent_font_size: style
+      parent_font_size: node
+        .get_style()
         .inheritable_style
         .font_size
         .map(|f| f.resolve_to_px(render_context))
@@ -139,8 +138,8 @@ fn insert_taffy_node<Nodes: Node<Nodes>>(
     };
 
     let children_ids = children
-      .iter()
-      .map(|child| insert_taffy_node(taffy, node_map, (*child).clone(), &render_context))
+      .into_iter()
+      .map(|child| insert_taffy_node(taffy, node_map, child, &render_context))
       .collect::<Vec<_>>();
 
     taffy.set_children(node_id, &children_ids).unwrap();

@@ -21,9 +21,9 @@
 macro_rules! impl_node_enum {
   ($name:ident, $($variant:ident => $variant_type:ty),*) => {
     impl $crate::layout::node::Node<$name> for $name {
-      fn get_children(&self) -> Option<Vec<&$name>> {
+      fn take_children(&mut self) -> Option<Vec<$name>> {
         match self {
-          $( $name::$variant(inner) => inner.get_children(), )*
+          $( $name::$variant(inner) => inner.take_children(), )*
         }
       }
 
