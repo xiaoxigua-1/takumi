@@ -12,10 +12,7 @@ use crate::{
 
 use crate::rendering::RenderContext;
 
-/// A renderer for a single node.
-///
-/// This renderer is used to render a single node with the specified dimensions.
-/// It is used to render the node with the specified dimensions.
+/// Stores the context and node for rendering.
 struct NodeRender<'ctx, Nodes: Node<Nodes>> {
   context: RenderContext<'ctx>,
   node: Nodes,
