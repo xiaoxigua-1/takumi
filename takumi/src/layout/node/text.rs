@@ -7,13 +7,12 @@ use serde::{Deserialize, Serialize};
 use taffy::{AvailableSpace, Layout, Size};
 
 use crate::{
+  GlobalContext,
   layout::{
     node::Node,
     style::{FontStyle, Style},
   },
-  rendering::{
-    FastBlendImage, RenderContext, apply_text_transform, construct_text_buffer, draw_text,
-  },
+  rendering::{Canvas, RenderContext, apply_text_transform, construct_text_buffer, draw_text},
 };
 
 /// A node that renders text content.
@@ -38,11 +37,11 @@ impl<Nodes: Node<Nodes>> Node<Nodes> for TextNode {
     &mut self.style
   }
 
-  fn draw_content(&self, context: &RenderContext, canvas: &mut FastBlendImage, layout: Layout) {
+  fn draw_content(&self, context: &RenderContext, canvas: &Canvas, layout: Layout) {
     draw_text(
       &self.text,
       &self.style.resolve_to_font_style(context),
-      context,
+      &context.global,
       canvas,
       layout,
     );
@@ -55,7 +54,7 @@ impl<Nodes: Node<Nodes>> Node<Nodes> for TextNode {
     known_dimensions: Size<Option<f32>>,
   ) -> Size<f32> {
     measure_text(
-      context,
+      &context.global,
       &self.text,
       &self.style.resolve_to_font_style(context),
       known_dimensions,
@@ -73,7 +72,7 @@ impl<Nodes: Node<Nodes>> Node<Nodes> for TextNode {
 /// This function handles text wrapping, line height, and respects both explicit
 /// dimensions and available space constraints.
 pub fn measure_text(
-  context: &RenderContext,
+  global: &GlobalContext,
   text: &str,
   style: &FontStyle,
   known_dimensions: Size<Option<f32>>,
@@ -113,7 +112,7 @@ pub fn measure_text(
   let buffer = construct_text_buffer(
     &text,
     style,
-    context,
+    global,
     Some((width_constraint, height_constraint_with_max_lines)),
   );
 

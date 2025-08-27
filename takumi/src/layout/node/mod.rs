@@ -13,8 +13,7 @@ use crate::{
   impl_node_enum,
   layout::style::Style,
   rendering::{
-    BoxShadowRenderPhase, FastBlendImage, RenderContext, draw_background_layers, draw_box_shadow,
-    draw_filled_rect_color,
+    BoxShadowRenderPhase, Canvas, RenderContext, draw_background_layers, draw_box_shadow,
   },
 };
 
@@ -74,7 +73,7 @@ pub trait Node<N: Node<N>>: Send + Sync + Clone {
   }
 
   /// Draws the node onto the canvas using the computed layout.
-  fn draw_on_canvas(&self, context: &RenderContext, canvas: &mut FastBlendImage, layout: Layout) {
+  fn draw_on_canvas(&self, context: &RenderContext, canvas: &Canvas, layout: Layout) {
     self.draw_outset_box_shadow(context, canvas, layout);
     self.draw_background_color(context, canvas, layout);
     self.draw_background_image(context, canvas, layout);
@@ -84,12 +83,7 @@ pub trait Node<N: Node<N>>: Send + Sync + Clone {
   }
 
   /// Draws the outset box shadow of the node.
-  fn draw_outset_box_shadow(
-    &self,
-    context: &RenderContext,
-    canvas: &mut FastBlendImage,
-    layout: Layout,
-  ) {
+  fn draw_outset_box_shadow(&self, context: &RenderContext, canvas: &Canvas, layout: Layout) {
     if let Some(box_shadow) = &self.get_style().box_shadow {
       let border_radius = self.get_style().create_border_radius(&layout, context);
 
@@ -105,12 +99,7 @@ pub trait Node<N: Node<N>>: Send + Sync + Clone {
   }
 
   /// Draws the inset box shadow of the node.
-  fn draw_inset_box_shadow(
-    &self,
-    context: &RenderContext,
-    canvas: &mut FastBlendImage,
-    layout: Layout,
-  ) {
+  fn draw_inset_box_shadow(&self, context: &RenderContext, canvas: &Canvas, layout: Layout) {
     if let Some(box_shadow) = &self.get_style().box_shadow {
       let border_radius = self.get_style().create_border_radius(&layout, context);
 
@@ -126,37 +115,21 @@ pub trait Node<N: Node<N>>: Send + Sync + Clone {
   }
 
   /// Draws the background color of the node.
-  fn draw_background_color(
-    &self,
-    context: &RenderContext,
-    canvas: &mut FastBlendImage,
-    layout: Layout,
-  ) {
+  fn draw_background_color(&self, context: &RenderContext, canvas: &Canvas, layout: Layout) {
     if let Some(background_color) = &self.get_style().background_color {
       let radius = self.get_style().create_border_radius(&layout, context);
 
-      draw_filled_rect_color(
-        canvas,
-        layout.size,
-        layout.location,
-        *background_color,
-        radius,
-      );
+      canvas.fill_color(layout.location, layout.size, *background_color, radius);
     }
   }
 
   /// Draws the background image(s) of the node.
-  fn draw_background_image(
-    &self,
-    context: &RenderContext,
-    canvas: &mut FastBlendImage,
-    layout: Layout,
-  ) {
+  fn draw_background_image(&self, context: &RenderContext, canvas: &Canvas, layout: Layout) {
     draw_background_layers(self.get_style(), context, canvas, layout);
   }
 
   /// Draws the main content of the node.
-  fn draw_content(&self, _context: &RenderContext, _canvas: &mut FastBlendImage, _layout: Layout) {
+  fn draw_content(&self, _context: &RenderContext, _canvas: &Canvas, _layout: Layout) {
     // Default implementation does nothing
   }
 
@@ -166,7 +139,7 @@ pub trait Node<N: Node<N>>: Send + Sync + Clone {
   }
 
   /// Draws the border of the node.
-  fn draw_border(&self, context: &RenderContext, canvas: &mut FastBlendImage, layout: Layout) {
+  fn draw_border(&self, context: &RenderContext, canvas: &Canvas, layout: Layout) {
     use crate::rendering::{BorderProperties, draw_border};
 
     let border = BorderProperties::from_layout(context, &layout, self.get_style());

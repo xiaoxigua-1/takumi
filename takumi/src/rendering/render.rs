@@ -1,4 +1,7 @@
-use std::io::{Seek, Write};
+use std::{
+  io::{Seek, Write},
+  sync::mpsc::channel,
+};
 
 use image::{ExtendedColorType, ImageFormat, RgbaImage, codecs::jpeg::JpegEncoder};
 use serde::{Deserialize, Serialize};
@@ -7,15 +10,15 @@ use taffy::{AvailableSpace, NodeId, Point, TaffyTree, geometry::Size};
 use crate::{
   GlobalContext,
   layout::{Viewport, node::Node},
-  rendering::FastBlendImage,
+  rendering::{Canvas, create_blocking_canvas_loop},
 };
 
 use crate::rendering::RenderContext;
 
 /// Stores the context and node for rendering.
-struct NodeRender<'ctx, Nodes: Node<Nodes>> {
+struct NodeContext<'ctx, N: Node<N>> {
   context: RenderContext<'ctx>,
-  node: Nodes,
+  node: N,
 }
 
 /// Output format for the rendered image.
@@ -89,6 +92,9 @@ pub fn render<Nodes: Node<Nodes>>(
 
   let mut taffy = TaffyTree::new();
 
+  let (tx, rx) = channel();
+  let canvas = Canvas::new(tx);
+
   let render_context = RenderContext {
     global,
     viewport,
@@ -96,8 +102,6 @@ pub fn render<Nodes: Node<Nodes>>(
   };
 
   let root_node_id = insert_taffy_node(&mut taffy, root_node, &render_context);
-
-  let mut canvas = FastBlendImage(RgbaImage::new(viewport.width, viewport.height));
 
   let available_space = Size {
     width: AvailableSpace::Definite(viewport.width as f32),
@@ -126,15 +130,19 @@ pub fn render<Nodes: Node<Nodes>>(
     )
     .unwrap();
 
-  draw_node(&taffy, root_node_id, &mut canvas, Point::ZERO);
+  let handler = std::thread::spawn(move || create_blocking_canvas_loop(viewport, rx));
 
-  Ok(canvas.0)
+  draw_node(&taffy, root_node_id, &canvas, Point::ZERO);
+
+  let canvas = handler.join().unwrap();
+
+  Ok(canvas)
 }
 
 fn draw_node<Nodes: Node<Nodes>>(
-  taffy: &TaffyTree<NodeRender<Nodes>>,
+  taffy: &TaffyTree<NodeContext<Nodes>>,
   node_id: NodeId,
-  canvas: &mut FastBlendImage,
+  canvas: &Canvas,
   offset: Point<f32>,
 ) {
   let mut layout = *taffy.layout(node_id).unwrap();
@@ -153,7 +161,7 @@ fn draw_node<Nodes: Node<Nodes>>(
 }
 
 fn insert_taffy_node<'ctx, Nodes: Node<Nodes>>(
-  taffy: &mut TaffyTree<NodeRender<'ctx, Nodes>>,
+  taffy: &mut TaffyTree<NodeContext<'ctx, Nodes>>,
   mut node: Nodes,
   render_context: &RenderContext<'ctx>,
 ) -> NodeId {
@@ -169,7 +177,7 @@ fn insert_taffy_node<'ctx, Nodes: Node<Nodes>>(
   let node_id = taffy
     .new_leaf_with_context(
       node.get_style().resolve_to_taffy_style(render_context),
-      NodeRender {
+      NodeContext {
         context: *render_context,
         node,
       },
@@ -178,9 +186,8 @@ fn insert_taffy_node<'ctx, Nodes: Node<Nodes>>(
 
   if let Some(children) = children {
     let render_context = RenderContext {
-      global: render_context.global,
-      viewport: render_context.viewport,
       parent_font_size,
+      ..*render_context
     };
 
     let children_ids = children

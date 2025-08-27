@@ -2322,6 +2322,7 @@ dependencies = [
  "ts-rs",
  "wasm-bindgen",
  "woff2-patched",
+ "zeno",
 ]
 
 [[package]]

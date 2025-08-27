@@ -3,7 +3,7 @@ use taffy::{Layout, Point, Size};
 
 use crate::{
   layout::style::{BoxShadow, BoxShadows},
-  rendering::{BorderRadius, FastBlendImage, RenderContext},
+  rendering::{BorderRadius, Canvas, RenderContext},
 };
 
 /// Applies a fast blur to an image using image-rs's optimized implementation.
@@ -63,7 +63,7 @@ pub fn draw_box_shadow(
   context: &RenderContext,
   box_shadows: &BoxShadows,
   border_radius: BorderRadius,
-  canvas: &mut FastBlendImage,
+  canvas: &Canvas,
   layout: Layout,
   phase: BoxShadowRenderPhase,
 ) {
@@ -80,9 +80,12 @@ pub fn draw_box_shadow(
         let draw = draw_single_box_shadow(&resolved, border_radius, layout);
 
         canvas.overlay_image(
-          &draw.image,
-          (layout.location.x + draw.offset.x) as i32,
-          (layout.location.y + draw.offset.y) as i32,
+          draw.image,
+          Point {
+            x: (layout.location.x + draw.offset.x) as i32,
+            y: (layout.location.y + draw.offset.y) as i32,
+          },
+          border_radius,
         );
       }
     }
@@ -120,9 +123,12 @@ pub fn draw_box_shadow(
 
       for draw in images {
         canvas.overlay_image(
-          &draw.image,
-          (layout.location.x + draw.offset.x) as i32,
-          (layout.location.y + draw.offset.y) as i32,
+          draw.image,
+          Point {
+            x: (layout.location.x + draw.offset.x) as i32,
+            y: (layout.location.y + draw.offset.y) as i32,
+          },
+          border_radius,
         );
       }
     }
@@ -179,19 +185,7 @@ fn draw_inset_shadow(
     border_radius,
   );
 
-  if shadow.blur_radius <= 0.0 {
-    if !border_radius.is_zero() {
-      border_radius.apply_to_image(&mut shadow_image);
-    }
-
-    return shadow_image;
-  }
-
   apply_fast_blur(&mut shadow_image, shadow.blur_radius);
-
-  if !border_radius.is_zero() {
-    border_radius.apply_to_image(&mut shadow_image);
-  }
 
   shadow_image
 }

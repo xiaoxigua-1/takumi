@@ -5,8 +5,9 @@ use image::{Pixel, Rgba};
 use taffy::{Layout, Size};
 
 use crate::{
+  GlobalContext,
   layout::style::{FontStyle, Gradient, LinearGradientOrColor, TextOverflow, TextTransform},
-  rendering::{FastBlendImage, RenderContext},
+  rendering::Canvas,
 };
 
 const ELLIPSIS_CHAR: &str = "…";
@@ -15,8 +16,8 @@ const ELLIPSIS_CHAR: &str = "…";
 pub fn draw_text(
   text: &str,
   style: &FontStyle,
-  context: &RenderContext,
-  canvas: &mut FastBlendImage,
+  global: &GlobalContext,
+  canvas: &Canvas,
   layout: Layout,
 ) {
   if style.font_size == 0.0 {
@@ -33,7 +34,7 @@ pub fn draw_text(
   let buffer = construct_text_buffer(
     &render_text,
     style,
-    context,
+    global,
     Some((Some(content_box.width), Some(content_box.height))),
   );
 
@@ -62,7 +63,7 @@ pub fn draw_text(
       text_with_ellipsis.push_str(truncated_text);
       text_with_ellipsis.push_str(ELLIPSIS_CHAR);
 
-      let truncated_buffer = construct_text_buffer(&text_with_ellipsis, style, context, None);
+      let truncated_buffer = construct_text_buffer(&text_with_ellipsis, style, global, None);
 
       let last_line = truncated_buffer.layout_runs().last().unwrap();
 
@@ -82,11 +83,11 @@ pub fn draw_text(
     text_with_ellipsis.push_str(truncated_text);
     text_with_ellipsis.push_str(ELLIPSIS_CHAR);
 
-    return draw_text(&text_with_ellipsis, style, context, canvas, layout);
+    return draw_text(&text_with_ellipsis, style, global, canvas, layout);
   }
 
   draw_buffer(
-    context,
+    global,
     &buffer,
     canvas,
     content_box,
@@ -96,18 +97,18 @@ pub fn draw_text(
 }
 
 fn draw_buffer(
-  context: &RenderContext,
+  global: &GlobalContext,
   buffer: &Buffer,
-  canvas: &mut FastBlendImage,
+  canvas: &mut Canvas,
   content_box: Size<f32>,
   color: &LinearGradientOrColor,
   (start_x, start_y): (f32, f32),
 ) {
-  let mut font_system = context.global.font_context.font_system.lock().unwrap();
-  let mut font_cache = context.global.font_context.font_cache.lock().unwrap();
+  let mut font_system = global.font_context.font_system.lock().unwrap();
+  let mut font_cache = global.font_context.font_cache.lock().unwrap();
 
   let mut gradient_ctx = if let LinearGradientOrColor::Gradient(gradient) = color {
-    Some(gradient.to_draw_context(content_box.width, content_box.height, context))
+    Some(gradient.to_draw_context(content_box.width, content_box.height, global))
   } else {
     None
   };
@@ -225,7 +226,7 @@ fn draw_buffer(
 pub(crate) fn construct_text_buffer(
   text: &str,
   font_style: &FontStyle,
-  context: &RenderContext,
+  global: &GlobalContext,
   size: Option<(Option<f32>, Option<f32>)>,
 ) -> Buffer {
   let metrics = Metrics::new(font_style.font_size, font_style.line_height);
@@ -243,7 +244,7 @@ pub(crate) fn construct_text_buffer(
     attrs = attrs.letter_spacing(letter_spacing);
   }
 
-  let mut font_system = context.global.font_context.font_system.lock().unwrap();
+  let mut font_system = global.font_context.font_system.lock().unwrap();
 
   if let Some((width, height)) = size {
     buffer.set_size(&mut font_system, width, height);

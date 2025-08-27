@@ -1,65 +1,91 @@
-use std::iter::successors;
+use std::{iter::successors, sync::Arc};
 
 use image::{
   Rgba, RgbaImage,
   imageops::{FilterType, resize},
 };
 use taffy::{Layout, Point, Size};
+use zeno::Fill;
 
 use crate::{
   layout::style::{
     BackgroundImage, BackgroundPosition, BackgroundRepeat, BackgroundRepeatStyle, BackgroundSize,
     Color, Gradient, LengthUnit, PositionComponent, PositionKeywordX, PositionKeywordY, Style,
   },
-  rendering::{BorderRadius, FastBlendImage, RenderContext},
+  rendering::{BorderRadius, Canvas, RenderContext, draw_pixel, mask::create_mask},
 };
 
 /// Draws a filled rectangle with a solid color.
 pub fn draw_filled_rect_color(
-  canvas: &mut FastBlendImage,
+  image: &mut RgbaImage,
   size: Size<f32>,
   offset: Point<f32>,
   color: Color,
   radius: BorderRadius,
 ) {
   let color: Rgba<u8> = color.into();
-  let size = Size {
-    width: size.width as u32,
-    height: size.height as u32,
-  };
 
   if radius.is_zero() {
     // Fast path: if drawing on the entire canvas, we can just replace the entire canvas with the color
     if color.0[3] == 255
       && offset.x == 0.0
       && offset.y == 0.0
-      && size.width == canvas.width()
-      && size.height == canvas.height()
+      && size.width as u32 == image.width()
+      && size.height as u32 == image.height()
     {
-      let canvas_mut = canvas.0.as_mut();
-      let canvas_len = canvas_mut.len();
+      let image_mut = image.as_mut();
+      let image_len = image_mut.len();
 
-      for i in (0..canvas_len).step_by(4) {
-        canvas_mut[i..i + 4].copy_from_slice(&color.0);
+      for i in (0..image_len).step_by(4) {
+        image_mut[i..i + 4].copy_from_slice(&color.0);
       }
 
       return;
     }
 
-    for y in 0..size.height {
-      for x in 0..size.width {
-        canvas.draw_pixel(x + offset.x as u32, y + offset.y as u32, color);
+    for y in 0..size.height as u32 {
+      for x in 0..size.width as u32 {
+        draw_pixel(image, x + offset.x as u32, y + offset.y as u32, color);
       }
     }
 
     return;
   };
 
-  let mut image = RgbaImage::from_pixel(size.width, size.height, color);
+  let (mask, placement) = create_mask(size.width, size.height, radius, Fill::NonZero);
 
-  radius.apply_to_image(&mut image);
+  let mut i = 0;
 
-  canvas.overlay_image(&image, offset.x as i32, offset.y as i32);
+  for y in 0..placement.height {
+    for x in 0..placement.width {
+      if mask[i] == 0 {
+        i += 1;
+        continue;
+      }
+
+      let x = x as i32 + placement.left;
+      let y = y as i32 + placement.top;
+
+      if x < 0 || y < 0 || x >= image.width() as i32 || y >= image.height() as i32 {
+        i += 1;
+        continue;
+      }
+
+      let color = if mask[i] == u8::MAX {
+        color
+      } else {
+        Rgba([
+          color.0[0],
+          color.0[1],
+          color.0[2],
+          (color.0[3] * mask[i]) / u8::MAX,
+        ])
+      };
+
+      draw_pixel(image, x as u32, y as u32, color);
+      i += 1;
+    }
+  }
 }
 
 fn resolve_length_against_area(unit: LengthUnit, area: u32, context: &RenderContext) -> u32 {
@@ -230,7 +256,7 @@ fn pad_with_last<T: Copy>(values: &mut Vec<T>, target_len: usize, default: T) {
 pub fn draw_background_layers(
   style: &Style,
   context: &RenderContext,
-  canvas: &mut FastBlendImage,
+  canvas: &Canvas,
   layout: Layout,
 ) {
   let Some(images) = &style.background_image else {
@@ -323,41 +349,23 @@ pub fn draw_background_layers(
       }
     };
 
-    // Fast path: if the tile size == area size and the position is (0, 0)
-    // we can just draw the tile image directly
-    if matches!(
-      (&ys[..], &xs[..], tile_w == area_w, tile_h == area_h),
-      ([0], [0], true, true)
-    ) {
-      if !radius.is_zero() {
-        radius.apply_to_image(&mut tile_image);
-      }
+    let tile_image = Arc::new(tile_image);
 
-      canvas.overlay_image(&tile_image, 0, 0);
-      continue;
-    }
-
-    // Compose a layer-sized buffer
-    let mut layer_img = FastBlendImage(RgbaImage::new(area_w, area_h));
     for y in &ys {
       for x in &xs {
         if *x >= area_w as i32 || *y >= area_h as i32 {
           continue;
         }
 
-        layer_img.overlay_image(&tile_image, *x, *y);
+        canvas.overlay_image(
+          tile_image.clone(),
+          Point {
+            x: *x + layout.location.x as i32,
+            y: *y + layout.location.y as i32,
+          },
+          radius,
+        );
       }
     }
-
-    // Apply radius and overlay
-    if !radius.is_zero() {
-      radius.apply_to_image(&mut layer_img.0);
-    }
-
-    canvas.overlay_image(
-      &layer_img.0,
-      layout.location.x as i32,
-      layout.location.y as i32,
-    );
   }
 }

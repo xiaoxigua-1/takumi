@@ -3,7 +3,7 @@ use taffy::{Layout, Point, Size};
 
 use crate::{
   layout::style::{Color, Style},
-  rendering::{BorderRadius, FastBlendImage, RenderContext, draw_filled_rect_color},
+  rendering::{BorderRadius, Canvas, RenderContext, draw_filled_rect_color},
 };
 
 /// Represents the properties of a border.
@@ -38,7 +38,7 @@ impl BorderProperties {
 ///
 /// This function draws borders with specified size and color. If border_radius is specified,
 /// it creates a rounded border using a custom drawing approach.
-pub fn draw_border(canvas: &mut FastBlendImage, border: BorderProperties) {
+pub fn draw_border(canvas: &Canvas, border: BorderProperties) {
   if !border.radius.is_zero() {
     draw_rounded_border(canvas, border);
   } else {
@@ -47,7 +47,7 @@ pub fn draw_border(canvas: &mut FastBlendImage, border: BorderProperties) {
 }
 
 /// Draws a rectangular border without rounded corners.
-fn draw_rectangular_border(canvas: &mut FastBlendImage, border: BorderProperties) {
+fn draw_rectangular_border(canvas: &Canvas, border: BorderProperties) {
   // Top border
   if border.width.top > 0.0 {
     draw_filled_rect_color(

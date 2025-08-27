@@ -68,37 +68,37 @@ macro_rules! impl_node_enum {
         }
       }
 
-      fn draw_on_canvas(&self, context: &$crate::rendering::RenderContext, canvas: &mut $crate::rendering::FastBlendImage, layout: $crate::taffy::Layout) {
+      fn draw_on_canvas(&self, context: &$crate::rendering::RenderContext, canvas: &$crate::rendering::Canvas, layout: $crate::taffy::Layout) {
         match self {
           $( $name::$variant(inner) => <_ as $crate::layout::node::Node<$name>>::draw_on_canvas(inner, context, canvas, layout), )*
         }
       }
 
-      fn draw_background_color(&self, context: &$crate::rendering::RenderContext, canvas: &mut $crate::rendering::FastBlendImage, layout: $crate::taffy::Layout) {
+      fn draw_background_color(&self, context: &$crate::rendering::RenderContext, canvas: &$crate::rendering::Canvas, layout: $crate::taffy::Layout) {
         match self {
           $( $name::$variant(inner) => <_ as $crate::layout::node::Node<$name>>::draw_background_color(inner, context, canvas, layout), )*
         }
       }
 
-      fn draw_content(&self, context: &$crate::rendering::RenderContext, canvas: &mut $crate::rendering::FastBlendImage, layout: $crate::taffy::Layout) {
+      fn draw_content(&self, context: &$crate::rendering::RenderContext, canvas: &$crate::rendering::Canvas, layout: $crate::taffy::Layout) {
         match self {
           $( $name::$variant(inner) => <_ as $crate::layout::node::Node<$name>>::draw_content(inner, context, canvas, layout), )*
         }
       }
 
-      fn draw_border(&self, context: &$crate::rendering::RenderContext, canvas: &mut $crate::rendering::FastBlendImage, layout: $crate::taffy::Layout) {
+      fn draw_border(&self, context: &$crate::rendering::RenderContext, canvas: &$crate::rendering::Canvas, layout: $crate::taffy::Layout) {
         match self {
           $( $name::$variant(inner) => <_ as $crate::layout::node::Node<$name>>::draw_border(inner, context, canvas, layout), )*
         }
       }
 
-      fn draw_outset_box_shadow(&self, context: &$crate::rendering::RenderContext, canvas: &mut $crate::rendering::FastBlendImage, layout: $crate::taffy::Layout) {
+      fn draw_outset_box_shadow(&self, context: &$crate::rendering::RenderContext, canvas: &$crate::rendering::Canvas, layout: $crate::taffy::Layout) {
         match self {
           $( $name::$variant(inner) => <_ as $crate::layout::node::Node<$name>>::draw_outset_box_shadow(inner, context, canvas, layout), )*
         }
       }
 
-      fn draw_inset_box_shadow(&self, context: &$crate::rendering::RenderContext, canvas: &mut $crate::rendering::FastBlendImage, layout: $crate::taffy::Layout) {
+      fn draw_inset_box_shadow(&self, context: &$crate::rendering::RenderContext, canvas: &$crate::rendering::Canvas, layout: $crate::taffy::Layout) {
         match self {
           $( $name::$variant(inner) => <_ as $crate::layout::node::Node<$name>>::draw_inset_box_shadow(inner, context, canvas, layout), )*
         }

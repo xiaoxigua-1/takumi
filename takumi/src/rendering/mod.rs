@@ -7,6 +7,7 @@ mod components;
 mod debug_drawing;
 /// Image drawing functions
 mod image_drawing;
+mod mask;
 /// Main image renderer and viewport management
 mod render;
 /// Text drawing functions
@@ -24,9 +25,9 @@ use crate::{GlobalContext, layout::Viewport};
 
 /// The context for the image renderer.
 #[derive(Clone, Copy)]
-pub struct RenderContext<'ctx> {
+pub struct RenderContext<'g> {
   /// The global context.
-  pub global: &'ctx GlobalContext,
+  pub global: &'g GlobalContext,
   /// The viewport for the image renderer.
   pub viewport: Viewport,
   /// The font size in pixels, used for em and rem units.
