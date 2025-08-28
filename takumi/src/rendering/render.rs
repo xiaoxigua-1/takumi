@@ -131,13 +131,13 @@ pub fn render<Nodes: Node<Nodes>>(
     .unwrap();
 
   #[cfg(target_arch = "wasm32")]
-  {
+  let canvas = {
     render_node(&taffy, root_node_id, &canvas, Point::ZERO);
 
     drop(canvas);
 
     create_blocking_canvas_loop(viewport, rx)
-  }
+  };
 
   #[cfg(not(target_arch = "wasm32"))]
   let canvas = {
