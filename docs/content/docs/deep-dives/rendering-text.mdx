@@ -41,10 +41,12 @@ for (const url of fontUrls) {
 import { container, text } from '@takumi-rs/helpers';
 
 const layout = container({
-  width: 400,
-  height: 200,
-  alignItems: 'center',
-  justifyContent: 'center',
+  style: {
+    width: 400,
+    height: 200,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   children: [
     text('Centered Bold', {
       fontSize: 32,
