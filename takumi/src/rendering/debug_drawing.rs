@@ -21,7 +21,7 @@ pub fn draw_debug_border(canvas: &Canvas, layout: Layout) {
       offset: Point { x, y },
       size,
       color: Color([255, 0, 0, 255]),
-      radius: BorderRadius::default(),
+      radius: BorderRadius::zero(),
     },
   );
 
@@ -32,7 +32,7 @@ pub fn draw_debug_border(canvas: &Canvas, layout: Layout) {
       offset: layout.location,
       size: layout.size,
       color: Color([0, 255, 0, 255]),
-      radius: BorderRadius::default(),
+      radius: BorderRadius::zero(),
     },
   );
 }

@@ -5,22 +5,22 @@ use image::{
   imageops::{FilterType, resize},
 };
 use taffy::{Layout, Point, Size};
-use zeno::Fill;
+use zeno::Mask;
 
 use crate::{
   layout::style::{
     BackgroundImage, BackgroundPosition, BackgroundRepeat, BackgroundRepeatStyle, BackgroundSize,
-    Color, Gradient, LengthUnit, PositionComponent, PositionKeywordX, PositionKeywordY, Style,
+    Gradient, LengthUnit, PositionComponent, PositionKeywordX, PositionKeywordY, Style,
   },
-  rendering::{BorderRadius, Canvas, RenderContext, draw_pixel, mask::create_mask},
+  rendering::{BorderRadius, Canvas, RenderContext, draw_pixel},
 };
 
 /// Draws a filled rectangle with a solid color.
-pub fn draw_filled_rect_color(
+pub fn draw_filled_rect_color<C: Into<Rgba<u8>>>(
   image: &mut RgbaImage,
-  size: Size<f32>,
-  offset: Point<f32>,
-  color: Color,
+  size: Size<u32>,
+  offset: Point<i32>,
+  color: C,
   radius: BorderRadius,
 ) {
   let color: Rgba<u8> = color.into();
@@ -28,10 +28,10 @@ pub fn draw_filled_rect_color(
   if radius.is_zero() {
     // Fast path: if drawing on the entire canvas, we can just replace the entire canvas with the color
     if color.0[3] == 255
-      && offset.x == 0.0
-      && offset.y == 0.0
-      && size.width as u32 == image.width()
-      && size.height as u32 == image.height()
+      && offset.x == 0
+      && offset.y == 0
+      && size.width == image.width()
+      && size.height == image.height()
     {
       let image_mut = image.as_mut();
       let image_len = image_mut.len();
@@ -43,8 +43,8 @@ pub fn draw_filled_rect_color(
       return;
     }
 
-    for y in 0..size.height as u32 {
-      for x in 0..size.width as u32 {
+    for y in 0..size.height {
+      for x in 0..size.width {
         draw_pixel(image, x + offset.x as u32, y + offset.y as u32, color);
       }
     }
@@ -52,7 +52,11 @@ pub fn draw_filled_rect_color(
     return;
   };
 
-  let (mask, placement) = create_mask(size.width, size.height, radius, Fill::NonZero);
+  let mut paths = Vec::new();
+
+  radius.write_mask_commands(&mut paths);
+
+  let (mask, placement) = Mask::new(&paths).render();
 
   let mut i = 0;
 
@@ -78,7 +82,7 @@ pub fn draw_filled_rect_color(
           color.0[0],
           color.0[1],
           color.0[2],
-          (color.0[3] * mask[i]) / u8::MAX,
+          (color.0[3] as f32 * (mask[i] as f32 / 255.0)) as u8,
         ])
       };
 

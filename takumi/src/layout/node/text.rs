@@ -41,7 +41,7 @@ impl<Nodes: Node<Nodes>> Node<Nodes> for TextNode {
     draw_text(
       &self.text,
       &self.style.resolve_to_font_style(context),
-      &context.global,
+      context,
       canvas,
       layout,
     );
@@ -54,7 +54,7 @@ impl<Nodes: Node<Nodes>> Node<Nodes> for TextNode {
     known_dimensions: Size<Option<f32>>,
   ) -> Size<f32> {
     measure_text(
-      &context.global,
+      context.global,
       &self.text,
       &self.style.resolve_to_font_style(context),
       known_dimensions,

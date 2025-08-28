@@ -506,11 +506,11 @@ mod tests {
         center: (0.25, 0.6),
         stops: vec![
           GradientStop::ColorHint {
-            color: Color([255, 255, 255, 255]),
+            color: Color::white(),
             hint: None,
           },
           GradientStop::ColorHint {
-            color: Color([0, 0, 0, 255]),
+            color: Color::black(),
             hint: None,
           },
         ],
@@ -557,15 +557,15 @@ mod tests {
       center: (0.5, 0.5),
       stops: vec![
         GradientStop::ColorHint {
-          color: Color([0, 0, 0, 255]),
+          color: Color::black(),
           hint: Some(StopPosition(LengthUnit::Percentage(0.0))),
         },
         GradientStop::ColorHint {
-          color: Color([0, 0, 0, 255]),
+          color: Color::black(),
           hint: Some(StopPosition(LengthUnit::Percentage(50.0))),
         },
         GradientStop::ColorHint {
-          color: Color([0, 0, 0, 255]),
+          color: Color::black(),
           hint: Some(StopPosition(LengthUnit::Px(100.0))),
         },
       ],
@@ -591,15 +591,15 @@ mod tests {
       center: (0.5, 0.5),
       stops: vec![
         GradientStop::ColorHint {
-          color: Color([0, 0, 0, 255]),
+          color: Color::black(),
           hint: Some(StopPosition(LengthUnit::Px(0.0))),
         },
         GradientStop::ColorHint {
-          color: Color([0, 0, 0, 255]),
+          color: Color::black(),
           hint: Some(StopPosition(LengthUnit::Px(0.0))),
         },
         GradientStop::ColorHint {
-          color: Color([0, 0, 0, 255]),
+          color: Color::black(),
           hint: Some(StopPosition(LengthUnit::Px(0.0))),
         },
       ],

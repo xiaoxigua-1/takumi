@@ -7,7 +7,7 @@ pub use image::*;
 pub use text::*;
 
 use serde::{Deserialize, Serialize};
-use taffy::{AvailableSpace, Layout, Size};
+use taffy::{AvailableSpace, Layout, Point, Size};
 
 use crate::{
   impl_node_enum,
@@ -119,7 +119,18 @@ pub trait Node<N: Node<N>>: Send + Sync + Clone {
     if let Some(background_color) = &self.get_style().background_color {
       let radius = self.get_style().create_border_radius(&layout, context);
 
-      canvas.fill_color(layout.location, layout.size, *background_color, radius);
+      canvas.fill_color(
+        Point {
+          x: layout.location.x as i32,
+          y: layout.location.y as i32,
+        },
+        Size {
+          width: layout.size.width as u32,
+          height: layout.size.height as u32,
+        },
+        *background_color,
+        radius,
+      );
     }
   }
 

@@ -241,7 +241,7 @@ fn test_background_image_grid_pattern() {
     Some(BackgroundRepeatsValue::Css("repeat, repeat".to_string())),
   );
 
-  container.style.background_color = Some(Color([255, 255, 255, 255]));
+  container.style.background_color = Some(Color::white());
 
   assert_eq!(
     container.style.background_repeat,
@@ -276,7 +276,7 @@ fn test_background_image_noise_v1_with_gradient() {
     )),
   );
 
-  container.style.background_color = Some(Color([255, 255, 255, 255]));
+  container.style.background_color = Some(Color::white());
 
   run_style_width_test(
     container.into(),

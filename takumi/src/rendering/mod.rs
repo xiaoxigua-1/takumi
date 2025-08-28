@@ -7,7 +7,6 @@ mod components;
 mod debug_drawing;
 /// Image drawing functions
 mod image_drawing;
-mod mask;
 /// Main image renderer and viewport management
 mod render;
 /// Text drawing functions
