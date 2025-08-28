@@ -24,9 +24,9 @@ use crate::{GlobalContext, layout::Viewport};
 
 /// The context for the image renderer.
 #[derive(Clone, Copy)]
-pub struct RenderContext<'ctx> {
+pub struct RenderContext<'g> {
   /// The global context.
-  pub global: &'ctx GlobalContext,
+  pub global: &'g GlobalContext,
   /// The viewport for the image renderer.
   pub viewport: Viewport,
   /// The font size in pixels, used for em and rem units.

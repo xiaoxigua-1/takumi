@@ -1,7 +1,7 @@
 use takumi::layout::{
   node::ContainerNode,
   style::{
-    Color, InheritableStyle,
+    Color,
     LengthUnit::{Percentage, Px},
     Style,
   },
@@ -26,9 +26,6 @@ fn test_style_padding() {
           width: Percentage(100.0),
           height: Percentage(100.0),
           background_color: Some(Color([255, 0, 0, 255])), // Red child to show padding effect
-          inheritable_style: InheritableStyle {
-            ..Default::default()
-          },
           ..Default::default()
         },
         children: None,

@@ -73,7 +73,7 @@ fn test_style_border_width() {
     style: Style {
       width: Percentage(100.0),
       height: Percentage(100.0),
-      background_color: Some(Color([255, 255, 255, 255])),
+      background_color: Some(Color::white()),
       border_width: Px(10.0).into(),
       inheritable_style: InheritableStyle {
         border_color: Some(Color([255, 0, 0, 255])),
@@ -135,7 +135,7 @@ fn test_style_box_shadow_inset() {
         style: Style {
           width: Px(120.0),
           height: Px(80.0),
-          background_color: Some(Color([255, 255, 255, 255])), // White child for inset visibility
+          background_color: Some(Color::white()), // White child for inset visibility
           border_radius: Some(Px(16.0).into()),
           box_shadow: Some(BoxShadows(vec![BoxShadow {
             color: Color([0, 0, 0, 153]),
@@ -176,9 +176,6 @@ fn test_style_position() {
           position: Position::Absolute, // Test the position property
           inset: Px(20.0).into(),       // Position with inset properties
           background_color: Some(Color([255, 0, 0, 255])), // Red child to make it visible
-          inheritable_style: InheritableStyle {
-            ..Default::default()
-          },
           ..Default::default()
         },
         children: None,

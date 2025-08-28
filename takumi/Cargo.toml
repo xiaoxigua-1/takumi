@@ -15,6 +15,7 @@ merge = "0.2"
 cssparser = "0.35"
 csscolorparser = "0.7"
 noise = "0.9.0"
+zeno = "0.3.3"
 
 [dependencies.rayon]
 version = "1.10"

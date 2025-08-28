@@ -1,9 +1,12 @@
+use std::sync::Arc;
+
 use image::{Rgba, RgbaImage, imageops::fast_blur};
 use taffy::{Layout, Point, Size};
+use zeno::{Fill, Mask};
 
 use crate::{
   layout::style::{BoxShadow, BoxShadows},
-  rendering::{BorderRadius, FastBlendImage, RenderContext},
+  rendering::{BorderRadius, Canvas, RenderContext, draw_filled_rect_color},
 };
 
 /// Applies a fast blur to an image using image-rs's optimized implementation.
@@ -52,7 +55,7 @@ impl BoxShadowResolved {
       offset_x: shadow.offset_x.resolve_to_px(context),
       offset_y: shadow.offset_y.resolve_to_px(context),
       blur_radius: shadow.blur_radius.resolve_to_px(context),
-      spread_radius: shadow.spread_radius.resolve_to_px(context),
+      spread_radius: shadow.spread_radius.resolve_to_px(context).max(0.0),
       color: shadow.color.into(),
     }
   }
@@ -63,7 +66,7 @@ pub fn draw_box_shadow(
   context: &RenderContext,
   box_shadows: &BoxShadows,
   border_radius: BorderRadius,
-  canvas: &mut FastBlendImage,
+  canvas: &Canvas,
   layout: Layout,
   phase: BoxShadowRenderPhase,
 ) {
@@ -80,9 +83,12 @@ pub fn draw_box_shadow(
         let draw = draw_single_box_shadow(&resolved, border_radius, layout);
 
         canvas.overlay_image(
-          &draw.image,
-          (layout.location.x + draw.offset.x) as i32,
-          (layout.location.y + draw.offset.y) as i32,
+          Arc::new(draw.image),
+          Point {
+            x: (layout.location.x + draw.offset.x) as i32,
+            y: (layout.location.y + draw.offset.y) as i32,
+          },
+          draw.border_radius,
         );
       }
     }
@@ -120,9 +126,12 @@ pub fn draw_box_shadow(
 
       for draw in images {
         canvas.overlay_image(
-          &draw.image,
-          (layout.location.x + draw.offset.x) as i32,
-          (layout.location.y + draw.offset.y) as i32,
+          Arc::new(draw.image),
+          Point {
+            x: (layout.location.x + draw.offset.x) as i32,
+            y: (layout.location.y + draw.offset.y) as i32,
+          },
+          draw.border_radius,
         );
       }
     }
@@ -132,6 +141,7 @@ pub fn draw_box_shadow(
 struct ShadowDraw {
   image: RgbaImage,
   offset: Point<f32>,
+  border_radius: BorderRadius,
 }
 
 fn draw_single_box_shadow(
@@ -143,6 +153,7 @@ fn draw_single_box_shadow(
     ShadowDraw {
       image: draw_inset_shadow(shadow, border_radius, layout),
       offset: Point { x: 0.0, y: 0.0 },
+      border_radius,
     }
   } else {
     ShadowDraw {
@@ -151,6 +162,7 @@ fn draw_single_box_shadow(
         x: shadow.offset_x - shadow.blur_radius - shadow.spread_radius,
         y: shadow.offset_y - shadow.blur_radius - shadow.spread_radius,
       },
+      border_radius: BorderRadius::zero(),
     }
   }
 }
@@ -166,121 +178,98 @@ fn draw_inset_shadow(
     shadow.color,
   );
 
-  remove_inner_section(
-    &mut shadow_image,
-    Point {
-      x: (shadow.spread_radius + shadow.offset_x) as i32,
-      y: (shadow.spread_radius + shadow.offset_y) as i32,
-    },
-    Size {
-      width: (layout.size.width - shadow.spread_radius * 2.0) as u32,
-      height: (layout.size.height - shadow.spread_radius * 2.0) as u32,
-    },
-    border_radius,
-  );
+  let mut paths = Vec::new();
 
-  if shadow.blur_radius <= 0.0 {
-    if !border_radius.is_zero() {
-      border_radius.apply_to_image(&mut shadow_image);
+  let offset_border_radius = BorderRadius {
+    offset: Point {
+      x: border_radius.offset.x + shadow.offset_x,
+      y: border_radius.offset.y + shadow.offset_y,
+    },
+    ..border_radius
+  };
+
+  offset_border_radius.write_mask_commands(&mut paths);
+
+  offset_border_radius
+    .grow(-shadow.spread_radius)
+    .write_mask_commands(&mut paths);
+
+  let mut mask = Mask::new(&paths);
+
+  mask.style(Fill::EvenOdd);
+
+  let (mask, placement) = mask.render();
+
+  let mut i = 0;
+
+  for y in 0..placement.height {
+    for x in 0..placement.width {
+      let alpha = mask[i];
+
+      i += 1;
+
+      if alpha == u8::MAX {
+        continue;
+      }
+
+      let x = x as i32 + placement.left;
+      let y = y as i32 + placement.top;
+
+      if x < 0 || y < 0 || x >= shadow_image.width() as i32 || y >= shadow_image.height() as i32 {
+        continue;
+      }
+
+      let alpha = shadow.color.0[3] as f32 * (alpha as f32 / 255.0);
+
+      let color = Rgba([
+        shadow.color.0[0],
+        shadow.color.0[1],
+        shadow.color.0[2],
+        alpha as u8,
+      ]);
+
+      shadow_image.put_pixel(x as u32, y as u32, color);
     }
-
-    return shadow_image;
   }
 
   apply_fast_blur(&mut shadow_image, shadow.blur_radius);
 
-  if !border_radius.is_zero() {
-    border_radius.apply_to_image(&mut shadow_image);
-  }
-
   shadow_image
 }
 
-/// Draws an outset (external) box shadow.
+/// Draws an outset box shadow.
 fn draw_outset_shadow(
   shadow: &BoxShadowResolved,
-  mut border_radius: BorderRadius,
+  border_radius: BorderRadius,
   layout: Layout,
 ) -> RgbaImage {
-  let mut spread_image = RgbaImage::from_pixel(
-    (layout.size.width + shadow.spread_radius * 2.0) as u32,
-    (layout.size.height + shadow.spread_radius * 2.0) as u32,
-    shadow.color,
-  );
-
-  if !border_radius.is_zero() {
-    border_radius.offset_px(shadow.spread_radius);
-    border_radius.apply_to_image(&mut spread_image);
-  }
-
-  if shadow.blur_radius <= 0.0 {
-    return spread_image;
-  }
-
   let box_shadow_size = (shadow.blur_radius + shadow.spread_radius) * 2.0;
 
-  let mut blur_image = FastBlendImage(RgbaImage::new(
+  let mut image = RgbaImage::new(
     (layout.size.width + box_shadow_size) as u32,
     (layout.size.height + box_shadow_size) as u32,
-  ));
-
-  blur_image.overlay_image(
-    &spread_image,
-    shadow.blur_radius as i32,
-    shadow.blur_radius as i32,
   );
 
-  apply_fast_blur(&mut blur_image.0, shadow.blur_radius);
+  // Draw the spread area, offset by blur + spread radius, width is spread radius
+  draw_filled_rect_color(
+    &mut image,
+    Size {
+      width: layout.size.width as u32,
+      height: layout.size.height as u32,
+    },
+    Point {
+      x: (shadow.spread_radius + shadow.blur_radius) as i32,
+      y: (shadow.spread_radius + shadow.blur_radius) as i32,
+    },
+    shadow.color,
+    border_radius.grow(shadow.spread_radius),
+  );
 
-  blur_image.0
-}
-
-fn get_pixel_index_from_axis(x: u32, y: u32, width: u32) -> usize {
-  (y * width + x) as usize
-}
-
-fn remove_inner_section(
-  image: &mut RgbaImage,
-  offset: Point<i32>,
-  size: Size<u32>,
-  border_radius: BorderRadius,
-) {
-  if border_radius.is_zero() {
-    let width = image.width();
-    let image_mut = image.as_mut();
-
-    for x in 0..size.width {
-      for y in 0..size.height {
-        let index = get_pixel_index_from_axis(x + offset.x as u32, y + offset.y as u32, width);
-
-        image_mut[index * 4 + 3] = 0;
-      }
-    }
-
-    return;
-  };
-
-  let mut mask = RgbaImage::from_pixel(size.width, size.height, Rgba([0, 0, 0, 255]));
-
-  border_radius.apply_to_image(&mut mask);
-
-  let width = image.width();
-  let pixels = image.as_mut();
-
-  for (x, y, mask_pixel) in mask.enumerate_pixels() {
-    match mask_pixel.0[3] {
-      255 => {
-        let index = get_pixel_index_from_axis(x + offset.x as u32, y + offset.y as u32, width);
-
-        pixels[index * 4 + 3] = 0;
-      }
-      0 => {}
-      _ => {
-        let index = get_pixel_index_from_axis(x + offset.x as u32, y + offset.y as u32, width);
-
-        pixels[index * 4 + 3] =
-          (pixels[index * 4 + 3] as f32 * (mask_pixel.0[3] as f32 / 255.0)) as u8;
-      }
-    }
+  if shadow.blur_radius <= 0.0 {
+    return image;
   }
+
+  apply_fast_blur(&mut image, shadow.blur_radius);
+
+  image
 }

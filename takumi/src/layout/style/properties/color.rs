@@ -43,6 +43,16 @@ impl Color {
   pub const fn transparent() -> Self {
     Color([0, 0, 0, 0])
   }
+
+  /// Creates a new black color.
+  pub const fn black() -> Self {
+    Color([0, 0, 0, 255])
+  }
+
+  /// Creates a new white color.
+  pub const fn white() -> Self {
+    Color([255, 255, 255, 255])
+  }
 }
 
 impl TryFrom<ColorValue> for Color {

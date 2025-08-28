@@ -166,22 +166,6 @@ impl LinearGradientDrawContext {
   }
 }
 
-/// Represents either a linear gradient or a solid color.
-#[derive(Debug, Clone, PartialEq, TS, Serialize, Deserialize)]
-#[serde(untagged)]
-pub enum LinearGradientOrColor {
-  /// A linear gradient.
-  Gradient(LinearGradient),
-  /// A solid color.
-  Color(Color),
-}
-
-impl Default for LinearGradientOrColor {
-  fn default() -> Self {
-    LinearGradientOrColor::Color(Color::default())
-  }
-}
-
 /// Represents a gradient stop position.
 /// If a percentage or number (0.0-1.0) is provided, it is treated as a percentage.
 #[derive(Debug, Clone, Copy, PartialEq, TS, Deserialize, Serialize)]
@@ -1041,15 +1025,15 @@ mod tests {
       angle: Angle::new(0.0),
       stops: vec![
         GradientStop::ColorHint {
-          color: Color([0, 0, 0, 255]),
+          color: Color::black(),
           hint: Some(StopPosition(LengthUnit::Percentage(0.0))),
         },
         GradientStop::ColorHint {
-          color: Color([0, 0, 0, 255]),
+          color: Color::black(),
           hint: Some(StopPosition(LengthUnit::Percentage(50.0))),
         },
         GradientStop::ColorHint {
-          color: Color([0, 0, 0, 255]),
+          color: Color::black(),
           hint: Some(StopPosition(LengthUnit::Px(100.0))),
         },
       ],
@@ -1074,11 +1058,11 @@ mod tests {
       angle: Angle::new(0.0),
       stops: vec![
         GradientStop::ColorHint {
-          color: Color([0, 0, 0, 255]),
+          color: Color::black(),
           hint: Some(StopPosition(LengthUnit::Px(0.0))),
         },
         GradientStop::ColorHint {
-          color: Color([0, 0, 0, 255]),
+          color: Color::black(),
           hint: Some(StopPosition(LengthUnit::Px(0.0))),
         },
       ],

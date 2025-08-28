@@ -22,7 +22,6 @@ import type { ImageScalingAlgorithm } from "./ImageScalingAlgorithm";
 import type { JustifyContent } from "./JustifyContent";
 import type { LengthUnit } from "./LengthUnit";
 import type { LineHeight } from "./LineHeight";
-import type { LinearGradientOrColor } from "./LinearGradientOrColor";
 import type { ObjectFit } from "./ObjectFit";
 import type { Position } from "./Position";
 import type { Sides } from "./Sides";
@@ -302,7 +301,7 @@ borderColor?: Color,
 /**
  * Text color for child text elements.
  */
-color?: LinearGradientOrColor, 
+color?: Color, 
 /**
  * Font size for text rendering.
  */

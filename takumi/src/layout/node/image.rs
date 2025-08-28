@@ -11,7 +11,7 @@ use crate::resources::image::ImageResult;
 use crate::{
   GlobalContext,
   layout::{node::Node, style::Style},
-  rendering::{FastBlendImage, RenderContext, draw_image},
+  rendering::{Canvas, RenderContext, draw_image},
   resources::image::{ImageResourceError, ImageSource, is_svg},
 };
 
@@ -70,7 +70,7 @@ impl<Nodes: Node<Nodes>> Node<Nodes> for ImageNode {
     measure_image(size, known_dimensions, available_space)
   }
 
-  fn draw_content(&self, context: &RenderContext, canvas: &mut FastBlendImage, layout: Layout) {
+  fn draw_content(&self, context: &RenderContext, canvas: &Canvas, layout: Layout) {
     let Ok(image) = resolve_image(&self.src, context.global) else {
       return;
     };

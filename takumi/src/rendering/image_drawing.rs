@@ -1,9 +1,11 @@
+use std::sync::Arc;
+
 use image::imageops::crop_imm;
 use image::{RgbaImage, imageops::FilterType};
-use taffy::Layout;
+use taffy::{Layout, Point};
 
 use crate::layout::style::{ObjectFit, Style};
-use crate::rendering::{FastBlendImage, RenderContext};
+use crate::rendering::{Canvas, RenderContext};
 use crate::resources::image::ImageSource;
 
 /// Process an image according to the specified object-fit style.
@@ -133,7 +135,7 @@ pub fn draw_image(
   image: &ImageSource,
   style: &Style,
   context: &RenderContext,
-  canvas: &mut FastBlendImage,
+  canvas: &Canvas,
   layout: Layout,
 ) {
   let content_box = layout.content_box_size();
@@ -143,7 +145,7 @@ pub fn draw_image(
   let container_width = content_box.width as u32;
   let container_height = content_box.height as u32;
 
-  let (mut image, offset_x, offset_y) = process_image_for_object_fit(
+  let (image, offset_x, offset_y) = process_image_for_object_fit(
     image,
     style.object_fit,
     style
@@ -155,15 +157,12 @@ pub fn draw_image(
     container_height,
   );
 
-  // Apply border radius if specified
-  let radius = style.create_border_radius(&layout, context);
-  if !radius.is_zero() {
-    radius.apply_to_image(&mut image);
-  }
-
   canvas.overlay_image(
-    &image,
-    offset_x as i32 + x as i32,
-    offset_y as i32 + y as i32,
+    Arc::new(image),
+    Point {
+      x: offset_x as i32 + x as i32,
+      y: offset_y as i32 + y as i32,
+    },
+    style.create_border_radius(&layout, context),
   );
 }

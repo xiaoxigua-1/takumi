@@ -6,9 +6,7 @@ use takumi::{
   GlobalContext,
   layout::{
     DEFAULT_FONT_SIZE, DEFAULT_LINE_HEIGHT_SCALER, Viewport,
-    style::{
-      Color, FontFamily, FontStyle, LinearGradientOrColor, TextOverflow, TextStyle, TextTransform,
-    },
+    style::{Color, FontFamily, FontStyle, TextOverflow, TextStyle, TextTransform},
   },
   rendering::RenderContext,
 };
@@ -61,7 +59,7 @@ fn create_test_font_style() -> FontStyle {
     text_align: Some(cosmic_text::Align::Left),
     text_overflow: TextOverflow::Clip,
     text_transform: TextTransform::None,
-    color: LinearGradientOrColor::Color(Color([0, 0, 0, 255])),
+    color: Color::black(),
   }
 }
 
@@ -250,7 +248,7 @@ mod measure_text_tests {
     let style = create_test_font_style();
 
     measure_text(
-      &context,
+      context.global,
       text,
       &style,
       create_known_dimensions(width, height),
@@ -270,7 +268,7 @@ mod measure_text_tests {
     let context = create_test_context();
 
     measure_text(
-      &context,
+      context.global,
       text,
       style,
       create_known_dimensions(width, height),

@@ -33,7 +33,7 @@ pub struct FontStyle {
   /// Text transform behavior (uppercase, lowercase, capitalize, none)
   pub text_transform: TextTransform,
   /// Text color for child text elements.
-  pub color: LinearGradientOrColor,
+  pub color: Color,
 }
 
 /// Main styling structure that contains all layout and visual properties.
@@ -254,7 +254,7 @@ pub struct InheritableStyle {
   /// Color of the element's border.
   pub border_color: Option<Color>,
   /// Text color for child text elements.
-  pub color: Option<LinearGradientOrColor>,
+  pub color: Option<Color>,
   /// Font size for text rendering.
   pub font_size: Option<LengthUnit>,
   /// Font family name for text rendering.
@@ -507,11 +507,7 @@ impl Style {
       .unwrap_or_else(|| font_size * DEFAULT_LINE_HEIGHT_SCALER);
 
     FontStyle {
-      color: self
-        .inheritable_style
-        .color
-        .clone()
-        .unwrap_or(LinearGradientOrColor::Color(Color([0, 0, 0, 255]))),
+      color: self.inheritable_style.color.unwrap_or_else(Color::black),
       font_size,
       line_height,
       font_weight: self
