@@ -62,8 +62,11 @@ pub fn draw_filled_rect_color<C: Into<Rgba<u8>>>(
 
   for y in 0..placement.height {
     for x in 0..placement.width {
-      if mask[i] == 0 {
-        i += 1;
+      let alpha = mask[i];
+
+      i += 1;
+
+      if alpha == 0 {
         continue;
       }
 
@@ -71,23 +74,21 @@ pub fn draw_filled_rect_color<C: Into<Rgba<u8>>>(
       let y = y as i32 + placement.top;
 
       if x < 0 || y < 0 || x >= image.width() as i32 || y >= image.height() as i32 {
-        i += 1;
         continue;
       }
 
-      let color = if mask[i] == u8::MAX {
+      let color = if alpha == u8::MAX {
         color
       } else {
         Rgba([
           color.0[0],
           color.0[1],
           color.0[2],
-          (color.0[3] as f32 * (mask[i] as f32 / 255.0)) as u8,
+          (color.0[3] as f32 * (alpha as f32 / 255.0)) as u8,
         ])
       };
 
       draw_pixel(image, x as u32, y as u32, color);
-      i += 1;
     }
   }
 }

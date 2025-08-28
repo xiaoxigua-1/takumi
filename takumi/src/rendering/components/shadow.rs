@@ -193,8 +193,11 @@ fn draw_inset_shadow(
 
   for y in 0..placement.height {
     for x in 0..placement.width {
-      if mask[i] == u8::MAX {
-        i += 1;
+      let alpha = mask[i];
+
+      i += 1;
+
+      if alpha == u8::MAX {
         continue;
       }
 
@@ -202,11 +205,10 @@ fn draw_inset_shadow(
       let y = y as i32 + placement.top;
 
       if x < 0 || y < 0 || x >= shadow_image.width() as i32 || y >= shadow_image.height() as i32 {
-        i += 1;
         continue;
       }
 
-      let alpha = shadow.color.0[3] as f32 * (mask[i] as f32 / 255.0);
+      let alpha = shadow.color.0[3] as f32 * (alpha as f32 / 255.0);
 
       let color = Rgba([
         shadow.color.0[0],
@@ -216,7 +218,6 @@ fn draw_inset_shadow(
       ]);
 
       shadow_image.put_pixel(x as u32, y as u32, color);
-      i += 1;
     }
   }
 

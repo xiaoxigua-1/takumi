@@ -199,8 +199,11 @@ fn draw_mask(
 
   for y in 0..size.height {
     for x in 0..size.width {
-      if mask[i] == 0 {
-        i += 1;
+      let alpha = mask[i];
+
+      i += 1;
+
+      if alpha == 0 {
         continue;
       }
 
@@ -208,11 +211,10 @@ fn draw_mask(
       let y = y as i32 + offset.y;
 
       if x < 0 || y < 0 || x >= canvas.width() as i32 || y >= canvas.height() as i32 {
-        i += 1;
         continue;
       }
 
-      let pixel = Rgba([color.0[0], color.0[1], color.0[2], mask[i]]);
+      let pixel = Rgba([color.0[0], color.0[1], color.0[2], alpha]);
       draw_pixel(canvas, x as u32, y as u32, pixel);
     }
   }
@@ -283,8 +285,11 @@ fn overlay_image(
 
   for y in 0..placement.height {
     for x in 0..placement.width {
-      if mask[i] == 0 {
-        i += 1;
+      let alpha = mask[i];
+
+      i += 1;
+
+      if alpha == 0 {
         continue;
       }
 
@@ -292,11 +297,22 @@ fn overlay_image(
       let y = y as i32 + placement.top;
 
       if x < 0 || y < 0 || x >= canvas.width() as i32 || y >= canvas.height() as i32 {
-        i += 1;
         continue;
       }
 
       let pixel = *image.get_pixel(x as u32 + overlay_x, y as u32 + overlay_y);
+
+      let pixel = if alpha == u8::MAX {
+        pixel
+      } else {
+        Rgba([
+          pixel.0[0],
+          pixel.0[1],
+          pixel.0[2],
+          (pixel.0[3] as f32 * (alpha as f32 / 255.0)) as u8,
+        ])
+      };
+
       draw_pixel(canvas, x as u32 + draw_x, y as u32 + draw_y, pixel);
     }
   }

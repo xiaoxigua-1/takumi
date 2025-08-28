@@ -6,7 +6,6 @@ import type { FontWeight } from "./FontWeight";
 import type { ImageScalingAlgorithm } from "./ImageScalingAlgorithm";
 import type { LengthUnit } from "./LengthUnit";
 import type { LineHeight } from "./LineHeight";
-import type { LinearGradientOrColor } from "./LinearGradientOrColor";
 import type { TextAlign } from "./TextAlign";
 import type { TextOverflow } from "./TextOverflow";
 import type { TextStyle } from "./TextStyle";
@@ -39,7 +38,7 @@ borderColor?: Color,
 /**
  * Text color for child text elements.
  */
-color?: LinearGradientOrColor, 
+color?: Color, 
 /**
  * Font size for text rendering.
  */

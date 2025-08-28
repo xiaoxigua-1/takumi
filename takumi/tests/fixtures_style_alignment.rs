@@ -1,7 +1,7 @@
 use takumi::layout::{
   node::ContainerNode,
   style::{
-    AlignItems, Color, Display, InheritableStyle, JustifyContent,
+    AlignItems, Color, Display, JustifyContent,
     LengthUnit::{Percentage, Px},
     Style,
   },
@@ -27,9 +27,6 @@ fn test_style_align_items() {
           width: Px(50.0),
           height: Px(50.0),
           background_color: Some(Color([255, 0, 0, 255])), // Red child
-          inheritable_style: InheritableStyle {
-            ..Default::default()
-          },
           ..Default::default()
         },
         children: None,
@@ -40,9 +37,6 @@ fn test_style_align_items() {
           width: Px(50.0),
           height: Px(50.0),
           background_color: Some(Color([0, 255, 0, 255])), // Green child
-          inheritable_style: InheritableStyle {
-            ..Default::default()
-          },
           ..Default::default()
         },
         children: None,
@@ -53,9 +47,6 @@ fn test_style_align_items() {
           width: Px(50.0),
           height: Px(50.0),
           background_color: Some(Color([255, 255, 0, 255])), // Yellow child
-          inheritable_style: InheritableStyle {
-            ..Default::default()
-          },
           ..Default::default()
         },
         children: None,
@@ -84,9 +75,6 @@ fn test_style_justify_content() {
           width: Px(50.0),
           height: Px(50.0),
           background_color: Some(Color([255, 0, 0, 255])), // Red child
-          inheritable_style: InheritableStyle {
-            ..Default::default()
-          },
           ..Default::default()
         },
         children: None,
@@ -97,9 +85,6 @@ fn test_style_justify_content() {
           width: Px(50.0),
           height: Px(50.0),
           background_color: Some(Color([0, 255, 0, 255])), // Green child
-          inheritable_style: InheritableStyle {
-            ..Default::default()
-          },
           ..Default::default()
         },
         children: None,
@@ -110,9 +95,6 @@ fn test_style_justify_content() {
           width: Px(50.0),
           height: Px(50.0),
           background_color: Some(Color([255, 255, 0, 255])), // Yellow child
-          inheritable_style: InheritableStyle {
-            ..Default::default()
-          },
           ..Default::default()
         },
         children: None,

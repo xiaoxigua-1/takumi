@@ -2,7 +2,7 @@ use takumi::layout::{
   node::ContainerNode,
   style::{
     Color, Display, FlexDirection, Gap, GridLengthUnit, GridTemplateComponent,
-    GridTemplateComponents, GridTrackSize, InheritableStyle,
+    GridTemplateComponents, GridTrackSize,
     LengthUnit::{Percentage, Px},
     Style,
   },
@@ -28,9 +28,6 @@ fn test_style_flex_basis() {
           flex_basis: Px(100.0), // Set flex basis to 100px
           height: Px(50.0),
           background_color: Some(Color([255, 0, 0, 255])), // Red child
-          inheritable_style: InheritableStyle {
-            ..Default::default()
-          },
           ..Default::default()
         },
         children: None,
@@ -41,9 +38,6 @@ fn test_style_flex_basis() {
           flex_basis: Px(100.0), // Set flex basis to 100px
           height: Px(50.0),
           background_color: Some(Color([0, 255, 0, 255])), // Green child
-          inheritable_style: InheritableStyle {
-            ..Default::default()
-          },
           ..Default::default()
         },
         children: None,
@@ -54,9 +48,6 @@ fn test_style_flex_basis() {
           flex_basis: Px(100.0), // Set flex basis to 100px
           height: Px(50.0),
           background_color: Some(Color([255, 255, 0, 255])), // Yellow child
-          inheritable_style: InheritableStyle {
-            ..Default::default()
-          },
           ..Default::default()
         },
         children: None,
@@ -85,9 +76,6 @@ fn test_style_flex_direction() {
           width: Px(50.0),
           height: Px(50.0),
           background_color: Some(Color([255, 0, 0, 255])), // Red child
-          inheritable_style: InheritableStyle {
-            ..Default::default()
-          },
           ..Default::default()
         },
         children: None,
@@ -98,9 +86,6 @@ fn test_style_flex_direction() {
           width: Px(50.0),
           height: Px(50.0),
           background_color: Some(Color([0, 255, 0, 255])), // Green child
-          inheritable_style: InheritableStyle {
-            ..Default::default()
-          },
           ..Default::default()
         },
         children: None,
@@ -111,9 +96,6 @@ fn test_style_flex_direction() {
           width: Px(50.0),
           height: Px(50.0),
           background_color: Some(Color([255, 255, 0, 255])), // Yellow child
-          inheritable_style: InheritableStyle {
-            ..Default::default()
-          },
           ..Default::default()
         },
         children: None,
@@ -143,9 +125,6 @@ fn test_style_gap() {
           width: Px(50.0),                                 // Fixed width
           height: Px(50.0),                                // Fixed height
           background_color: Some(Color([255, 0, 0, 255])), // Red child
-          inheritable_style: InheritableStyle {
-            ..Default::default()
-          },
           ..Default::default()
         },
         children: None,
@@ -157,9 +136,6 @@ fn test_style_gap() {
           width: Px(50.0),                                 // Fixed width
           height: Px(50.0),                                // Fixed height
           background_color: Some(Color([0, 255, 0, 255])), // Green child
-          inheritable_style: InheritableStyle {
-            ..Default::default()
-          },
           ..Default::default()
         },
         children: None,
@@ -171,9 +147,6 @@ fn test_style_gap() {
           width: Px(50.0),                                   // Fixed width
           height: Px(50.0),                                  // Fixed height
           background_color: Some(Color([255, 255, 0, 255])), // Yellow child
-          inheritable_style: InheritableStyle {
-            ..Default::default()
-          },
           ..Default::default()
         },
         children: None,

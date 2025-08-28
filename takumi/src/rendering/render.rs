@@ -130,16 +130,30 @@ pub fn render<Nodes: Node<Nodes>>(
     )
     .unwrap();
 
-  let handler = std::thread::spawn(move || create_blocking_canvas_loop(viewport, rx));
+  #[cfg(target_arch = "wasm32")]
+  {
+    render_node(&taffy, root_node_id, &canvas, Point::ZERO);
 
-  draw_node(&taffy, root_node_id, &canvas, Point::ZERO);
+    drop(canvas);
 
-  let canvas = handler.join().unwrap();
+    create_blocking_canvas_loop(viewport, rx)
+  }
+
+  #[cfg(not(target_arch = "wasm32"))]
+  let canvas = {
+    let handler = std::thread::spawn(move || create_blocking_canvas_loop(viewport, rx));
+
+    render_node(&taffy, root_node_id, &canvas, Point::ZERO);
+
+    drop(canvas);
+
+    handler.join().unwrap()
+  };
 
   Ok(canvas)
 }
 
-fn draw_node<Nodes: Node<Nodes>>(
+fn render_node<Nodes: Node<Nodes>>(
   taffy: &TaffyTree<NodeContext<Nodes>>,
   node_id: NodeId,
   canvas: &Canvas,
@@ -156,7 +170,7 @@ fn draw_node<Nodes: Node<Nodes>>(
     .draw_on_canvas(&node_context.context, canvas, layout);
 
   for child_id in taffy.children(node_id).unwrap() {
-    draw_node(taffy, child_id, canvas, layout.location);
+    render_node(taffy, child_id, canvas, layout.location);
   }
 }
 

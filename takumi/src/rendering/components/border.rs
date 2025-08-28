@@ -160,8 +160,11 @@ fn draw_rounded_border(canvas: &Canvas, border: BorderProperties) {
 
   for y in 0..border.size.height as i32 {
     for x in 0..border.size.width as i32 {
-      if mask[i] == 0 {
-        i += 1;
+      let alpha = mask[i];
+
+      i += 1;
+
+      if alpha == 0 {
         continue;
       }
 
@@ -172,7 +175,7 @@ fn draw_rounded_border(canvas: &Canvas, border: BorderProperties) {
         border.color.0[0],
         border.color.0[1],
         border.color.0[2],
-        mask[i],
+        alpha,
       ]);
 
       border_image.put_pixel(x as u32, y as u32, pixel);

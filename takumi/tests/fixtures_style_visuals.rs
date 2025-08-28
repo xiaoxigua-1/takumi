@@ -176,9 +176,6 @@ fn test_style_position() {
           position: Position::Absolute, // Test the position property
           inset: Px(20.0).into(),       // Position with inset properties
           background_color: Some(Color([255, 0, 0, 255])), // Red child to make it visible
-          inheritable_style: InheritableStyle {
-            ..Default::default()
-          },
           ..Default::default()
         },
         children: None,
