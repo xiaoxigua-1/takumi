@@ -180,9 +180,17 @@ fn draw_inset_shadow(
 
   let mut paths = Vec::new();
 
-  border_radius.write_mask_commands(&mut paths);
+  let offset_border_radius = BorderRadius {
+    offset: Point {
+      x: border_radius.offset.x + shadow.offset_x,
+      y: border_radius.offset.y + shadow.offset_y,
+    },
+    ..border_radius
+  };
 
-  border_radius
+  offset_border_radius.write_mask_commands(&mut paths);
+
+  offset_border_radius
     .grow(-shadow.spread_radius)
     .write_mask_commands(&mut paths);
 
