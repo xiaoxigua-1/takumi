@@ -9,8 +9,9 @@ use zeno::Mask;
 
 use crate::{
   layout::style::{
-    BackgroundImage, BackgroundPosition, BackgroundRepeat, BackgroundRepeatStyle, BackgroundSize,
-    Gradient, LengthUnit, PositionComponent, PositionKeywordX, PositionKeywordY, Style,
+    BackgroundImage, BackgroundImages, BackgroundPosition, BackgroundPositions, BackgroundRepeat,
+    BackgroundRepeatStyle, BackgroundRepeats, BackgroundSize, BackgroundSizes, Gradient,
+    LengthUnit, PositionComponent, PositionKeywordX, PositionKeywordY,
   },
   rendering::{
     BorderRadius, Canvas, RenderContext,
@@ -195,19 +196,23 @@ pub fn draw_filled_rect_color<C: Into<Rgba<u8>>>(
   }
 }
 
-fn resolve_length_against_area(unit: LengthUnit, area: u32, context: &RenderContext) -> u32 {
+pub(crate) fn resolve_length_against_area(
+  unit: LengthUnit,
+  area: u32,
+  context: &RenderContext,
+) -> u32 {
   match unit {
     LengthUnit::Auto => area,
     _ => unit.resolve_to_px(context, area as f32).max(0.0) as u32,
   }
 }
 
-fn resolve_background_size(
-  size: &BackgroundSize,
+pub(crate) fn resolve_background_size(
+  size: BackgroundSize,
   area: (u32, u32),
   context: &RenderContext,
 ) -> (u32, u32) {
-  match *size {
+  match size {
     BackgroundSize::Explicit { width, height } => (
       resolve_length_against_area(width, area.0, context),
       resolve_length_against_area(height, area.1, context),
@@ -218,7 +223,7 @@ fn resolve_background_size(
   }
 }
 
-fn resolve_length_unit_to_position_component(
+pub(crate) fn resolve_length_unit_to_position_component(
   length: LengthUnit,
   available: i32,
   context: &RenderContext,
@@ -229,8 +234,8 @@ fn resolve_length_unit_to_position_component(
   }
 }
 
-fn resolve_position_component_x(
-  comp: &BackgroundPosition,
+pub(crate) fn resolve_position_component_x(
+  comp: BackgroundPosition,
   tile_w: u32,
   area_w: u32,
   context: &RenderContext,
@@ -247,8 +252,8 @@ fn resolve_position_component_x(
   }
 }
 
-fn resolve_position_component_y(
-  comp: &BackgroundPosition,
+pub(crate) fn resolve_position_component_y(
+  comp: BackgroundPosition,
   tile_h: u32,
   area_h: u32,
   context: &RenderContext,
@@ -280,9 +285,82 @@ pub fn render_gradient_tile(
   }
 }
 
+/// Resolve tile image, positions along X and Y for a background-like layer.
+/// Returns (tile_image, tile_w, tile_h, xs, ys).
+pub(crate) fn resolve_layer_tiles(
+  image: &BackgroundImage,
+  pos: BackgroundPosition,
+  size: BackgroundSize,
+  repeat: BackgroundRepeat,
+  area_w: u32,
+  area_h: u32,
+  context: &RenderContext,
+) -> (RgbaImage, Vec<i32>, Vec<i32>) {
+  // Compute tile size
+  let (mut tile_w, mut tile_h) = resolve_background_size(size, (area_w, area_h), context);
+
+  if tile_w == 0 || tile_h == 0 {
+    return (
+      RgbaImage::from_pixel(0, 0, Rgba([0, 0, 0, 0])),
+      vec![],
+      vec![],
+    );
+  }
+
+  // Build tile image (use context-aware resolver where possible)
+  let mut tile_image = render_gradient_tile(image, tile_w, tile_h, context);
+
+  // Handle round adjustment (rescale per axis)
+  let xs: Vec<i32> = match repeat.x {
+    BackgroundRepeatStyle::Repeat => {
+      let origin_x = resolve_position_component_x(pos, tile_w, area_w, context);
+      collect_repeat_tile_positions(area_w, tile_w, origin_x)
+    }
+    BackgroundRepeatStyle::NoRepeat => {
+      let origin_x = resolve_position_component_x(pos, tile_w, area_w, context);
+      vec![origin_x]
+    }
+    BackgroundRepeatStyle::Space => collect_spaced_tile_positions(area_w, tile_w),
+    BackgroundRepeatStyle::Round => {
+      let (px, new_w) = collect_stretched_tile_positions(area_w, tile_w);
+      if new_w != tile_w {
+        tile_w = new_w;
+        tile_image = resize(&tile_image, tile_w, tile_h, FilterType::CatmullRom);
+      }
+      px
+    }
+  };
+
+  let ys: Vec<i32> = match repeat.y {
+    BackgroundRepeatStyle::Repeat => {
+      let origin_y = resolve_position_component_y(pos, tile_h, area_h, context);
+      collect_repeat_tile_positions(area_h, tile_h, origin_y)
+    }
+    BackgroundRepeatStyle::NoRepeat => {
+      let origin_y = resolve_position_component_y(pos, tile_h, area_h, context);
+      vec![origin_y]
+    }
+    BackgroundRepeatStyle::Space => collect_spaced_tile_positions(area_h, tile_h),
+    BackgroundRepeatStyle::Round => {
+      let (py, new_h) = collect_stretched_tile_positions(area_h, tile_h);
+      if new_h != tile_h {
+        tile_h = new_h;
+        tile_image = resize(&tile_image, tile_w, tile_h, FilterType::CatmullRom);
+      }
+      py
+    }
+  };
+
+  (tile_image, xs, ys)
+}
+
 /// Collects a list of tile positions to place along an axis.
 /// Starts from the "origin" and collects tile positions until the "area_size" is reached.
-fn collect_repeat_tile_positions(area_size: u32, tile_size: u32, origin: i32) -> Vec<i32> {
+pub(crate) fn collect_repeat_tile_positions(
+  area_size: u32,
+  tile_size: u32,
+  origin: i32,
+) -> Vec<i32> {
   if tile_size == 0 {
     return Vec::new();
   }
@@ -301,7 +379,7 @@ fn collect_repeat_tile_positions(area_size: u32, tile_size: u32, origin: i32) ->
 
 /// Collects evenly spaced tile positions along an axis for `background-repeat: space`.
 /// Distributes gaps between tiles so the first and last touch the edges.
-fn collect_spaced_tile_positions(area_size: u32, tile_size: u32) -> Vec<i32> {
+pub(crate) fn collect_spaced_tile_positions(area_size: u32, tile_size: u32) -> Vec<i32> {
   if tile_size == 0 {
     return vec![];
   }
@@ -326,7 +404,7 @@ fn collect_spaced_tile_positions(area_size: u32, tile_size: u32) -> Vec<i32> {
 /// Collects stretched tile positions along an axis for `background-repeat: round`.
 /// Rounds the size of the tile to fill the area.
 /// Returns the positions and the new tile size.
-fn collect_stretched_tile_positions(area_size: u32, tile_size: u32) -> (Vec<i32>, u32) {
+pub(crate) fn collect_stretched_tile_positions(area_size: u32, tile_size: u32) -> (Vec<i32>, u32) {
   if tile_size == 0 || area_size == 0 {
     return (vec![], tile_size);
   }
@@ -343,117 +421,71 @@ fn collect_stretched_tile_positions(area_size: u32, tile_size: u32) -> (Vec<i32>
   (positions, new_tile_size)
 }
 
-/// Pads a vector to `target_len` by repeating its last element, or `default` if empty.
-fn pad_with_last<T: Copy>(values: &mut Vec<T>, target_len: usize, default: T) {
-  let fill = values.last().copied().unwrap_or(default);
-  values.resize(target_len, fill);
+pub(crate) fn resolve_layers_tiles(
+  images: &BackgroundImages,
+  positions: Option<&BackgroundPositions>,
+  sizes: Option<&BackgroundSizes>,
+  repeats: Option<&BackgroundRepeats>,
+  context: &RenderContext,
+  layout: Layout,
+) -> Vec<(RgbaImage, Vec<i32>, Vec<i32>)> {
+  let last_position = positions
+    .and_then(|p| p.0.last().copied())
+    .unwrap_or_default();
+  let last_size = sizes.and_then(|s| s.0.last().copied()).unwrap_or_default();
+  let last_repeat = repeats
+    .and_then(|r| r.0.last().copied())
+    .unwrap_or_default();
+
+  let mut tiles = Vec::new();
+
+  // Paint each background layer in order
+  for (i, image) in images.0.iter().enumerate() {
+    let pos = positions
+      .and_then(|p| p.0.get(i).copied())
+      .unwrap_or(last_position);
+    let size = sizes.and_then(|s| s.0.get(i).copied()).unwrap_or(last_size);
+    let repeat = repeats
+      .and_then(|r| r.0.get(i).copied())
+      .unwrap_or(last_repeat);
+
+    let resolved = resolve_layer_tiles(
+      image,
+      pos,
+      size,
+      repeat,
+      layout.size.width as u32,
+      layout.size.height as u32,
+      context,
+    );
+
+    if resolved.1.is_empty()
+      || resolved.2.is_empty()
+      || resolved.0.width() == 0
+      || resolved.0.height() == 0
+    {
+      continue;
+    }
+
+    tiles.push(resolved);
+  }
+
+  tiles
 }
 
 /// Draw layered backgrounds (gradients) with support for background-size, -position, and -repeat.
-pub fn draw_background_layers(
-  style: &Style,
+pub(crate) fn draw_background_layers(
+  tiles: Vec<(RgbaImage, Vec<i32>, Vec<i32>)>,
+  radius: BorderRadius,
   context: &RenderContext,
   canvas: &Canvas,
   layout: Layout,
 ) {
-  let Some(images) = &style.background_image else {
-    return;
-  };
-
-  let radius = style.create_border_radius(&layout, context);
-
-  let area_w = layout.size.width as u32;
-  let area_h = layout.size.height as u32;
-
-  // Resolve per-layer lists with last-value semantics (repeat the last provided value)
-  let mut positions = style
-    .background_position
-    .as_ref()
-    .map(|v| v.0.clone())
-    .unwrap_or_default();
-
-  let mut sizes = style
-    .background_size
-    .as_ref()
-    .map(|v| v.0.clone())
-    .unwrap_or_default();
-
-  let mut repeats = style
-    .background_repeat
-    .as_ref()
-    .map(|v| v.0.clone())
-    .unwrap_or_default();
-
-  let target_len = images.0.len();
-  pad_with_last(&mut positions, target_len, BackgroundPosition::default());
-  pad_with_last(&mut sizes, target_len, BackgroundSize::default());
-  pad_with_last(&mut repeats, target_len, BackgroundRepeat::repeat());
-
-  // Paint each background layer in order
-  for (i, image) in images.0.iter().enumerate() {
-    let pos = &positions[i];
-    let size = &sizes[i];
-    let repeat = &repeats[i];
-
-    // Compute tile size
-    let (mut tile_w, mut tile_h) = resolve_background_size(size, (area_w, area_h), context);
-
-    if tile_w == 0 || tile_h == 0 {
-      continue;
-    }
-
-    // Build tile image (use context-aware resolver where possible)
-    let mut tile_image = render_gradient_tile(image, tile_w, tile_h, context);
-
-    // Handle round adjustment (rescale per axis)
-    let xs: Vec<i32> = match repeat.x {
-      BackgroundRepeatStyle::Repeat => {
-        let origin_x = resolve_position_component_x(pos, tile_w, area_w, context);
-        collect_repeat_tile_positions(area_w, tile_w, origin_x)
-      }
-      BackgroundRepeatStyle::NoRepeat => {
-        let origin_x = resolve_position_component_x(pos, tile_w, area_w, context);
-        vec![origin_x]
-      }
-      BackgroundRepeatStyle::Space => collect_spaced_tile_positions(area_w, tile_w),
-      BackgroundRepeatStyle::Round => {
-        let (px, new_w) = collect_stretched_tile_positions(area_w, tile_w);
-        if new_w != tile_w {
-          tile_w = new_w;
-          tile_image = resize(&tile_image, tile_w, tile_h, FilterType::CatmullRom);
-        }
-        px
-      }
-    };
-
-    let ys: Vec<i32> = match repeat.y {
-      BackgroundRepeatStyle::Repeat => {
-        let origin_y = resolve_position_component_y(pos, tile_h, area_h, context);
-        collect_repeat_tile_positions(area_h, tile_h, origin_y)
-      }
-      BackgroundRepeatStyle::NoRepeat => {
-        let origin_y = resolve_position_component_y(pos, tile_h, area_h, context);
-        vec![origin_y]
-      }
-      BackgroundRepeatStyle::Space => collect_spaced_tile_positions(area_h, tile_h),
-      BackgroundRepeatStyle::Round => {
-        let (py, new_h) = collect_stretched_tile_positions(area_h, tile_h);
-        if new_h != tile_h {
-          tile_h = new_h;
-          tile_image = resize(&tile_image, tile_w, tile_h, FilterType::CatmullRom);
-        }
-        py
-      }
-    };
-
+  for (tile_image, xs, ys) in tiles {
     let tile_image = Arc::new(tile_image);
 
     for y in &ys {
       for x in &xs {
-        if *x >= area_w as i32 || *y >= area_h as i32 {
-          continue;
-        }
-
         canvas.overlay_image(
           tile_image.clone(),
           Point {

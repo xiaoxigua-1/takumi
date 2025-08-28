@@ -137,7 +137,7 @@ pub enum BackgroundPositionsValue {
 }
 
 /// A list of `background-position` values (one per layer).
-#[derive(Debug, Deserialize, Serialize, Clone, PartialEq, TS)]
+#[derive(Debug, Default, Deserialize, Serialize, Clone, PartialEq, TS)]
 #[ts(as = "BackgroundPositionsValue")]
 #[serde(try_from = "BackgroundPositionsValue")]
 pub struct BackgroundPositions(pub Vec<BackgroundPosition>);

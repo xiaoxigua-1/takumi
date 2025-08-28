@@ -1,12 +1,14 @@
 use std::borrow::Cow;
+use std::sync::Arc;
 
 use cosmic_text::{Attrs, Buffer, Metrics, Shaping};
+use image::RgbaImage;
 use taffy::{Layout, Point, Size};
 
 use crate::{
   GlobalContext,
-  layout::style::{Color, FontStyle, TextOverflow, TextTransform},
-  rendering::{Canvas, RenderContext},
+  layout::style::{Color, FontStyle, Style, TextOverflow, TextTransform},
+  rendering::{BorderRadius, Canvas, RenderContext, overlay_image, resolve_layers_tiles},
 };
 
 const ELLIPSIS_CHAR: &str = "…";
@@ -14,12 +16,13 @@ const ELLIPSIS_CHAR: &str = "…";
 /// Draws text on the canvas with the specified font style and layout.
 pub fn draw_text(
   text: &str,
-  style: &FontStyle,
+  style: &Style,
   context: &RenderContext,
   canvas: &Canvas,
   layout: Layout,
 ) {
-  if style.font_size == 0.0 {
+  let font_style = style.resolve_to_font_style(context);
+  if font_style.font_size == 0.0 {
     return;
   }
 
@@ -28,11 +31,11 @@ pub fn draw_text(
   let start_x = layout.content_box_x();
   let start_y = layout.content_box_y();
 
-  let render_text = apply_text_transform(text, style.text_transform);
+  let render_text = apply_text_transform(text, font_style.text_transform);
 
   let buffer = construct_text_buffer(
     &render_text,
-    style,
+    &font_style,
     context.global,
     Some((Some(content_box.width), Some(content_box.height))),
   );
@@ -48,7 +51,7 @@ pub fn draw_text(
   };
 
   let should_append_ellipsis =
-    style.text_overflow == TextOverflow::Ellipsis && last_glyph.end < render_text.len();
+    font_style.text_overflow == TextOverflow::Ellipsis && last_glyph.end < render_text.len();
 
   if should_append_ellipsis {
     let first_glyph = last_run.glyphs.first().unwrap();
@@ -63,7 +66,7 @@ pub fn draw_text(
       text_with_ellipsis.push_str(ELLIPSIS_CHAR);
 
       let truncated_buffer =
-        construct_text_buffer(&text_with_ellipsis, style, context.global, None);
+        construct_text_buffer(&text_with_ellipsis, &font_style, context.global, None);
 
       let last_line = truncated_buffer.layout_runs().last().unwrap();
 
@@ -86,6 +89,55 @@ pub fn draw_text(
     return draw_text(&text_with_ellipsis, style, context, canvas, layout);
   }
 
+  // If we have a mask image on the style, render it using the background tiling logic into a
+  // temporary image and use that as the glyph fill.
+  if let Some(images) = &style.mask_image {
+    let resolved_tiles = resolve_layers_tiles(
+      images,
+      style.mask_position.as_ref(),
+      style.mask_size.as_ref(),
+      style.mask_repeat.as_ref(),
+      context,
+      layout,
+    );
+
+    if resolved_tiles.is_empty() {
+      return;
+    }
+
+    let mut composed = RgbaImage::new(content_box.width as u32, content_box.height as u32);
+
+    for (tile_image, xs, ys) in resolved_tiles {
+      for y in &ys {
+        for x in &xs {
+          overlay_image(
+            &mut composed,
+            &tile_image,
+            Point { x: *x, y: *y },
+            Default::default(),
+            Point { x: 0, y: 0 },
+            0.0,
+          )
+        }
+      }
+    }
+
+    draw_buffer(
+      context,
+      &buffer,
+      canvas,
+      style.inheritable_style.color.unwrap_or_else(Color::black),
+      (start_x, start_y),
+      Point {
+        x: (layout.location.x + layout.size.width / 2.0) as i32,
+        y: (layout.location.y + layout.size.height / 2.0) as i32,
+      },
+      Some(Arc::new(composed)),
+    );
+
+    return;
+  }
+
   let transform_origin = Point {
     x: (layout.location.x + layout.size.width / 2.0) as i32,
     y: (layout.location.y + layout.size.height / 2.0) as i32,
@@ -95,9 +147,10 @@ pub fn draw_text(
     context,
     &buffer,
     canvas,
-    style.color,
+    style.inheritable_style.color.unwrap_or_else(Color::black),
     (start_x, start_y),
     transform_origin,
+    None,
   );
 }
 
@@ -108,6 +161,7 @@ fn draw_buffer(
   color: Color,
   (start_x, start_y): (f32, f32),
   transform_origin: Point<i32>,
+  image_fill: Option<Arc<RgbaImage>>,
 ) {
   let mut font_system = context.global.font_context.font_system.lock().unwrap();
   let mut font_cache = context.global.font_context.font_cache.lock().unwrap();
@@ -129,45 +183,81 @@ fn draw_buffer(
 
       match image.content {
         cosmic_text::SwashContent::Mask => {
-          canvas.draw_mask(
-            image_data,
-            base_offset,
-            Size {
-              width: image.placement.width,
-              height: image.placement.height,
-            },
-            color,
-            transform_origin,
-            *context.rotation,
-          );
+          if let Some(ref fill) = image_fill {
+            let src_offset = Point {
+              x: base_offset.x - start_x as i32,
+              y: base_offset.y - start_y as i32,
+            };
+            canvas.draw_mask_with_image(
+              image_data.clone(),
+              base_offset,
+              Size {
+                width: image.placement.width,
+                height: image.placement.height,
+              },
+              fill.clone(),
+              src_offset,
+            );
+          } else {
+            canvas.draw_mask(
+              image_data,
+              base_offset,
+              Size {
+                width: image.placement.width,
+                height: image.placement.height,
+              },
+              color,
+              transform_origin,
+              *context.rotation,
+            );
+          }
         }
         cosmic_text::SwashContent::Color => {
-          // apply alpha to the image based on the glyph color alpha
-          if color.0[3] != 255 {
-            let target_alpha = color.0[3] as f32 / 255.0;
+          if let Some(ref fill) = image_fill {
+            let src_offset = Point {
+              x: base_offset.x - start_x as i32,
+              y: base_offset.y - start_y as i32,
+            };
+            canvas.draw_mask_with_image(
+              // collect the alpha values from [r, g, b, a] sequence
+              image_data.into_iter().skip(3).step_by(4).collect(),
+              base_offset,
+              Size {
+                width: image.placement.width,
+                height: image.placement.height,
+              },
+              fill.clone(),
+              src_offset,
+            );
+          } else {
+            // apply alpha to the image based on the glyph color alpha
+            if color.0[3] != 255 {
+              let target_alpha = color.0[3] as f32 / 255.0;
 
-            for alpha in image_data.iter_mut().skip(3).step_by(4) {
-              *alpha = (*alpha as f32 * target_alpha) as u8;
+              for alpha in image_data.iter_mut().skip(3).step_by(4) {
+                *alpha = (*alpha as f32 * target_alpha) as u8;
+              }
             }
-          }
 
-          canvas.draw_mask(
-            image_data,
-            base_offset,
-            Size {
-              width: image.placement.width,
-              height: image.placement.height,
-            },
-            color,
-            transform_origin,
-            *context.rotation,
-          );
+            canvas.overlay_image(
+              Arc::new(
+                RgbaImage::from_raw(image.placement.width, image.placement.height, image_data)
+                  .unwrap(),
+              ),
+              base_offset,
+              BorderRadius::default(),
+              transform_origin,
+              *context.rotation,
+            );
+          }
         }
         _ => {}
       }
     }
   }
 }
+
+// Deprecated: use `draw_buffer(..., image_fill)` instead.
 
 pub(crate) fn construct_text_buffer(
   text: &str,

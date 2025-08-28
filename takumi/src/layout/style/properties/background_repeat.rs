@@ -110,7 +110,7 @@ pub enum BackgroundRepeatsValue {
 }
 
 /// A list of background-repeat values (layered).
-#[derive(Debug, Deserialize, Serialize, Clone, PartialEq, TS)]
+#[derive(Debug, Default, Deserialize, Serialize, Clone, PartialEq, TS)]
 #[ts(as = "BackgroundRepeatsValue")]
 #[serde(try_from = "BackgroundRepeatsValue")]
 pub struct BackgroundRepeats(pub Vec<BackgroundRepeat>);

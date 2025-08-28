@@ -14,7 +14,7 @@ use crate::{
   layout::style::Style,
   rendering::{
     BorderProperties, BoxShadowRenderPhase, Canvas, RenderContext, draw_background_layers,
-    draw_border, draw_box_shadow,
+    draw_border, draw_box_shadow, resolve_layers_tiles,
   },
 };
 
@@ -138,7 +138,26 @@ pub trait Node<N: Node<N>>: Send + Sync + Clone {
 
   /// Draws the background image(s) of the node.
   fn draw_background_image(&self, context: &RenderContext, canvas: &Canvas, layout: Layout) {
-    draw_background_layers(self.get_style(), context, canvas, layout);
+    let style = self.get_style();
+
+    if let Some(background_image) = style.background_image.as_ref() {
+      let tiles = resolve_layers_tiles(
+        background_image,
+        style.background_position.as_ref(),
+        style.background_size.as_ref(),
+        style.background_repeat.as_ref(),
+        context,
+        layout,
+      );
+
+      draw_background_layers(
+        tiles,
+        style.create_border_radius(&layout, context),
+        context,
+        canvas,
+        layout,
+      );
+    }
   }
 
   /// Draws the main content of the node.

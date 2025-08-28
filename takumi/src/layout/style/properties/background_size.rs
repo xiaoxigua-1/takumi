@@ -71,7 +71,7 @@ pub enum BackgroundSizesValue {
 }
 
 /// A list of `background-size` values (one per layer).
-#[derive(Debug, Deserialize, Serialize, Clone, PartialEq, TS)]
+#[derive(Debug, Default, Deserialize, Serialize, Clone, PartialEq, TS)]
 #[ts(as = "BackgroundSizesValue")]
 #[serde(try_from = "BackgroundSizesValue")]
 pub struct BackgroundSizes(pub Vec<BackgroundSize>);

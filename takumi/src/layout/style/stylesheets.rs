@@ -111,6 +111,14 @@ pub struct Style {
   pub transform: Option<Transforms>,
   /// Transform origin for the element.
   pub transform_origin: Option<BackgroundPosition>,
+  /// Mask image for the element.
+  pub mask_image: Option<BackgroundImages>,
+  /// Mask size for the element.
+  pub mask_size: Option<BackgroundSizes>,
+  /// Mask position for the element.
+  pub mask_position: Option<BackgroundPositions>,
+  /// Mask repeat for the element.
+  pub mask_repeat: Option<BackgroundRepeats>,
   /// Spacing between rows and columns in flex or grid layouts.
   pub gap: Gap,
   /// How much the flex item should grow relative to other flex items when positive free space is distributed.
@@ -225,6 +233,10 @@ impl Default for Style {
       box_shadow: Default::default(),
       transform: None,
       transform_origin: None,
+      mask_image: None,
+      mask_size: None,
+      mask_position: None,
+      mask_repeat: None,
       background_color: None,
       background_image: None,
       background_position: None,
