@@ -169,6 +169,12 @@ fn render_node<Nodes: Node<Nodes>>(
   layout.location.x += offset.x;
   layout.location.y += offset.y;
 
+  if let Some(transform) = &node_context.node.get_style().transform {
+    let translate = transform.translate(&node_context.context);
+    layout.location.x += translate.x;
+    layout.location.y += translate.y;
+  }
+
   node_context
     .node
     .draw_on_canvas(&node_context.context, canvas, layout);
