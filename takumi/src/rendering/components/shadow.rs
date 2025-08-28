@@ -88,7 +88,7 @@ pub fn draw_box_shadow(
             x: (layout.location.x + draw.offset.x) as i32,
             y: (layout.location.y + draw.offset.y) as i32,
           },
-          BorderRadius::zero(),
+          draw.border_radius,
         );
       }
     }
@@ -131,7 +131,7 @@ pub fn draw_box_shadow(
             x: (layout.location.x + draw.offset.x) as i32,
             y: (layout.location.y + draw.offset.y) as i32,
           },
-          BorderRadius::zero(),
+          draw.border_radius,
         );
       }
     }
@@ -141,6 +141,7 @@ pub fn draw_box_shadow(
 struct ShadowDraw {
   image: RgbaImage,
   offset: Point<f32>,
+  border_radius: BorderRadius,
 }
 
 fn draw_single_box_shadow(
@@ -152,6 +153,7 @@ fn draw_single_box_shadow(
     ShadowDraw {
       image: draw_inset_shadow(shadow, border_radius, layout),
       offset: Point { x: 0.0, y: 0.0 },
+      border_radius,
     }
   } else {
     ShadowDraw {
@@ -160,6 +162,7 @@ fn draw_single_box_shadow(
         x: shadow.offset_x - shadow.blur_radius - shadow.spread_radius,
         y: shadow.offset_y - shadow.blur_radius - shadow.spread_radius,
       },
+      border_radius: BorderRadius::zero(),
     }
   }
 }
@@ -180,7 +183,7 @@ fn draw_inset_shadow(
   border_radius.write_mask_commands(&mut paths);
 
   border_radius
-    .grow(-shadow.blur_radius)
+    .grow(-shadow.spread_radius)
     .write_mask_commands(&mut paths);
 
   let mut mask = Mask::new(&paths);
