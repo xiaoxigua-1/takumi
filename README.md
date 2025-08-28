@@ -13,7 +13,7 @@ For newcomers, check out the [Getting Started](https://takumi.kane.tw/docs/getti
 - Takes your existing JSX components and drops them in. It should just work.
 - RTL support.
 - WOFF2 font support. Trims your bundle size.
-- PNG, JPEG, WebP output support.
+- PNG, JPEG, WebP, AVIF output support.
 
 ## Showcase
 

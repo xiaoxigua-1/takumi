@@ -25,6 +25,7 @@ pub struct RenderOptions {
 #[napi(string_enum)]
 pub enum OutputFormat {
   WebP,
+  Avif,
   Png,
   Jpeg,
 }
@@ -35,6 +36,7 @@ impl From<OutputFormat> for ImageOutputFormat {
       OutputFormat::Png => ImageOutputFormat::Png,
       OutputFormat::Jpeg => ImageOutputFormat::Jpeg,
       OutputFormat::WebP => ImageOutputFormat::WebP,
+      OutputFormat::Avif => ImageOutputFormat::Avif,
     }
   }
 }

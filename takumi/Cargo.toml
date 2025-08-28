@@ -14,8 +14,8 @@ rust-version = "1.85.1"
 merge = "0.2"
 cssparser = "0.35"
 csscolorparser = "0.7"
-noise = "0.9.0"
-zeno = "0.3.3"
+noise = "0.9"
+zeno = "0.3"
 
 [dependencies.rayon]
 version = "1.10"
@@ -61,7 +61,7 @@ optional = true
 [dependencies.image]
 default-features = false
 version = "0.25"
-features = ["jpeg", "png", "webp"]
+features = ["jpeg", "png", "webp", "avif"]
 
 [dependencies.resvg]
 version = "0.45"

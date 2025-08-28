@@ -28,6 +28,8 @@ struct NodeContext<'ctx, N: Node<N>> {
 pub enum ImageOutputFormat {
   /// WebP format, suitable for web images with good compression.
   WebP,
+  /// AVIF format, even better compression than WebP, but requires more CPU time to encode.
+  Avif,
   /// PNG format, lossless and supports transparency.
   Png,
   /// JPEG format, lossy compression suitable for photographs.
@@ -39,6 +41,7 @@ impl ImageOutputFormat {
   pub fn content_type(&self) -> &'static str {
     match self {
       ImageOutputFormat::WebP => "image/webp",
+      ImageOutputFormat::Avif => "image/avif",
       ImageOutputFormat::Png => "image/png",
       ImageOutputFormat::Jpeg => "image/jpeg",
     }
@@ -49,6 +52,7 @@ impl From<ImageOutputFormat> for ImageFormat {
   fn from(format: ImageOutputFormat) -> Self {
     match format {
       ImageOutputFormat::WebP => Self::WebP,
+      ImageOutputFormat::Avif => Self::Avif,
       ImageOutputFormat::Png => Self::Png,
       ImageOutputFormat::Jpeg => Self::Jpeg,
     }
@@ -63,9 +67,6 @@ pub fn write_image<T: Write + Seek>(
   jpeg_quality: Option<u8>,
 ) -> Result<(), image::ImageError> {
   match format {
-    ImageOutputFormat::Png | ImageOutputFormat::WebP => {
-      image.write_to(destination, format.into())?;
-    }
     ImageOutputFormat::Jpeg => {
       // Strip alpha channel into a tightly packed RGB buffer
       let raw = image.as_raw();
@@ -76,6 +77,9 @@ pub fn write_image<T: Write + Seek>(
 
       let mut encoder = JpegEncoder::new_with_quality(destination, jpeg_quality.unwrap_or(75));
       encoder.encode(&rgb, image.width(), image.height(), ExtendedColorType::Rgb8)?;
+    }
+    _ => {
+      image.write_to(destination, format.into())?;
     }
   }
 
