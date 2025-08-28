@@ -61,7 +61,7 @@ optional = true
 [dependencies.image]
 default-features = false
 version = "0.25"
-features = ["jpeg", "png", "webp", "avif"]
+features = ["jpeg", "png", "webp"]
 
 [dependencies.resvg]
 version = "0.45"
@@ -74,8 +74,9 @@ default-features = false
 features = ["std", "simd"]
 
 [features]
-default = ["woff2", "woff", "image_data_uri", "svg", "rayon"]
+default = ["woff2", "woff", "image_data_uri", "svg", "rayon", "avif"]
 wasm = ["dep:wasm-bindgen"]
+avif = ["image/avif"]
 image_data_uri = ["dep:base64"]
 svg = ["dep:resvg"]
 woff2 = ["dep:woff2-patched", "dep:bytes"]

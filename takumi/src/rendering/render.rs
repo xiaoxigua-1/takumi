@@ -29,6 +29,7 @@ pub enum ImageOutputFormat {
   /// WebP format, suitable for web images with good compression.
   WebP,
   /// AVIF format, even better compression than WebP, but requires more CPU time to encode.
+  #[cfg(feature = "avif")]
   Avif,
   /// PNG format, lossless and supports transparency.
   Png,
@@ -41,6 +42,7 @@ impl ImageOutputFormat {
   pub fn content_type(&self) -> &'static str {
     match self {
       ImageOutputFormat::WebP => "image/webp",
+      #[cfg(feature = "avif")]
       ImageOutputFormat::Avif => "image/avif",
       ImageOutputFormat::Png => "image/png",
       ImageOutputFormat::Jpeg => "image/jpeg",
@@ -52,6 +54,7 @@ impl From<ImageOutputFormat> for ImageFormat {
   fn from(format: ImageOutputFormat) -> Self {
     match format {
       ImageOutputFormat::WebP => Self::WebP,
+      #[cfg(feature = "avif")]
       ImageOutputFormat::Avif => Self::Avif,
       ImageOutputFormat::Png => Self::Png,
       ImageOutputFormat::Jpeg => Self::Jpeg,
