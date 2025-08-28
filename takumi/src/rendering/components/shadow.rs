@@ -254,7 +254,7 @@ fn draw_outset_shadow(
       y: (shadow.spread_radius + shadow.blur_radius) as i32,
     },
     shadow.color,
-    border_radius.grow(shadow.blur_radius),
+    border_radius.grow(shadow.spread_radius),
   );
 
   if shadow.blur_radius <= 0.0 {

@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use image::{Rgba, RgbaImage};
 use taffy::{Layout, Point, Size};
-use zeno::Mask;
+use zeno::{Fill, Mask};
 
 use crate::{
   layout::style::{Color, Style},
@@ -154,7 +154,11 @@ fn draw_rounded_border(canvas: &Canvas, border: BorderProperties) {
 
   inner_border_radius.write_mask_commands(&mut paths);
 
-  let (mask, placement) = Mask::new(&paths).render();
+  let mut mask = Mask::new(&paths);
+
+  mask.style(Fill::EvenOdd);
+
+  let (mask, placement) = mask.render();
 
   let mut i = 0;
 

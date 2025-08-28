@@ -49,13 +49,13 @@ impl BorderRadius {
   /// A new `BorderRadius` instance with increased corner radii and adjusted size/offset
   pub fn grow(&self, radius: f32) -> Self {
     Self {
-      top_left: self.top_left + radius,
-      top_right: self.top_right + radius,
-      bottom_right: self.bottom_right + radius,
-      bottom_left: self.bottom_left + radius,
+      top_left: (self.top_left + radius).max(0.0),
+      top_right: (self.top_right + radius).max(0.0),
+      bottom_right: (self.bottom_right + radius).max(0.0),
+      bottom_left: (self.bottom_left + radius).max(0.0),
       size: Size {
-        width: self.size.width + radius * 2.0,
-        height: self.size.height + radius * 2.0,
+        width: (self.size.width + radius * 2.0).max(0.0),
+        height: (self.size.height + radius * 2.0).max(0.0),
       },
       offset: Point {
         x: self.offset.x - radius,
