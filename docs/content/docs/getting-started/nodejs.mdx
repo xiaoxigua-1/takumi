@@ -60,7 +60,7 @@ import type { OutputFormat } from "@takumi-rs/core";
 const imageBuffer = await renderer.renderAsync(createOpenGraphImage("John Doe"), {
   width: 1200,
   height: 630,
-  format: "WebP" as OutputFormat.WebP, // when `isolatedModules` is enabled, you need to use the enum value directly
+  format: "WebP"
 });
 ```
 

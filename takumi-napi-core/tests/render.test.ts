@@ -108,7 +108,7 @@ describe("renderAsync", () => {
   test("webp", async () => {
     const result = await renderer.renderAsync(node, {
       ...options,
-      format: OutputFormat.WebP,
+      format: "WebP",
     });
 
     await writeFile("./test.webp", result);
@@ -119,7 +119,7 @@ describe("renderAsync", () => {
   test("png", async () => {
     const result = await renderer.renderAsync(node, {
       ...options,
-      format: OutputFormat.Png,
+      format: "Png",
     });
 
     await writeFile("./test.png", result);
@@ -130,7 +130,7 @@ describe("renderAsync", () => {
   test("jpeg 75%", async () => {
     const result = await renderer.renderAsync(node, {
       ...options,
-      format: OutputFormat.Jpeg,
+      format: "Jpeg",
       quality: 75,
     });
 
@@ -142,7 +142,7 @@ describe("renderAsync", () => {
   test("jpeg 100%", async () => {
     const result = await renderer.renderAsync(node, {
       ...options,
-      format: OutputFormat.Jpeg,
+      format: "Jpeg",
       quality: 100,
     });
 
