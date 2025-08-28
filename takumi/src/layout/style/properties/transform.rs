@@ -10,6 +10,7 @@ use crate::{
 
 /// Represents a single CSS transform operation
 #[derive(Debug, Clone, Deserialize, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
 pub enum Transform {
   /// Translates an element along the X-axis and Y-axis by the specified lengths
   Translate(LengthUnit, LengthUnit),
@@ -17,6 +18,8 @@ pub enum Transform {
 
 /// A collection of transform operations that can be applied together
 #[derive(Debug, Clone, Deserialize, Serialize, TS)]
+#[ts(as = "TransformsValue")]
+#[serde(try_from = "TransformsValue")]
 pub struct Transforms(pub Vec<Transform>);
 
 impl Transforms {

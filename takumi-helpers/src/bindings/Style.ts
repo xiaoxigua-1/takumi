@@ -29,6 +29,7 @@ import type { TextAlign } from "./TextAlign";
 import type { TextOverflow } from "./TextOverflow";
 import type { TextStyle } from "./TextStyle";
 import type { TextTransform } from "./TextTransform";
+import type { Transforms } from "./Transforms";
 
 /**
  * Main styling structure that contains all layout and visual properties.
@@ -166,6 +167,10 @@ flexBasis: LengthUnit,
  * Positioning method (relative, absolute, etc.).
  */
 position: Position, 
+/**
+ * Transform for the element.
+ */
+transform?: Transforms, 
 /**
  * Spacing between rows and columns in flex or grid layouts.
  */
