@@ -54,10 +54,6 @@ features = ["flexbox", "grid", "taffy_tree"]
 version = "1"
 features = ["derive"]
 
-[dependencies.wasm-bindgen]
-version = "0.2"
-optional = true
-
 [dependencies.image]
 default-features = false
 version = "0.25"
@@ -75,7 +71,6 @@ features = ["std", "simd"]
 
 [features]
 default = ["woff2", "woff", "image_data_uri", "svg", "rayon", "avif"]
-wasm = ["dep:wasm-bindgen"]
 avif = ["image/avif"]
 image_data_uri = ["dep:base64"]
 svg = ["dep:resvg"]

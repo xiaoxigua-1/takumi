@@ -6,7 +6,6 @@ pub const DEFAULT_LINE_HEIGHT_SCALER: f32 = 1.2;
 
 /// The viewport for the image renderer.
 #[derive(Debug, Clone, Copy)]
-#[cfg_attr(feature = "wasm", wasm_bindgen::prelude::wasm_bindgen)]
 pub struct Viewport {
   /// The width of the viewport in pixels.
   pub width: u32,
@@ -16,7 +15,6 @@ pub struct Viewport {
   pub font_size: f32,
 }
 
-#[cfg_attr(feature = "wasm", wasm_bindgen::prelude::wasm_bindgen)]
 impl Viewport {
   /// Creates a new viewport with the default font size.
   #[must_use]

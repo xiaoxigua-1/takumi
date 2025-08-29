@@ -18,7 +18,7 @@ features = ["derive"]
 
 [dependencies.takumi]
 path = "../takumi"
-features = ["wasm", "woff2", "image_data_uri", "svg"]
+features = ["woff2", "image_data_uri", "svg"]
 default-features = false
 
 # https://github.com/rust-lang/rust/issues/93294

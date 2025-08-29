@@ -2321,7 +2321,6 @@ dependencies = [
  "taffy",
  "tiny-skia",
  "ts-rs",
- "wasm-bindgen",
  "woff2-patched",
  "zeno",
 ]

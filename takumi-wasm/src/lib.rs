@@ -6,7 +6,7 @@ use takumi::{
   GlobalContext,
   image::load_from_memory,
   layout::{Viewport, node::NodeKind},
-  rendering::{ImageOutputFormat, render, write_image},
+  rendering::{render, write_image},
   resources::image::ImageSource,
 };
 use wasm_bindgen::prelude::*;
@@ -24,6 +24,27 @@ extern "C" {
   #[wasm_bindgen(typescript_type = "AnyNode")]
   #[derive(Debug)]
   pub type AnyNode;
+}
+
+/// Proxy type for the ImageOutputFormat enum.
+/// This is needed because wasm-bindgen doesn't support cfg macro in enum variants.
+/// https://github.com/erwanvivien/fast_qr/pull/41/files
+#[wasm_bindgen]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ImageOutputFormat {
+  WebP,
+  Png,
+  Jpeg,
+}
+
+impl From<ImageOutputFormat> for takumi::rendering::ImageOutputFormat {
+  fn from(format: ImageOutputFormat) -> Self {
+    match format {
+      ImageOutputFormat::WebP => takumi::rendering::ImageOutputFormat::WebP,
+      ImageOutputFormat::Png => takumi::rendering::ImageOutputFormat::Png,
+      ImageOutputFormat::Jpeg => takumi::rendering::ImageOutputFormat::Jpeg,
+    }
+  }
 }
 
 #[wasm_bindgen]
@@ -84,7 +105,7 @@ impl Renderer {
     write_image(
       &image,
       &mut cursor,
-      format.unwrap_or(ImageOutputFormat::Png),
+      format.unwrap_or(ImageOutputFormat::Png).into(),
       quality,
     )
     .unwrap();
@@ -102,7 +123,8 @@ impl Renderer {
     quality: Option<u8>,
   ) -> String {
     let buffer = self.render(node, width, height, format, quality);
-    let format = format.unwrap_or(ImageOutputFormat::Png);
+    let format: takumi::rendering::ImageOutputFormat =
+      format.unwrap_or(ImageOutputFormat::Png).into();
 
     let mut data_uri = String::new();
 
