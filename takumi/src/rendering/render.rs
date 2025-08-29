@@ -139,7 +139,13 @@ pub fn render<Nodes: Node<Nodes>>(
 
   #[cfg(target_arch = "wasm32")]
   let canvas = {
-    render_node(&taffy, root_node_id, &canvas, Point::ZERO);
+    render_node(
+      &taffy,
+      root_node_id,
+      &canvas,
+      Point::ZERO,
+      Transforms::default(),
+    );
 
     drop(canvas);
 
