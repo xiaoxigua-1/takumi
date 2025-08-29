@@ -207,13 +207,17 @@ impl LengthUnit {
     match self {
       LengthUnit::Auto => CompactLength::auto(),
       LengthUnit::Percentage(value) => CompactLength::percent(value / 100.0),
-      LengthUnit::Rem(value) => CompactLength::length(value * context.viewport.font_size),
-      LengthUnit::Em(value) => CompactLength::length(value * context.parent_font_size),
+      LengthUnit::Rem(value) => {
+        CompactLength::length(value * context.viewport.font_size * context.scale.width)
+      }
+      LengthUnit::Em(value) => {
+        CompactLength::length(value * context.parent_font_size * context.scale.width)
+      }
       LengthUnit::Vh(value) => {
         CompactLength::length(context.viewport.height as f32 * value / 100.0)
       }
       LengthUnit::Vw(value) => CompactLength::length(context.viewport.width as f32 * value / 100.0),
-      _ => CompactLength::length(self.resolve_to_px(context)),
+      _ => CompactLength::length(self.resolve_to_px(context, context.viewport.width as f32)),
     }
   }
 
@@ -230,7 +234,7 @@ impl LengthUnit {
   }
 
   /// Resolves the length unit to a pixel value.
-  pub fn resolve_to_px(self, context: &RenderContext) -> f32 {
+  pub fn resolve_to_px(self, context: &RenderContext, percentage_full_px: f32) -> f32 {
     const ONE_CM_IN_PX: f32 = 96.0 / 2.54;
     const ONE_MM_IN_PX: f32 = ONE_CM_IN_PX / 10.0;
     const ONE_Q_IN_PX: f32 = ONE_CM_IN_PX / 40.0;
@@ -238,10 +242,10 @@ impl LengthUnit {
     const ONE_PT_IN_PX: f32 = ONE_IN_PX / 72.0;
     const ONE_PC_IN_PX: f32 = ONE_IN_PX / 6.0;
 
-    match self {
+    let value = match self {
       LengthUnit::Auto => 0.0,
       LengthUnit::Px(value) => value,
-      LengthUnit::Percentage(value) => value * context.parent_font_size / 100.0,
+      LengthUnit::Percentage(value) => (value / 100.0) * percentage_full_px,
       LengthUnit::Rem(value) => value * context.viewport.font_size,
       LengthUnit::Em(value) => value * context.parent_font_size,
       LengthUnit::Vh(value) => value * context.viewport.height as f32 / 100.0,
@@ -252,7 +256,9 @@ impl LengthUnit {
       LengthUnit::Q(value) => value * ONE_Q_IN_PX,
       LengthUnit::Pt(value) => value * ONE_PT_IN_PX,
       LengthUnit::Pc(value) => value * ONE_PC_IN_PX,
-    }
+    };
+
+    value * context.scale.width
   }
 
   /// Resolves the length unit to a `LengthPercentageAuto`.

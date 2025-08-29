@@ -185,7 +185,9 @@ pub fn draw_pixel(canvas: &mut RgbaImage, x: u32, y: u32, color: Rgba<u8>) {
   }
 
   // image-rs blend will skip the operation if the source color is fully transparent
-  canvas.get_pixel_mut(x, y).blend(&color);
+  if let Some(pixel) = canvas.get_pixel_mut_checked(x, y) {
+    pixel.blend(&color);
+  }
 }
 
 fn draw_mask(
@@ -210,7 +212,7 @@ fn draw_mask(
       let x = x as i32 + offset.x;
       let y = y as i32 + offset.y;
 
-      if x < 0 || y < 0 || x >= canvas.width() as i32 || y >= canvas.height() as i32 {
+      if x < 0 || y < 0 {
         continue;
       }
 
@@ -296,14 +298,16 @@ fn overlay_image(
       let x = x as i32 + placement.left;
       let y = y as i32 + placement.top;
 
-      if x < 0 || y < 0 || x >= canvas.width() as i32 || y >= canvas.height() as i32 {
+      if x < 0 || y < 0 {
         continue;
       }
 
-      let pixel = *image.get_pixel(x as u32 + overlay_x, y as u32 + overlay_y);
+      let Some(pixel) = image.get_pixel_checked(x as u32 + overlay_x, y as u32 + overlay_y) else {
+        continue;
+      };
 
       let pixel = if alpha == u8::MAX {
-        pixel
+        *pixel
       } else {
         Rgba([
           pixel.0[0],

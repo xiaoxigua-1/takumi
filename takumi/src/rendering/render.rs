@@ -9,8 +9,8 @@ use taffy::{AvailableSpace, NodeId, Point, TaffyTree, geometry::Size};
 
 use crate::{
   GlobalContext,
-  layout::{Viewport, node::Node},
-  rendering::{Canvas, create_blocking_canvas_loop},
+  layout::{Viewport, node::Node, style::Transforms},
+  rendering::{Canvas, DEFAULT_SCALE, create_blocking_canvas_loop},
 };
 
 use crate::rendering::RenderContext;
@@ -105,6 +105,7 @@ pub fn render<Nodes: Node<Nodes>>(
     global,
     viewport,
     parent_font_size: viewport.font_size,
+    scale: DEFAULT_SCALE,
   };
 
   let root_node_id = insert_taffy_node(&mut taffy, root_node, &render_context);
@@ -149,7 +150,13 @@ pub fn render<Nodes: Node<Nodes>>(
   let canvas = {
     let handler = std::thread::spawn(move || create_blocking_canvas_loop(viewport, rx));
 
-    render_node(&taffy, root_node_id, &canvas, Point::ZERO);
+    render_node(
+      &taffy,
+      root_node_id,
+      &canvas,
+      Point::ZERO,
+      Transforms::default(),
+    );
 
     drop(canvas);
 
@@ -164,25 +171,31 @@ fn render_node<Nodes: Node<Nodes>>(
   node_id: NodeId,
   canvas: &Canvas,
   offset: Point<f32>,
+  mut transform: Transforms,
 ) {
   let mut layout = *taffy.layout(node_id).unwrap();
   let node_context = taffy.get_node_context(node_id).unwrap();
 
+  let mut render_context = node_context.context;
+
   layout.location.x += offset.x;
   layout.location.y += offset.y;
 
-  if let Some(transform) = &node_context.node.get_style().transform {
-    let translate = transform.translate(&node_context.context);
-    layout.location.x += translate.x;
-    layout.location.y += translate.y;
+  // preserve the offset before the transform is applied
+  let child_offset = layout.location;
+
+  if let Some(node_transform) = &node_context.node.get_style().transform {
+    transform.chain(node_transform);
   }
+
+  transform.apply(&mut render_context, &mut layout);
 
   node_context
     .node
-    .draw_on_canvas(&node_context.context, canvas, layout);
+    .draw_on_canvas(&render_context, canvas, layout);
 
   for child_id in taffy.children(node_id).unwrap() {
-    render_node(taffy, child_id, canvas, layout.location);
+    render_node(taffy, child_id, canvas, child_offset, transform.clone());
   }
 }
 
@@ -197,7 +210,7 @@ fn insert_taffy_node<'ctx, Nodes: Node<Nodes>>(
     .get_style()
     .inheritable_style
     .font_size
-    .map(|f| f.resolve_to_px(render_context))
+    .map(|f| f.resolve_to_px(render_context, render_context.parent_font_size))
     .unwrap_or(render_context.parent_font_size);
 
   let node_id = taffy

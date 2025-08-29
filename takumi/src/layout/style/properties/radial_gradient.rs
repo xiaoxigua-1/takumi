@@ -411,6 +411,7 @@ mod tests {
   use super::*;
   use crate::layout::DEFAULT_FONT_SIZE;
   use crate::layout::style::{LengthUnit, StopPosition};
+  use crate::rendering::DEFAULT_SCALE;
   use crate::{GlobalContext, layout::Viewport, rendering::RenderContext};
 
   #[test]
@@ -575,6 +576,7 @@ mod tests {
       global: &GlobalContext::default(),
       viewport: Viewport::new(200, 100),
       parent_font_size: DEFAULT_FONT_SIZE,
+      scale: DEFAULT_SCALE,
     };
     let resolved = gradient.resolve_stops_for_radius(ctx.viewport.width as f32, &ctx);
 
@@ -609,6 +611,7 @@ mod tests {
       global: &GlobalContext::default(),
       viewport: Viewport::new(200, 100),
       parent_font_size: DEFAULT_FONT_SIZE,
+      scale: DEFAULT_SCALE,
     };
     let resolved = gradient.resolve_stops_for_radius(ctx.viewport.width as f32, &ctx);
 

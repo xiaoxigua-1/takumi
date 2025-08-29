@@ -31,7 +31,10 @@ impl BorderProperties {
       width: layout.border,
       offset: layout.location,
       size: layout.size,
-      color: style.inheritable_style.border_color.unwrap_or_default(),
+      color: style
+        .inheritable_style
+        .border_color
+        .unwrap_or_else(Color::black),
       radius: style.create_border_radius(layout, context),
     }
   }

@@ -1,11 +1,13 @@
 use criterion::{BatchSize, BenchmarkId, Criterion, Throughput, criterion_group, criterion_main};
 use takumi::{
   GlobalContext,
-  layout::Viewport,
-  layout::style::{
-    Angle, BackgroundImage, Color, GradientStop, LengthUnit, LinearGradient, StopPosition,
+  layout::{
+    Viewport,
+    style::{
+      Angle, BackgroundImage, Color, GradientStop, LengthUnit, LinearGradient, StopPosition,
+    },
   },
-  rendering::{RenderContext, render_gradient_tile},
+  rendering::{DEFAULT_SCALE, RenderContext, render_gradient_tile},
 };
 
 fn bench_sizes() -> Vec<(u32, u32)> {
@@ -49,6 +51,7 @@ fn bench_takumi(c: &mut Criterion) {
               global: &global,
               viewport,
               parent_font_size: viewport.font_size,
+              scale: DEFAULT_SCALE,
             };
             (sample_gradient(), w, h, context)
           },

@@ -168,8 +168,7 @@ fn resolve_border_radius_from_percentage_css(
   radius: LengthUnit,
   reference_size: f32,
 ) -> f32 {
-  match radius {
-    LengthUnit::Percentage(value) => value * reference_size / 100.0,
-    rest => rest.resolve_to_px(context).min(reference_size / 2.0),
-  }
+  radius
+    .resolve_to_px(context, reference_size)
+    .min(reference_size / 2.0)
 }

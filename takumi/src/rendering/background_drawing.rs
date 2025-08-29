@@ -43,9 +43,16 @@ pub fn draw_filled_rect_color<C: Into<Rgba<u8>>>(
       return;
     }
 
-    for y in 0..size.height {
-      for x in 0..size.width {
-        draw_pixel(image, x + offset.x as u32, y + offset.y as u32, color);
+    for y in 0..size.height as i32 {
+      for x in 0..size.width as i32 {
+        let x = x + offset.x;
+        let y = y + offset.y;
+
+        if x < 0 || y < 0 {
+          continue;
+        }
+
+        draw_pixel(image, x as u32, y as u32, color);
       }
     }
 
@@ -73,7 +80,7 @@ pub fn draw_filled_rect_color<C: Into<Rgba<u8>>>(
       let x = x as i32 + placement.left;
       let y = y as i32 + placement.top;
 
-      if x < 0 || y < 0 || x >= image.width() as i32 || y >= image.height() as i32 {
+      if x < 0 || y < 0 {
         continue;
       }
 
@@ -94,15 +101,10 @@ pub fn draw_filled_rect_color<C: Into<Rgba<u8>>>(
 }
 
 fn resolve_length_against_area(unit: LengthUnit, area: u32, context: &RenderContext) -> u32 {
-  if unit == LengthUnit::Auto {
-    return area;
+  match unit {
+    LengthUnit::Auto => area,
+    _ => unit.resolve_to_px(context, area as f32).max(0.0) as u32,
   }
-
-  if let LengthUnit::Percentage(p) = unit {
-    return ((p / 100.0) * area as f32).max(0.0) as u32;
-  }
-
-  unit.resolve_to_px(context).max(0.0) as u32
 }
 
 fn resolve_background_size(
@@ -126,15 +128,10 @@ fn resolve_length_unit_to_position_component(
   available: i32,
   context: &RenderContext,
 ) -> i32 {
-  if length == LengthUnit::Auto {
-    return available / 2;
+  match length {
+    LengthUnit::Auto => available / 2,
+    _ => length.resolve_to_px(context, available as f32).round() as i32,
   }
-
-  if let LengthUnit::Percentage(p) = length {
-    return ((available as f32) * (p / 100.0)).round() as i32;
-  }
-
-  length.resolve_to_px(context).round() as i32
 }
 
 fn resolve_position_component_x(

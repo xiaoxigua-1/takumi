@@ -8,7 +8,7 @@ use takumi::{
     DEFAULT_FONT_SIZE, DEFAULT_LINE_HEIGHT_SCALER, Viewport,
     style::{Color, FontFamily, FontStyle, TextOverflow, TextStyle, TextTransform},
   },
-  rendering::RenderContext,
+  rendering::{DEFAULT_SCALE, RenderContext},
 };
 
 const NOTO_SANS_REGULAR_BUFFER: &[u8] =
@@ -43,6 +43,7 @@ fn create_test_context() -> RenderContext<'static> {
       height: VIEWPORT_HEIGHT,
       font_size: DEFAULT_FONT_SIZE,
     },
+    scale: DEFAULT_SCALE,
   }
 }
 

@@ -4,4 +4,4 @@ import type { LengthUnit } from "./LengthUnit";
 /**
  * Represents a single CSS transform operation
  */
-export type Transform = { "translate": [LengthUnit, LengthUnit] };
+export type Transform = { "translate": [LengthUnit, LengthUnit] } | { "scale": [number, number] };

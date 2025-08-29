@@ -49,13 +49,16 @@ pub struct BoxShadowResolved {
 
 impl BoxShadowResolved {
   /// Creates a new `BoxShadowResolved` from a `BoxShadow` and a `RenderContext`.
-  pub fn from_box_shadow(shadow: &BoxShadow, context: &RenderContext) -> Self {
+  pub fn from_box_shadow(shadow: &BoxShadow, context: &RenderContext, size: Size<f32>) -> Self {
     Self {
       inset: shadow.inset,
-      offset_x: shadow.offset_x.resolve_to_px(context),
-      offset_y: shadow.offset_y.resolve_to_px(context),
-      blur_radius: shadow.blur_radius.resolve_to_px(context),
-      spread_radius: shadow.spread_radius.resolve_to_px(context).max(0.0),
+      offset_x: shadow.offset_x.resolve_to_px(context, size.width),
+      offset_y: shadow.offset_y.resolve_to_px(context, size.height),
+      blur_radius: shadow.blur_radius.resolve_to_px(context, size.width),
+      spread_radius: shadow
+        .spread_radius
+        .resolve_to_px(context, size.width)
+        .max(0.0),
       color: shadow.color.into(),
     }
   }
@@ -78,7 +81,7 @@ pub fn draw_box_shadow(
       };
 
       if matches_phase {
-        let resolved = BoxShadowResolved::from_box_shadow(shadow, context);
+        let resolved = BoxShadowResolved::from_box_shadow(shadow, context, layout.size);
 
         let draw = draw_single_box_shadow(&resolved, border_radius, layout);
 
@@ -100,7 +103,11 @@ pub fn draw_box_shadow(
         };
 
         if matches_phase {
-          Some(BoxShadowResolved::from_box_shadow(shadow, context))
+          Some(BoxShadowResolved::from_box_shadow(
+            shadow,
+            context,
+            layout.size,
+          ))
         } else {
           None
         }
@@ -215,10 +222,6 @@ fn draw_inset_shadow(
       let x = x as i32 + placement.left;
       let y = y as i32 + placement.top;
 
-      if x < 0 || y < 0 || x >= shadow_image.width() as i32 || y >= shadow_image.height() as i32 {
-        continue;
-      }
-
       let alpha = shadow.color.0[3] as f32 * (alpha as f32 / 255.0);
 
       let color = Rgba([
@@ -228,7 +231,9 @@ fn draw_inset_shadow(
         alpha as u8,
       ]);
 
-      shadow_image.put_pixel(x as u32, y as u32, color);
+      if let Some(pixel) = shadow_image.get_pixel_mut_checked(x as u32, y as u32) {
+        *pixel = color;
+      }
     }
   }
 

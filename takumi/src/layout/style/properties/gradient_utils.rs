@@ -59,12 +59,7 @@ pub(crate) fn stop_length_to_axis_px(
   axis_size_px: f32,
   context: &RenderContext,
 ) -> f32 {
-  match length {
-    LengthUnit::Percentage(pct) => (pct / 100.0) * axis_size_px,
-    LengthUnit::Px(px) => px,
-    _ => length.resolve_to_px(context),
-  }
-  .max(0.0)
+  length.resolve_to_px(context, axis_size_px).max(0.0)
 }
 
 /// Resolves gradient steps into color stops with positions expressed in pixels along an axis.
@@ -183,6 +178,7 @@ mod tests {
   use crate::{
     GlobalContext,
     layout::{DEFAULT_FONT_SIZE, Viewport, style::StopPosition},
+    rendering::DEFAULT_SCALE,
   };
 
   use super::*;
@@ -208,6 +204,7 @@ mod tests {
       global: &GlobalContext::default(),
       viewport: Viewport::new(40, 40),
       parent_font_size: DEFAULT_FONT_SIZE,
+      scale: DEFAULT_SCALE,
     };
 
     let resolved = resolve_stops_along_axis(&stops, ctx.viewport.width as f32, &ctx);
@@ -258,6 +255,7 @@ mod tests {
       global: &GlobalContext::default(),
       viewport: Viewport::new(40, 40),
       parent_font_size: DEFAULT_FONT_SIZE,
+      scale: DEFAULT_SCALE,
     };
 
     let resolved = resolve_stops_along_axis(&stops, ctx.viewport.width as f32, &ctx);
@@ -305,6 +303,7 @@ mod tests {
       global: &GlobalContext::default(),
       viewport: Viewport::new(100, 40),
       parent_font_size: DEFAULT_FONT_SIZE,
+      scale: DEFAULT_SCALE,
     };
 
     let resolved = resolve_stops_along_axis(&stops, ctx.viewport.width as f32, &ctx);

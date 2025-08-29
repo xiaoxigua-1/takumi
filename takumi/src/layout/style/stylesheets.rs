@@ -5,7 +5,7 @@ use taffy::{Layout, Size, Style as TaffyStyle};
 use ts_rs::TS;
 
 use crate::{
-  layout::{DEFAULT_FONT_SIZE, DEFAULT_LINE_HEIGHT_SCALER, style::properties::*},
+  layout::{DEFAULT_LINE_HEIGHT_SCALER, style::properties::*},
   rendering::{BorderRadius, RenderContext},
 };
 
@@ -500,13 +500,13 @@ impl Style {
     let font_size = self
       .inheritable_style
       .font_size
-      .map(|f| f.resolve_to_px(context))
-      .unwrap_or(DEFAULT_FONT_SIZE);
+      .map(|f| f.resolve_to_px(context, context.parent_font_size))
+      .unwrap_or(context.parent_font_size * context.scale.width);
 
     let line_height = self
       .inheritable_style
       .line_height
-      .map(|f| f.0.resolve_to_px(context))
+      .map(|f| f.0.resolve_to_px(context, font_size / context.scale.width))
       .unwrap_or_else(|| font_size * DEFAULT_LINE_HEIGHT_SCALER);
 
     FontStyle {
@@ -524,7 +524,7 @@ impl Style {
       letter_spacing: self
         .inheritable_style
         .letter_spacing
-        .map(|spacing| spacing.resolve_to_px(context) / context.parent_font_size),
+        .map(|spacing| spacing.resolve_to_px(context, font_size) / font_size),
       text_align: self.inheritable_style.text_align.and_then(Into::into),
       text_overflow: self
         .inheritable_style
