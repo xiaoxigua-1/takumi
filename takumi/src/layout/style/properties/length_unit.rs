@@ -34,6 +34,18 @@ pub enum LengthUnit {
   Vh(f32),
   /// Vw value relative to the viewport width (0-100)
   Vw(f32),
+  /// Centimeter value
+  Cm(f32),
+  /// Millimeter value
+  Mm(f32),
+  /// Inch value
+  In(f32),
+  /// Quarter value
+  Q(f32),
+  /// Point value
+  Pt(f32),
+  /// Picas value
+  Pc(f32),
   /// Specific pixel value
   Px(f32),
 }
@@ -54,6 +66,21 @@ pub enum LengthUnitValue {
   Vh(f32),
   /// Vw value relative to the viewport width (0-100)
   Vw(f32),
+  /// Centimeter value
+  Cm(f32),
+  /// Millimeter value
+  Mm(f32),
+  /// Inch value
+  In(f32),
+  /// Quarter value
+  #[serde(rename = "Q")]
+  Q(f32),
+  /// Point value
+  #[serde(rename = "Pt")]
+  Pt(f32),
+  /// Picas value
+  #[serde(rename = "Pc")]
+  Pc(f32),
   /// Specific pixel value
   #[serde(untagged)]
   Px(f32),
@@ -73,6 +100,12 @@ impl TryFrom<LengthUnitValue> for LengthUnit {
       LengthUnitValue::Em(v) => Ok(Self::Em(v)),
       LengthUnitValue::Vh(v) => Ok(Self::Vh(v)),
       LengthUnitValue::Vw(v) => Ok(Self::Vw(v)),
+      LengthUnitValue::Cm(v) => Ok(Self::Cm(v)),
+      LengthUnitValue::Mm(v) => Ok(Self::Mm(v)),
+      LengthUnitValue::In(v) => Ok(Self::In(v)),
+      LengthUnitValue::Q(v) => Ok(Self::Q(v)),
+      LengthUnitValue::Pt(v) => Ok(Self::Pt(v)),
+      LengthUnitValue::Pc(v) => Ok(Self::Pc(v)),
       LengthUnitValue::Px(v) => Ok(Self::Px(v)),
       LengthUnitValue::Css(s) => {
         let mut input = ParserInput::new(&s);
@@ -102,6 +135,12 @@ impl From<LengthUnit> for LengthUnitValue {
       LengthUnit::Em(v) => LengthUnitValue::Em(v),
       LengthUnit::Vh(v) => LengthUnitValue::Vh(v),
       LengthUnit::Vw(v) => LengthUnitValue::Vw(v),
+      LengthUnit::Cm(v) => LengthUnitValue::Cm(v),
+      LengthUnit::Mm(v) => LengthUnitValue::Mm(v),
+      LengthUnit::In(v) => LengthUnitValue::In(v),
+      LengthUnit::Q(v) => LengthUnitValue::Q(v),
+      LengthUnit::Pt(v) => LengthUnitValue::Pt(v),
+      LengthUnit::Pc(v) => LengthUnitValue::Pc(v),
       LengthUnit::Px(v) => LengthUnitValue::Px(v),
     }
   }
@@ -139,6 +178,12 @@ impl<'i> FromCss<'i> for LengthUnit {
           "rem" => Ok(Self::Rem(value)),
           "vw" => Ok(Self::Vw(value)),
           "vh" => Ok(Self::Vh(value)),
+          "cm" => Ok(Self::Cm(value)),
+          "mm" => Ok(Self::Mm(value)),
+          "in" => Ok(Self::In(value)),
+          "q" => Ok(Self::Q(value)),
+          "pt" => Ok(Self::Pt(value)),
+          "pc" => Ok(Self::Pc(value)),
           _ => Err(location.new_basic_unexpected_token_error(token.clone()).into()),
         }
       }
@@ -161,7 +206,6 @@ impl LengthUnit {
   pub fn to_compact_length(self, context: &RenderContext) -> CompactLength {
     match self {
       LengthUnit::Auto => CompactLength::auto(),
-      LengthUnit::Px(value) => CompactLength::length(value),
       LengthUnit::Percentage(value) => CompactLength::percent(value / 100.0),
       LengthUnit::Rem(value) => CompactLength::length(value * context.viewport.font_size),
       LengthUnit::Em(value) => CompactLength::length(value * context.parent_font_size),
@@ -169,6 +213,7 @@ impl LengthUnit {
         CompactLength::length(context.viewport.height as f32 * value / 100.0)
       }
       LengthUnit::Vw(value) => CompactLength::length(context.viewport.width as f32 * value / 100.0),
+      _ => CompactLength::length(self.resolve_to_px(context)),
     }
   }
 
@@ -186,6 +231,13 @@ impl LengthUnit {
 
   /// Resolves the length unit to a pixel value.
   pub fn resolve_to_px(self, context: &RenderContext) -> f32 {
+    const ONE_CM_IN_PX: f32 = 96.0 / 2.54;
+    const ONE_MM_IN_PX: f32 = ONE_CM_IN_PX / 10.0;
+    const ONE_Q_IN_PX: f32 = ONE_CM_IN_PX / 40.0;
+    const ONE_IN_PX: f32 = 2.54 * ONE_CM_IN_PX;
+    const ONE_PT_IN_PX: f32 = ONE_IN_PX / 72.0;
+    const ONE_PC_IN_PX: f32 = ONE_IN_PX / 6.0;
+
     match self {
       LengthUnit::Auto => 0.0,
       LengthUnit::Px(value) => value,
@@ -194,6 +246,12 @@ impl LengthUnit {
       LengthUnit::Em(value) => value * context.parent_font_size,
       LengthUnit::Vh(value) => value * context.viewport.height as f32 / 100.0,
       LengthUnit::Vw(value) => value * context.viewport.width as f32 / 100.0,
+      LengthUnit::Cm(value) => value * ONE_CM_IN_PX,
+      LengthUnit::Mm(value) => value * ONE_MM_IN_PX,
+      LengthUnit::In(value) => value * ONE_IN_PX,
+      LengthUnit::Q(value) => value * ONE_Q_IN_PX,
+      LengthUnit::Pt(value) => value * ONE_PT_IN_PX,
+      LengthUnit::Pc(value) => value * ONE_PC_IN_PX,
     }
   }
 
