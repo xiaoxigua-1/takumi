@@ -309,17 +309,18 @@ pub fn apply_text_transform<'a>(input: &'a str, transform: TextTransform) -> Cow
 }
 
 /// Construct a new string with an ellipsis appended such that it fits within `max_width`.
-fn make_ellipsis_text(
-  render_text: &str,
+fn make_ellipsis_text<'s>(
+  render_text: &'s str,
   start_index: usize,
   end_index: usize,
   font_style: &FontStyle,
   global: &GlobalContext,
   max_width: f32,
-) -> String {
+) -> Cow<'s, str> {
   let mut truncated_text = &render_text[start_index..end_index];
 
   while !truncated_text.is_empty() {
+    // try to calculate the last line only with the truncated text and ellipsis character
     let mut text_with_ellipsis = String::with_capacity(truncated_text.len() + ELLIPSIS_CHAR.len());
 
     text_with_ellipsis.push_str(truncated_text);
@@ -329,9 +330,11 @@ fn make_ellipsis_text(
 
     let last_line = truncated_buffer.layout_runs().last().unwrap();
 
+    // if the text fits, return the text with ellipsis character
     if last_line.line_w <= max_width {
       let before_last_line = &render_text[..start_index];
 
+      // build the text with ellipsis character
       let mut text_with_ellipsis =
         String::with_capacity(before_last_line.len() + truncated_text.len() + ELLIPSIS_CHAR.len());
 
@@ -339,16 +342,18 @@ fn make_ellipsis_text(
       text_with_ellipsis.push_str(truncated_text);
       text_with_ellipsis.push_str(ELLIPSIS_CHAR);
 
-      return text_with_ellipsis;
+      return Cow::Owned(text_with_ellipsis);
     }
 
-    // shrink by one grapheme/char; using len()-ELLIPSIS_CHAR.len() mirrors previous logic
-    truncated_text = &truncated_text[..truncated_text.len() - ELLIPSIS_CHAR.len()];
+    // try to shrink by one char
+    if let Some((char_idx, _)) = truncated_text.char_indices().last() {
+      truncated_text = &truncated_text[..char_idx];
+    } else {
+      // the text is empty, break out
+      break;
+    }
   }
 
-  // fallback: return the original segment with ellipsis if nothing else fits
-  let mut fallback = String::with_capacity(ELLIPSIS_CHAR.len());
-  fallback.push_str(&render_text[..start_index]);
-  fallback.push_str(ELLIPSIS_CHAR);
-  fallback
+  // if there's nothing left, returns nothing
+  Cow::Borrowed("")
 }
