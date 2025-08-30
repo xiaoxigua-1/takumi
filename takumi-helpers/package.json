@@ -11,10 +11,10 @@
   },
   "devDependencies": {
     "@types/bun": "catalog:",
-    "@types/react": "^19.1.10",
-    "@types/react-dom": "^19.1.7",
+    "@types/react": "^19.1.12",
+    "@types/react-dom": "^19.1.9",
     "bun-plugin-dts": "^0.3.0",
-    "lucide-react": "^0.541.0",
+    "lucide-react": "^0.542.0",
     "react": "^19.1.0",
     "tsup": "^8.5.0",
     "typescript": "catalog:"
