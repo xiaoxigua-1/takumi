@@ -1,4 +1,3 @@
-import { join } from "node:path";
 import { file } from "bun";
 
 export const persistentImages = [
@@ -8,19 +7,14 @@ export const persistentImages = [
   },
 ];
 
-const weights = ["600", "800"];
-
 export const name = "500-stars";
 
 export const width = 1200;
 export const height = 675;
 
-export const fonts = weights.map((weight) =>
-  join(
-    "../../assets/fonts/plus-jakarta-sans-v11-latin",
-    `plus-jakarta-sans-v11-latin-${weight}.woff2`,
-  ),
-);
+export const fonts = [
+  "plus-jakarta-sans/PlusJakartaSans-VariableFont_wght.woff2",
+];
 
 export default function FiveHundredStars() {
   return (

@@ -39,7 +39,7 @@ impl Default for Gap {
 }
 
 impl TryFrom<GapValue> for Gap {
-  type Error = &'static str;
+  type Error = String;
 
   fn try_from(value: GapValue) -> Result<Self, Self::Error> {
     match value {
@@ -49,7 +49,7 @@ impl TryFrom<GapValue> for Gap {
         let mut input = ParserInput::new(&value);
         let mut parser = Parser::new(&mut input);
 
-        let first = LengthUnit::from_css(&mut parser).map_err(|_| "Failed to parse CSS gap")?;
+        let first = LengthUnit::from_css(&mut parser).map_err(|e| e.to_string())?;
 
         if let Ok(second) = LengthUnit::from_css(&mut parser) {
           Ok(Self(first, second))

@@ -381,7 +381,7 @@ pub enum RadialGradientValue {
 }
 
 impl TryFrom<RadialGradientValue> for RadialGradient {
-  type Error = &'static str;
+  type Error = String;
 
   fn try_from(value: RadialGradientValue) -> Result<Self, Self::Error> {
     match value {
@@ -400,7 +400,7 @@ impl TryFrom<RadialGradientValue> for RadialGradient {
         let mut input = ParserInput::new(&css);
         let mut parser = Parser::new(&mut input);
 
-        RadialGradient::from_css(&mut parser).map_err(|_| "Failed to parse radial gradient")
+        RadialGradient::from_css(&mut parser).map_err(|e| e.to_string())
       }
     }
   }

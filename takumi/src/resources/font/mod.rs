@@ -83,13 +83,30 @@ pub struct FontContext {
   pub font_cache: Mutex<SwashCache>,
 }
 
+/// Embedded fonts
+#[cfg(feature = "embed_fonts")]
+const EMBEDDED_FONTS: &[&[u8]] = &[include_bytes!(
+  "../../../../assets/fonts/plus-jakarta-sans/PlusJakartaSans-VariableFont_wght.woff2"
+)];
+
 impl Default for FontContext {
   fn default() -> Self {
+    #[cfg(feature = "embed_fonts")]
+    let db = {
+      let mut db = Database::new();
+
+      for font in EMBEDDED_FONTS {
+        db.load_font_data(load_font(font.to_vec(), None).unwrap());
+      }
+
+      db
+    };
+
+    #[cfg(not(feature = "embed_fonts"))]
+    let db = Database::new();
+
     Self {
-      font_system: Mutex::new(FontSystem::new_with_locale_and_db(
-        "en-US".to_string(),
-        Database::new(),
-      )),
+      font_system: Mutex::new(FontSystem::new_with_locale_and_db("en-US".to_string(), db)),
       font_cache: Mutex::new(SwashCache::new()),
     }
   }

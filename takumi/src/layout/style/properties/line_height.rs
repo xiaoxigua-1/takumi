@@ -23,7 +23,7 @@ pub enum LineHeightValue {
 }
 
 impl TryFrom<LineHeightValue> for LineHeight {
-  type Error = &'static str;
+  type Error = String;
 
   fn try_from(value: LineHeightValue) -> Result<Self, Self::Error> {
     match value {
@@ -32,7 +32,7 @@ impl TryFrom<LineHeightValue> for LineHeight {
         let mut input = ParserInput::new(&css);
         let mut parser = Parser::new(&mut input);
 
-        LineHeight::from_css(&mut parser).map_err(|_| "Failed to parse line height")
+        LineHeight::from_css(&mut parser).map_err(|e| e.to_string())
       }
       LineHeightValue::Length(length) => Ok(LineHeight(length)),
     }

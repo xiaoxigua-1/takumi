@@ -35,7 +35,7 @@ pub enum GridLengthUnitValue {
 }
 
 impl TryFrom<GridLengthUnitValue> for GridLengthUnit {
-  type Error = &'static str;
+  type Error = String;
 
   fn try_from(value: GridLengthUnitValue) -> Result<Self, Self::Error> {
     match value {
@@ -44,7 +44,7 @@ impl TryFrom<GridLengthUnitValue> for GridLengthUnit {
       GridLengthUnitValue::Css(css) => {
         let mut input = ParserInput::new(&css);
         let mut parser = Parser::new(&mut input);
-        GridLengthUnit::from_css(&mut parser).map_err(|_| "Failed to parse CSS grid length unit")
+        GridLengthUnit::from_css(&mut parser).map_err(|e| e.to_string())
       }
     }
   }

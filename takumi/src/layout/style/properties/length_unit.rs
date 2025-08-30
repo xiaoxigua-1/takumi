@@ -1,8 +1,3 @@
-//! Length units and measurement types for the takumi styling system.
-//!
-//! This module provides various length units (px, em, rem, %, vh, vw) and
-//! utility types for handling measurements and spacing in CSS-like layouts.
-
 use cssparser::{Parser, ParserInput, Token, match_ignore_ascii_case};
 use serde::{Deserialize, Serialize};
 use taffy::{CompactLength, Dimension, LengthPercentage, LengthPercentageAuto, Rect};
@@ -90,7 +85,7 @@ pub enum LengthUnitValue {
 }
 
 impl TryFrom<LengthUnitValue> for LengthUnit {
-  type Error = &'static str;
+  type Error = String;
 
   fn try_from(value: LengthUnitValue) -> Result<Self, Self::Error> {
     match value {
@@ -111,14 +106,7 @@ impl TryFrom<LengthUnitValue> for LengthUnit {
         let mut input = ParserInput::new(&s);
         let mut parser = Parser::new(&mut input);
 
-        let unit =
-          LengthUnit::from_css(&mut parser).map_err(|_| "Failed to parse CSS length unit")?;
-
-        // Ensure no trailing tokens remain so that multi-value CSS like
-        // "1px 2px" does not get parsed as a single LengthUnit.
-        parser
-          .expect_exhausted()
-          .map_err(|_| "Failed to parse CSS length unit: trailing tokens found")?;
+        let unit = LengthUnit::from_css(&mut parser).map_err(|e| e.to_string())?;
 
         Ok(unit)
       }

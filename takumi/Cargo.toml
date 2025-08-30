@@ -42,8 +42,8 @@ version = "0.4"
 optional = true
 
 [dependencies.cosmic-text]
-version = "0.14"
 features = ["shape-run-cache"]
+git = "https://github.com/pop-os/cosmic-text"
 
 [dependencies.taffy]
 version = "0.9"
@@ -77,6 +77,7 @@ svg = ["dep:resvg"]
 woff2 = ["dep:woff2-patched", "dep:bytes"]
 woff = ["dep:flate2"]
 rayon = ["dep:rayon", "image/rayon"]
+embed_fonts = []
 test_update_fixtures = []
 
 [dev-dependencies]

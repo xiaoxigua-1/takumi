@@ -43,7 +43,7 @@ impl<T: TS + Copy + for<'i> FromCss<'i>> TryFrom<SidesValue<T>> for Sides<T> {
         let mut parser = Parser::new(&mut input);
 
         // Parse between 1 and 4 values of T using FromCss
-        let first = T::from_css(&mut parser).map_err(|_| "Failed to parse first CSS side value")?;
+        let first = T::from_css(&mut parser).map_err(|e| e.to_string())?;
         let second = parser.try_parse(T::from_css).ok();
         let third = parser.try_parse(T::from_css).ok();
         let fourth = parser.try_parse(T::from_css).ok();

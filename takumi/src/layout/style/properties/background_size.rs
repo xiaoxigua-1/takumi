@@ -77,7 +77,7 @@ pub enum BackgroundSizesValue {
 pub struct BackgroundSizes(pub Vec<BackgroundSize>);
 
 impl TryFrom<BackgroundSizesValue> for BackgroundSizes {
-  type Error = &'static str;
+  type Error = String;
 
   fn try_from(value: BackgroundSizesValue) -> Result<Self, Self::Error> {
     match value {
@@ -85,14 +85,9 @@ impl TryFrom<BackgroundSizesValue> for BackgroundSizes {
       BackgroundSizesValue::Css(css) => {
         let mut input = ParserInput::new(&css);
         let mut parser = Parser::new(&mut input);
-        let mut values = vec![
-          BackgroundSize::from_css(&mut parser)
-            .map_err(|_| "Failed to parse first background-size")?,
-        ];
+        let mut values = vec![BackgroundSize::from_css(&mut parser).map_err(|e| e.to_string())?];
         while parser.expect_comma().is_ok() {
-          values.push(
-            BackgroundSize::from_css(&mut parser).map_err(|_| "Failed to parse background-size")?,
-          );
+          values.push(BackgroundSize::from_css(&mut parser).map_err(|e| e.to_string())?);
         }
         Ok(Self(values))
       }
@@ -165,7 +160,7 @@ mod tests {
     assert!(result.is_err());
   }
 
-  fn parse_bg_sizes(input: &str) -> Result<BackgroundSizes, &'static str> {
+  fn parse_bg_sizes(input: &str) -> Result<BackgroundSizes, String> {
     BackgroundSizes::try_from(BackgroundSizesValue::Css(input.to_string()))
   }
 

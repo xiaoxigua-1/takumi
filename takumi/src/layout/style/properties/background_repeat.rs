@@ -116,7 +116,7 @@ pub enum BackgroundRepeatsValue {
 pub struct BackgroundRepeats(pub Vec<BackgroundRepeat>);
 
 impl TryFrom<BackgroundRepeatsValue> for BackgroundRepeats {
-  type Error = &'static str;
+  type Error = String;
 
   fn try_from(value: BackgroundRepeatsValue) -> Result<Self, Self::Error> {
     match value {
@@ -135,7 +135,7 @@ impl TryFrom<BackgroundRepeatsValue> for BackgroundRepeats {
         }
 
         if values.is_empty() {
-          return Err("background-repeat should have at least one value");
+          return Err("background-repeat should have at least one value".to_string());
         }
 
         Ok(Self(values))

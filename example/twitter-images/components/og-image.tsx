@@ -1,4 +1,3 @@
-import { join } from "node:path";
 import { file } from "bun";
 import { Box, Brain, Globe, type LucideIcon, Zap } from "lucide-react";
 import { createElement } from "react";
@@ -15,19 +14,14 @@ export const persistentImages = [
   },
 ];
 
-const weights = ["500", "600", "700", "800"];
-
 export const name = "og-image";
 
 export const width = 1280;
 export const height = 640;
 
-export const fonts = weights.map((weight) =>
-  join(
-    "../../assets/fonts/plus-jakarta-sans-v11-latin",
-    `plus-jakarta-sans-v11-latin-${weight}.woff2`,
-  ),
-);
+export const fonts = [
+  "plus-jakarta-sans/PlusJakartaSans-VariableFont_wght.woff2",
+];
 
 export default function OgImage() {
   return (

@@ -27,7 +27,7 @@ pub enum GridTemplateComponentsValue {
 }
 
 impl TryFrom<GridTemplateComponentsValue> for GridTemplateComponents {
-  type Error = &'static str;
+  type Error = String;
 
   fn try_from(value: GridTemplateComponentsValue) -> Result<Self, Self::Error> {
     match value {

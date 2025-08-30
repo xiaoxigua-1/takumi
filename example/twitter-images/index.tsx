@@ -15,7 +15,9 @@ async function render(module: Component) {
   const renderer = new Renderer({
     persistentImages: module.persistentImages,
     fonts: await Promise.all(
-      module.fonts.map((font) => file(font).arrayBuffer()),
+      module.fonts.map((font) =>
+        file(join("../../assets/fonts", font)).arrayBuffer(),
+      ),
     ),
   });
 

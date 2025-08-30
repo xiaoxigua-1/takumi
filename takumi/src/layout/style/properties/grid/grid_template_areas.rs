@@ -28,7 +28,7 @@ pub enum GridTemplateAreasValue {
 }
 
 impl TryFrom<GridTemplateAreasValue> for GridTemplateAreas {
-  type Error = &'static str;
+  type Error = String;
 
   fn try_from(value: GridTemplateAreasValue) -> Result<Self, Self::Error> {
     match value {
@@ -36,15 +36,14 @@ impl TryFrom<GridTemplateAreasValue> for GridTemplateAreas {
         // Validate consistent row lengths
         let width = matrix.first().map_or(0, Vec::len);
         if width > 0 && matrix.iter().any(|r| r.len() != width) {
-          return Err("Inconsistent row lengths in grid-template-areas matrix");
+          return Err("Inconsistent row lengths in grid-template-areas matrix".to_string());
         }
         Ok(GridTemplateAreas(matrix))
       }
       GridTemplateAreasValue::Css(css) => {
         let mut input = ParserInput::new(&css);
         let mut parser = Parser::new(&mut input);
-        GridTemplateAreas::from_css(&mut parser)
-          .map_err(|_| "Failed to parse grid-template-areas CSS value")
+        GridTemplateAreas::from_css(&mut parser).map_err(|e| e.to_string())
       }
     }
   }

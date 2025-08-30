@@ -26,7 +26,7 @@ pub enum GridTrackSizesValue {
 }
 
 impl TryFrom<GridTrackSizesValue> for GridTrackSizes {
-  type Error = &'static str;
+  type Error = String;
 
   fn try_from(value: GridTrackSizesValue) -> Result<Self, Self::Error> {
     match value {

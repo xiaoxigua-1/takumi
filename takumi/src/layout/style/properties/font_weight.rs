@@ -27,7 +27,7 @@ enum FontWeightValue {
 }
 
 impl TryFrom<FontWeightValue> for FontWeight {
-  type Error = &'static str;
+  type Error = String;
 
   fn try_from(value: FontWeightValue) -> Result<Self, Self::Error> {
     match value {
@@ -36,8 +36,7 @@ impl TryFrom<FontWeightValue> for FontWeight {
         let mut input = ParserInput::new(&ident);
         let mut parser = Parser::new(&mut input);
 
-        FontWeight::from_css(&mut parser)
-          .map_err(|_| "Expected a valid font weight keyword or number")
+        FontWeight::from_css(&mut parser).map_err(|e| e.to_string())
       }
     }
   }
