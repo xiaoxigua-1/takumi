@@ -1,8 +1,7 @@
 import { describe, expect, test } from "bun:test";
-import { writeFile } from "node:fs/promises";
 import { container, image, percentage, rem, text } from "@takumi-rs/helpers";
 import { Glob } from "bun";
-import { OutputFormat, Renderer } from "../index";
+import { Renderer } from "../index";
 
 const renderer = new Renderer();
 
@@ -77,6 +76,10 @@ test("Renderer initialization with fonts and images", async () => {
   });
 });
 
+test("no crash without fonts and images", () => {
+  new Renderer();
+});
+
 describe("setup", () => {
   test("loadFontsAsync", async () => {
     const glob = new Glob("../assets/fonts/**/*.{woff2,ttf}");
@@ -111,7 +114,14 @@ describe("renderAsync", () => {
       format: "WebP",
     });
 
-    await writeFile("./test.webp", result);
+    expect(result).toBeInstanceOf(Buffer);
+  });
+
+  test("avif", async () => {
+    const result = await renderer.renderAsync(node, {
+      ...options,
+      format: "Avif",
+    });
 
     expect(result).toBeInstanceOf(Buffer);
   });
@@ -121,8 +131,6 @@ describe("renderAsync", () => {
       ...options,
       format: "Png",
     });
-
-    await writeFile("./test.png", result);
 
     expect(result).toBeInstanceOf(Buffer);
   });
@@ -134,8 +142,6 @@ describe("renderAsync", () => {
       quality: 75,
     });
 
-    await writeFile("./test-75.jpg", result);
-
     expect(result).toBeInstanceOf(Buffer);
   });
 
@@ -145,8 +151,6 @@ describe("renderAsync", () => {
       format: "Jpeg",
       quality: 100,
     });
-
-    await writeFile("./test-100.jpg", result);
 
     expect(result).toBeInstanceOf(Buffer);
   });

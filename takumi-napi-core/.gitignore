@@ -198,6 +198,3 @@ Cargo.lock
 *.wasm
 index.js
 index.d.ts
-*.webp
-*.png
-*.jpg
