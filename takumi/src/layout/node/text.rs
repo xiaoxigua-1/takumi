@@ -116,15 +116,24 @@ pub fn measure_text(
     Some((width_constraint, height_constraint_with_max_lines)),
   );
 
-  let (max_run_width, total_lines) = buffer.layout_runs().fold((0.0, 0usize), |(w, lines), run| {
-    (run.line_w.max(w), lines + 1)
-  });
+  let layout_runs = buffer.layout_runs();
+  let mut line_count = 0;
 
-  let measured_height = total_lines as f32 * buffer.metrics().line_height;
+  let (max_run_width, total_height) = layout_runs.fold((0.0, 0.0), |(w, line_height), run| {
+    line_count += 1;
+    if let Some(max_lines) = style.line_clamp {
+      // cosmic text might layout more lines than the max lines,
+      // so we need to manually check if we've exceeded the max lines
+      if line_count > max_lines as usize {
+        return (w, line_height);
+      }
+    }
+    (run.line_w.max(w), line_height + run.line_height)
+  });
 
   taffy::Size {
     // Ceiling to avoid sub-pixel getting cutoff
     width: max_run_width.ceil(),
-    height: measured_height.ceil(),
+    height: total_height.ceil(),
   }
 }

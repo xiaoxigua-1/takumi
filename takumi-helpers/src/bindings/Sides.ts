@@ -3,4 +3,4 @@
 /**
  * Represents the values for the four sides of a box (top, right, bottom, left).
  */
-export type Sides<T> = T | [T, T] | [T, T, T, T] | string;
+export type Sides<T> = string | [T, T, T, T] | [T, T] | T;
