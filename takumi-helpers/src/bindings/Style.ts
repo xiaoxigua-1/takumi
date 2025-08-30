@@ -177,6 +177,22 @@ transform?: Transforms,
  */
 transformOrigin?: BackgroundPosition, 
 /**
+ * Mask image for the element.
+ */
+maskImage?: BackgroundImages, 
+/**
+ * Mask size for the element.
+ */
+maskSize?: BackgroundSizes, 
+/**
+ * Mask position for the element.
+ */
+maskPosition?: BackgroundPositions, 
+/**
+ * Mask repeat for the element.
+ */
+maskRepeat?: BackgroundRepeats, 
+/**
  * Spacing between rows and columns in flex or grid layouts.
  */
 gap: Gap, 

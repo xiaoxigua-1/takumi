@@ -1,6 +1,7 @@
 use takumi::layout::{
   node::{ContainerNode, NodeKind, TextNode},
   style::{
+    BackgroundImagesValue, BackgroundPositionsValue, BackgroundRepeatsValue, BackgroundSizesValue,
     Color, FontWeight, InheritableStyle,
     LengthUnit::{Percentage, Px},
     LineHeight, Style, TextAlign, TextOverflow, TextTransform,
@@ -278,4 +279,45 @@ fn fixtures_text_transform_all() {
   };
 
   run_style_width_test(container.into(), "tests/fixtures/text_transform_all.png");
+}
+
+#[test]
+fn fixtures_text_mask_image_gradient_and_emoji() {
+  let gradient_images = BackgroundImagesValue::Css(
+    "linear-gradient(90deg, #ff3b30, #ffcc00, #34c759, #007aff, #5856d6)".to_string(),
+  );
+
+  let text = TextNode {
+    style: Style {
+      background_color: Some(Color([240, 240, 240, 255])),
+      width: Percentage(100.0),
+      inheritable_style: InheritableStyle {
+        font_size: Some(Px(72.0)),
+        ..Default::default()
+      },
+      mask_image: Some(gradient_images.try_into().unwrap()),
+      mask_size: Some(
+        BackgroundSizesValue::Css("100% 100%".to_string())
+          .try_into()
+          .unwrap(),
+      ),
+      mask_position: Some(
+        BackgroundPositionsValue::Css("0 0".to_string())
+          .try_into()
+          .unwrap(),
+      ),
+      mask_repeat: Some(
+        BackgroundRepeatsValue::Css("no-repeat".to_string())
+          .try_into()
+          .unwrap(),
+      ),
+      ..Default::default()
+    },
+    text: "Gradient Mask Emoji: 🪓 🦊 💩".to_string(),
+  };
+
+  run_style_width_test(
+    text.clone().into(),
+    "tests/fixtures/text_mask_image_gradient_emoji.png",
+  );
 }

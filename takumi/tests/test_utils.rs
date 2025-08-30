@@ -31,6 +31,11 @@ fn create_test_context() -> GlobalContext {
     .unwrap();
 
   context
+    .font_context
+    .load_and_store(include_bytes!("../../assets/fonts/noto-sans/NotoColorEmoji.ttf").to_vec())
+    .unwrap();
+
+  context
 }
 
 fn create_test_viewport() -> Viewport {

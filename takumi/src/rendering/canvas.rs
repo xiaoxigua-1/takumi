@@ -85,6 +85,24 @@ impl Canvas {
     });
   }
 
+  /// Draws a mask using an image as the source of colors.
+  pub fn draw_mask_with_image(
+    &self,
+    mask: Vec<u8>,
+    offset: Point<i32>,
+    size: Size<u32>,
+    image: Arc<RgbaImage>,
+    src_offset: Point<i32>,
+  ) {
+    let _ = self.0.send(DrawCommand::DrawMaskWithImage {
+      mask,
+      offset,
+      size,
+      image,
+      src_offset,
+    });
+  }
+
   /// Fills a rectangular area with the specified color and optional border radius.
   ///
   /// # Arguments
@@ -157,6 +175,19 @@ pub enum DrawCommand {
     /// Rotation in degrees to apply when drawing
     rotation: f32,
   },
+  /// Draw a mask using an image as the color source.
+  DrawMaskWithImage {
+    /// The mask data as a vector of alpha values (0-255)
+    mask: Vec<u8>,
+    /// The position offset where to place the mask
+    offset: Point<i32>,
+    /// The size of the mask area
+    size: Size<u32>,
+    /// The source image to sample colors from
+    image: Arc<RgbaImage>,
+    /// The source offset in `image` corresponding to `offset` on the canvas
+    src_offset: Point<i32>,
+  },
   /// Fill a rectangular area with the specified color and optional border radius.
   FillColor {
     /// The position offset where to start filling
@@ -209,6 +240,13 @@ impl DrawCommand {
         transform_origin,
         rotation,
       ),
+      DrawCommand::DrawMaskWithImage {
+        ref mask,
+        offset,
+        size,
+        ref image,
+        src_offset,
+      } => draw_mask_with_image(canvas, mask, offset, size, image, src_offset),
     }
   }
 }
@@ -285,7 +323,7 @@ fn draw_mask(
   }
 }
 
-fn overlay_image(
+pub(crate) fn overlay_image(
   canvas: &mut RgbaImage,
   image: &RgbaImage,
   offset: Point<i32>,
@@ -530,4 +568,48 @@ pub(crate) fn inverse_rotate(point: Point<i32>, origin: Point<i32>, rotation: f3
   let sy = origin.y as f32 + (vx as f32 * sin_t + vy as f32 * cos_t);
 
   (sx, sy)
+}
+
+fn draw_mask_with_image(
+  canvas: &mut RgbaImage,
+  mask: &[u8],
+  offset: Point<i32>,
+  size: Size<u32>,
+  image: &RgbaImage,
+  src_offset: Point<i32>,
+) {
+  let mut i = 0;
+
+  for y in 0..size.height {
+    for x in 0..size.width {
+      let alpha = mask[i];
+      i += 1;
+
+      if alpha == 0 {
+        continue;
+      }
+
+      let dst_x = x as i32 + offset.x;
+      let dst_y = y as i32 + offset.y;
+
+      if dst_x < 0 || dst_y < 0 || dst_x >= canvas.width() as i32 || dst_y >= canvas.height() as i32
+      {
+        continue;
+      }
+
+      let src_x = x as i32 + src_offset.x;
+      let src_y = y as i32 + src_offset.y;
+
+      if src_x < 0 || src_y < 0 || src_x >= image.width() as i32 || src_y >= image.height() as i32 {
+        continue;
+      }
+
+      let mut pixel = *image.get_pixel(src_x as u32, src_y as u32);
+      if alpha != u8::MAX {
+        pixel.0[3] = ((pixel.0[3] as f32) * (alpha as f32 / 255.0)) as u8;
+      }
+
+      draw_pixel(canvas, dst_x as u32, dst_y as u32, pixel);
+    }
+  }
 }

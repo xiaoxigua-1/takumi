@@ -38,13 +38,7 @@ impl<Nodes: Node<Nodes>> Node<Nodes> for TextNode {
   }
 
   fn draw_content(&self, context: &RenderContext, canvas: &Canvas, layout: Layout) {
-    draw_text(
-      &self.text,
-      &self.style.resolve_to_font_style(context),
-      context,
-      canvas,
-      layout,
-    );
+    draw_text(&self.text, &self.style, context, canvas, layout);
   }
 
   fn measure(
