@@ -33,7 +33,7 @@ pub fn draw_text(
 
   let render_text = apply_text_transform(text, font_style.text_transform);
 
-  let buffer = construct_text_buffer(
+  let mut buffer = construct_text_buffer(
     &render_text,
     &font_style,
     context.global,
@@ -56,37 +56,21 @@ pub fn draw_text(
   if should_append_ellipsis {
     let first_glyph = last_run.glyphs.first().unwrap();
 
-    let mut truncated_text = &render_text[first_glyph.start..last_glyph.end];
+    let text_with_ellipsis = make_ellipsis_text(
+      &render_text,
+      first_glyph.start,
+      last_glyph.end,
+      &font_style,
+      context.global,
+      content_box.width,
+    );
 
-    while !truncated_text.is_empty() {
-      let mut text_with_ellipsis =
-        String::with_capacity(truncated_text.len() + ELLIPSIS_CHAR.len());
-
-      text_with_ellipsis.push_str(truncated_text);
-      text_with_ellipsis.push_str(ELLIPSIS_CHAR);
-
-      let truncated_buffer =
-        construct_text_buffer(&text_with_ellipsis, &font_style, context.global, None);
-
-      let last_line = truncated_buffer.layout_runs().last().unwrap();
-
-      if last_line.line_w <= content_box.width {
-        break;
-      }
-
-      truncated_text = &truncated_text[..truncated_text.len() - ELLIPSIS_CHAR.len()];
-    }
-
-    let before_last_line = &render_text[..first_glyph.start];
-
-    let mut text_with_ellipsis =
-      String::with_capacity(before_last_line.len() + truncated_text.len() + ELLIPSIS_CHAR.len());
-
-    text_with_ellipsis.push_str(before_last_line);
-    text_with_ellipsis.push_str(truncated_text);
-    text_with_ellipsis.push_str(ELLIPSIS_CHAR);
-
-    return draw_text(&text_with_ellipsis, style, context, canvas, layout);
+    buffer = construct_text_buffer(
+      &text_with_ellipsis,
+      &font_style,
+      context.global,
+      Some((Some(content_box.width), Some(content_box.height))),
+    );
   }
 
   // If we have a mask image on the style, render it using the background tiling logic into a
@@ -322,4 +306,49 @@ pub fn apply_text_transform<'a>(input: &'a str, transform: TextTransform) -> Cow
       Cow::Owned(result)
     }
   }
+}
+
+/// Construct a new string with an ellipsis appended such that it fits within `max_width`.
+fn make_ellipsis_text(
+  render_text: &str,
+  start_index: usize,
+  end_index: usize,
+  font_style: &FontStyle,
+  global: &GlobalContext,
+  max_width: f32,
+) -> String {
+  let mut truncated_text = &render_text[start_index..end_index];
+
+  while !truncated_text.is_empty() {
+    let mut text_with_ellipsis = String::with_capacity(truncated_text.len() + ELLIPSIS_CHAR.len());
+
+    text_with_ellipsis.push_str(truncated_text);
+    text_with_ellipsis.push_str(ELLIPSIS_CHAR);
+
+    let truncated_buffer = construct_text_buffer(&text_with_ellipsis, font_style, global, None);
+
+    let last_line = truncated_buffer.layout_runs().last().unwrap();
+
+    if last_line.line_w <= max_width {
+      let before_last_line = &render_text[..start_index];
+
+      let mut text_with_ellipsis =
+        String::with_capacity(before_last_line.len() + truncated_text.len() + ELLIPSIS_CHAR.len());
+
+      text_with_ellipsis.push_str(before_last_line);
+      text_with_ellipsis.push_str(truncated_text);
+      text_with_ellipsis.push_str(ELLIPSIS_CHAR);
+
+      return text_with_ellipsis;
+    }
+
+    // shrink by one grapheme/char; using len()-ELLIPSIS_CHAR.len() mirrors previous logic
+    truncated_text = &truncated_text[..truncated_text.len() - ELLIPSIS_CHAR.len()];
+  }
+
+  // fallback: return the original segment with ellipsis if nothing else fits
+  let mut fallback = String::with_capacity(ELLIPSIS_CHAR.len());
+  fallback.push_str(&render_text[..start_index]);
+  fallback.push_str(ELLIPSIS_CHAR);
+  fallback
 }

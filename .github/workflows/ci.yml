@@ -62,6 +62,10 @@ jobs:
       - name: Run doc tests
         run: cargo test --doc --all-features --workspace
 
+      # make sure cargo test didn't change any files (like TypeScript bindings)
+      - name: Git diff is empty
+        run: git diff --exit-code
+
       - name: Test README.md is up to date
         working-directory: takumi
         run: cargo rdme --check
