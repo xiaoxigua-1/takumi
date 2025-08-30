@@ -6,7 +6,7 @@ use zeno::{Fill, Mask};
 
 use crate::{
   layout::style::{Color, Style},
-  rendering::{BorderRadius, Canvas, RenderContext},
+  rendering::{BorderRadius, Canvas, RenderContext, draw_filled_rect_color},
 };
 
 /// Represents the properties of a border.
@@ -22,6 +22,8 @@ pub struct BorderProperties {
   pub color: Color,
   /// The radius of the border.
   pub radius: BorderRadius,
+  /// The rotation of the border.
+  pub rotation: f32,
 }
 
 impl BorderProperties {
@@ -36,6 +38,7 @@ impl BorderProperties {
         .border_color
         .unwrap_or_else(Color::black),
       radius: style.create_border_radius(layout, context),
+      rotation: *context.rotation,
     }
   }
 }
@@ -62,69 +65,96 @@ pub fn draw_border(canvas: &Canvas, border: BorderProperties) {
 
 /// Draws a rectangular border without rounded corners.
 fn draw_rectangular_border(canvas: &Canvas, border: BorderProperties) {
-  // Top border
+  // Compose the four edges into a single offscreen image and rotate once around element center
+  let mut border_image = RgbaImage::from_pixel(
+    border.size.width as u32,
+    border.size.height as u32,
+    Rgba([0, 0, 0, 0]),
+  );
+
+  // Top edge
   if border.width.top > 0.0 {
-    canvas.fill_color(
-      Point {
-        x: border.offset.x as i32,
-        y: border.offset.y as i32,
-      },
+    draw_filled_rect_color(
+      &mut border_image,
       Size {
         width: border.size.width as u32,
         height: border.width.top as u32,
       },
+      Point { x: 0, y: 0 },
       border.color,
       BorderRadius::zero(),
+      0.0,
     );
   }
 
-  // Bottom border
+  // Bottom edge
   if border.width.bottom > 0.0 {
-    canvas.fill_color(
-      Point {
-        x: border.offset.x as i32,
-        y: (border.offset.y + border.size.height - border.width.bottom) as i32,
-      },
+    draw_filled_rect_color(
+      &mut border_image,
       Size {
         width: border.size.width as u32,
         height: border.width.bottom as u32,
       },
+      Point {
+        x: 0,
+        y: (border.size.height - border.width.bottom) as i32,
+      },
       border.color,
       BorderRadius::zero(),
+      0.0,
     );
   }
 
-  // Left border (excluding corners already drawn by top/bottom)
+  // Left edge (between top and bottom)
   if border.width.left > 0.0 {
-    canvas.fill_color(
-      Point {
-        x: border.offset.x as i32,
-        y: (border.offset.y + border.width.top) as i32,
-      },
+    draw_filled_rect_color(
+      &mut border_image,
       Size {
         width: border.width.left as u32,
         height: (border.size.height - border.width.top - border.width.bottom) as u32,
       },
+      Point {
+        x: 0,
+        y: border.width.top as i32,
+      },
       border.color,
       BorderRadius::zero(),
+      0.0,
     );
   }
 
-  // Right border (excluding corners already drawn by top/bottom)
+  // Right edge (between top and bottom)
   if border.width.right > 0.0 {
-    canvas.fill_color(
-      Point {
-        x: (border.offset.x + border.size.width - border.width.right) as i32,
-        y: (border.offset.y + border.width.top) as i32,
-      },
+    draw_filled_rect_color(
+      &mut border_image,
       Size {
         width: border.width.right as u32,
         height: (border.size.height - border.width.top - border.width.bottom) as u32,
       },
+      Point {
+        x: (border.size.width - border.width.right) as i32,
+        y: border.width.top as i32,
+      },
       border.color,
       BorderRadius::zero(),
+      0.0,
     );
   }
+
+  // Overlay once using the element center as the transform origin
+  canvas.overlay_image(
+    Arc::new(border_image),
+    Point {
+      x: border.offset.x as i32,
+      y: border.offset.y as i32,
+    },
+    BorderRadius::zero(),
+    Point {
+      x: (border.offset.x + border.size.width / 2.0) as i32,
+      y: (border.offset.y + border.size.height / 2.0) as i32,
+    },
+    border.rotation,
+  );
 }
 
 /// Draws a rounded border with border radius.
@@ -197,5 +227,10 @@ fn draw_rounded_border(canvas: &Canvas, border: BorderProperties) {
       y: border.offset.y as i32,
     },
     BorderRadius::zero(),
+    Point {
+      x: (border.offset.x + border.size.width / 2.0) as i32,
+      y: (border.offset.y + border.size.height / 2.0) as i32,
+    },
+    border.rotation,
   );
 }

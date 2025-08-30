@@ -21,7 +21,10 @@ pub use render::*;
 use taffy::Size;
 pub use text_drawing::*;
 
-use crate::{GlobalContext, layout::Viewport};
+use crate::{
+  GlobalContext,
+  layout::{Viewport, style::Angle},
+};
 
 const DEFAULT_SCALE_FACTOR: f32 = 1.0;
 
@@ -42,4 +45,6 @@ pub struct RenderContext<'g> {
   pub parent_font_size: f32,
   /// The scale factor for the image renderer.
   pub scale: Size<f32>,
+  /// Rotation in degrees.
+  pub rotation: Angle,
 }

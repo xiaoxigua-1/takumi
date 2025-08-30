@@ -42,11 +42,20 @@ impl Canvas {
   /// * `image` - The image to overlay on the canvas
   /// * `offset` - The position offset where to place the image
   /// * `radius` - Border radius to apply to the image corners
-  pub fn overlay_image(&self, image: Arc<RgbaImage>, offset: Point<i32>, radius: BorderRadius) {
+  pub fn overlay_image(
+    &self,
+    image: Arc<RgbaImage>,
+    offset: Point<i32>,
+    radius: BorderRadius,
+    transform_origin: Point<i32>,
+    rotation: f32,
+  ) {
     let _ = self.0.send(DrawCommand::OverlayImage {
       image,
       offset,
       radius,
+      transform_origin,
+      rotation,
     });
   }
 
@@ -57,12 +66,22 @@ impl Canvas {
   /// * `offset` - The position offset where to place the mask
   /// * `size` - The size of the mask area
   /// * `color` - The color to apply to the mask
-  pub fn draw_mask(&self, mask: Vec<u8>, offset: Point<i32>, size: Size<u32>, color: Color) {
+  pub fn draw_mask(
+    &self,
+    mask: Vec<u8>,
+    offset: Point<i32>,
+    size: Size<u32>,
+    color: Color,
+    transform_origin: Point<i32>,
+    rotation: f32,
+  ) {
     let _ = self.0.send(DrawCommand::DrawMask {
       mask,
       offset,
       size,
       color,
+      transform_origin,
+      rotation,
     });
   }
 
@@ -79,12 +98,14 @@ impl Canvas {
     size: Size<u32>,
     color: Color,
     radius: BorderRadius,
+    rotation: f32,
   ) {
     let _ = self.0.send(DrawCommand::FillColor {
       offset,
       size,
       color,
       radius,
+      rotation,
     });
   }
 }
@@ -116,6 +137,10 @@ pub enum DrawCommand {
     offset: Point<i32>,
     /// Border radius to apply to the image corners
     radius: BorderRadius,
+    /// Rotation origin in canvas coordinates
+    transform_origin: Point<i32>,
+    /// Rotation in degrees to apply when drawing
+    rotation: f32,
   },
   /// Draw a mask with the specified color onto the canvas.
   DrawMask {
@@ -127,6 +152,10 @@ pub enum DrawCommand {
     size: Size<u32>,
     /// The color to apply to the mask
     color: Color,
+    /// Rotation origin in canvas coordinates
+    transform_origin: Point<i32>,
+    /// Rotation in degrees to apply when drawing
+    rotation: f32,
   },
   /// Fill a rectangular area with the specified color and optional border radius.
   FillColor {
@@ -138,6 +167,8 @@ pub enum DrawCommand {
     color: Color,
     /// Border radius to apply to the filled area
     radius: BorderRadius,
+    /// Rotation in degrees to apply when drawing
+    rotation: f32,
   },
 }
 
@@ -152,19 +183,32 @@ impl DrawCommand {
         ref image,
         offset,
         radius,
-      } => overlay_image(canvas, image, offset, radius),
+        transform_origin,
+        rotation,
+      } => overlay_image(canvas, image, offset, radius, transform_origin, rotation),
       DrawCommand::FillColor {
         offset,
         size,
         color,
         radius,
-      } => draw_filled_rect_color(canvas, size, offset, color, radius),
+        rotation,
+      } => draw_filled_rect_color(canvas, size, offset, color, radius, rotation),
       DrawCommand::DrawMask {
         ref mask,
         offset,
         size,
         color,
-      } => draw_mask(canvas, mask, offset, size, color),
+        transform_origin,
+        rotation,
+      } => draw_mask(
+        canvas,
+        mask,
+        offset,
+        size,
+        color,
+        transform_origin,
+        rotation,
+      ),
     }
   }
 }
@@ -196,6 +240,8 @@ fn draw_mask(
   offset: Point<i32>,
   size: Size<u32>,
   color: Color,
+  transform_origin: Point<i32>,
+  rotation: f32,
 ) {
   let mut i = 0;
 
@@ -217,7 +263,24 @@ fn draw_mask(
       }
 
       let pixel = Rgba([color.0[0], color.0[1], color.0[2], alpha]);
-      draw_pixel(canvas, x as u32, y as u32, pixel);
+
+      let dest = if rotation == 0.0 {
+        Point { x, y }
+      } else {
+        rotate_position(
+          Point { x, y },
+          transform_origin,
+          Size {
+            width: canvas.width(),
+            height: canvas.height(),
+          },
+          rotation,
+        )
+      };
+
+      if dest.x >= 0 && dest.y >= 0 {
+        draw_pixel(canvas, dest.x as u32, dest.y as u32, pixel);
+      }
     }
   }
 }
@@ -227,6 +290,8 @@ fn overlay_image(
   image: &RgbaImage,
   offset: Point<i32>,
   radius: BorderRadius,
+  transform_origin: Point<i32>,
+  rotation: f32,
 ) {
   let drawable_width = if offset.x < 0 {
     image
@@ -270,7 +335,25 @@ fn overlay_image(
     for y in 0..drawable_height {
       for x in 0..drawable_width {
         let pixel = *image.get_pixel(x + overlay_x, y + overlay_y);
-        draw_pixel(canvas, x + draw_x, y + draw_y, pixel);
+        if rotation == 0.0 {
+          draw_pixel(canvas, x + draw_x, y + draw_y, pixel);
+        } else {
+          let dest = rotate_position(
+            Point {
+              x: (x + draw_x) as i32,
+              y: (y + draw_y) as i32,
+            },
+            transform_origin,
+            Size {
+              width: canvas.width(),
+              height: canvas.height(),
+            },
+            rotation,
+          );
+          if dest.x >= 0 && dest.y >= 0 {
+            draw_pixel(canvas, dest.x as u32, dest.y as u32, pixel);
+          }
+        }
       }
     }
 
@@ -317,7 +400,134 @@ fn overlay_image(
         ])
       };
 
-      draw_pixel(canvas, x as u32 + draw_x, y as u32 + draw_y, pixel);
+      if rotation == 0.0 {
+        draw_pixel(canvas, x as u32 + draw_x, y as u32 + draw_y, pixel);
+      } else {
+        let dest = rotate_position(
+          Point {
+            x: x + draw_x as i32,
+            y: y + draw_y as i32,
+          },
+          transform_origin,
+          Size {
+            width: canvas.width(),
+            height: canvas.height(),
+          },
+          rotation,
+        );
+        if dest.x >= 0 && dest.y >= 0 {
+          draw_pixel(canvas, dest.x as u32, dest.y as u32, pixel);
+        }
+      }
     }
   }
+}
+
+pub(crate) fn rotate_position(
+  point: Point<i32>,
+  origin: Point<i32>,
+  size: Size<u32>,
+  rotation: f32,
+) -> Point<i32> {
+  if rotation == 0.0 {
+    return point;
+  }
+
+  let theta = rotation.to_radians();
+  let cos_t = theta.cos();
+  let sin_t = theta.sin();
+
+  let dx = point.x - origin.x;
+  let dy = point.y - origin.y;
+
+  let rx = origin.x as f32 + (dx as f32 * cos_t - dy as f32 * sin_t);
+  let ry = origin.y as f32 + (dx as f32 * sin_t + dy as f32 * cos_t);
+
+  // Clamp to canvas bounds to avoid overflow
+  let rx_i = rx.round() as i32;
+  let ry_i = ry.round() as i32;
+
+  let max_x = size.width as i32 - 1;
+  let max_y = size.height as i32 - 1;
+
+  Point {
+    x: rx_i.clamp(0, max_x),
+    y: ry_i.clamp(0, max_y),
+  }
+}
+
+/// Computes the axis-aligned bounding box of a rectangle after rotation, clamped to canvas bounds.
+/// Returns (min_x, min_y, max_x, max_y) in integer canvas coordinates.
+pub(crate) fn rotated_bounding_box(
+  offset: Point<i32>,
+  size: Size<u32>,
+  origin: Point<i32>,
+  canvas_size: Size<u32>,
+  rotation: f32,
+) -> (i32, i32, i32, i32) {
+  if rotation == 0.0 {
+    let min_x = offset.x.max(0);
+    let min_y = offset.y.max(0);
+    let max_x = (offset.x + size.width as i32 - 1).min(canvas_size.width as i32 - 1);
+    let max_y = (offset.y + size.height as i32 - 1).min(canvas_size.height as i32 - 1);
+    return (min_x, min_y, max_x, max_y);
+  }
+
+  let corners = [
+    Point {
+      x: offset.x,
+      y: offset.y,
+    },
+    Point {
+      x: offset.x + size.width as i32,
+      y: offset.y,
+    },
+    Point {
+      x: offset.x,
+      y: offset.y + size.height as i32,
+    },
+    Point {
+      x: offset.x + size.width as i32,
+      y: offset.y + size.height as i32,
+    },
+  ];
+
+  let mut min_x = i32::MAX;
+  let mut min_y = i32::MAX;
+  let mut max_x = i32::MIN;
+  let mut max_y = i32::MIN;
+
+  for &c in &corners {
+    let rc = rotate_position(c, origin, canvas_size, rotation);
+    min_x = min_x.min(rc.x);
+    min_y = min_y.min(rc.y);
+    max_x = max_x.max(rc.x);
+    max_y = max_y.max(rc.y);
+  }
+
+  min_x = min_x.max(0);
+  min_y = min_y.max(0);
+  max_x = max_x.min(canvas_size.width as i32 - 1);
+  max_y = max_y.min(canvas_size.height as i32 - 1);
+
+  (min_x, min_y, max_x, max_y)
+}
+
+/// Applies the inverse rotation to a destination point, returning the corresponding source float coordinates.
+pub(crate) fn inverse_rotate(point: Point<i32>, origin: Point<i32>, rotation: f32) -> (f32, f32) {
+  if rotation == 0.0 {
+    return (point.x as f32, point.y as f32);
+  }
+
+  let theta = (-rotation).to_radians();
+  let cos_t = theta.cos();
+  let sin_t = theta.sin();
+
+  let vx = point.x - origin.x;
+  let vy = point.y - origin.y;
+
+  let sx = origin.x as f32 + (vx as f32 * cos_t - vy as f32 * sin_t);
+  let sy = origin.y as f32 + (vx as f32 * sin_t + vy as f32 * cos_t);
+
+  (sx, sy)
 }

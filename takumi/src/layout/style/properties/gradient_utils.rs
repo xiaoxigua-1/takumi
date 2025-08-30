@@ -177,7 +177,10 @@ pub(crate) fn resolve_stops_along_axis(
 mod tests {
   use crate::{
     GlobalContext,
-    layout::{DEFAULT_FONT_SIZE, Viewport, style::StopPosition},
+    layout::{
+      DEFAULT_FONT_SIZE, Viewport,
+      style::{Angle, StopPosition},
+    },
     rendering::DEFAULT_SCALE,
   };
 
@@ -205,6 +208,7 @@ mod tests {
       viewport: Viewport::new(40, 40),
       parent_font_size: DEFAULT_FONT_SIZE,
       scale: DEFAULT_SCALE,
+      rotation: Angle::new(0.0),
     };
 
     let resolved = resolve_stops_along_axis(&stops, ctx.viewport.width as f32, &ctx);
@@ -256,6 +260,7 @@ mod tests {
       viewport: Viewport::new(40, 40),
       parent_font_size: DEFAULT_FONT_SIZE,
       scale: DEFAULT_SCALE,
+      rotation: Angle::new(0.0),
     };
 
     let resolved = resolve_stops_along_axis(&stops, ctx.viewport.width as f32, &ctx);
@@ -304,6 +309,7 @@ mod tests {
       viewport: Viewport::new(100, 40),
       parent_font_size: DEFAULT_FONT_SIZE,
       scale: DEFAULT_SCALE,
+      rotation: Angle::new(0.0),
     };
 
     let resolved = resolve_stops_along_axis(&stops, ctx.viewport.width as f32, &ctx);

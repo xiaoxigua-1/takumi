@@ -109,6 +109,8 @@ pub struct Style {
   pub position: Position,
   /// Transform for the element.
   pub transform: Option<Transforms>,
+  /// Transform origin for the element.
+  pub transform_origin: Option<BackgroundPosition>,
   /// Spacing between rows and columns in flex or grid layouts.
   pub gap: Gap,
   /// How much the flex item should grow relative to other flex items when positive free space is distributed.
@@ -222,6 +224,7 @@ impl Default for Style {
       object_fit: Default::default(),
       box_shadow: Default::default(),
       transform: None,
+      transform_origin: None,
       background_color: None,
       background_image: None,
       background_position: None,

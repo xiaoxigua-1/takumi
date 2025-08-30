@@ -92,6 +92,11 @@ pub fn draw_box_shadow(
             y: (layout.location.y + draw.offset.y) as i32,
           },
           draw.border_radius,
+          Point {
+            x: (layout.location.x + layout.size.width / 2.0) as i32,
+            y: (layout.location.y + layout.size.height / 2.0) as i32,
+          },
+          *context.rotation,
         );
       }
     }
@@ -139,6 +144,11 @@ pub fn draw_box_shadow(
             y: (layout.location.y + draw.offset.y) as i32,
           },
           draw.border_radius,
+          Point {
+            x: (layout.location.x + layout.size.width / 2.0) as i32,
+            y: (layout.location.y + layout.size.height / 2.0) as i32,
+          },
+          *context.rotation,
         );
       }
     }
@@ -268,6 +278,7 @@ fn draw_outset_shadow(
     },
     shadow.color,
     border_radius.grow(shadow.spread_radius),
+    0.0,
   );
 
   if shadow.blur_radius <= 0.0 {

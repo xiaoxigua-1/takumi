@@ -52,6 +52,7 @@ fn bench_takumi(c: &mut Criterion) {
               viewport,
               parent_font_size: viewport.font_size,
               scale: DEFAULT_SCALE,
+              rotation: Angle::new(0.0),
             };
             (sample_gradient(), w, h, context)
           },

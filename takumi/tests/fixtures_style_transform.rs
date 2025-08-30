@@ -1,7 +1,7 @@
 use takumi::layout::{
   node::{ContainerNode, TextNode},
   style::{
-    Color, Display, InheritableStyle,
+    Angle, Color, Display, InheritableStyle,
     LengthUnit::{Percentage, Px},
     Sides, Style, Transform, Transforms,
   },
@@ -86,7 +86,34 @@ fn test_style_transform_translate_and_scale() {
     ]),
   };
 
-  container.children = Some(vec![position.into(), translated.into(), scaled.into()]);
+  let rotated = ContainerNode {
+    style: Style {
+      transform: Some(Transforms(vec![Transform::Rotate(Angle::new(45.0))])),
+      background_color: Some(Color([0, 0, 255, 255])),
+      width: Px(200.0),
+      height: Px(200.0),
+      border_width: Sides([Px(1.0); 4]),
+      inheritable_style: InheritableStyle {
+        color: Some(Color::white()),
+        ..Default::default()
+      },
+      ..Default::default()
+    },
+    children: Some(vec![
+      TextNode {
+        text: "200px x 200px, rotate(45deg)".to_string(),
+        style: Style::default(),
+      }
+      .into(),
+    ]),
+  };
+
+  container.children = Some(vec![
+    position.into(),
+    translated.into(),
+    scaled.into(),
+    rotated.into(),
+  ]);
 
   run_style_width_test(
     container.into(),

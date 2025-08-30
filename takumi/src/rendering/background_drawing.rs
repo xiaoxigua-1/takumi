@@ -12,7 +12,11 @@ use crate::{
     BackgroundImage, BackgroundPosition, BackgroundRepeat, BackgroundRepeatStyle, BackgroundSize,
     Gradient, LengthUnit, PositionComponent, PositionKeywordX, PositionKeywordY, Style,
   },
-  rendering::{BorderRadius, Canvas, RenderContext, draw_pixel},
+  rendering::{
+    BorderRadius, Canvas, RenderContext,
+    canvas::{inverse_rotate, rotated_bounding_box},
+    draw_pixel,
+  },
 };
 
 /// Draws a filled rectangle with a solid color.
@@ -22,12 +26,14 @@ pub fn draw_filled_rect_color<C: Into<Rgba<u8>>>(
   offset: Point<i32>,
   color: C,
   radius: BorderRadius,
+  rotation: f32,
 ) {
   let color: Rgba<u8> = color.into();
 
   if radius.is_zero() {
     // Fast path: if drawing on the entire canvas, we can just replace the entire canvas with the color
-    if color.0[3] == 255
+    if rotation == 0.0
+      && color.0[3] == 255
       && offset.x == 0
       && offset.y == 0
       && size.width == image.width()
@@ -43,16 +49,52 @@ pub fn draw_filled_rect_color<C: Into<Rgba<u8>>>(
       return;
     }
 
-    for y in 0..size.height as i32 {
-      for x in 0..size.width as i32 {
-        let x = x + offset.x;
-        let y = y + offset.y;
+    let transform_origin = Point {
+      x: offset.x + (size.width as i32 / 2),
+      y: offset.y + (size.height as i32 / 2),
+    };
 
-        if x < 0 || y < 0 {
-          continue;
+    if rotation == 0.0 {
+      for y in 0..size.height as i32 {
+        for x in 0..size.width as i32 {
+          let sx = x + offset.x;
+          let sy = y + offset.y;
+
+          if sx < 0 || sy < 0 {
+            continue;
+          }
+
+          draw_pixel(image, sx as u32, sy as u32, color);
         }
+      }
+    } else {
+      // Inverse mapping to avoid gaps: iterate destination bounding box and sample from source
+      let (min_x, min_y, max_x, max_y) = rotated_bounding_box(
+        offset,
+        size,
+        transform_origin,
+        Size {
+          width: image.width(),
+          height: image.height(),
+        },
+        rotation,
+      );
 
-        draw_pixel(image, x as u32, y as u32, color);
+      for dy in min_y..=max_y {
+        for dx in min_x..=max_x {
+          let (sx, sy) = inverse_rotate(Point { x: dx, y: dy }, transform_origin, rotation);
+
+          let sx_i = sx.floor() as i32;
+          let sy_i = sy.floor() as i32;
+
+          if sx_i >= offset.x
+            && sy_i >= offset.y
+            && sx_i < offset.x + size.width as i32
+            && sy_i < offset.y + size.height as i32
+          {
+            draw_pixel(image, dx as u32, dy as u32, color);
+          }
+        }
       }
     }
 
@@ -67,35 +109,88 @@ pub fn draw_filled_rect_color<C: Into<Rgba<u8>>>(
 
   let mut i = 0;
 
-  for y in 0..placement.height {
-    for x in 0..placement.width {
-      let alpha = mask[i];
+  let transform_origin = Point {
+    x: offset.x + (size.width as i32 / 2),
+    y: offset.y + (size.height as i32 / 2),
+  };
 
-      i += 1;
+  if rotation == 0.0 {
+    for y in 0..placement.height {
+      for x in 0..placement.width {
+        let alpha = mask[i];
 
-      if alpha == 0 {
-        continue;
+        i += 1;
+
+        if alpha == 0 {
+          continue;
+        }
+
+        let x = x as i32 + placement.left;
+        let y = y as i32 + placement.top;
+
+        if x < 0 || y < 0 {
+          continue;
+        }
+
+        let color = if alpha == u8::MAX {
+          color
+        } else {
+          Rgba([
+            color.0[0],
+            color.0[1],
+            color.0[2],
+            (color.0[3] as f32 * (alpha as f32 / 255.0)) as u8,
+          ])
+        };
+
+        draw_pixel(image, x as u32, y as u32, color);
       }
+    }
+  } else {
+    // Inverse mapping using mask sampling to avoid gaps on rounded rectangles
+    let (min_x, min_y, max_x, max_y) = rotated_bounding_box(
+      offset,
+      size,
+      transform_origin,
+      Size {
+        width: image.width(),
+        height: image.height(),
+      },
+      rotation,
+    );
 
-      let x = x as i32 + placement.left;
-      let y = y as i32 + placement.top;
+    for dy in min_y..=max_y {
+      for dx in min_x..=max_x {
+        let (sx, sy) = inverse_rotate(Point { x: dx, y: dy }, transform_origin, rotation);
 
-      if x < 0 || y < 0 {
-        continue;
+        let sx_i = sx.round() as i32;
+        let sy_i = sy.round() as i32;
+
+        // Convert source coordinate into mask space
+        let mx = sx_i - placement.left;
+        let my = sy_i - placement.top;
+
+        if mx >= 0 && my >= 0 && (mx as u32) < placement.width && (my as u32) < placement.height {
+          let idx = my as usize * placement.width as usize + mx as usize;
+          let alpha = mask[idx];
+          if alpha == 0 {
+            continue;
+          }
+
+          let color = if alpha == u8::MAX {
+            color
+          } else {
+            Rgba([
+              color.0[0],
+              color.0[1],
+              color.0[2],
+              (color.0[3] as f32 * (alpha as f32 / 255.0)) as u8,
+            ])
+          };
+
+          draw_pixel(image, dx as u32, dy as u32, color);
+        }
       }
-
-      let color = if alpha == u8::MAX {
-        color
-      } else {
-        Rgba([
-          color.0[0],
-          color.0[1],
-          color.0[2],
-          (color.0[3] as f32 * (alpha as f32 / 255.0)) as u8,
-        ])
-      };
-
-      draw_pixel(image, x as u32, y as u32, color);
     }
   }
 }
@@ -366,6 +461,11 @@ pub fn draw_background_layers(
             y: *y + layout.location.y as i32,
           },
           radius,
+          Point {
+            x: (layout.location.x + layout.size.width / 2.0) as i32,
+            y: (layout.location.y + layout.size.height / 2.0) as i32,
+          },
+          *context.rotation,
         );
       }
     }

@@ -4,7 +4,10 @@ use taffy::{Layout, Rect};
 use ts_rs::TS;
 
 use crate::{
-  layout::style::{FromCss, LengthUnit, ParseResult, parse_length_percentage},
+  layout::style::{
+    Angle, BackgroundPosition, FromCss, LengthUnit, ParseResult, PositionComponent,
+    PositionKeywordX, PositionKeywordY, parse_length_percentage,
+  },
   rendering::{DEFAULT_SCALE, RenderContext},
 };
 
@@ -16,6 +19,8 @@ pub enum Transform {
   Translate(LengthUnit, LengthUnit),
   /// Scales an element by the specified factors
   Scale(f32, f32),
+  /// Rotates an element (2D rotation) by angle in degrees
+  Rotate(Angle),
 }
 
 fn scale_rect(rect: &mut Rect<f32>, x_scale: f32, y_scale: f32) {
@@ -23,6 +28,22 @@ fn scale_rect(rect: &mut Rect<f32>, x_scale: f32, y_scale: f32) {
   rect.right *= x_scale;
   rect.top *= y_scale;
   rect.bottom *= y_scale;
+}
+
+fn to_length_unit(component: PositionComponent) -> LengthUnit {
+  match component {
+    PositionComponent::KeywordX(keyword) => match keyword {
+      PositionKeywordX::Center => LengthUnit::Percentage(0.5),
+      PositionKeywordX::Left => LengthUnit::Percentage(0.0),
+      PositionKeywordX::Right => LengthUnit::Percentage(1.0),
+    },
+    PositionComponent::KeywordY(keyword) => match keyword {
+      PositionKeywordY::Center => LengthUnit::Percentage(0.5),
+      PositionKeywordY::Top => LengthUnit::Percentage(0.0),
+      PositionKeywordY::Bottom => LengthUnit::Percentage(1.0),
+    },
+    PositionComponent::Length(length) => length,
+  }
 }
 
 /// A collection of transform operations that can be applied together
@@ -37,9 +58,26 @@ impl Transforms {
     self.0.extend_from_slice(&other.0);
   }
 
+  /// Adds a transform origin to the transforms
+  pub fn with_transform_origin(&self, transform_origin: &BackgroundPosition) -> Transforms {
+    let mut transforms = Vec::with_capacity(self.0.len() + 2);
+
+    transforms.push(Transform::Translate(
+      to_length_unit(transform_origin.x),
+      to_length_unit(transform_origin.y),
+    ));
+    transforms.extend_from_slice(&self.0);
+    transforms.push(Transform::Translate(
+      to_length_unit(transform_origin.x),
+      to_length_unit(transform_origin.y),
+    ));
+
+    Transforms(transforms)
+  }
+
   /// Applies the transforms to the layout
   pub fn apply(&self, context: &mut RenderContext, layout: &mut Layout) {
-    for transform in &self.0 {
+    for transform in self.0.iter().rev() {
       match *transform {
         Transform::Translate(x_length, y_length) => {
           layout.location.x += x_length.resolve_to_px(context, layout.size.width);
@@ -62,6 +100,9 @@ impl Transforms {
           // update the scale of the render context
           context.scale.width *= x_scale;
           context.scale.height *= y_scale;
+        }
+        Transform::Rotate(angle) => {
+          context.rotation = Angle::new(*context.rotation + *angle);
         }
       }
     }
@@ -138,6 +179,9 @@ impl<'i> FromCss<'i> for Transform {
       "scaley" => Ok(Transform::Scale(
         DEFAULT_SCALE.width,
         parser.parse_nested_block(parse_length_percentage)?,
+      )),
+      "rotate" => Ok(Transform::Rotate(
+        parser.parse_nested_block(Angle::from_css)?,
       )),
       _ => Err(location.new_basic_unexpected_token_error(token.clone()).into()),
     }

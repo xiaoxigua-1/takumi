@@ -164,5 +164,10 @@ pub fn draw_image(
       y: offset_y as i32 + y as i32,
     },
     style.create_border_radius(&layout, context),
+    Point {
+      x: (layout.location.x + layout.size.width / 2.0) as i32,
+      y: (layout.location.y + layout.size.height / 2.0) as i32,
+    },
+    *context.rotation,
   );
 }

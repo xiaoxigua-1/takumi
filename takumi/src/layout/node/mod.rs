@@ -13,7 +13,8 @@ use crate::{
   impl_node_enum,
   layout::style::Style,
   rendering::{
-    BoxShadowRenderPhase, Canvas, RenderContext, draw_background_layers, draw_box_shadow,
+    BorderProperties, BoxShadowRenderPhase, Canvas, RenderContext, draw_background_layers,
+    draw_border, draw_box_shadow,
   },
 };
 
@@ -130,6 +131,7 @@ pub trait Node<N: Node<N>>: Send + Sync + Clone {
         },
         *background_color,
         radius,
+        *context.rotation,
       );
     }
   }
@@ -151,8 +153,6 @@ pub trait Node<N: Node<N>>: Send + Sync + Clone {
 
   /// Draws the border of the node.
   fn draw_border(&self, context: &RenderContext, canvas: &Canvas, layout: Layout) {
-    use crate::rendering::{BorderProperties, draw_border};
-
     let border = BorderProperties::from_layout(context, &layout, self.get_style());
     draw_border(canvas, border);
   }

@@ -6,7 +6,7 @@ use takumi::{
   GlobalContext,
   layout::{
     DEFAULT_FONT_SIZE, DEFAULT_LINE_HEIGHT_SCALER, Viewport,
-    style::{Color, FontFamily, FontStyle, TextOverflow, TextStyle, TextTransform},
+    style::{Angle, Color, FontFamily, FontStyle, TextOverflow, TextStyle, TextTransform},
   },
   rendering::{DEFAULT_SCALE, RenderContext},
 };
@@ -44,6 +44,7 @@ fn create_test_context() -> RenderContext<'static> {
       font_size: DEFAULT_FONT_SIZE,
     },
     scale: DEFAULT_SCALE,
+    rotation: Angle::new(0.0),
   }
 }
 

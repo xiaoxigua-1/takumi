@@ -151,6 +151,25 @@ impl LengthUnit {
   pub const fn zero() -> Self {
     Self::Px(0.0)
   }
+
+  /// Returns a negative length unit.
+  pub fn negative(self) -> Self {
+    match self {
+      LengthUnit::Auto => LengthUnit::Auto,
+      LengthUnit::Percentage(v) => LengthUnit::Percentage(-v),
+      LengthUnit::Rem(v) => LengthUnit::Rem(-v),
+      LengthUnit::Em(v) => LengthUnit::Em(-v),
+      LengthUnit::Vh(v) => LengthUnit::Vh(-v),
+      LengthUnit::Vw(v) => LengthUnit::Vw(-v),
+      LengthUnit::Cm(v) => LengthUnit::Cm(-v),
+      LengthUnit::Mm(v) => LengthUnit::Mm(-v),
+      LengthUnit::In(v) => LengthUnit::In(-v),
+      LengthUnit::Q(v) => LengthUnit::Q(-v),
+      LengthUnit::Pt(v) => LengthUnit::Pt(-v),
+      LengthUnit::Pc(v) => LengthUnit::Pc(-v),
+      LengthUnit::Px(v) => LengthUnit::Px(-v),
+    }
+  }
 }
 
 impl From<f32> for LengthUnit {

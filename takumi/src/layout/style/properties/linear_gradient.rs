@@ -854,6 +854,7 @@ mod tests {
       viewport: Viewport::new(100, 100),
       parent_font_size: DEFAULT_FONT_SIZE,
       scale: DEFAULT_SCALE,
+      rotation: Angle::new(0.0),
     };
     let ctx = gradient.to_draw_context(100.0, 100.0, &dummy_context);
     let color_top = gradient.at(50, 0, &ctx);
@@ -895,6 +896,7 @@ mod tests {
       viewport: Viewport::new(100, 100),
       parent_font_size: DEFAULT_FONT_SIZE,
       scale: DEFAULT_SCALE,
+      rotation: Angle::new(0.0),
     };
     let ctx = gradient.to_draw_context(100.0, 100.0, &dummy_context);
     let color_left = gradient.at(0, 50, &ctx);
@@ -921,6 +923,7 @@ mod tests {
       viewport: Viewport::new(100, 100),
       parent_font_size: DEFAULT_FONT_SIZE,
       scale: DEFAULT_SCALE,
+      rotation: Angle::new(0.0),
     };
     let ctx = gradient.to_draw_context(100.0, 100.0, &dummy_context);
     let color = gradient.at(50, 50, &ctx);
@@ -940,6 +943,7 @@ mod tests {
       viewport: Viewport::new(100, 100),
       parent_font_size: DEFAULT_FONT_SIZE,
       scale: DEFAULT_SCALE,
+      rotation: Angle::new(0.0),
     };
     let ctx = gradient.to_draw_context(100.0, 100.0, &dummy_context);
     let color = gradient.at(50, 50, &ctx);
@@ -957,6 +961,7 @@ mod tests {
       viewport: Viewport::new(40, 40),
       parent_font_size: DEFAULT_FONT_SIZE,
       scale: DEFAULT_SCALE,
+      rotation: Angle::new(0.0),
     };
     let ctx = gradient.to_draw_context(40.0, 40.0, &dummy_context);
 
@@ -984,6 +989,7 @@ mod tests {
       viewport: Viewport::new(40, 40),
       parent_font_size: DEFAULT_FONT_SIZE,
       scale: DEFAULT_SCALE,
+      rotation: Angle::new(0.0),
     };
     let ctx = gradient.to_draw_context(40.0, 40.0, &dummy_context);
 
@@ -1051,6 +1057,7 @@ mod tests {
       viewport: Viewport::new(200, 100),
       parent_font_size: DEFAULT_FONT_SIZE,
       scale: DEFAULT_SCALE,
+      rotation: Angle::new(0.0),
     };
 
     let resolved = gradient.resolve_stops_for_axis_size(ctx.viewport.width as f32, &ctx);
@@ -1081,6 +1088,7 @@ mod tests {
       viewport: Viewport::new(200, 100),
       parent_font_size: DEFAULT_FONT_SIZE,
       scale: DEFAULT_SCALE,
+      rotation: Angle::new(0.0),
     };
 
     let resolved = gradient.resolve_stops_for_axis_size(ctx.viewport.width as f32, &ctx);

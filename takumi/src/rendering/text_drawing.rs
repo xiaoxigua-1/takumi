@@ -86,7 +86,19 @@ pub fn draw_text(
     return draw_text(&text_with_ellipsis, style, context, canvas, layout);
   }
 
-  draw_buffer(context, &buffer, canvas, style.color, (start_x, start_y));
+  let transform_origin = Point {
+    x: (layout.location.x + layout.size.width / 2.0) as i32,
+    y: (layout.location.y + layout.size.height / 2.0) as i32,
+  };
+
+  draw_buffer(
+    context,
+    &buffer,
+    canvas,
+    style.color,
+    (start_x, start_y),
+    transform_origin,
+  );
 }
 
 fn draw_buffer(
@@ -95,6 +107,7 @@ fn draw_buffer(
   canvas: &Canvas,
   color: Color,
   (start_x, start_y): (f32, f32),
+  transform_origin: Point<i32>,
 ) {
   let mut font_system = context.global.font_context.font_system.lock().unwrap();
   let mut font_cache = context.global.font_context.font_cache.lock().unwrap();
@@ -124,6 +137,8 @@ fn draw_buffer(
               height: image.placement.height,
             },
             color,
+            transform_origin,
+            *context.rotation,
           );
         }
         cosmic_text::SwashContent::Color => {
@@ -144,6 +159,8 @@ fn draw_buffer(
               height: image.placement.height,
             },
             color,
+            transform_origin,
+            *context.rotation,
           );
         }
         _ => {}

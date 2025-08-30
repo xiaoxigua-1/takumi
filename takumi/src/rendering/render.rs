@@ -1,4 +1,5 @@
 use std::{
+  borrow::Cow,
   io::{Seek, Write},
   sync::mpsc::channel,
 };
@@ -9,8 +10,12 @@ use taffy::{AvailableSpace, NodeId, Point, TaffyTree, geometry::Size};
 
 use crate::{
   GlobalContext,
-  layout::{Viewport, node::Node, style::Transforms},
-  rendering::{Canvas, DEFAULT_SCALE, create_blocking_canvas_loop},
+  layout::{
+    Viewport,
+    node::Node,
+    style::{Angle, Transforms},
+  },
+  rendering::{Canvas, DEFAULT_SCALE, create_blocking_canvas_loop, draw_debug_border},
 };
 
 use crate::rendering::RenderContext;
@@ -106,6 +111,7 @@ pub fn render<Nodes: Node<Nodes>>(
     viewport,
     parent_font_size: viewport.font_size,
     scale: DEFAULT_SCALE,
+    rotation: Angle::new(0.0),
   };
 
   let root_node_id = insert_taffy_node(&mut taffy, root_node, &render_context);
@@ -189,9 +195,16 @@ fn render_node<Nodes: Node<Nodes>>(
 
   // preserve the offset before the transform is applied
   let child_offset = layout.location;
+  let style = node_context.node.get_style();
 
-  if let Some(node_transform) = &node_context.node.get_style().transform {
-    transform.chain(node_transform);
+  if let Some(node_transform) = &style.transform {
+    let mut node_transform = Cow::Borrowed(node_transform);
+
+    if let Some(transform_origin) = &style.transform_origin {
+      node_transform = Cow::Owned(node_transform.with_transform_origin(transform_origin));
+    }
+
+    transform.chain(&node_transform);
   }
 
   transform.apply(&mut render_context, &mut layout);
@@ -199,6 +212,10 @@ fn render_node<Nodes: Node<Nodes>>(
   node_context
     .node
     .draw_on_canvas(&render_context, canvas, layout);
+
+  if node_context.context.global.draw_debug_border {
+    draw_debug_border(canvas, layout, *render_context.rotation);
+  }
 
   for child_id in taffy.children(node_id).unwrap() {
     render_node(taffy, child_id, canvas, child_offset, transform.clone());

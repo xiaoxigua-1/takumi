@@ -42,7 +42,8 @@ pub enum PositionComponent {
 
 /// Parsed `background-position` value for one layer.
 #[derive(Debug, Clone, Copy, Deserialize, Serialize, TS, PartialEq)]
-#[serde(rename_all = "kebab-case")]
+#[serde(try_from = "BackgroundPositionValue")]
+#[ts(as = "BackgroundPositionValue")]
 pub struct BackgroundPosition {
   /// X-axis position component.
   pub x: PositionComponent,
@@ -50,11 +51,37 @@ pub struct BackgroundPosition {
   pub y: PositionComponent,
 }
 
+/// Proxy type for deserializing `BackgroundPosition`
+#[derive(Debug, Clone, Deserialize, Serialize, TS, PartialEq)]
+#[serde(untagged)]
+pub enum BackgroundPositionValue {
+  /// Parsed positions for one or two dimensions.
+  Position(PositionComponent, PositionComponent),
+  /// Raw CSS string to be parsed.
+  Css(String),
+}
+
 impl Default for BackgroundPosition {
   fn default() -> Self {
     Self {
       x: PositionComponent::KeywordX(PositionKeywordX::Center),
       y: PositionComponent::KeywordY(PositionKeywordY::Center),
+    }
+  }
+}
+
+impl TryFrom<BackgroundPositionValue> for BackgroundPosition {
+  type Error = String;
+
+  fn try_from(value: BackgroundPositionValue) -> Result<Self, Self::Error> {
+    match value {
+      BackgroundPositionValue::Position(x, y) => Ok(Self { x, y }),
+      BackgroundPositionValue::Css(css) => {
+        let mut input = ParserInput::new(&css);
+        let mut parser = Parser::new(&mut input);
+
+        Self::from_css(&mut parser).map_err(|e| e.to_string())
+      }
     }
   }
 }
@@ -116,7 +143,7 @@ pub enum BackgroundPositionsValue {
 pub struct BackgroundPositions(pub Vec<BackgroundPosition>);
 
 impl TryFrom<BackgroundPositionsValue> for BackgroundPositions {
-  type Error = &'static str;
+  type Error = String;
 
   fn try_from(value: BackgroundPositionsValue) -> Result<Self, Self::Error> {
     match value {
@@ -124,15 +151,10 @@ impl TryFrom<BackgroundPositionsValue> for BackgroundPositions {
       BackgroundPositionsValue::Css(css) => {
         let mut input = ParserInput::new(&css);
         let mut parser = Parser::new(&mut input);
-        let mut values = vec![
-          BackgroundPosition::from_css(&mut parser)
-            .map_err(|_| "Failed to parse first background-position")?,
-        ];
+        let mut values =
+          vec![BackgroundPosition::from_css(&mut parser).map_err(|e| e.to_string())?];
         while parser.expect_comma().is_ok() {
-          values.push(
-            BackgroundPosition::from_css(&mut parser)
-              .map_err(|_| "Failed to parse background-position")?,
-          );
+          values.push(BackgroundPosition::from_css(&mut parser).map_err(|e| e.to_string())?);
         }
         Ok(Self(values))
       }
