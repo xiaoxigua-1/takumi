@@ -257,8 +257,6 @@ fn draw_buffer(
   }
 }
 
-// Deprecated: use `draw_buffer(..., image_fill)` instead.
-
 pub(crate) fn construct_text_buffer(
   text: &str,
   font_style: &FontStyle,
