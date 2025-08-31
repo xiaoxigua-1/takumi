@@ -6,7 +6,7 @@ use zeno::{Fill, Mask};
 
 use crate::{
   layout::style::{Color, Style},
-  rendering::{BorderRadius, Canvas, RenderContext, draw_filled_rect_color},
+  rendering::{BorderRadius, Canvas, RenderContext, draw_filled_rect_color, draw_pixel},
 };
 
 /// Represents the properties of a border.
@@ -163,7 +163,7 @@ fn draw_rounded_border(canvas: &Canvas, border: BorderProperties) {
   let mut border_image = RgbaImage::from_pixel(
     border.size.width as u32,
     border.size.height as u32,
-    border.color.into(),
+    Color::transparent().into(),
   );
 
   let mut paths = Vec::new();
@@ -173,17 +173,7 @@ fn draw_rounded_border(canvas: &Canvas, border: BorderProperties) {
   let avg_border_width =
     (border.width.left + border.width.right + border.width.top + border.width.bottom) / 4.0;
 
-  let inner_border_radius = BorderRadius {
-    offset: Point {
-      x: border.width.left,
-      y: border.width.top,
-    },
-    size: Size {
-      width: border.size.width - border.width.left - border.width.right,
-      height: border.size.height - border.width.top - border.width.bottom,
-    },
-    ..border.radius.grow(avg_border_width)
-  };
+  let inner_border_radius = border.radius.grow(-avg_border_width);
 
   inner_border_radius.write_mask_commands(&mut paths);
 
@@ -195,8 +185,8 @@ fn draw_rounded_border(canvas: &Canvas, border: BorderProperties) {
 
   let mut i = 0;
 
-  for y in 0..border.size.height as i32 {
-    for x in 0..border.size.width as i32 {
+  for y in 0..placement.height as i32 {
+    for x in 0..placement.width as i32 {
       let alpha = mask[i];
 
       i += 1;
@@ -212,10 +202,10 @@ fn draw_rounded_border(canvas: &Canvas, border: BorderProperties) {
         border.color.0[0],
         border.color.0[1],
         border.color.0[2],
-        alpha,
+        (alpha as f32 / 255.0 * border.color.0[3] as f32) as u8,
       ]);
 
-      border_image.put_pixel(x as u32, y as u32, pixel);
+      draw_pixel(&mut border_image, x as u32, y as u32, pixel);
     }
   }
 

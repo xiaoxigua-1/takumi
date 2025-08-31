@@ -2,7 +2,7 @@ use takumi::layout::{
   node::ContainerNode,
   style::{
     BoxShadow, BoxShadows, Color, InheritableStyle,
-    LengthUnit::{Percentage, Px},
+    LengthUnit::{Percentage, Px, Rem},
     Position, Style,
   },
 };
@@ -85,6 +85,41 @@ fn test_style_border_width() {
   };
 
   run_style_width_test(container.into(), "tests/fixtures/style_border_width.png");
+}
+
+#[test]
+fn test_style_border_width_with_radius() {
+  let container = ContainerNode {
+    style: Style {
+      width: Percentage(100.0),
+      height: Percentage(100.0),
+      padding: Rem(4.0).into(),
+      background_color: Some(Color::white()),
+      inheritable_style: InheritableStyle {
+        border_color: Some(Color([255, 0, 0, 255])),
+        ..Default::default()
+      },
+      ..Default::default()
+    },
+    children: Some(vec![
+      ContainerNode {
+        style: Style {
+          width: Rem(16.0),
+          height: Rem(8.0),
+          border_radius: Some(Px(10.0).into()),
+          border_width: Px(4.0).into(),
+          ..Default::default()
+        },
+        children: None,
+      }
+      .into(),
+    ]),
+  };
+
+  run_style_width_test(
+    container.into(),
+    "tests/fixtures/style_border_width_with_radius.png",
+  );
 }
 
 #[test]
