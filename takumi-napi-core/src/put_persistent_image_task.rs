@@ -1,13 +1,14 @@
 use napi::Task;
+use std::sync::Arc;
 use takumi::{GlobalContext, resources::image::load_image_source_from_bytes};
 
-pub struct PutPersistentImageTask<'ctx> {
+pub struct PutPersistentImageTask {
   pub src: Option<String>,
-  pub context: &'ctx GlobalContext,
+  pub context: Arc<GlobalContext>,
   pub buffer: Vec<u8>,
 }
 
-impl<'ctx> Task for PutPersistentImageTask<'ctx> {
+impl Task for PutPersistentImageTask {
   type Output = ();
   type JsValue = ();
 

@@ -1,28 +1,29 @@
 use std::io::Cursor;
 
 use napi::bindgen_prelude::*;
+use std::sync::Arc;
 use takumi::{
   GlobalContext,
   layout::{Viewport, node::NodeKind},
   rendering::{ImageOutputFormat, render, write_image},
 };
 
-pub struct RenderTask<'ctx> {
+pub struct RenderTask {
   pub node: Option<NodeKind>,
-  pub context: &'ctx GlobalContext,
+  pub context: Arc<GlobalContext>,
   pub viewport: Viewport,
   pub format: ImageOutputFormat,
   pub quality: Option<u8>,
 }
 
-impl<'ctx> Task for RenderTask<'ctx> {
+impl Task for RenderTask {
   type Output = Vec<u8>;
   type JsValue = Buffer;
 
   fn compute(&mut self) -> Result<Self::Output> {
     let node = self.node.take().unwrap();
 
-    let image = render(self.viewport, self.context, node)
+    let image = render(self.viewport, &self.context, node)
       .map_err(|e| napi::Error::from_reason(format!("Failed to render: {e:?}")))?;
 
     let mut buffer = Vec::new();

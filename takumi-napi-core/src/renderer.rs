@@ -11,10 +11,11 @@ use crate::{
   load_font_task::LoadFontTask, put_persistent_image_task::PutPersistentImageTask,
   render_task::RenderTask,
 };
+use std::sync::Arc;
 
 #[napi]
 #[derive(Default)]
-pub struct Renderer(GlobalContext);
+pub struct Renderer(Arc<GlobalContext>);
 
 #[napi(object)]
 pub struct RenderOptions {
@@ -73,7 +74,7 @@ impl Renderer {
   pub fn new(options: Option<ConstructRendererOptions>) -> Self {
     let options = options.unwrap_or_default();
 
-    let renderer = Self(GlobalContext {
+    let renderer = Self(Arc::new(GlobalContext {
       draw_debug_border: options.debug.unwrap_or_default(),
       font_context: FontContext::new(
         options
@@ -81,7 +82,7 @@ impl Renderer {
           .unwrap_or_else(|| options.fonts.is_none()),
       ),
       ..Default::default()
-    });
+    }));
 
     if let Some(images) = options.persistent_images {
       for image in images {
@@ -118,11 +119,11 @@ impl Renderer {
     src: String,
     data: ArrayBuffer,
     signal: Option<AbortSignal>,
-  ) -> AsyncTask<PutPersistentImageTask<'_>> {
+  ) -> AsyncTask<PutPersistentImageTask> {
     AsyncTask::with_optional_signal(
       PutPersistentImageTask {
         src: Some(src),
-        context: &self.0,
+        context: Arc::clone(&self.0),
         buffer: data.to_vec(),
       },
       signal,
@@ -134,10 +135,10 @@ impl Renderer {
     &self,
     data: ArrayBuffer,
     signal: Option<AbortSignal>,
-  ) -> AsyncTask<LoadFontTask<'_>> {
+  ) -> AsyncTask<LoadFontTask> {
     AsyncTask::with_optional_signal(
       LoadFontTask {
-        context: &self.0,
+        context: Arc::clone(&self.0),
         buffers: vec![data.to_vec()],
       },
       signal,
@@ -149,10 +150,10 @@ impl Renderer {
     &self,
     fonts: Vec<ArrayBuffer>,
     signal: Option<AbortSignal>,
-  ) -> AsyncTask<LoadFontTask<'_>> {
+  ) -> AsyncTask<LoadFontTask> {
     AsyncTask::with_optional_signal(
       LoadFontTask {
-        context: &self.0,
+        context: Arc::clone(&self.0),
         buffers: fonts.into_iter().map(|buf| buf.to_vec()).collect(),
       },
       signal,
@@ -174,13 +175,13 @@ impl Renderer {
     source: Object,
     options: RenderOptions,
     signal: Option<AbortSignal>,
-  ) -> Result<AsyncTask<RenderTask<'_>>> {
+  ) -> Result<AsyncTask<RenderTask>> {
     let node = env.from_js_value(source)?;
 
     Ok(AsyncTask::with_optional_signal(
       RenderTask {
         node: Some(node),
-        context: &self.0,
+        context: Arc::clone(&self.0),
         viewport: Viewport::new(options.width, options.height),
         format: options.format.unwrap_or(OutputFormat::png).into(),
         quality: options.quality,

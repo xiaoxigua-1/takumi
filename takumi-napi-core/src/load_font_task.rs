@@ -1,13 +1,14 @@
 use napi::bindgen_prelude::*;
 use rayon::prelude::*;
+use std::sync::Arc;
 use takumi::GlobalContext;
 
-pub struct LoadFontTask<'ctx> {
-  pub context: &'ctx GlobalContext,
+pub struct LoadFontTask {
+  pub context: Arc<GlobalContext>,
   pub buffers: Vec<Vec<u8>>,
 }
 
-impl<'ctx> Task for LoadFontTask<'ctx> {
+impl Task for LoadFontTask {
   type Output = usize;
   type JsValue = u32;
 
