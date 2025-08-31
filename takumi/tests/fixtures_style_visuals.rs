@@ -186,3 +186,22 @@ fn test_style_position() {
 
   run_style_width_test(container.into(), "tests/fixtures/style_position.png");
 }
+
+#[test]
+fn test_style_border_radius_circle() {
+  let container = ContainerNode {
+    style: Style {
+      width: Px(300.0),
+      height: Px(300.0),
+      background_color: Some(Color([255, 0, 0, 255])),
+      border_radius: Some(Percentage(50.0).into()),
+      ..Default::default()
+    },
+    children: None,
+  };
+
+  run_style_width_test(
+    container.into(),
+    "tests/fixtures/style_border_radius_circle.png",
+  );
+}

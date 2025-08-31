@@ -1,5 +1,5 @@
 use taffy::{Layout, Point, Rect, Size};
-use zeno::{Command, PathBuilder};
+use zeno::{Angle, ArcSize, ArcSweep, Command, PathBuilder};
 
 use crate::{layout::style::LengthUnit, rendering::RenderContext};
 
@@ -87,47 +87,71 @@ impl BorderRadius {
     // Start at top-left corner (after the radius)
     path.move_to((self.offset.x + self.top_left, self.offset.y));
 
-    // Top edge to top-right corner
-    path.rel_line_to((top_edge_width, 0.0));
+    if top_edge_width > 0.0 {
+      // Top edge to top-right corner
+      path.rel_line_to((top_edge_width, 0.0));
+    }
 
-    // Top-right corner using quadratic curve
+    // Top-right corner using arc
     if self.top_right > 0.0 {
-      path.rel_quad_to(
-        (self.top_right, 0.0),            // control point: corner of rectangle
-        (self.top_right, self.top_right), // end point: down by radius
+      path.rel_arc_to(
+        self.top_right,
+        self.top_right,
+        Angle::from_radians(0.),
+        ArcSize::Small,
+        ArcSweep::Positive,
+        (self.top_right, self.top_right),
       );
     }
 
-    // Right edge
-    path.rel_line_to((0.0, right_edge_height));
+    if right_edge_height > 0.0 {
+      // Right edge
+      path.rel_line_to((0.0, right_edge_height));
+    }
 
-    // Bottom-right corner
+    // Bottom-right corner using arc
     if self.bottom_right > 0.0 {
-      path.rel_quad_to(
-        (0.0, self.bottom_right), // control point: corner of rectangle
-        (-self.bottom_right, self.bottom_right), // end point: left by radius
+      path.rel_arc_to(
+        self.bottom_right,
+        self.bottom_right,
+        Angle::from_radians(0.),
+        ArcSize::Small,
+        ArcSweep::Positive,
+        (-self.bottom_right, self.bottom_right),
       );
     }
 
-    // Bottom edge
-    path.rel_line_to((-bottom_edge_width, 0.0));
+    if bottom_edge_width > 0.0 {
+      // Bottom edge
+      path.rel_line_to((-bottom_edge_width, 0.0));
+    }
 
-    // Bottom-left corner
+    // Bottom-left corner using arc
     if self.bottom_left > 0.0 {
-      path.rel_quad_to(
-        (-self.bottom_left, 0.0),               // control point: corner of rectangle
-        (-self.bottom_left, -self.bottom_left), // end point: up by radius
+      path.rel_arc_to(
+        self.bottom_left,
+        self.bottom_left,
+        Angle::from_radians(0.),
+        ArcSize::Small,
+        ArcSweep::Positive,
+        (-self.bottom_left, -self.bottom_left),
       );
     }
 
-    // Left edge
-    path.rel_line_to((0.0, -left_edge_height));
+    if left_edge_height > 0.0 {
+      // Left edge
+      path.rel_line_to((0.0, -left_edge_height));
+    }
 
-    // Top-left corner
+    // Top-left corner using arc
     if self.top_left > 0.0 {
-      path.rel_quad_to(
-        (0.0, -self.top_left),           // control point: corner of rectangle
-        (self.top_left, -self.top_left), // end point: right by radius
+      path.rel_arc_to(
+        self.top_left,
+        self.top_left,
+        Angle::from_radians(0.),
+        ArcSize::Small,
+        ArcSweep::Positive,
+        (self.top_left, -self.top_left),
       );
     }
 
