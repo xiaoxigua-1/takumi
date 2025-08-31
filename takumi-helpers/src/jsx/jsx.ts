@@ -1,15 +1,15 @@
-import {
-  type ComponentProps,
-  type CSSProperties,
-  cloneElement,
-  type JSX,
-  type ReactElement,
-  type ReactNode,
+import type {
+  ComponentProps,
+  CSSProperties,
+  JSX,
+  ReactElement,
+  ReactNode,
 } from "react";
-import { renderToStaticMarkup } from "react-dom/server";
 import { container, image, percentage, text } from "../helpers";
 import type { Node, PartialStyle } from "../types";
 import { stylePresets } from "./style-presets";
+import { serializeSvg } from "./svg";
+import { isHtmlElement } from "./utils";
 
 const REACT_ELEMENT_TYPE_TRANSITIONAL = Symbol.for(
   "react.transitional.element",
@@ -125,7 +125,7 @@ async function processReactElement(element: ReactElement): Promise<Node[]> {
   const memoResult = tryHandleMemo(element);
   if (memoResult !== undefined) return memoResult;
 
-  // Handle React fragments
+  // Handle React fragments <></>
   if (
     typeof element.type === "symbol" &&
     element.type === Symbol.for("react.fragment")
@@ -176,16 +176,7 @@ function createImageElement(element: ReactElement<ComponentProps<"img">>) {
 function createSvgElement(element: ReactElement<ComponentProps<"svg">>) {
   const style = extractStyleFromProps(element.props) as PartialStyle;
 
-  const svg = renderToStaticMarkup(
-    cloneElement(
-      element,
-      {
-        xmlns: "http://www.w3.org/2000/svg",
-        ...element.props,
-      },
-      element.props.children,
-    ),
-  );
+  const svg = serializeSvg(element);
 
   return image({
     src: svg,
@@ -199,13 +190,6 @@ function extractStyleFromProps(props: unknown): CSSProperties {
   return "style" in props && typeof props.style === "object"
     ? (props.style as CSSProperties)
     : {};
-}
-
-function isHtmlElement<T extends keyof JSX.IntrinsicElements>(
-  element: ReactElement,
-  type: T,
-): element is ReactElement<ComponentProps<T>> {
-  return element.type === type;
 }
 
 function collectChildren(element: ReactElement): Promise<Node[]> {

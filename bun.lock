@@ -87,21 +87,16 @@
       "name": "@takumi-rs/helpers",
       "version": "0.28.1",
       "devDependencies": {
-        "@types/bun": "catalog:",
+        "@types/bun": "^1.2.21",
         "@types/react": "^19.1.12",
         "@types/react-dom": "^19.1.9",
         "bun-plugin-dts": "^0.3.0",
         "lucide-react": "^0.542.0",
-        "react": "^19.1.0",
+        "react": "^19.1.1",
+        "react-dom": "^19.1.1",
         "tsup": "^8.5.0",
-        "typescript": "catalog:",
+        "typescript": "^5.9.2",
       },
-      "peerDependencies": {
-        "react-dom": "^19.0.0",
-      },
-      "optionalPeers": [
-        "react-dom",
-      ],
     },
     "takumi-napi-core": {
       "name": "@takumi-rs/core",
