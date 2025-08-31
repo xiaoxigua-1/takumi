@@ -1,5 +1,7 @@
+use std::f32::consts::SQRT_2;
+
 use taffy::{Layout, Point, Rect, Size};
-use zeno::{Angle, ArcSize, ArcSweep, Command, PathBuilder};
+use zeno::{Command, PathBuilder};
 
 use crate::{layout::style::LengthUnit, rendering::RenderContext};
 
@@ -65,96 +67,82 @@ impl BorderRadius {
   }
 
   /// Generates path commands to create a mask representing the border radius shape.
-  ///
-  /// This method creates a vector path that defines the outline of a rectangle with
-  /// rounded corners based on the border radius values. The path is constructed by:
-  /// 1. Starting at the top-left corner (after the radius)
-  /// 2. Drawing straight edges between corners
-  /// 3. Adding quadratic curves for each corner with non-zero radius
-  /// 4. Closing the path
-  ///
-  /// The resulting path can be used for masking operations to create rounded corners.
-  ///
-  /// # Arguments
-  /// * `path` - The vector to append the path commands to
+  /// Uses cubic Bézier curves to approximate CSS border-radius quarter-circles.
   pub fn write_mask_commands(&self, path: &mut Vec<Command>) {
-    // Calculate the straight edge lengths (total size minus corner radii)
-    let top_edge_width = self.size.width - self.top_left - self.top_right;
-    let right_edge_height = self.size.height - self.top_right - self.bottom_right;
-    let bottom_edge_width = self.size.width - self.bottom_left - self.bottom_right;
-    let left_edge_height = self.size.height - self.bottom_left - self.top_left;
+    // CSS border-radius uses cubic Bézier approximation of quarter circles
+    // The magic number 0.552284749831 ≈ 4/3 * (√2 - 1) gives the best circular approximation
+    const KAPPA: f32 = 4.0 / 3.0 * (SQRT_2 - 1.0);
 
-    // Start at top-left corner (after the radius)
+    // Calculate the available space for each edge
+    let top_edge_width = (self.size.width - self.top_left - self.top_right).max(0.0);
+    let right_edge_height = (self.size.height - self.top_right - self.bottom_right).max(0.0);
+    let bottom_edge_width = (self.size.width - self.bottom_left - self.bottom_right).max(0.0);
+    let left_edge_height = (self.size.height - self.bottom_left - self.top_left).max(0.0);
+
+    // Start at the end of the top-left radius along the top edge
     path.move_to((self.offset.x + self.top_left, self.offset.y));
 
+    // Top edge - horizontal line from top-left corner end to top-right corner start
     if top_edge_width > 0.0 {
-      // Top edge to top-right corner
       path.rel_line_to((top_edge_width, 0.0));
     }
 
-    // Top-right corner using arc
+    // Top-right corner - quarter circle using cubic Bézier
     if self.top_right > 0.0 {
-      path.rel_arc_to(
-        self.top_right,
-        self.top_right,
-        Angle::from_radians(0.),
-        ArcSize::Small,
-        ArcSweep::Positive,
-        (self.top_right, self.top_right),
+      let control_offset = self.top_right * KAPPA;
+      path.rel_curve_to(
+        (control_offset, 0.0),                             // first control point
+        (self.top_right, self.top_right - control_offset), // second control point
+        (self.top_right, self.top_right),                  // end point
       );
     }
 
+    // Right edge - vertical line from top-right corner end to bottom-right corner start
     if right_edge_height > 0.0 {
-      // Right edge
       path.rel_line_to((0.0, right_edge_height));
     }
 
-    // Bottom-right corner using arc
+    // Bottom-right corner - quarter circle using cubic Bézier
     if self.bottom_right > 0.0 {
-      path.rel_arc_to(
-        self.bottom_right,
-        self.bottom_right,
-        Angle::from_radians(0.),
-        ArcSize::Small,
-        ArcSweep::Positive,
-        (-self.bottom_right, self.bottom_right),
+      let control_offset = self.bottom_right * KAPPA;
+      path.rel_curve_to(
+        (0.0, control_offset),                                    // first control point
+        (-self.bottom_right + control_offset, self.bottom_right), // second control point
+        (-self.bottom_right, self.bottom_right),                  // end point
       );
     }
 
+    // Bottom edge - horizontal line from bottom-right corner end to bottom-left corner start
     if bottom_edge_width > 0.0 {
-      // Bottom edge
       path.rel_line_to((-bottom_edge_width, 0.0));
     }
 
-    // Bottom-left corner using arc
+    // Bottom-left corner - quarter circle using cubic Bézier
     if self.bottom_left > 0.0 {
-      path.rel_arc_to(
-        self.bottom_left,
-        self.bottom_left,
-        Angle::from_radians(0.),
-        ArcSize::Small,
-        ArcSweep::Positive,
-        (-self.bottom_left, -self.bottom_left),
+      let control_offset = self.bottom_left * KAPPA;
+      path.rel_curve_to(
+        (-control_offset, 0.0),                                  // first control point
+        (-self.bottom_left, -self.bottom_left + control_offset), // second control point
+        (-self.bottom_left, -self.bottom_left),                  // end point
       );
     }
 
+    // Left edge - vertical line from bottom-left corner end to top-left corner start
     if left_edge_height > 0.0 {
-      // Left edge
       path.rel_line_to((0.0, -left_edge_height));
     }
 
-    // Top-left corner using arc
+    // Top-left corner - quarter circle using cubic Bézier
     if self.top_left > 0.0 {
-      path.rel_arc_to(
-        self.top_left,
-        self.top_left,
-        Angle::from_radians(0.),
-        ArcSize::Small,
-        ArcSweep::Positive,
-        (self.top_left, -self.top_left),
+      let control_offset = self.top_left * KAPPA;
+      path.rel_curve_to(
+        (0.0, -control_offset),                           // first control point
+        (self.top_left - control_offset, -self.top_left), // second control point
+        (self.top_left, -self.top_left),                  // end point
       );
     }
 
+    // Close the path
     path.close();
   }
 
