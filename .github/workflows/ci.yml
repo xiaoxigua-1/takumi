@@ -112,6 +112,25 @@ jobs:
           path: takumi-helpers/dist
           if-no-files-found: error
 
+  test-helpers:
+    name: Test @takumi-rs/helpers
+    runs-on: ubuntu-latest
+    needs: build-helpers
+    steps:
+      - uses: actions/checkout@v5
+      
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      
+      - name: Install dependencies
+        run: bun install --frozen-lockfile --filter ./takumi-helpers
+      
+      - name: Test
+        working-directory: takumi-helpers
+        run: bun test
+
   version-check-helpers:
     name: Check version for @takumi-rs/helpers
     if: github.ref == 'refs/heads/master'
@@ -129,7 +148,7 @@ jobs:
 
   publish-helpers:
     name: Publish @takumi-rs/helpers
-    needs: [build-helpers, version-check-helpers]
+    needs: [build-helpers, test-helpers, version-check-helpers]
     if: github.ref == 'refs/heads/master' && needs.version-check-helpers.outputs.exists == 'false'
     runs-on: ubuntu-latest
     steps:
@@ -510,7 +529,7 @@ jobs:
   pass-test:
     name: Pass Test
     runs-on: ubuntu-latest
-    needs: [biome-lint, test-rust, test-napi, test-wasm]
+    needs: [biome-lint, test-rust, test-napi, test-wasm, test-helpers]
     if: always()
     steps: 
       - run: echo "Pass test"
