@@ -25,10 +25,9 @@ type MemoLike = {
 
 function isValidElement(object: unknown): object is ReactElementLike {
   return (
-    typeof object === "object" &&
+    (typeof object === "object" || typeof object === "function") &&
     object !== null &&
-    "type" in object &&
-    typeof object.type === "string"
+    "type" in object
   );
 }
 
