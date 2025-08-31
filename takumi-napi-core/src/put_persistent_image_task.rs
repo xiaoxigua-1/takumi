@@ -1,11 +1,11 @@
-use napi::Task;
+use napi::{Task, bindgen_prelude::Buffer};
 use std::sync::Arc;
 use takumi::{GlobalContext, resources::image::load_image_source_from_bytes};
 
 pub struct PutPersistentImageTask {
   pub src: Option<String>,
   pub context: Arc<GlobalContext>,
-  pub buffer: Vec<u8>,
+  pub buffer: Buffer,
 }
 
 impl Task for PutPersistentImageTask {

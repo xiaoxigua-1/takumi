@@ -56,7 +56,7 @@ impl From<OutputFormat> for ImageOutputFormat {
 #[napi(object)]
 pub struct PersistentImage<'ctx> {
   pub src: String,
-  pub data: ArrayBuffer<'ctx>,
+  pub data: BufferSlice<'ctx>,
 }
 
 #[napi(object)]
@@ -113,14 +113,14 @@ impl Renderer {
   pub fn put_persistent_image_async(
     &self,
     src: String,
-    data: ArrayBuffer,
+    data: Buffer,
     signal: Option<AbortSignal>,
   ) -> AsyncTask<PutPersistentImageTask> {
     AsyncTask::with_optional_signal(
       PutPersistentImageTask {
         src: Some(src),
         context: Arc::clone(&self.0),
-        buffer: data.to_vec(),
+        buffer: data,
       },
       signal,
     )
