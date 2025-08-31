@@ -41,11 +41,6 @@
     "tsconfig.json"
   ],
   "license": "MIT",
-  "peerDependenciesMeta": {
-    "react-dom": {
-      "optional": true
-    }
-  },
   "scripts": {
     "build": "tsup-node src/index.ts src/jsx/jsx.ts --minify --dts --format esm,cjs --no-splitting"
   },
