@@ -1,14 +1,14 @@
 ---
-title: Migrate from Satori
-description: Migrate from Satori to Takumi with your existing components.
+title: From Next.js ImageResponse
+description: Migrate from Next.js ImageResponse to Takumi with your existing components.
 ---
 
-Takumi aims to create a universal image generation library that can be used in any environment and not just limited to Node.js.
+Takumi aims to create a universal image generation library that can be used in any environment and not just limited to JavaScript runtime.
 
 We still provide helper functions like [`fromJsx`](/docs/deep-dives/from-jsx-helper) to bridge the gap between JSX and Takumi nodes without refactoring the codebase.
 
 <Callout>
-This guide is for people plan to use Takumi in Node.js or Bun, if you are looking for WASM bindings, check out [Use Takumi in Browser (WASM)](/docs/getting-started/wasm-web) instead.
+This guide is for people plan to use Takumi in Next.js, if you are looking for WASM bindings, check out [Use Takumi in Browser (WASM)](/docs/getting-started/wasm-web) instead.
 </Callout>
 
 ## Installation
@@ -17,7 +17,17 @@ This guide is for people plan to use Takumi in Node.js or Bun, if you are lookin
 npm i @takumi-rs/core @takumi-rs/helpers
 ```
 
-## For Next.js `ImageResponse` users
+## `next.config.ts`
+
+Takumi uses N-API under the hood, it should be opted-out from Server Components bundling and use native Node.js `require` function.
+
+```ts
+export const config = {
+  serverExternalPackages: ["@takumi-rs/core"],
+};
+```
+
+## The `route.ts`
 
 <Callout>
 Might be a `ImageResponse` breaking change in the future.
