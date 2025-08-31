@@ -54,7 +54,7 @@
 //! let context = GlobalContext::default();
 //!
 //! // Load fonts
-//! context.font_context.load_and_store(include_bytes!("../../assets/fonts/noto-sans/google-sans-code-v11-latin-regular.woff2").to_vec());
+//! context.font_context.load_and_store(include_bytes!("../../assets/fonts/noto-sans/google-sans-code-v11-latin-regular.woff2"));
 //!
 //! // Create a viewport
 //! let viewport = Viewport::new(1200, 630);
