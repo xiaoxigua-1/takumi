@@ -25,20 +25,29 @@ pub struct RenderOptions {
 }
 
 #[napi(string_enum)]
+#[allow(non_camel_case_types)]
 pub enum OutputFormat {
+  webp,
+  avif,
+  png,
+  jpeg,
   WebP,
   Avif,
-  Png,
   Jpeg,
+  Png,
 }
 
 impl From<OutputFormat> for ImageOutputFormat {
   fn from(format: OutputFormat) -> Self {
     match format {
-      OutputFormat::Png => ImageOutputFormat::Png,
-      OutputFormat::Jpeg => ImageOutputFormat::Jpeg,
       OutputFormat::WebP => ImageOutputFormat::WebP,
       OutputFormat::Avif => ImageOutputFormat::Avif,
+      OutputFormat::Jpeg => ImageOutputFormat::Jpeg,
+      OutputFormat::Png => ImageOutputFormat::Png,
+      OutputFormat::png => ImageOutputFormat::Png,
+      OutputFormat::jpeg => ImageOutputFormat::Jpeg,
+      OutputFormat::webp => ImageOutputFormat::WebP,
+      OutputFormat::avif => ImageOutputFormat::Avif,
     }
   }
 }
@@ -173,7 +182,7 @@ impl Renderer {
         node: Some(node),
         context: &self.0,
         viewport: Viewport::new(options.width, options.height),
-        format: options.format.unwrap_or(OutputFormat::Png).into(),
+        format: options.format.unwrap_or(OutputFormat::png).into(),
         quality: options.quality,
       },
       signal,
