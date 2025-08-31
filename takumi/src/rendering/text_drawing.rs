@@ -264,6 +264,8 @@ pub(crate) fn construct_text_buffer(
 
   let mut font_system = global.font_context.font_system.lock().unwrap();
 
+  buffer.set_wrap(&mut font_system, font_style.text_wrap);
+
   if let Some((width, height)) = size {
     buffer.set_size(&mut font_system, width, height);
   }

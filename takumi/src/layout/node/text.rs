@@ -111,19 +111,22 @@ pub fn measure_text(
   );
 
   let layout_runs = buffer.layout_runs();
-  let mut line_count = 0;
 
-  let (max_run_width, total_height) = layout_runs.fold((0.0, 0.0), |(w, line_height), run| {
-    line_count += 1;
-    if let Some(max_lines) = style.line_clamp {
-      // cosmic text might layout more lines than the max lines,
-      // so we need to manually check if we've exceeded the max lines
-      if line_count > max_lines as usize {
-        return (w, line_height);
-      }
+  let mut max_run_width = 0.0;
+  let mut total_height = 0.0;
+
+  for (line_index, run) in layout_runs.enumerate() {
+    if style
+      .line_clamp
+      .is_some_and(|max_lines| line_index >= max_lines as usize)
+    {
+      break;
     }
-    (run.line_w.max(w), line_height + run.line_height)
-  });
+
+    max_run_width = run.line_w.max(max_run_width);
+    total_height += run.line_height;
+    println!("{text} {} {}", max_run_width, run.line_height);
+  }
 
   taffy::Size {
     // Ceiling to avoid sub-pixel getting cutoff

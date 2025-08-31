@@ -17,6 +17,11 @@ csscolorparser = "0.7"
 noise = "0.9"
 zeno = "0.3"
 
+[dependencies.parley]
+version = "0.5"
+default-features = false
+features = ["std"]
+
 [dependencies.rayon]
 version = "1.10"
 optional = true
@@ -40,11 +45,6 @@ optional = true
 [dependencies.woff2-patched]
 version = "0.4"
 optional = true
-
-[dependencies.cosmic-text]
-features = ["shape-run-cache"]
-version = "0.14"
-git = "https://github.com/pop-os/cosmic-text"
 
 [dependencies.taffy]
 version = "0.9"

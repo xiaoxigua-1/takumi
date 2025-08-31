@@ -1,12 +1,13 @@
 use std::{
   borrow::Cow,
-  sync::{Arc, Mutex},
+  sync::{Arc, Mutex, atomic::AtomicUsize},
 };
 
 use cosmic_text::{
   FontSystem, SwashCache,
   fontdb::{Database, Source},
 };
+use parley::fontique::Blob;
 
 #[cfg(feature = "woff")]
 mod woff;
@@ -88,12 +89,9 @@ fn guess_font_format(source: &[u8]) -> Result<FontFormat, FontError> {
 /// A context for managing fonts in the rendering system.
 ///
 /// This struct holds the font system and cache used for text rendering.
-#[derive(Debug)]
 pub struct FontContext {
-  /// The font system used for text layout and rendering
-  pub font_system: Mutex<FontSystem>,
-  /// The cache for font glyphs and metrics
-  pub font_cache: Mutex<SwashCache>,
+  inner: Mutex<parley::FontContext>,
+  counter: AtomicUsize,
 }
 
 /// Embedded fonts
@@ -104,28 +102,15 @@ const EMBEDDED_FONTS: &[&[u8]] = &[include_bytes!(
 
 impl Default for FontContext {
   fn default() -> Self {
-    Self {
-      font_system: Mutex::new(FontSystem::new_with_locale_and_db(
-        "en-US".to_string(),
-        Database::new(),
-      )),
-      font_cache: Mutex::new(SwashCache::new()),
-    }
+    Self(Mutex::new(parley::FontContext::new()))
   }
 }
 
 impl FontContext {
   /// Purge the rasterization cache.
   pub fn purge_cache(&self) {
-    let mut cache_lock = self.font_cache.lock().unwrap();
-    cache_lock.image_cache.clear();
-    cache_lock.outline_command_cache.clear();
-
-    drop(cache_lock);
-
-    let mut font_system_lock = self.font_system.lock().unwrap();
-
-    font_system_lock.shape_run_cache.trim(0);
+    let mut lock = self.0.lock().unwrap();
+    lock.source_cache.prune(0, true);
   }
 
   /// Creates a new font context with option to opt-in load default fonts,
@@ -153,16 +138,19 @@ impl FontContext {
   pub fn load_and_store(&self, source: &[u8]) -> Result<(), FontError> {
     let font_data = load_font(source, None)?;
 
-    let mut lock = self.font_system.lock().unwrap();
+    let mut lock = self.0.lock().unwrap();
 
-    let db_mut = lock.db_mut();
+    let db_mut = lock.collection.register_fonts(font_data, None)?;
 
     // Wrap the font bytes in a single Arc so the database can parse faces
     // (including font collections) without per-face copying.
-    let arc_data = Arc::new(match font_data {
-      Cow::Owned(vec) => vec,
-      Cow::Borrowed(slice) => slice.to_vec(),
-    });
+    let arc_data = Blob::from_raw_parts(
+      match font_data {
+        Cow::Owned(vec) => vec,
+        Cow::Borrowed(slice) => slice.to_vec(),
+      },
+      self.counter.fetch_add(1, Ordering::Relaxed),
+    );
 
     db_mut.load_font_source(Source::Binary(arc_data));
 

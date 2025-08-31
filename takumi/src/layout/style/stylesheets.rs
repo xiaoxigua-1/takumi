@@ -1,4 +1,4 @@
-use cosmic_text::{Align, FamilyOwned, Weight};
+use cosmic_text::{Align, FamilyOwned, Weight, Wrap};
 use merge::{Merge, option::overwrite_none};
 use serde::{Deserialize, Serialize};
 use taffy::{Layout, Size, Style as TaffyStyle};
@@ -34,6 +34,8 @@ pub struct FontStyle {
   pub text_transform: TextTransform,
   /// Text color for child text elements.
   pub color: Color,
+  /// Text wrap behavior.
+  pub text_wrap: Wrap,
 }
 
 /// Main styling structure that contains all layout and visual properties.
@@ -546,6 +548,7 @@ impl Style {
         .text_overflow
         .unwrap_or(TextOverflow::Clip),
       text_transform: self.inheritable_style.text_transform.unwrap_or_default(),
+      text_wrap: Wrap::Word,
     }
   }
 }
