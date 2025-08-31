@@ -1,0 +1,62 @@
+---
+title: Migrate from Satori
+description: Migrate from Satori to Takumi with your existing components.
+---
+
+Takumi aims to create a universal image generation library that can be used in any environment and not just limited to Node.js.
+
+We still provide helper functions like [`fromJsx`](/docs/deep-dives/from-jsx-helper) to bridge the gap between JSX and Takumi nodes without refactoring the codebase.
+
+<Callout>
+This guide is for people plan to use Takumi in Node.js or Bun, if you are looking for WASM bindings, check out [Use Takumi in Browser (WASM)](/docs/getting-started/wasm-web) instead.
+</Callout>
+
+## Installation
+
+```npm
+npm i @takumi-rs/core @takumi-rs/helpers
+```
+
+## For Next.js `ImageResponse` users
+
+<Callout>
+Might be a `ImageResponse` breaking change in the future.
+</Callout>
+
+```diff
+- import { ImageResponse } from "next/og";
++ import { fromJsx } from "@takumi-rs/helpers/jsx";
++ import { Renderer } from "@takumi-rs/core";
+
++ const renderer = new Renderer({
++  fonts: [/* Add your font buffers */],
++ });
+
+function OgImage({ title }: { title: string }) {
+  return (
+    <div>
+      <h1>Hello from {title}!</h1>
+    </div>
+  );
+}
+
+export function GET(request: Request) {
+-  return ImageResponse(<OgImage title="Satori" />);
+
++  const node = await fromJsx(<OgImage title="Takumi" />);
++  const buffer = await renderer.renderAsync(node, {
++    width: 1200,
++    height: 630,
++    format: "WebP",
++  });
+
++  return new Response(buffer as BodyInit, {
++    headers: {
++      "Content-Type": "image/webp",
++    },
++  });
+```
+
+Now you have an `GET` handler with Takumi setup!
+
+If theres any issues or unexpected behavior, please open an issue on [our GitHub repository](https://github.com/kane50613/takumi/issues).
