@@ -64,7 +64,7 @@ jobs:
 
       # make sure cargo test didn't change any files (like TypeScript bindings)
       - name: Git diff is empty
-        run: git diff --exit-code
+        run: git diff --exit-code HEAD --
 
       - name: Test README.md is up to date
         working-directory: takumi
