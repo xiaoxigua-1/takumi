@@ -158,4 +158,6 @@ describe("renderAsync", () => {
 
 describe("clean up", () => {
   test("clearImageStore", () => renderer.clearImageStore());
+
+  test("purgeFontCache", () => renderer.purgeFontCache());
 });

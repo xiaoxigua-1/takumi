@@ -1,8 +1,10 @@
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
 use takumi::{
-  GlobalContext, layout::Viewport, rendering::ImageOutputFormat,
-  resources::image::load_image_source_from_bytes,
+  GlobalContext,
+  layout::Viewport,
+  rendering::ImageOutputFormat,
+  resources::{font::FontContext, image::load_image_source_from_bytes},
 };
 
 use crate::{
@@ -53,6 +55,7 @@ pub struct ConstructRendererOptions<'ctx> {
   pub debug: Option<bool>,
   pub persistent_images: Option<Vec<PersistentImage<'ctx>>>,
   pub fonts: Option<Vec<ArrayBuffer<'ctx>>>,
+  pub load_default_fonts: Option<bool>,
 }
 
 #[napi]
@@ -63,6 +66,11 @@ impl Renderer {
 
     let renderer = Self(GlobalContext {
       draw_debug_border: options.debug.unwrap_or_default(),
+      font_context: FontContext::new(
+        options
+          .load_default_fonts
+          .unwrap_or_else(|| options.fonts.is_none()),
+      ),
       ..Default::default()
     });
 
@@ -88,6 +96,11 @@ impl Renderer {
     }
 
     renderer
+  }
+
+  #[napi]
+  pub fn purge_font_cache(&self) {
+    self.0.font_context.purge_cache();
   }
 
   #[napi(ts_return_type = "Promise<void>")]

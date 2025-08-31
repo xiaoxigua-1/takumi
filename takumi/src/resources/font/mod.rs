@@ -91,28 +91,51 @@ const EMBEDDED_FONTS: &[&[u8]] = &[include_bytes!(
 
 impl Default for FontContext {
   fn default() -> Self {
-    #[cfg(feature = "embed_fonts")]
-    let db = {
-      let mut db = Database::new();
-
-      for font in EMBEDDED_FONTS {
-        db.load_font_data(load_font(font.to_vec(), None).unwrap());
-      }
-
-      db
-    };
-
-    #[cfg(not(feature = "embed_fonts"))]
-    let db = Database::new();
-
     Self {
-      font_system: Mutex::new(FontSystem::new_with_locale_and_db("en-US".to_string(), db)),
+      font_system: Mutex::new(FontSystem::new_with_locale_and_db(
+        "en-US".to_string(),
+        Database::new(),
+      )),
       font_cache: Mutex::new(SwashCache::new()),
     }
   }
 }
 
 impl FontContext {
+  /// Purge the rasterization cache.
+  pub fn purge_cache(&self) {
+    let mut cache_lock = self.font_cache.lock().unwrap();
+    cache_lock.image_cache.clear();
+    cache_lock.outline_command_cache.clear();
+
+    drop(cache_lock);
+
+    let mut font_system_lock = self.font_system.lock().unwrap();
+
+    font_system_lock.shape_run_cache.trim(0);
+  }
+
+  /// Creates a new font context with option to opt-in load default fonts,
+  /// only available when `embed_fonts` feature is enabled
+  #[cfg(feature = "embed_fonts")]
+  pub fn new(load_default_fonts: bool) -> Self {
+    let context = Self::default();
+
+    if load_default_fonts {
+      for font in EMBEDDED_FONTS {
+        context.load_and_store(font.to_vec()).unwrap();
+      }
+    }
+
+    context
+  }
+
+  /// Creates a new font context.
+  #[cfg(not(feature = "embed_fonts"))]
+  pub fn new() -> Self {
+    Self::default()
+  }
+
   /// Loads font into internal font db
   pub fn load_and_store(&self, source: Vec<u8>) -> Result<(), FontError> {
     let font_data = load_font(source, None)?;
