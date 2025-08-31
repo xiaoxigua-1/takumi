@@ -1,6 +1,12 @@
-use std::sync::Mutex;
+use std::{
+  borrow::Cow,
+  sync::{Arc, Mutex},
+};
 
-use cosmic_text::{FontSystem, SwashCache, fontdb::Database};
+use cosmic_text::{
+  FontSystem, SwashCache,
+  fontdb::{Database, Source},
+};
 
 #[cfg(feature = "woff")]
 mod woff;
@@ -36,23 +42,30 @@ pub enum FontFormat {
 }
 
 /// Loads and processes font data from raw bytes, optionally using format hint for detection
-pub fn load_font(source: Vec<u8>, format_hint: Option<FontFormat>) -> Result<Vec<u8>, FontError> {
+pub fn load_font<'source>(
+  source: &'source [u8],
+  format_hint: Option<FontFormat>,
+) -> Result<Cow<'source, [u8]>, FontError> {
   let format = if let Some(format) = format_hint {
     format
   } else {
-    guess_font_format(&source)?
+    guess_font_format(source)?
   };
 
   match format {
-    FontFormat::Ttf | FontFormat::Otf => Ok(source),
+    FontFormat::Ttf | FontFormat::Otf => Ok(Cow::Borrowed(source)),
     #[cfg(feature = "woff2")]
     FontFormat::Woff2 => {
-      let mut bytes = bytes::Bytes::from(source);
+      let mut bytes = bytes::Bytes::copy_from_slice(source);
 
-      woff2_patched::convert_woff2_to_ttf(&mut bytes).map_err(FontError::Woff2)
+      let ttf = woff2_patched::convert_woff2_to_ttf(&mut bytes).map_err(FontError::Woff2)?;
+
+      Ok(Cow::Owned(ttf))
     }
     #[cfg(feature = "woff")]
-    FontFormat::Woff => woff::decompress_woff(&source).map_err(FontError::Woff),
+    FontFormat::Woff => Ok(Cow::Owned(
+      woff::decompress_woff(source).map_err(FontError::Woff)?,
+    )),
   }
 }
 
@@ -123,7 +136,7 @@ impl FontContext {
 
     if load_default_fonts {
       for font in EMBEDDED_FONTS {
-        context.load_and_store(font.to_vec()).unwrap();
+        context.load_and_store(font).unwrap();
       }
     }
 
@@ -137,11 +150,21 @@ impl FontContext {
   }
 
   /// Loads font into internal font db
-  pub fn load_and_store(&self, source: Vec<u8>) -> Result<(), FontError> {
+  pub fn load_and_store(&self, source: &[u8]) -> Result<(), FontError> {
     let font_data = load_font(source, None)?;
 
     let mut lock = self.font_system.lock().unwrap();
-    lock.db_mut().load_font_data(font_data);
+
+    let db_mut = lock.db_mut();
+
+    // Wrap the font bytes in a single Arc so the database can parse faces
+    // (including font collections) without per-face copying.
+    let arc_data = Arc::new(match font_data {
+      Cow::Owned(vec) => vec,
+      Cow::Borrowed(slice) => slice.to_vec(),
+    });
+
+    db_mut.load_font_source(Source::Binary(arc_data));
 
     Ok(())
   }

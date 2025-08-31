@@ -1,11 +1,10 @@
 use napi::bindgen_prelude::*;
-use rayon::prelude::*;
 use std::sync::Arc;
 use takumi::GlobalContext;
 
 pub struct LoadFontTask {
   pub context: Arc<GlobalContext>,
-  pub buffers: Vec<Vec<u8>>,
+  pub buffers: Vec<Buffer>,
 }
 
 impl Task for LoadFontTask {
@@ -13,27 +12,17 @@ impl Task for LoadFontTask {
   type JsValue = u32;
 
   fn compute(&mut self) -> Result<Self::Output> {
-    let buffers = std::mem::take(&mut self.buffers);
-
-    if buffers.is_empty() {
+    if self.buffers.is_empty() {
       return Ok(0);
     }
 
-    if buffers.len() == 1 {
-      return Ok(
-        self
-          .context
-          .font_context
-          .load_and_store(buffers.into_iter().next().unwrap())
-          .map(|_| 1)
-          .unwrap_or(0),
-      );
-    }
+    let mut loaded_count = 0;
 
-    let loaded_count = buffers
-      .into_par_iter()
-      .map(|buffer| self.context.font_context.load_and_store(buffer).is_ok() as usize)
-      .sum();
+    for buffer in &self.buffers {
+      if self.context.font_context.load_and_store(buffer).is_ok() {
+        loaded_count += 1;
+      }
+    }
 
     Ok(loaded_count)
   }

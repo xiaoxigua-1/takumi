@@ -65,7 +65,7 @@ impl Renderer {
   }
 
   #[wasm_bindgen(js_name = loadFont)]
-  pub fn load_font(&self, font_data: Vec<u8>) {
+  pub fn load_font(&self, font_data: &[u8]) {
     self.context.font_context.load_and_store(font_data).unwrap();
   }
 

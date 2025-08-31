@@ -64,7 +64,7 @@ pub struct PersistentImage<'ctx> {
 pub struct ConstructRendererOptions<'ctx> {
   pub debug: Option<bool>,
   pub persistent_images: Option<Vec<PersistentImage<'ctx>>>,
-  pub fonts: Option<Vec<ArrayBuffer<'ctx>>>,
+  pub fonts: Option<Vec<BufferSlice<'ctx>>>,
   pub load_default_fonts: Option<bool>,
 }
 
@@ -97,11 +97,7 @@ impl Renderer {
 
     if let Some(fonts) = options.fonts {
       for font in fonts {
-        renderer
-          .0
-          .font_context
-          .load_and_store(font.to_vec())
-          .unwrap();
+        renderer.0.font_context.load_and_store(&font).unwrap();
       }
     }
 
@@ -133,13 +129,13 @@ impl Renderer {
   #[napi(ts_return_type = "Promise<number>")]
   pub fn load_font_async(
     &self,
-    data: ArrayBuffer,
+    data: Buffer,
     signal: Option<AbortSignal>,
   ) -> AsyncTask<LoadFontTask> {
     AsyncTask::with_optional_signal(
       LoadFontTask {
         context: Arc::clone(&self.0),
-        buffers: vec![data.to_vec()],
+        buffers: vec![data],
       },
       signal,
     )
@@ -148,13 +144,13 @@ impl Renderer {
   #[napi(ts_return_type = "Promise<number>")]
   pub fn load_fonts_async(
     &self,
-    fonts: Vec<ArrayBuffer>,
+    fonts: Vec<Buffer>,
     signal: Option<AbortSignal>,
   ) -> AsyncTask<LoadFontTask> {
     AsyncTask::with_optional_signal(
       LoadFontTask {
         context: Arc::clone(&self.0),
-        buffers: fonts.into_iter().map(|buf| buf.to_vec()).collect(),
+        buffers: fonts,
       },
       signal,
     )
