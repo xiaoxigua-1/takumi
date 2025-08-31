@@ -56,9 +56,11 @@ const node = container({
 });
 
 test("Renderer initialization with fonts and images", async () => {
-  const font = await Bun.file(
-    "../assets/fonts/noto-sans/NotoSansTC-Bold.woff",
-  ).arrayBuffer();
+  const font = Buffer.from(
+    await Bun.file(
+      "../assets/fonts/noto-sans/NotoSansTC-Bold.woff",
+    ).arrayBuffer(),
+  );
 
   new Renderer({
     fonts: [font],
@@ -86,7 +88,9 @@ describe("setup", () => {
     const files = await Array.fromAsync(glob.scan());
 
     const buffers = await Promise.all(
-      files.map((file) => Bun.file(file).arrayBuffer()),
+      files.map(async (file) =>
+        Buffer.from(await Bun.file(file).arrayBuffer()),
+      ),
     );
 
     const count = await renderer.loadFontsAsync(buffers);
