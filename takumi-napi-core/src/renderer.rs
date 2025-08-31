@@ -2,8 +2,8 @@ use napi::bindgen_prelude::*;
 use napi_derive::napi;
 use takumi::{
   GlobalContext,
-  layout::Viewport,
-  rendering::ImageOutputFormat,
+  layout::{Viewport, node::NodeKind},
+  rendering::{ImageOutputFormat, render, write_image},
   resources::{font::FontContext, image::load_image_source_from_bytes},
 };
 
@@ -11,7 +11,7 @@ use crate::{
   load_font_task::LoadFontTask, put_persistent_image_task::PutPersistentImageTask,
   render_task::RenderTask,
 };
-use std::sync::Arc;
+use std::{io::Cursor, sync::Arc};
 
 #[napi]
 #[derive(Default)]
@@ -184,5 +184,26 @@ impl Renderer {
       },
       signal,
     ))
+  }
+
+  #[napi(ts_args_type = "source: { type: string }, options: RenderOptions")]
+  pub fn render(&self, env: Env, source: Object, options: RenderOptions) -> Result<Buffer> {
+    let node: NodeKind = env.from_js_value(source)?;
+
+    let viewport = Viewport::new(options.width, options.height);
+    let image = render(viewport, &self.0, node).unwrap();
+
+    let mut buffer = Vec::new();
+    let mut cursor = Cursor::new(&mut buffer);
+
+    write_image(
+      &image,
+      &mut cursor,
+      options.format.unwrap_or(OutputFormat::png).into(),
+      options.quality,
+    )
+    .unwrap();
+
+    Ok(buffer.into())
   }
 }

@@ -116,6 +116,15 @@ describe("renderAsync", () => {
     height: 630,
   };
 
+  test("webp sync", () => {
+    const result = renderer.render(node, {
+      ...options,
+      format: "webp",
+    });
+
+    expect(result).toBeInstanceOf(Buffer);
+  });
+
   test("webp", async () => {
     const result = await renderer.renderAsync(node, {
       ...options,
