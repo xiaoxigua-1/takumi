@@ -8,9 +8,13 @@ const renderer = new Renderer();
 const remoteUrl = "https://yeecord.com/img/logo.png";
 const localImagePath = "../assets/images/yeecord.png";
 
-const remoteImage = await fetch(remoteUrl).then((r) => r.arrayBuffer());
+const remoteImage = await fetch(remoteUrl)
+  .then((r) => r.arrayBuffer())
+  .then(Buffer.from);
 
-const localImage = await Bun.file(localImagePath).arrayBuffer();
+const localImage = await Bun.file(localImagePath)
+  .arrayBuffer()
+  .then(Buffer.from);
 const dataUri = `data:image/png;base64,${Buffer.from(localImage).toString(
   "base64",
 )}`;
