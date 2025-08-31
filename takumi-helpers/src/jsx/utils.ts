@@ -15,3 +15,7 @@ export function isReactElement(element: unknown): element is ReactElement {
     typeof element.type === "string"
   );
 }
+
+export function camelToKebab(camel: string): string {
+  return camel.replace(/([A-Z])/g, "-$1").toLowerCase();
+}

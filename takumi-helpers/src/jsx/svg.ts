@@ -1,5 +1,5 @@
 import type { ComponentProps, ReactElement } from "react";
-import { isReactElement } from "./utils";
+import { camelToKebab, isReactElement } from "./utils";
 
 function isTextNode(node: unknown): node is string | number {
   return typeof node === "string" || typeof node === "number";
@@ -22,84 +22,77 @@ function styleObjectToString(styleObj: Record<string, unknown>): string {
     .join(";");
 }
 
-const svgKebabAttrs = [
-  "stop-color",
-  "stop-opacity",
-  "stroke-width",
-  "stroke-dasharray",
-  "stroke-dashoffset",
-  "stroke-linecap",
-  "stroke-linejoin",
-  "fill-rule",
-  "clip-rule",
-  "color-interpolation-filters",
-  "flood-color",
-  "flood-opacity",
-  "accent-height",
-  "alignment-baseline",
-  "arabic-form",
-  "baseline-shift",
-  "cap-height",
-  "clip-path",
-  "clip-path-units",
-  "color-interpolation",
-  "color-profile",
-  "color-rendering",
-  "enable-background",
-  "fill-opacity",
-  "font-family",
-  "font-size",
-  "font-size-adjust",
-  "font-stretch",
-  "font-style",
-  "font-variant",
-  "font-weight",
-  "glyph-name",
-  "glyph-orientation-horizontal",
-  "glyph-orientation-vertical",
-  "horiz-adv-x",
-  "horiz-origin-x",
-  "image-rendering",
-  "letter-spacing",
-  "lighting-color",
-  "marker-end",
-  "marker-mid",
-  "marker-start",
-  "overline-position",
-  "overline-thickness",
-  "paint-order",
-  "preserve-aspect-ratio",
-  "pointer-events",
-  "shape-rendering",
-  "stroke-miterlimit",
-  "stroke-opacity",
-  "text-anchor",
-  "text-decoration",
-  "text-rendering",
-  "transform-origin",
-  "underline-position",
-  "underline-thickness",
-  "unicode-bidi",
-  "unicode-range",
-  "units-per-em",
-  "vector-effect",
-  "vert-adv-y",
-  "vert-origin-x",
-  "vert-origin-y",
-  "v-alphabetic",
-  "v-hanging",
-  "v-ideographic",
-  "v-mathematical",
-  "word-spacing",
-  "writing-mode",
+const propertiesToKebabCase = [
+  "stopColor",
+  "stopOpacity",
+  "strokeWidth",
+  "strokeDasharray",
+  "strokeDashoffset",
+  "strokeLinecap",
+  "strokeLinejoin",
+  "fillRule",
+  "clipRule",
+  "colorInterpolationFilters",
+  "floodColor",
+  "floodOpacity",
+  "accentHeight",
+  "alignmentBaseline",
+  "arabicForm",
+  "baselineShift",
+  "capHeight",
+  "clipPath",
+  "clipPathUnits",
+  "colorInterpolation",
+  "colorProfile",
+  "colorRendering",
+  "enableBackground",
+  "fillOpacity",
+  "fontFamily",
+  "fontSize",
+  "fontSizeAdjust",
+  "fontStretch",
+  "fontStyle",
+  "fontVariant",
+  "fontWeight",
+  "glyphName",
+  "glyphOrientationHorizontal",
+  "glyphOrientationVertical",
+  "horizAdvX",
+  "horizOriginX",
+  "imageRendering",
+  "letterSpacing",
+  "lightingColor",
+  "markerEnd",
+  "markerMid",
+  "markerStart",
+  "overlinePosition",
+  "overlineThickness",
+  "paintOrder",
+  "preserveAspectRatio",
+  "pointerEvents",
+  "shapeRendering",
+  "strokeMiterlimit",
+  "strokeOpacity",
+  "textAnchor",
+  "textDecoration",
+  "textRendering",
+  "transformOrigin",
+  "underlinePosition",
+  "underlineThickness",
+  "unicodeBidi",
+  "unicodeRange",
+  "unitsPerEm",
+  "vectorEffect",
+  "vertAdvY",
+  "vertOriginX",
+  "vertOriginY",
+  "vAlphabetic",
+  "vHanging",
+  "vIdeographic",
+  "vMathematical",
+  "wordSpacing",
+  "writingMode",
 ];
-
-const svgAttrMap: Record<string, string> = Object.fromEntries(
-  svgKebabAttrs.map((kebab) => {
-    const camel = kebab.replace(/-([a-z])/g, (_m, c) => c.toUpperCase());
-    return [camel, kebab];
-  }),
-);
 
 function serializePropToAttrString(
   key: string,
@@ -111,11 +104,10 @@ function serializePropToAttrString(
   let attrName: string;
   if (key === "className") {
     attrName = "class";
-  } else if (svgAttrMap[key]) {
-    attrName = svgAttrMap[key];
+  } else if (propertiesToKebabCase.includes(key)) {
+    attrName = camelToKebab(key);
   } else {
-    const possibleKebab = key.replace(/([A-Z])/g, "-$1").toLowerCase();
-    attrName = svgKebabAttrs.includes(possibleKebab) ? possibleKebab : key;
+    attrName = key;
   }
 
   if (typeof value === "boolean") {
