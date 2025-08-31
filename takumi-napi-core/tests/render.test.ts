@@ -111,7 +111,7 @@ describe("renderAsync", () => {
   test("webp", async () => {
     const result = await renderer.renderAsync(node, {
       ...options,
-      format: "WebP",
+      format: "webp",
     });
 
     expect(result).toBeInstanceOf(Buffer);
@@ -120,7 +120,7 @@ describe("renderAsync", () => {
   test("avif", async () => {
     const result = await renderer.renderAsync(node, {
       ...options,
-      format: "Avif",
+      format: "avif",
     });
 
     expect(result).toBeInstanceOf(Buffer);
@@ -129,26 +129,26 @@ describe("renderAsync", () => {
   test("png", async () => {
     const result = await renderer.renderAsync(node, {
       ...options,
-      format: "Png",
+      format: "png",
     });
 
     expect(result).toBeInstanceOf(Buffer);
   });
 
-  test("jpeg 75%", async () => {
+  test("jpeg 75% Quality", async () => {
     const result = await renderer.renderAsync(node, {
       ...options,
-      format: "Jpeg",
+      format: "jpeg",
       quality: 75,
     });
 
     expect(result).toBeInstanceOf(Buffer);
   });
 
-  test("jpeg 100%", async () => {
+  test("jpeg 100% Quality", async () => {
     const result = await renderer.renderAsync(node, {
       ...options,
-      format: "Jpeg",
+      format: "jpeg",
       quality: 100,
     });
 
