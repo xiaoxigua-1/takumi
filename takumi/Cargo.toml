@@ -43,6 +43,7 @@ optional = true
 
 [dependencies.cosmic-text]
 features = ["shape-run-cache"]
+version = "0.14"
 git = "https://github.com/pop-os/cosmic-text"
 
 [dependencies.taffy]
