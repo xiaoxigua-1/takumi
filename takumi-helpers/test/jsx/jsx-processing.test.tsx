@@ -6,6 +6,20 @@ import { fromJsx } from "../../src/jsx/jsx";
 import type { ContainerNode, ImageNode, TextNode } from "../../src/types";
 
 describe("fromJsx", () => {
+  test("handles React like object", async () => {
+    const result = await fromJsx({
+      type: "div",
+      props: {
+        children: "Hello World",
+      },
+    });
+
+    expect(result).toEqual({
+      type: "container",
+      children: [{ type: "text", text: "Hello World" }],
+    } satisfies ContainerNode);
+  });
+
   test("converts text to TextNode", async () => {
     const result = await fromJsx("Hello World");
     expect(result).toEqual({

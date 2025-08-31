@@ -1,4 +1,5 @@
-import type { ComponentProps, ReactElement } from "react";
+import type { ComponentProps } from "react";
+import type { ReactElementLike } from "./jsx";
 import { camelToKebab, isReactElement } from "./utils";
 
 function isTextNode(node: unknown): node is string | number {
@@ -131,7 +132,7 @@ function propsToAttrStrings(props: Record<string, unknown>): string[] {
 }
 
 const serializeElementNode = (
-  obj: ReactElement,
+  obj: ReactElementLike,
   serializeFn: (n: unknown) => string,
 ): string => {
   const props = (obj.props as Record<string, unknown>) || {};
@@ -155,18 +156,18 @@ const serialize = (node: unknown): string => {
 };
 
 export function serializeSvg(
-  element: ReactElement<ComponentProps<"svg">>,
+  element: ReactElementLike<"svg", ComponentProps<"svg">>,
 ): string {
   const props = (element.props as Record<string, unknown>) || {};
 
   if (!("xmlns" in props)) {
-    const cloned: ReactElement = {
+    const cloned: ReactElementLike<"svg", ComponentProps<"svg">> = {
       ...element,
       props: {
         ...props,
         xmlns: "http://www.w3.org/2000/svg",
       },
-    } as ReactElement;
+    } as ReactElementLike<"svg", ComponentProps<"svg">>;
 
     return serialize(cloned) || "";
   }

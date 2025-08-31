@@ -1,13 +1,14 @@
-import type { ComponentProps, JSX, ReactElement } from "react";
+import type { ComponentProps, JSX } from "react";
+import type { ReactElementLike } from "./jsx";
 
 export function isHtmlElement<T extends keyof JSX.IntrinsicElements>(
-  element: ReactElement,
+  element: ReactElementLike,
   type: T,
-): element is ReactElement<ComponentProps<T>> {
+): element is ReactElementLike<T, ComponentProps<T>> {
   return element.type === type;
 }
 
-export function isReactElement(element: unknown): element is ReactElement {
+export function isReactElement(element: unknown): element is ReactElementLike {
   return (
     typeof element === "object" &&
     element !== null &&

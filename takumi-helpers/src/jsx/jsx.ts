@@ -1,22 +1,17 @@
-import type {
-  ComponentProps,
-  CSSProperties,
-  JSX,
-  ReactElement,
-  ReactNode,
-} from "react";
+import type { ComponentProps, CSSProperties, JSX, ReactNode } from "react";
 import { container, image, percentage, text } from "../helpers";
 import type { Node, PartialStyle } from "../types";
 import { stylePresets } from "./style-presets";
 import { serializeSvg } from "./svg";
 import { isHtmlElement } from "./utils";
 
-const REACT_ELEMENT_TYPE_TRANSITIONAL = Symbol.for(
-  "react.transitional.element",
-);
-const REACT_ELEMENT_TYPE_LEGACY = Symbol.for("react.element");
 const REACT_FORWARD_REF_TYPE = Symbol.for("react.forward_ref");
 const REACT_MEMO_TYPE = Symbol.for("react.memo");
+
+export type ReactElementLike<K extends string = string, P = unknown> = {
+  type: K;
+  props: P;
+};
 
 type ForwardRefLike = {
   $$typeof: symbol;
@@ -28,17 +23,18 @@ type MemoLike = {
   type: unknown;
 };
 
-function isValidElement(object: unknown): object is ReactElement {
+function isValidElement(object: unknown): object is ReactElementLike {
   return (
     typeof object === "object" &&
     object !== null &&
-    "$$typeof" in object &&
-    (object.$$typeof === REACT_ELEMENT_TYPE_TRANSITIONAL ||
-      object.$$typeof === REACT_ELEMENT_TYPE_LEGACY)
+    "type" in object &&
+    typeof object.type === "string"
   );
 }
 
-export async function fromJsx(element: ReactNode): Promise<Node> {
+export async function fromJsx(
+  element: ReactNode | ReactElementLike,
+): Promise<Node> {
   const result = await fromJsxInternal(element);
 
   if (result.length === 0) {
@@ -58,7 +54,9 @@ export async function fromJsx(element: ReactNode): Promise<Node> {
   });
 }
 
-async function fromJsxInternal(element: ReactNode): Promise<Node[]> {
+async function fromJsxInternal(
+  element: ReactNode | ReactElementLike,
+): Promise<Node[]> {
   if (element === undefined || element === null) return [];
 
   // If element is a server component, wait for it to resolve first
@@ -83,7 +81,7 @@ function isFunctionComponent(
 }
 
 function tryHandleForwardRef(
-  element: ReactElement,
+  element: ReactElementLike,
 ): Promise<Node[]> | undefined {
   if (typeof element.type !== "object" || element.type === null)
     return undefined;
@@ -94,7 +92,7 @@ function tryHandleForwardRef(
   }
 }
 
-function tryHandleMemo(element: ReactElement): Promise<Node[]> | undefined {
+function tryHandleMemo(element: ReactElementLike): Promise<Node[]> | undefined {
   if (typeof element.type !== "object" || element.type === null)
     return undefined;
 
@@ -106,15 +104,15 @@ function tryHandleMemo(element: ReactElement): Promise<Node[]> | undefined {
     return fromJsxInternal(innerType(element.props));
   }
 
-  const cloned: ReactElement = {
+  const cloned: ReactElementLike = {
     ...element,
-    type: innerType as ReactElement["type"],
-  } as ReactElement;
+    type: innerType as ReactElementLike["type"],
+  } as ReactElementLike;
 
   return processReactElement(cloned);
 }
 
-async function processReactElement(element: ReactElement): Promise<Node[]> {
+async function processReactElement(element: ReactElementLike): Promise<Node[]> {
   if (isFunctionComponent(element.type)) {
     return fromJsxInternal(element.type(element.props));
   }
@@ -160,7 +158,9 @@ async function processReactElement(element: ReactElement): Promise<Node[]> {
   ];
 }
 
-function createImageElement(element: ReactElement<ComponentProps<"img">>) {
+function createImageElement(
+  element: ReactElementLike<"img", ComponentProps<"img">>,
+) {
   if (!element.props.src) {
     throw new Error("Image element must have a 'src' prop.");
   }
@@ -173,7 +173,9 @@ function createImageElement(element: ReactElement<ComponentProps<"img">>) {
   });
 }
 
-function createSvgElement(element: ReactElement<ComponentProps<"svg">>) {
+function createSvgElement(
+  element: ReactElementLike<"svg", ComponentProps<"svg">>,
+) {
   const style = extractStyleFromProps(element.props) as PartialStyle;
 
   const svg = serializeSvg(element);
@@ -192,7 +194,7 @@ function extractStyleFromProps(props: unknown): CSSProperties {
     : {};
 }
 
-function collectChildren(element: ReactElement): Promise<Node[]> {
+function collectChildren(element: ReactElementLike): Promise<Node[]> {
   if (
     typeof element.props !== "object" ||
     element.props === null ||
