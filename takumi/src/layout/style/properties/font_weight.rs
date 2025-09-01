@@ -1,29 +1,41 @@
-use cosmic_text::Weight;
-use cssparser::{Parser, ParserInput, Token, match_ignore_ascii_case};
-use serde::{Deserialize, Serialize};
+use parley::style::FontWeight as ParleyFontWeight;
+use serde::{Deserialize, Serialize, Serializer};
 use ts_rs::TS;
 
-use crate::layout::style::{FromCss, ParseResult};
-
-/// Represents font weight as a numeric value.
-///
-/// This wraps a u16 value that corresponds to CSS font-weight values.
-/// Common values include 100 (thin), 200 (extra light), 300 (light),
-/// 400 (normal), 500 (medium), 600 (semi bold), 700 (bold),
-/// 800 (extra bold), 900 (black).
-#[derive(Debug, Copy, Clone, Deserialize, Serialize, TS, PartialEq)]
+/// Represents font weight value.
+#[derive(Debug, Default, Copy, Clone, Deserialize, TS, PartialEq)]
 #[serde(try_from = "FontWeightValue")]
 #[ts(as = "FontWeightValue")]
-pub struct FontWeight(pub u16);
+pub struct FontWeight(pub ParleyFontWeight);
 
-/// Proxy type for `FontWeight` to parse from CSS.
-#[derive(Debug, Clone, Deserialize, Serialize, TS, PartialEq)]
-#[serde(untagged)]
+#[derive(Debug, Copy, Clone, Deserialize, Serialize, TS, PartialEq)]
+#[serde(rename_all = "kebab-case")]
 enum FontWeightValue {
-  /// A number value between 100 and 900.
-  Number(u16),
-  /// CSS string value.
-  Css(String),
+  Thin,
+  ExtraLight,
+  Light,
+  SemiLight,
+  Normal,
+  Medium,
+  SemiBold,
+  Bold,
+  ExtraBold,
+  Black,
+  ExtraBlack,
+  #[serde(untagged)]
+  Number(f32),
+}
+
+impl From<FontWeight> for ParleyFontWeight {
+  fn from(value: FontWeight) -> Self {
+    value.0
+  }
+}
+
+impl From<f32> for FontWeight {
+  fn from(value: f32) -> Self {
+    FontWeight(ParleyFontWeight::new(value))
+  }
 }
 
 impl TryFrom<FontWeightValue> for FontWeight {
@@ -31,60 +43,27 @@ impl TryFrom<FontWeightValue> for FontWeight {
 
   fn try_from(value: FontWeightValue) -> Result<Self, Self::Error> {
     match value {
-      FontWeightValue::Number(n) => Ok(FontWeight(n)),
-      FontWeightValue::Css(ident) => {
-        let mut input = ParserInput::new(&ident);
-        let mut parser = Parser::new(&mut input);
-
-        FontWeight::from_css(&mut parser).map_err(|e| e.to_string())
-      }
+      FontWeightValue::Number(value) => Ok(FontWeight(ParleyFontWeight::new(value))),
+      FontWeightValue::Thin => Ok(FontWeight(ParleyFontWeight::THIN)),
+      FontWeightValue::ExtraLight => Ok(FontWeight(parley::style::FontWeight::EXTRA_LIGHT)),
+      FontWeightValue::Light => Ok(FontWeight(ParleyFontWeight::LIGHT)),
+      FontWeightValue::SemiLight => Ok(FontWeight(ParleyFontWeight::SEMI_LIGHT)),
+      FontWeightValue::Normal => Ok(FontWeight(ParleyFontWeight::NORMAL)),
+      FontWeightValue::Medium => Ok(FontWeight(ParleyFontWeight::MEDIUM)),
+      FontWeightValue::SemiBold => Ok(FontWeight(ParleyFontWeight::SEMI_BOLD)),
+      FontWeightValue::Bold => Ok(FontWeight(ParleyFontWeight::BOLD)),
+      FontWeightValue::ExtraBold => Ok(FontWeight(ParleyFontWeight::EXTRA_BOLD)),
+      FontWeightValue::Black => Ok(FontWeight(ParleyFontWeight::BLACK)),
+      FontWeightValue::ExtraBlack => Ok(FontWeight(ParleyFontWeight::EXTRA_BLACK)),
     }
   }
 }
 
-impl Default for FontWeight {
-  fn default() -> Self {
-    FontWeight(Weight::NORMAL.0)
-  }
-}
-
-impl From<FontWeight> for Weight {
-  fn from(weight: FontWeight) -> Self {
-    Weight(weight.0)
-  }
-}
-
-impl<'i> FromCss<'i> for FontWeight {
-  fn from_css(input: &mut Parser<'i, '_>) -> ParseResult<'i, Self> {
-    let location = input.current_source_location();
-    let token = input.next()?;
-
-    match *token {
-      Token::Ident(ref ident) => match_ignore_ascii_case! {&ident,
-        "normal" => Ok(FontWeight(400)),
-        "bold" => Ok(FontWeight(700)),
-        "bolder" => Ok(FontWeight(700)),
-        "lighter" => Ok(FontWeight(300)),
-        _ => Err(location.new_basic_unexpected_token_error(token.clone()).into()),
-      },
-      Token::Number { value, .. } => {
-        // Only accept 100..=900 in 100 increments
-        let int_value = value as i32;
-        if (100..=900).contains(&int_value) && int_value % 100 == 0 {
-          Ok(FontWeight(int_value as u16))
-        } else {
-          Err(
-            location
-              .new_basic_unexpected_token_error(token.clone())
-              .into(),
-          )
-        }
-      }
-      _ => Err(
-        location
-          .new_basic_unexpected_token_error(token.clone())
-          .into(),
-      ),
-    }
+impl Serialize for FontWeight {
+  fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+  where
+    S: Serializer,
+  {
+    serializer.serialize_f32(self.0.value())
   }
 }

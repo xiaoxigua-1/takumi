@@ -1,13 +1,15 @@
 use std::borrow::Cow;
 use std::sync::Arc;
 
-use cosmic_text::{Attrs, Buffer, Metrics, Shaping};
 use image::RgbaImage;
+use parley::{FontStack, PositionedLayoutItem, StyleProperty};
+use swash::scale::{Render, Source, StrikeWith, image::Content};
 use taffy::{Layout, Point, Size};
+use zeno::Format;
 
 use crate::{
   GlobalContext,
-  layout::style::{Color, FontStyle, Style, TextOverflow, TextTransform},
+  layout::style::{Color, ResolvedFontStyle, Style, TextOverflow, TextTransform},
   rendering::{BorderRadius, Canvas, RenderContext, overlay_image, resolve_layers_tiles},
 };
 
@@ -33,43 +35,39 @@ pub fn draw_text(
 
   let render_text = apply_text_transform(text, font_style.text_transform);
 
-  let mut buffer = construct_text_buffer(
+  let mut buffer = create_text_layout(
     &render_text,
     &font_style,
     context.global,
-    Some((Some(content_box.width), Some(content_box.height))),
+    content_box.width,
+    Some(MaxHeight::Absolute(content_box.height)),
   );
 
-  let Some(last_run) = buffer.layout_runs().last() else {
-    // No runs, nothing to draw
+  let Some(last_line) = buffer.lines().last() else {
     return;
   };
 
-  let Some(last_glyph) = last_run.glyphs.last() else {
-    // No runs, nothing to draw
-    return;
-  };
+  let last_line_range = last_line.text_range();
 
   let should_append_ellipsis =
-    font_style.text_overflow == TextOverflow::Ellipsis && last_glyph.end < render_text.len();
+    font_style.text_overflow == TextOverflow::Ellipsis && last_line_range.end < render_text.len();
 
   if should_append_ellipsis {
-    let first_glyph = last_run.glyphs.first().unwrap();
-
     let text_with_ellipsis = make_ellipsis_text(
       &render_text,
-      first_glyph.start,
-      last_glyph.end,
+      last_line_range.start,
+      last_line_range.end,
       &font_style,
       context.global,
       content_box.width,
     );
 
-    buffer = construct_text_buffer(
+    buffer = create_text_layout(
       &text_with_ellipsis,
       &font_style,
       context.global,
-      Some((Some(content_box.width), Some(content_box.height))),
+      content_box.width,
+      Some(MaxHeight::Absolute(content_box.height)),
     );
   }
 
@@ -140,147 +138,223 @@ pub fn draw_text(
 
 fn draw_buffer(
   context: &RenderContext,
-  buffer: &Buffer,
+  buffer: &parley::Layout<()>,
   canvas: &Canvas,
   color: Color,
   (start_x, start_y): (f32, f32),
   transform_origin: Point<i32>,
   image_fill: Option<Arc<RgbaImage>>,
 ) {
-  let mut font_system = context.global.font_context.font_system.lock().unwrap();
-  let mut font_cache = context.global.font_context.font_cache.lock().unwrap();
-
-  for run in buffer.layout_runs() {
-    for glyph in run.glyphs.iter() {
-      let physical_glyph = glyph.physical((0., 0.), 1.0);
-
-      let Some(image) = font_cache.get_image(&mut font_system, physical_glyph.cache_key) else {
-        continue; // No image for this glyph, skip
+  for line in buffer.lines() {
+    for item in line.items() {
+      let PositionedLayoutItem::GlyphRun(glyph_run) = item else {
+        continue;
       };
 
-      let base_offset = Point {
-        x: physical_glyph.x + image.placement.left + start_x as i32,
-        y: run.line_y as i32 + physical_glyph.y - image.placement.top + start_y as i32,
-      };
+      let run = glyph_run.run();
 
-      let mut image_data = image.data.clone();
+      context.global.font_context.with_scaler(run, |scaler| {
+        for glyph in glyph_run.positioned_glyphs() {
+          let Some(mut image) = Render::new(&[
+            Source::ColorOutline(0),
+            Source::ColorBitmap(StrikeWith::BestFit),
+            Source::Outline,
+          ])
+          .format(Format::Alpha)
+          .default_color(color.0)
+          .render(scaler, glyph.id) else {
+            continue;
+          };
 
-      match image.content {
-        cosmic_text::SwashContent::Mask => {
-          if let Some(ref fill) = image_fill {
-            let src_offset = Point {
-              x: base_offset.x - start_x as i32,
-              y: base_offset.y - start_y as i32,
-            };
-            canvas.draw_mask_with_image(
-              image_data.clone(),
-              base_offset,
-              Size {
-                width: image.placement.width,
-                height: image.placement.height,
-              },
-              fill.clone(),
-              src_offset,
-            );
-          } else {
-            canvas.draw_mask(
-              image_data,
-              base_offset,
-              Size {
-                width: image.placement.width,
-                height: image.placement.height,
-              },
-              color,
-              transform_origin,
-              *context.rotation,
-            );
-          }
-        }
-        cosmic_text::SwashContent::Color => {
-          if let Some(ref fill) = image_fill {
-            let src_offset = Point {
-              x: base_offset.x - start_x as i32,
-              y: base_offset.y - start_y as i32,
-            };
-            canvas.draw_mask_with_image(
-              // collect the alpha values from [r, g, b, a] sequence
-              image_data.into_iter().skip(3).step_by(4).collect(),
-              base_offset,
-              Size {
-                width: image.placement.width,
-                height: image.placement.height,
-              },
-              fill.clone(),
-              src_offset,
-            );
-          } else {
-            // apply alpha to the image based on the glyph color alpha
-            if color.0[3] != 255 {
-              let target_alpha = color.0[3] as f32 / 255.0;
+          let offset = Point {
+            x: (start_x + glyph.x) as i32 + image.placement.left,
+            y: (start_y + glyph.y) as i32 - image.placement.top,
+          };
 
-              for alpha in image_data.iter_mut().skip(3).step_by(4) {
-                *alpha = (*alpha as f32 * target_alpha) as u8;
+          match image.content {
+            Content::Mask => {
+              if let Some(fill) = image_fill.clone() {
+                canvas.draw_mask_with_image(
+                  image.data,
+                  offset,
+                  Size {
+                    width: image.placement.width,
+                    height: image.placement.height,
+                  },
+                  fill,
+                  Point { x: 0, y: 0 },
+                );
+              } else {
+                canvas.draw_mask(
+                  image.data,
+                  offset,
+                  Size {
+                    width: image.placement.width,
+                    height: image.placement.height,
+                  },
+                  color,
+                  transform_origin,
+                  *context.rotation,
+                );
               }
             }
+            Content::Color => {
+              if let Some(fill) = image_fill.clone() {
+                canvas.draw_mask_with_image(
+                  // collect the alpha values from [r, g, b, a] sequence
+                  image.data.into_iter().skip(3).step_by(4).collect(),
+                  offset,
+                  Size {
+                    width: image.placement.width,
+                    height: image.placement.height,
+                  },
+                  fill,
+                  Point { x: 0, y: 0 },
+                );
+              } else {
+                // apply alpha to the image based on the glyph color alpha
+                if color.0[3] != 255 {
+                  let target_alpha = color.0[3] as f32 / 255.0;
 
-            canvas.overlay_image(
-              Arc::new(
-                RgbaImage::from_raw(image.placement.width, image.placement.height, image_data)
-                  .unwrap(),
-              ),
-              base_offset,
-              BorderRadius::default(),
-              transform_origin,
-              *context.rotation,
-            );
+                  for alpha in image.data.iter_mut().skip(3).step_by(4) {
+                    *alpha = (*alpha as f32 * target_alpha) as u8;
+                  }
+                }
+
+                canvas.overlay_image(
+                  Arc::new(
+                    RgbaImage::from_raw(image.placement.width, image.placement.height, image.data)
+                      .unwrap(),
+                  ),
+                  offset,
+                  BorderRadius::default(),
+                  transform_origin,
+                  *context.rotation,
+                );
+              }
+            }
+            _ => {}
           }
         }
-        _ => {}
-      }
+      });
     }
   }
 }
 
-pub(crate) fn construct_text_buffer(
+pub(crate) enum MaxHeight {
+  Absolute(f32),
+  Lines(u32),
+  Both(f32, u32),
+}
+
+pub(crate) fn create_text_layout(
   text: &str,
-  font_style: &FontStyle,
+  font_style: &ResolvedFontStyle,
   global: &GlobalContext,
-  size: Option<(Option<f32>, Option<f32>)>,
-) -> Buffer {
-  let metrics = Metrics::new(font_style.font_size, font_style.line_height);
-  let mut buffer = Buffer::new_empty(metrics);
+  max_width: f32,
+  max_height: Option<MaxHeight>,
+) -> parley::Layout<()> {
+  let mut layout = global
+    .font_context
+    .create_layout(text, |builder, font_families| {
+      builder.push_default(StyleProperty::FontSize(font_style.font_size));
+      builder.push_default(StyleProperty::LineHeight(font_style.line_height));
+      builder.push_default(StyleProperty::FontWeight(font_style.font_weight));
+      builder.push_default(StyleProperty::FontStyle(font_style.font_style));
 
-  let mut attrs = Attrs::new().weight(font_style.font_weight);
+      if let Some(font_family) = font_style.font_family.as_ref() {
+        builder.push_default(StyleProperty::FontStack(font_family.into()));
+      } else {
+        builder.push_default(StyleProperty::FontStack(FontStack::List(Cow::Owned(
+          font_families
+            .into_iter()
+            .map(|f| parley::FontFamily::Named(f.into()))
+            .collect::<Vec<_>>(),
+        ))));
+      }
 
-  attrs = attrs.style(font_style.text_style.into());
+      if let Some(letter_spacing) = font_style.letter_spacing {
+        builder.push_default(StyleProperty::LetterSpacing(letter_spacing));
+      }
 
-  if let Some(font_family) = font_style.font_family.as_ref() {
-    attrs = attrs.family(font_family.as_family());
-  }
+      builder.push_default(StyleProperty::OverflowWrap(font_style.overflow_wrap));
+    });
 
-  if let Some(letter_spacing) = font_style.letter_spacing {
-    attrs = attrs.letter_spacing(letter_spacing);
-  }
+  break_lines(&mut layout, max_width, max_height);
 
-  let mut font_system = global.font_context.font_system.lock().unwrap();
-
-  buffer.set_wrap(&mut font_system, font_style.text_wrap);
-
-  if let Some((width, height)) = size {
-    buffer.set_size(&mut font_system, width, height);
-  }
-
-  let text = apply_text_transform(text, font_style.text_transform);
-
-  buffer.set_rich_text(
-    &mut font_system,
-    [(text.as_ref(), attrs.clone())],
-    &attrs,
-    Shaping::Advanced,
-    font_style.text_align,
+  layout.align(
+    Some(max_width),
+    font_style.text_align.unwrap_or_default(),
+    Default::default(),
   );
 
-  buffer
+  layout
+}
+
+fn break_lines(layout: &mut parley::Layout<()>, max_width: f32, max_height: Option<MaxHeight>) {
+  let Some(max_height) = max_height else {
+    return layout.break_all_lines(Some(max_width));
+  };
+
+  match max_height {
+    MaxHeight::Lines(lines) => {
+      let mut breaker = layout.break_lines();
+
+      for _ in 0..lines {
+        if breaker.break_next(max_width).is_none() {
+          // no more lines to break
+          break;
+        };
+      }
+
+      breaker.finish();
+    }
+    MaxHeight::Absolute(max_height) => {
+      let mut total_height = 0.0;
+      let mut breaker = layout.break_lines();
+
+      while total_height < max_height {
+        let Some((_, height)) = breaker.break_next(max_width) else {
+          // no more lines to break
+          break;
+        };
+
+        total_height += height;
+      }
+
+      // if its over the max height after last break, revert the break
+      if total_height > max_height {
+        breaker.revert();
+      }
+
+      breaker.finish();
+    }
+    MaxHeight::Both(max_height, max_lines) => {
+      let mut total_height = 0.0;
+      let mut line_count = 0;
+      let mut breaker = layout.break_lines();
+
+      while total_height < max_height {
+        if line_count >= max_lines {
+          break;
+        }
+
+        let Some((_, height)) = breaker.break_next(max_width) else {
+          // no more lines to break
+          break;
+        };
+
+        line_count += 1;
+        total_height += height;
+      }
+
+      if total_height > max_height {
+        breaker.revert();
+      }
+
+      breaker.finish();
+    }
+  }
 }
 
 /// Applies text transform to the input text.
@@ -315,7 +389,7 @@ fn make_ellipsis_text<'s>(
   render_text: &'s str,
   start_index: usize,
   end_index: usize,
-  font_style: &FontStyle,
+  font_style: &ResolvedFontStyle,
   global: &GlobalContext,
   max_width: f32,
 ) -> Cow<'s, str> {
@@ -328,12 +402,10 @@ fn make_ellipsis_text<'s>(
     text_with_ellipsis.push_str(truncated_text);
     text_with_ellipsis.push_str(ELLIPSIS_CHAR);
 
-    let truncated_buffer = construct_text_buffer(&text_with_ellipsis, font_style, global, None);
-
-    let last_line = truncated_buffer.layout_runs().last().unwrap();
+    let buffer = create_text_layout(&text_with_ellipsis, font_style, global, max_width, None);
 
     // if the text fits, return the text with ellipsis character
-    if last_line.line_w <= max_width {
+    if buffer.lines().count() == 1 {
       let before_last_line = &render_text[..start_index];
 
       // build the text with ellipsis character

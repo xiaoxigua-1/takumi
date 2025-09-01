@@ -2,13 +2,14 @@
 import type { BoxSizing } from "./BoxSizing";
 import type { Color } from "./Color";
 import type { FontFamily } from "./FontFamily";
+import type { FontStyle } from "./FontStyle";
 import type { FontWeight } from "./FontWeight";
 import type { ImageScalingAlgorithm } from "./ImageScalingAlgorithm";
 import type { LengthUnit } from "./LengthUnit";
 import type { LineHeight } from "./LineHeight";
+import type { OverflowWrap } from "./OverflowWrap";
 import type { TextAlign } from "./TextAlign";
 import type { TextOverflow } from "./TextOverflow";
-import type { TextStyle } from "./TextStyle";
 import type { TextTransform } from "./TextTransform";
 
 /**
@@ -30,7 +31,7 @@ textTransform?: TextTransform,
 /**
  * Font slant style (normal, italic, oblique).
  */
-textStyle?: TextStyle, 
+fontStyle?: FontStyle, 
 /**
  * Color of the element's border.
  */
@@ -70,4 +71,8 @@ letterSpacing?: LengthUnit,
 /**
  * Controls how images are scaled when rendered.
  */
-imageRendering?: ImageScalingAlgorithm, };
+imageRendering?: ImageScalingAlgorithm, 
+/**
+ * How text should be overflowed.
+ */
+overflowWrap?: OverflowWrap, };

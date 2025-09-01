@@ -12,6 +12,7 @@ import type { Display } from "./Display";
 import type { FlexDirection } from "./FlexDirection";
 import type { FlexWrap } from "./FlexWrap";
 import type { FontFamily } from "./FontFamily";
+import type { FontStyle } from "./FontStyle";
 import type { FontWeight } from "./FontWeight";
 import type { Gap } from "./Gap";
 import type { GridAutoFlow } from "./GridAutoFlow";
@@ -24,11 +25,11 @@ import type { JustifyContent } from "./JustifyContent";
 import type { LengthUnit } from "./LengthUnit";
 import type { LineHeight } from "./LineHeight";
 import type { ObjectFit } from "./ObjectFit";
+import type { OverflowWrap } from "./OverflowWrap";
 import type { Position } from "./Position";
 import type { Sides } from "./Sides";
 import type { TextAlign } from "./TextAlign";
 import type { TextOverflow } from "./TextOverflow";
-import type { TextStyle } from "./TextStyle";
 import type { TextTransform } from "./TextTransform";
 import type { Transforms } from "./Transforms";
 
@@ -319,7 +320,7 @@ textTransform?: TextTransform,
 /**
  * Font slant style (normal, italic, oblique).
  */
-textStyle?: TextStyle, 
+fontStyle?: FontStyle, 
 /**
  * Color of the element's border.
  */
@@ -359,4 +360,8 @@ letterSpacing?: LengthUnit,
 /**
  * Controls how images are scaled when rendered.
  */
-imageRendering?: ImageScalingAlgorithm, };
+imageRendering?: ImageScalingAlgorithm, 
+/**
+ * How text should be overflowed.
+ */
+overflowWrap?: OverflowWrap, };

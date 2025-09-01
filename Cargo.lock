@@ -2300,6 +2300,7 @@ dependencies = [
  "resvg",
  "serde",
  "serde_json",
+ "swash",
  "taffy",
  "tiny-skia",
  "ts-rs",

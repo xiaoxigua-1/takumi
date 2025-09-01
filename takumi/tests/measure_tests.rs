@@ -1,12 +1,12 @@
 use std::sync::LazyLock;
 
-use cosmic_text::Weight;
+use parley::style::{FontStyle as ParleyFontStyle, FontWeight as ParleyFontWeight};
 use taffy::{AvailableSpace, geometry::Size};
 use takumi::{
   GlobalContext,
   layout::{
     DEFAULT_FONT_SIZE, DEFAULT_LINE_HEIGHT_SCALER, Viewport,
-    style::{Angle, Color, FontFamily, FontStyle, TextOverflow, TextStyle, TextTransform},
+    style::{Angle, Color, ResolvedFontStyle, TextOverflow, TextTransform},
   },
   rendering::{DEFAULT_SCALE, RenderContext},
 };
@@ -17,10 +17,6 @@ const NOTO_SANS_REGULAR_BUFFER: &[u8] =
 // Viewport dimensions
 const VIEWPORT_WIDTH: u32 = 800;
 const VIEWPORT_HEIGHT: u32 = 600;
-
-// Font settings
-const LETTER_SPACING_0: f32 = 0.0;
-const FONT_FAMILY_NOTO_SANS: &str = "NotoSans";
 
 static SHARED_GLOBAL_CONTEXT: LazyLock<GlobalContext> = LazyLock::new(|| {
   let global_context = GlobalContext::default();
@@ -49,19 +45,20 @@ fn create_test_context() -> RenderContext<'static> {
 }
 
 // Helper function to create a basic ResolvedFontStyle for testing
-fn create_test_font_style() -> FontStyle {
-  FontStyle {
+fn create_test_font_style() -> ResolvedFontStyle {
+  ResolvedFontStyle {
     font_size: DEFAULT_FONT_SIZE,
-    line_height: DEFAULT_FONT_SIZE * DEFAULT_LINE_HEIGHT_SCALER,
-    font_weight: Weight::NORMAL,
-    text_style: TextStyle::Normal,
+    line_height: parley::LineHeight::FontSizeRelative(DEFAULT_LINE_HEIGHT_SCALER),
+    font_weight: ParleyFontWeight::NORMAL,
+    font_style: ParleyFontStyle::default(),
     line_clamp: None,
-    font_family: Some(FontFamily::Custom(FONT_FAMILY_NOTO_SANS.to_string()).into()),
-    letter_spacing: Some(LETTER_SPACING_0),
-    text_align: Some(cosmic_text::Align::Left),
+    font_family: None,
+    letter_spacing: None,
+    text_align: None,
     text_overflow: TextOverflow::Clip,
     text_transform: TextTransform::None,
     color: Color::black(),
+    overflow_wrap: parley::OverflowWrap::BreakWord,
   }
 }
 
@@ -261,7 +258,7 @@ mod measure_text_tests {
   // Helper function to measure text with custom style
   fn measure_text_with_style(
     text: &str,
-    style: &FontStyle,
+    style: &ResolvedFontStyle,
     width: Option<f32>,
     height: Option<f32>,
     available_width: AvailableSpace,
@@ -305,8 +302,8 @@ mod measure_text_tests {
       AvailableSpace::MaxContent,
     );
 
-    assert!(result.width <= 200.0);
-    assert!(result.height >= 2.0 * DEFAULT_FONT_SIZE * DEFAULT_LINE_HEIGHT_SCALER);
+    assert_eq!(result.width, 200.0);
+    assert!(result.height >= (2.0 * DEFAULT_FONT_SIZE * DEFAULT_LINE_HEIGHT_SCALER).ceil());
     // Have to allow one pixel tolerance due to rounding
     assert!((result.height % (DEFAULT_FONT_SIZE * DEFAULT_LINE_HEIGHT_SCALER)).floor() == 0.0);
   }
@@ -325,7 +322,7 @@ mod measure_text_tests {
       AvailableSpace::MaxContent,
     );
 
-    let expected_height = (2.0 * style.line_height).ceil();
+    let expected_height = (2.0 * DEFAULT_FONT_SIZE * DEFAULT_LINE_HEIGHT_SCALER).ceil();
     assert_eq!(result.height, expected_height);
   }
 
@@ -374,7 +371,7 @@ mod measure_text_tests {
       AvailableSpace::MaxContent,
     );
 
-    let expected_height = (3.0 * style.line_height).ceil();
+    let expected_height = (3.0 * DEFAULT_FONT_SIZE * DEFAULT_LINE_HEIGHT_SCALER).ceil();
     assert_eq!(result.height, expected_height);
   }
 
@@ -412,7 +409,6 @@ mod measure_text_tests {
   fn test_measure_text_with_different_font_size() {
     let mut style = create_test_font_style();
     style.font_size = 24.0;
-    style.line_height = 24.0 * DEFAULT_LINE_HEIGHT_SCALER;
 
     let result = measure_text_with_style(
       "Large font text",
@@ -424,13 +420,13 @@ mod measure_text_tests {
     );
 
     assert!(result.width > 0.0);
-    assert_eq!(result.height, style.line_height.ceil());
+    assert_eq!(result.height, (24.0 * DEFAULT_LINE_HEIGHT_SCALER).ceil());
   }
 
   #[test]
   fn test_measure_text_with_different_line_height() {
     let mut style = create_test_font_style();
-    style.line_height = DEFAULT_FONT_SIZE * 1.5;
+    style.line_height = parley::LineHeight::FontSizeRelative(1.5);
 
     let result = measure_text_with_style(
       "Text with increased line height",
@@ -442,7 +438,7 @@ mod measure_text_tests {
     );
 
     assert!(result.width > 0.0);
-    assert_eq!(result.height, style.line_height);
+    assert_eq!(result.height, DEFAULT_FONT_SIZE * 1.5);
   }
 
   #[test]

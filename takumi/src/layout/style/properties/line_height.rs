@@ -2,7 +2,10 @@ use cssparser::{Parser, ParserInput};
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
-use crate::layout::style::{FromCss, LengthUnit, ParseResult};
+use crate::{
+  layout::style::{FromCss, LengthUnit, ParseResult},
+  rendering::RenderContext,
+};
 
 /// Represents a line height value, number value is parsed as em.
 #[derive(Debug, Clone, PartialEq, Deserialize, Serialize, TS, Copy)]
@@ -46,5 +49,17 @@ impl<'i> FromCss<'i> for LineHeight {
     };
 
     Ok(LineHeight(LengthUnit::Em(number)))
+  }
+}
+
+impl LineHeight {
+  /// Converts the line height to a parley line height.
+  pub fn into_parley(self, context: &RenderContext) -> parley::LineHeight {
+    match self.0 {
+      LengthUnit::Px(value) => parley::LineHeight::Absolute(value),
+      LengthUnit::Em(value) => parley::LineHeight::FontSizeRelative(value),
+      LengthUnit::Percentage(value) => parley::LineHeight::FontSizeRelative(value / 100.0),
+      unit => parley::LineHeight::Absolute(unit.resolve_to_px(context, context.parent_font_size)),
+    }
   }
 }

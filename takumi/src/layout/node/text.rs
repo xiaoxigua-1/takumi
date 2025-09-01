@@ -10,9 +10,11 @@ use crate::{
   GlobalContext,
   layout::{
     node::Node,
-    style::{FontStyle, Style},
+    style::{ResolvedFontStyle, Style},
   },
-  rendering::{Canvas, RenderContext, apply_text_transform, construct_text_buffer, draw_text},
+  rendering::{
+    Canvas, MaxHeight, RenderContext, apply_text_transform, create_text_layout, draw_text,
+  },
 };
 
 /// A node that renders text content.
@@ -68,7 +70,7 @@ impl<Nodes: Node<Nodes>> Node<Nodes> for TextNode {
 pub fn measure_text(
   global: &GlobalContext,
   text: &str,
-  style: &FontStyle,
+  style: &ResolvedFontStyle,
   known_dimensions: Size<Option<f32>>,
   available_space: Size<AvailableSpace>,
 ) -> Size<f32> {
@@ -95,42 +97,37 @@ pub fn measure_text(
   });
 
   let height_constraint_with_max_lines = match (style.line_clamp, height_constraint) {
-    (Some(max_lines), Some(height)) => Some((max_lines as f32 * style.line_height).min(height)),
-    (Some(max_lines), None) => Some(max_lines as f32 * style.line_height),
-    (None, Some(height)) => Some(height),
+    (Some(max_lines), Some(height)) => Some(MaxHeight::Both(height, max_lines)),
+    (Some(max_lines), None) => Some(MaxHeight::Lines(max_lines)),
+    (None, Some(height)) => Some(MaxHeight::Absolute(height)),
     (None, None) => None,
   };
 
   let text = apply_text_transform(text, style.text_transform);
 
-  let buffer = construct_text_buffer(
+  let buffer = create_text_layout(
     &text,
     style,
     global,
-    Some((width_constraint, height_constraint_with_max_lines)),
+    width_constraint.unwrap_or(f32::MAX),
+    height_constraint_with_max_lines,
   );
 
-  let layout_runs = buffer.layout_runs();
-
-  let mut max_run_width = 0.0;
-  let mut total_height = 0.0;
-
-  for (line_index, run) in layout_runs.enumerate() {
-    if style
-      .line_clamp
-      .is_some_and(|max_lines| line_index >= max_lines as usize)
-    {
-      break;
-    }
-
-    max_run_width = run.line_w.max(max_run_width);
-    total_height += run.line_height;
-    println!("{text} {} {}", max_run_width, run.line_height);
-  }
+  let (max_run_width, total_height) =
+    buffer
+      .lines()
+      .fold((0.0, 0.0), |(max_run_width, total_height), line| {
+        let metrics = line.metrics();
+        (
+          metrics.advance.max(max_run_width),
+          total_height + metrics.line_height,
+        )
+      });
 
   taffy::Size {
-    // Ceiling to avoid sub-pixel getting cutoff
-    width: max_run_width.ceil(),
+    width: max_run_width
+      .ceil()
+      .min(width_constraint.unwrap_or(f32::MAX)),
     height: total_height.ceil(),
   }
 }

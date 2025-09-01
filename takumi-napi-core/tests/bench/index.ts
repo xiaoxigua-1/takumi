@@ -1,8 +1,8 @@
-import { fromJsx } from "@takumi-rs/helpers/jsx";
-import { bench, run, summary } from "mitata";
-import { Renderer } from "../..";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
+import { fromJsx } from "@takumi-rs/helpers/jsx";
+import { bench, summary } from "mitata";
+import { Renderer } from "../..";
 
 function createNode() {
   return fromJsx({
@@ -205,7 +205,7 @@ const renderer = new Renderer({
     await readFile(
       join(
         import.meta.dirname,
-        "../../../assets/fonts/geist/Geist-VariableFont_wght.woff2",
+        "../../../assets/fonts/geist/Geist[wght].woff2",
       ),
     ),
   ],

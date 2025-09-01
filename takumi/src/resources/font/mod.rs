@@ -1,13 +1,13 @@
 use std::{
   borrow::Cow,
-  sync::{Arc, Mutex, atomic::AtomicUsize},
+  sync::{Arc, Mutex},
 };
 
-use cosmic_text::{
-  FontSystem, SwashCache,
-  fontdb::{Database, Source},
+use parley::{Layout, LayoutContext, RangedBuilder, Run, fontique::Blob};
+use swash::{
+  FontRef,
+  scale::{ScaleContext, Scaler},
 };
-use parley::fontique::Blob;
 
 #[cfg(feature = "woff")]
 mod woff;
@@ -86,73 +86,114 @@ fn guess_font_format(source: &[u8]) -> Result<FontFormat, FontError> {
   }
 }
 
-/// A context for managing fonts in the rendering system.
-///
-/// This struct holds the font system and cache used for text rendering.
-pub struct FontContext {
-  inner: Mutex<parley::FontContext>,
-  counter: AtomicUsize,
-}
-
 /// Embedded fonts
 #[cfg(feature = "embed_fonts")]
 const EMBEDDED_FONTS: &[&[u8]] = &[include_bytes!(
-  "../../../../assets/fonts/plus-jakarta-sans/PlusJakartaSans-VariableFont_wght.woff2"
+  "../../../../assets/fonts/geist/Geist[wght].woff2"
 )];
 
+/// A context for managing fonts in the rendering system.
+pub struct FontContext {
+  layout: Mutex<(parley::FontContext, LayoutContext<()>)>,
+  scale: Mutex<ScaleContext>,
+}
+
 impl Default for FontContext {
+  #[cfg(feature = "embed_fonts")]
   fn default() -> Self {
-    Self(Mutex::new(parley::FontContext::new()))
+    Self::new_with_default_fonts()
+  }
+
+  #[cfg(not(feature = "embed_fonts"))]
+  fn default() -> Self {
+    Self::new()
   }
 }
 
 impl FontContext {
+  /// Create a swash scaler and run the function with it
+  /// The inner lock will be released after the function is executed
+  pub fn with_scaler(&self, run: &Run<'_, ()>, func: impl FnOnce(&mut Scaler<'_>)) {
+    let font = run.font();
+    let font_ref = FontRef::from_index(font.data.as_ref(), font.index as usize).unwrap();
+
+    let mut context = self.scale.lock().unwrap();
+
+    let mut scaler = context
+      .builder(font_ref)
+      .size(run.font_size())
+      .hint(true)
+      .build();
+
+    func(&mut scaler);
+  }
+
+  /// Access the inner context, then return the result of the function
+  /// The inner lock will be released after the function is executed
+  pub fn create_layout(
+    &self,
+    text: &str,
+    func: impl FnOnce(&mut RangedBuilder<'_, ()>, Vec<String>),
+  ) -> Layout<()> {
+    let mut lock = self.layout.lock().unwrap();
+    let (fcx, lcx) = &mut *lock;
+
+    let font_families = fcx
+      .collection
+      .family_names()
+      .map(ToOwned::to_owned)
+      .collect::<Vec<_>>();
+
+    if font_families.is_empty() {
+      panic!(
+        "No font families found, please make sure you have loaded at least one font (system fonts won't be included)."
+      );
+    }
+
+    let mut builder = lcx.ranged_builder(fcx, text, 1.0, true);
+
+    func(&mut builder, font_families);
+
+    builder.build(text)
+  }
+
   /// Purge the rasterization cache.
   pub fn purge_cache(&self) {
-    let mut lock = self.0.lock().unwrap();
-    lock.source_cache.prune(0, true);
+    let mut lock = self.layout.lock().unwrap();
+    lock.0.source_cache.prune(0, true);
   }
 
   /// Creates a new font context with option to opt-in load default fonts,
   /// only available when `embed_fonts` feature is enabled
   #[cfg(feature = "embed_fonts")]
-  pub fn new(load_default_fonts: bool) -> Self {
-    let context = Self::default();
+  pub fn new_with_default_fonts() -> Self {
+    let inner = Self::new();
 
-    if load_default_fonts {
-      for font in EMBEDDED_FONTS {
-        context.load_and_store(font).unwrap();
-      }
+    for font in EMBEDDED_FONTS {
+      inner.load_and_store(font).unwrap();
     }
 
-    context
+    inner
   }
 
   /// Creates a new font context.
-  #[cfg(not(feature = "embed_fonts"))]
   pub fn new() -> Self {
-    Self::default()
+    Self {
+      layout: Mutex::new((parley::FontContext::default(), LayoutContext::default())),
+      scale: Mutex::new(ScaleContext::default()),
+    }
   }
 
   /// Loads font into internal font db
   pub fn load_and_store(&self, source: &[u8]) -> Result<(), FontError> {
-    let font_data = load_font(source, None)?;
+    let font_data = Blob::new(Arc::new(match load_font(source, None)? {
+      Cow::Owned(vec) => vec,
+      Cow::Borrowed(slice) => slice.to_vec(),
+    }));
 
-    let mut lock = self.0.lock().unwrap();
+    let mut lock = self.layout.lock().unwrap();
 
-    let db_mut = lock.collection.register_fonts(font_data, None)?;
-
-    // Wrap the font bytes in a single Arc so the database can parse faces
-    // (including font collections) without per-face copying.
-    let arc_data = Blob::from_raw_parts(
-      match font_data {
-        Cow::Owned(vec) => vec,
-        Cow::Borrowed(slice) => slice.to_vec(),
-      },
-      self.counter.fetch_add(1, Ordering::Relaxed),
-    );
-
-    db_mut.load_font_source(Source::Binary(arc_data));
+    lock.0.collection.register_fonts(font_data, None);
 
     Ok(())
   }
