@@ -39,7 +39,9 @@ impl<'de> Deserialize<'de> for FontWeight {
       where
         E: serde::de::Error,
       {
-        Ok(FontWeight(ParleyFontWeight::parse(v).unwrap()))
+        Ok(FontWeight(ParleyFontWeight::parse(v).ok_or_else(|| {
+          serde::de::Error::custom(format!("Invalid font weight: {v}"))
+        })?))
       }
 
       fn visit_f64<E>(self, v: f64) -> Result<Self::Value, E>
