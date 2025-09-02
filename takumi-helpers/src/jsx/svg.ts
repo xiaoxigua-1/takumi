@@ -1,6 +1,6 @@
 import type { ComponentProps } from "react";
 import type { ReactElementLike } from "./jsx";
-import { camelToKebab, isReactElement } from "./utils";
+import { camelToKebab, isFunctionComponent, isReactElement } from "./utils";
 
 function isTextNode(node: unknown): node is string | number {
   return typeof node === "string" || typeof node === "number";
@@ -136,6 +136,14 @@ const serializeElementNode = (
   serializeFn: (n: unknown) => string,
 ): string => {
   const props = (obj.props as Record<string, unknown>) || {};
+
+  if (isFunctionComponent(obj.type)) return serialize(obj.type(obj.props));
+
+  // Handle symbols (like React fragments) - they can't be serialized as HTML/SVG tags
+  if (typeof obj.type === "symbol") return "";
+
+  // Only string types can be used as HTML/SVG tag names
+  if (typeof obj.type !== "string") return "";
 
   const attrs = propsToAttrStrings(props);
   const children = props.children;

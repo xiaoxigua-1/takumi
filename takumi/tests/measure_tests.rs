@@ -1,6 +1,9 @@
 use std::sync::LazyLock;
 
-use parley::style::{FontStyle as ParleyFontStyle, FontWeight as ParleyFontWeight};
+use parley::{
+  WordBreakStrength,
+  style::{FontStyle as ParleyFontStyle, FontWeight as ParleyFontWeight},
+};
 use taffy::{AvailableSpace, geometry::Size};
 use takumi::{
   GlobalContext,
@@ -55,6 +58,8 @@ fn create_test_font_style() -> ResolvedFontStyle {
     font_family: None,
     letter_spacing: None,
     text_align: None,
+    word_break: WordBreakStrength::Normal,
+    word_spacing: None,
     text_overflow: TextOverflow::Clip,
     text_transform: TextTransform::None,
     color: Color::black(),

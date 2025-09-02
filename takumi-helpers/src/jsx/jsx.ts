@@ -3,34 +3,21 @@ import { container, image, percentage, text } from "../helpers";
 import type { Node, PartialStyle } from "../types";
 import { stylePresets } from "./style-presets";
 import { serializeSvg } from "./svg";
-import { isHtmlElement } from "./utils";
+import {
+  isFunctionComponent,
+  isHtmlElement,
+  isReactForwardRef,
+  isReactMemo,
+  isValidElement,
+} from "./utils";
 
-const REACT_FORWARD_REF_TYPE = Symbol.for("react.forward_ref");
-const REACT_MEMO_TYPE = Symbol.for("react.memo");
-
-export type ReactElementLike<K extends string = string, P = unknown> = {
+export type ReactElementLike<
+  K = string | ((props: unknown) => ReactNode) | symbol,
+  P = unknown,
+> = {
   type: K;
   props: P;
 };
-
-type ForwardRefLike = {
-  $$typeof: symbol;
-  render: (props: unknown, ref: unknown) => ReactNode;
-};
-
-type MemoLike = {
-  $$typeof: symbol;
-  type: unknown;
-};
-
-function isValidElement(object: unknown): object is ReactElementLike {
-  return (
-    typeof object === "object" &&
-    object !== null &&
-    "type" in object &&
-    typeof object.type === "string"
-  );
-}
 
 export async function fromJsx(
   element: ReactNode | ReactElementLike,
@@ -74,21 +61,18 @@ async function fromJsxInternal(
   return [text(String(element))];
 }
 
-function isFunctionComponent(
-  value: unknown,
-): value is (props: unknown) => ReactNode {
-  return typeof value === "function";
-}
-
 function tryHandleForwardRef(
   element: ReactElementLike,
 ): Promise<Node[]> | undefined {
   if (typeof element.type !== "object" || element.type === null)
     return undefined;
 
-  const typeObject = element.type as unknown as Partial<ForwardRefLike>;
-  if (typeObject.$$typeof === REACT_FORWARD_REF_TYPE && typeObject.render) {
-    return fromJsxInternal(typeObject.render(element.props, null));
+  // Check if this is a forwardRef component
+  if (isReactForwardRef(element.type) && "render" in element.type) {
+    const forwardRefType = element.type as {
+      render: (props: unknown, ref: unknown) => ReactNode;
+    };
+    return fromJsxInternal(forwardRefType.render(element.props, null));
   }
 }
 
@@ -96,20 +80,22 @@ function tryHandleMemo(element: ReactElementLike): Promise<Node[]> | undefined {
   if (typeof element.type !== "object" || element.type === null)
     return undefined;
 
-  const typeObject = element.type as unknown as Partial<MemoLike>;
-  if (typeObject.$$typeof !== REACT_MEMO_TYPE) return undefined;
+  // Check if this is a memo component
+  if (isReactMemo(element.type) && "type" in element.type) {
+    const memoType = element.type as { type: unknown };
+    const innerType = memoType.type;
 
-  const innerType = typeObject.type;
-  if (isFunctionComponent(innerType)) {
-    return fromJsxInternal(innerType(element.props));
+    if (isFunctionComponent(innerType)) {
+      return fromJsxInternal(innerType(element.props));
+    }
+
+    const cloned: ReactElementLike = {
+      ...element,
+      type: innerType as ReactElementLike["type"],
+    } as ReactElementLike;
+
+    return processReactElement(cloned);
   }
-
-  const cloned: ReactElementLike = {
-    ...element,
-    type: innerType as ReactElementLike["type"],
-  } as ReactElementLike;
-
-  return processReactElement(cloned);
 }
 
 async function processReactElement(element: ReactElementLike): Promise<Node[]> {
