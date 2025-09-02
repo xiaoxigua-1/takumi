@@ -1,6 +1,10 @@
-import type { ComponentProps } from "react";
-import type { ReactElementLike } from "./jsx";
-import { camelToKebab, isFunctionComponent, isReactElement } from "./utils";
+import type { ComponentProps, ReactElement } from "react";
+import {
+  camelToKebab,
+  isFunctionComponent,
+  isValidElement,
+  type ReactElementLike,
+} from "./utils";
 
 function isTextNode(node: unknown): node is string | number {
   return typeof node === "string" || typeof node === "number";
@@ -158,24 +162,24 @@ const serialize = (node: unknown): string => {
   if (node === null || node === undefined || node === false) return "";
   if (isTextNode(node)) return String(node);
   if (Array.isArray(node)) return node.map(serialize).join("");
-  if (!isReactElement(node)) return "";
+  if (!isValidElement(node)) return "";
 
   return serializeElementNode(node, serialize);
 };
 
 export function serializeSvg(
-  element: ReactElementLike<"svg", ComponentProps<"svg">>,
+  element: ReactElement<ComponentProps<"svg">, "svg">,
 ): string {
   const props = (element.props as Record<string, unknown>) || {};
 
   if (!("xmlns" in props)) {
-    const cloned: ReactElementLike<"svg", ComponentProps<"svg">> = {
+    const cloned: ReactElement<ComponentProps<"svg">, "svg"> = {
       ...element,
       props: {
         ...props,
         xmlns: "http://www.w3.org/2000/svg",
       },
-    } as ReactElementLike<"svg", ComponentProps<"svg">>;
+    } as ReactElement<ComponentProps<"svg">, "svg">;
 
     return serialize(cloned) || "";
   }

@@ -1,4 +1,10 @@
-import type { ComponentProps, CSSProperties, JSX, ReactNode } from "react";
+import type {
+  ComponentProps,
+  CSSProperties,
+  JSX,
+  ReactElement,
+  ReactNode,
+} from "react";
 import { container, image, percentage, text } from "../helpers";
 import type { Node, PartialStyle } from "../types";
 import { stylePresets } from "./style-presets";
@@ -9,15 +15,8 @@ import {
   isReactForwardRef,
   isReactMemo,
   isValidElement,
+  type ReactElementLike,
 } from "./utils";
-
-export type ReactElementLike<
-  K = string | ((props: unknown) => ReactNode) | symbol,
-  P = unknown,
-> = {
-  type: K;
-  props: P;
-};
 
 export async function fromJsx(
   element: ReactNode | ReactElementLike,
@@ -145,7 +144,7 @@ async function processReactElement(element: ReactElementLike): Promise<Node[]> {
 }
 
 function createImageElement(
-  element: ReactElementLike<"img", ComponentProps<"img">>,
+  element: ReactElement<ComponentProps<"img">, "img">,
 ) {
   if (!element.props.src) {
     throw new Error("Image element must have a 'src' prop.");
@@ -159,9 +158,7 @@ function createImageElement(
   });
 }
 
-function createSvgElement(
-  element: ReactElementLike<"svg", ComponentProps<"svg">>,
-) {
+function createSvgElement(element: ReactElement<ComponentProps<"svg">, "svg">) {
   const style = extractStyleFromProps(element.props) as PartialStyle;
 
   const svg = serializeSvg(element);
