@@ -32,6 +32,7 @@ import type { TextAlign } from "./TextAlign";
 import type { TextOverflow } from "./TextOverflow";
 import type { TextTransform } from "./TextTransform";
 import type { Transforms } from "./Transforms";
+import type { WordBreak } from "./WordBreak";
 
 /**
  * Main styling structure that contains all layout and visual properties.
@@ -358,10 +359,18 @@ textAlign?: TextAlign,
  */
 letterSpacing?: LengthUnit, 
 /**
+ * Additional spacing between words in text.
+ */
+wordSpacing?: LengthUnit, 
+/**
  * Controls how images are scaled when rendered.
  */
 imageRendering?: ImageScalingAlgorithm, 
 /**
  * How text should be overflowed.
  */
-overflowWrap?: OverflowWrap, };
+overflowWrap?: OverflowWrap, 
+/**
+ * How text should be broken at word boundaries.
+ */
+wordBreak?: WordBreak, };

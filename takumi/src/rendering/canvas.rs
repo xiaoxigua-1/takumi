@@ -293,7 +293,7 @@ fn apply_mask_alpha_to_pixel(pixel: Rgba<u8>, alpha: u8) -> Rgba<u8> {
 }
 
 fn calculate_mask_index(mask_x: f32, mask_y: f32, width: u32) -> usize {
-  (mask_y.floor() as u32 * width + mask_x.floor() as u32) as usize
+  (mask_y as u32 * width + mask_x as u32) as usize
 }
 
 fn is_point_in_bounds(x: f32, y: f32, width: f32, height: f32) -> bool {
@@ -478,8 +478,8 @@ pub(crate) fn overlay_image(
           return;
         }
 
-        let src_img_x = (img_x.floor() as u32) + overlay_x;
-        let src_img_y = (img_y.floor() as u32) + overlay_y;
+        let src_img_x = (img_x as u32) + overlay_x;
+        let src_img_y = (img_y as u32) + overlay_y;
 
         if src_img_x >= image.width() || src_img_y >= image.height() {
           return;
@@ -583,8 +583,8 @@ pub(crate) fn overlay_image(
         return;
       }
 
-      let src_img_x = (img_src_x.floor() as u32) + overlay_x;
-      let src_img_y = (img_src_y.floor() as u32) + overlay_y;
+      let src_img_x = (img_src_x as u32) + overlay_x;
+      let src_img_y = (img_src_y as u32) + overlay_y;
 
       let Some(pixel) = image.get_pixel_checked(src_img_x, src_img_y) else {
         return;
@@ -616,16 +616,12 @@ pub(crate) fn rotate_position(
   let rx = origin.x as f32 + (dx as f32 * cos_t - dy as f32 * sin_t);
   let ry = origin.y as f32 + (dx as f32 * sin_t + dy as f32 * cos_t);
 
-  // Clamp to canvas bounds to avoid overflow
-  let rx_i = rx.round() as i32;
-  let ry_i = ry.round() as i32;
-
   let max_x = size.width as i32 - 1;
   let max_y = size.height as i32 - 1;
 
   Point {
-    x: rx_i.clamp(0, max_x),
-    y: ry_i.clamp(0, max_y),
+    x: (rx as i32).clamp(0, max_x),
+    y: (ry as i32).clamp(0, max_y),
   }
 }
 

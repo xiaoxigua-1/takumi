@@ -85,8 +85,8 @@ pub fn draw_filled_rect_color<C: Into<Rgba<u8>>>(
         for dx in min_x..=max_x {
           let (sx, sy) = inverse_rotate(Point { x: dx, y: dy }, transform_origin, rotation);
 
-          let sx_i = sx.floor() as i32;
-          let sy_i = sy.floor() as i32;
+          let sx_i = sx as i32;
+          let sy_i = sy as i32;
 
           if sx_i >= offset.x
             && sy_i >= offset.y
@@ -164,12 +164,9 @@ pub fn draw_filled_rect_color<C: Into<Rgba<u8>>>(
       for dx in min_x..=max_x {
         let (sx, sy) = inverse_rotate(Point { x: dx, y: dy }, transform_origin, rotation);
 
-        let sx_i = sx.round() as i32;
-        let sy_i = sy.round() as i32;
-
         // Convert source coordinate into mask space
-        let mx = sx_i - placement.left;
-        let my = sy_i - placement.top;
+        let mx = sx as i32 - placement.left;
+        let my = sy as i32 - placement.top;
 
         if mx >= 0 && my >= 0 && (mx as u32) < placement.width && (my as u32) < placement.height {
           let idx = my as usize * placement.width as usize + mx as usize;
