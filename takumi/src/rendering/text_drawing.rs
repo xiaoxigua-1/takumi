@@ -170,6 +170,11 @@ fn draw_buffer(
             y: (start_y + glyph.y) as i32 - image.placement.top,
           };
 
+          let src_offset = Point {
+            x: offset.x - start_x as i32,
+            y: offset.y - start_y as i32,
+          };
+
           match image.content {
             Content::Mask => {
               if let Some(fill) = image_fill.clone() {
@@ -181,7 +186,7 @@ fn draw_buffer(
                     height: image.placement.height,
                   },
                   fill,
-                  Point { x: 0, y: 0 },
+                  src_offset,
                 );
               } else {
                 canvas.draw_mask(
@@ -208,7 +213,7 @@ fn draw_buffer(
                     height: image.placement.height,
                   },
                   fill,
-                  Point { x: 0, y: 0 },
+                  src_offset,
                 );
               } else {
                 // apply alpha to the image based on the glyph color alpha
