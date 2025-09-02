@@ -5,7 +5,7 @@ use image::RgbaImage;
 use parley::{PositionedLayoutItem, StyleProperty};
 use swash::scale::{Render, Source, StrikeWith, image::Content};
 use taffy::{Layout, Point, Size};
-use zeno::Format;
+use zeno::{Format, Vector};
 
 use crate::{
   GlobalContext,
@@ -161,13 +161,14 @@ fn draw_buffer(
             Source::Outline,
           ])
           .format(Format::Alpha)
+          .offset(Vector::new(glyph.x.fract(), glyph.y.fract()))
           .render(scaler, glyph.id) else {
             continue;
           };
 
           let offset = Point {
-            x: (start_x + glyph.x) as i32 + image.placement.left,
-            y: (start_y + glyph.y) as i32 - image.placement.top,
+            x: (start_x + glyph.x.trunc()) as i32 + image.placement.left,
+            y: (start_y + glyph.y.trunc()) as i32 - image.placement.top,
           };
 
           let src_offset = Point {
