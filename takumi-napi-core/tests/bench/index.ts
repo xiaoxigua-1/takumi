@@ -1,7 +1,5 @@
-import { readFile } from "node:fs/promises";
-import { join } from "node:path";
 import { fromJsx } from "@takumi-rs/helpers/jsx";
-import { bench, summary } from "mitata";
+import { bench, run, summary } from "mitata";
 import { Renderer } from "../..";
 
 function createNode() {
@@ -200,17 +198,7 @@ function createNode() {
   });
 }
 
-const renderer = new Renderer({
-  fonts: [
-    await readFile(
-      join(
-        import.meta.dirname,
-        "../../../assets/fonts/geist/Geist[wght].woff2",
-      ),
-    ),
-  ],
-  loadDefaultFonts: false,
-});
+const renderer = new Renderer();
 
 summary(() => {
   bench("createNode", createNode);
@@ -224,13 +212,4 @@ summary(() => {
   });
 });
 
-await Bun.write(
-  "image.webp",
-  await renderer.renderAsync(await createNode(), {
-    width: 1200,
-    height: 630,
-    format: "webp",
-  }),
-);
-
-// await run();
+await run();

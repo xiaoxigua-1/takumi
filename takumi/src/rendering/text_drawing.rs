@@ -2,7 +2,7 @@ use std::borrow::Cow;
 use std::sync::Arc;
 
 use image::RgbaImage;
-use parley::{FontStack, PositionedLayoutItem, StyleProperty};
+use parley::{PositionedLayoutItem, StyleProperty};
 use swash::scale::{Render, Source, StrikeWith, image::Content};
 use taffy::{Layout, Point, Size};
 use zeno::Format;
@@ -161,7 +161,6 @@ fn draw_buffer(
             Source::Outline,
           ])
           .format(Format::Alpha)
-          .default_color(color.0)
           .render(scaler, glyph.id) else {
             continue;
           };
@@ -254,31 +253,22 @@ pub(crate) fn create_text_layout(
   max_width: f32,
   max_height: Option<MaxHeight>,
 ) -> parley::Layout<()> {
-  let mut layout = global
-    .font_context
-    .create_layout(text, |builder, font_families| {
-      builder.push_default(StyleProperty::FontSize(font_style.font_size));
-      builder.push_default(StyleProperty::LineHeight(font_style.line_height));
-      builder.push_default(StyleProperty::FontWeight(font_style.font_weight));
-      builder.push_default(StyleProperty::FontStyle(font_style.font_style));
+  let mut layout = global.font_context.create_layout(text, |builder| {
+    builder.push_default(StyleProperty::FontSize(font_style.font_size));
+    builder.push_default(StyleProperty::LineHeight(font_style.line_height));
+    builder.push_default(StyleProperty::FontWeight(font_style.font_weight));
+    builder.push_default(StyleProperty::FontStyle(font_style.font_style));
 
-      if let Some(font_family) = font_style.font_family.as_ref() {
-        builder.push_default(StyleProperty::FontStack(font_family.into()));
-      } else {
-        builder.push_default(StyleProperty::FontStack(FontStack::List(Cow::Owned(
-          font_families
-            .into_iter()
-            .map(|f| parley::FontFamily::Named(f.into()))
-            .collect::<Vec<_>>(),
-        ))));
-      }
+    if let Some(font_family) = font_style.font_family.as_ref() {
+      builder.push_default(StyleProperty::FontStack(font_family.into()));
+    }
 
-      if let Some(letter_spacing) = font_style.letter_spacing {
-        builder.push_default(StyleProperty::LetterSpacing(letter_spacing));
-      }
+    if let Some(letter_spacing) = font_style.letter_spacing {
+      builder.push_default(StyleProperty::LetterSpacing(letter_spacing));
+    }
 
-      builder.push_default(StyleProperty::OverflowWrap(font_style.overflow_wrap));
-    });
+    builder.push_default(StyleProperty::OverflowWrap(font_style.overflow_wrap));
+  });
 
   break_lines(&mut layout, max_width, max_height);
 

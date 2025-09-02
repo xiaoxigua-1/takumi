@@ -3,4 +3,4 @@
 /**
  * Represents font weight value.
  */
-export type FontWeight = "thin" | "extra-light" | "light" | "semi-light" | "normal" | "medium" | "semi-bold" | "bold" | "extra-bold" | "black" | "extra-black" | number;
+export type FontWeight = string | number;

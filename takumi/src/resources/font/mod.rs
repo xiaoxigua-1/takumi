@@ -3,7 +3,10 @@ use std::{
   sync::{Arc, Mutex},
 };
 
-use parley::{Layout, LayoutContext, RangedBuilder, Run, fontique::Blob};
+use parley::{
+  Layout, LayoutContext, RangedBuilder, Run,
+  fontique::{Blob, FallbackKey, Script},
+};
 use swash::{
   FontRef,
   scale::{ScaleContext, Scaler},
@@ -123,6 +126,7 @@ impl FontContext {
       .builder(font_ref)
       .size(run.font_size())
       .hint(true)
+      .variations(run.synthesis().variations().iter().copied())
       .build();
 
     func(&mut scaler);
@@ -133,26 +137,14 @@ impl FontContext {
   pub fn create_layout(
     &self,
     text: &str,
-    func: impl FnOnce(&mut RangedBuilder<'_, ()>, Vec<String>),
+    func: impl FnOnce(&mut RangedBuilder<'_, ()>),
   ) -> Layout<()> {
     let mut lock = self.layout.lock().unwrap();
     let (fcx, lcx) = &mut *lock;
 
-    let font_families = fcx
-      .collection
-      .family_names()
-      .map(ToOwned::to_owned)
-      .collect::<Vec<_>>();
-
-    if font_families.is_empty() {
-      panic!(
-        "No font families found, please make sure you have loaded at least one font (system fonts won't be included)."
-      );
-    }
-
     let mut builder = lcx.ranged_builder(fcx, text, 1.0, true);
 
-    func(&mut builder, font_families);
+    func(&mut builder);
 
     builder.build(text)
   }
@@ -193,7 +185,16 @@ impl FontContext {
 
     let mut lock = self.layout.lock().unwrap();
 
-    lock.0.collection.register_fonts(font_data, None);
+    let fonts = lock.0.collection.register_fonts(font_data, None);
+
+    for (family, _) in fonts {
+      for (script, _) in Script::all_samples() {
+        lock
+          .0
+          .collection
+          .append_fallbacks(FallbackKey::new(*script, None), std::iter::once(family));
+      }
+    }
 
     Ok(())
   }
