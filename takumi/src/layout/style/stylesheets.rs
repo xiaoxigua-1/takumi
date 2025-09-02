@@ -528,7 +528,7 @@ impl Style {
       .inheritable_style
       .font_size
       .map(|f| f.resolve_to_px(context, context.parent_font_size))
-      .unwrap_or(context.parent_font_size * context.scale.width);
+      .unwrap_or(context.parent_font_size);
 
     let line_height = self
       .inheritable_style

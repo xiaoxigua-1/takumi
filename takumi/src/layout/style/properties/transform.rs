@@ -8,7 +8,7 @@ use crate::{
     Angle, BackgroundPosition, FromCss, LengthUnit, ParseResult, PositionComponent,
     PositionKeywordX, PositionKeywordY, parse_length_percentage,
   },
-  rendering::{DEFAULT_SCALE, RenderContext},
+  rendering::RenderContext,
 };
 
 /// Represents a single CSS transform operation
@@ -75,37 +75,42 @@ impl Transforms {
     Transforms(transforms)
   }
 
-  /// Applies the transforms to the layout
-  pub fn apply(&self, context: &mut RenderContext, layout: &mut Layout) {
-    for transform in self.0.iter().rev() {
+  pub fn to_zeno(&self, context: &RenderContext, layout: &Layout) -> Option<zeno::Transform> {
+    let mut instance: Option<zeno::Transform> = None;
+
+    for transform in self.0.iter() {
       match *transform {
         Transform::Translate(x_length, y_length) => {
-          layout.location.x += x_length.resolve_to_px(context, layout.size.width);
-          layout.location.y += y_length.resolve_to_px(context, layout.size.height);
+          if let Some(instance) = instance.as_mut() {
+            *instance = instance.then_translate(
+              x_length.resolve_to_px(context, layout.size.width),
+              y_length.resolve_to_px(context, layout.size.height),
+            );
+          } else {
+            instance = Some(zeno::Transform::translation(
+              x_length.resolve_to_px(context, layout.size.width),
+              y_length.resolve_to_px(context, layout.size.height),
+            ));
+          }
         }
         Transform::Scale(x_scale, y_scale) => {
-          let original_size = layout.size;
-
-          layout.size.width *= x_scale;
-          layout.size.height *= y_scale;
-
-          // assume center of the element is the origin of the transform
-          layout.location.x -= (layout.size.width - original_size.width) / 2.0;
-          layout.location.y -= (layout.size.height - original_size.height) / 2.0;
-
-          scale_rect(&mut layout.border, x_scale, y_scale);
-          scale_rect(&mut layout.padding, x_scale, y_scale);
-          scale_rect(&mut layout.margin, x_scale, y_scale);
-
-          // update the scale of the render context
-          context.scale.width *= x_scale;
-          context.scale.height *= y_scale;
+          if let Some(instance) = instance.as_mut() {
+            *instance = instance.then_scale(x_scale, y_scale);
+          } else {
+            instance = Some(zeno::Transform::scale(x_scale, y_scale));
+          }
         }
         Transform::Rotate(angle) => {
-          context.rotation = Angle::new(*context.rotation + *angle);
+          if let Some(instance) = instance.as_mut() {
+            *instance = instance.then_rotate(zeno::Angle::from_degrees(*angle));
+          } else {
+            instance = Some(zeno::Transform::rotation(zeno::Angle::from_degrees(*angle)));
+          }
         }
       }
     }
+
+    instance
   }
 }
 
@@ -174,10 +179,10 @@ impl<'i> FromCss<'i> for Transform {
       )),
       "scalex" => Ok(Transform::Scale(
         parser.parse_nested_block(parse_length_percentage)?,
-        DEFAULT_SCALE.height,
+        1.0,
       )),
       "scaley" => Ok(Transform::Scale(
-        DEFAULT_SCALE.width,
+        1.0,
         parser.parse_nested_block(parse_length_percentage)?,
       )),
       "rotate" => Ok(Transform::Rotate(

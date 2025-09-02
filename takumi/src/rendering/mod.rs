@@ -18,21 +18,10 @@ pub use components::*;
 pub use debug_drawing::*;
 pub use image_drawing::*;
 pub use render::*;
-use taffy::Size;
 pub use text_drawing::*;
+use zeno::Transform;
 
-use crate::{
-  GlobalContext,
-  layout::{Viewport, style::Angle},
-};
-
-const DEFAULT_SCALE_FACTOR: f32 = 1.0;
-
-/// The default scale factor for the image renderer.
-pub const DEFAULT_SCALE: Size<f32> = Size {
-  width: DEFAULT_SCALE_FACTOR,
-  height: DEFAULT_SCALE_FACTOR,
-};
+use crate::{GlobalContext, layout::Viewport};
 
 /// The context for the image renderer.
 #[derive(Clone, Copy)]
@@ -44,7 +33,5 @@ pub struct RenderContext<'g> {
   /// The font size in pixels, used for em and rem units.
   pub parent_font_size: f32,
   /// The scale factor for the image renderer.
-  pub scale: Size<f32>,
-  /// Rotation in degrees.
-  pub rotation: Angle,
+  pub transform: Option<Transform>,
 }

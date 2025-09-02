@@ -5,7 +5,7 @@ use image::{
   imageops::{FilterType, resize},
 };
 use taffy::{Layout, Point, Size};
-use zeno::Mask;
+use zeno::{Mask, Transform};
 
 use crate::{
   layout::style::{
@@ -13,11 +13,7 @@ use crate::{
     BackgroundRepeatStyle, BackgroundRepeats, BackgroundSize, BackgroundSizes, Gradient,
     LengthUnit, PositionComponent, PositionKeywordX, PositionKeywordY,
   },
-  rendering::{
-    BorderRadius, Canvas, RenderContext,
-    canvas::{inverse_rotate, rotated_bounding_box},
-    draw_pixel,
-  },
+  rendering::{BorderRadius, Canvas, RenderContext, apply_mask_alpha_to_pixel, draw_pixel},
 };
 
 /// Draws a filled rectangle with a solid color.
@@ -27,168 +23,68 @@ pub fn draw_filled_rect_color<C: Into<Rgba<u8>>>(
   offset: Point<i32>,
   color: C,
   radius: BorderRadius,
-  rotation: f32,
+  transform: Option<Transform>,
 ) {
   let color: Rgba<u8> = color.into();
+  let can_direct_draw = transform.is_none() && radius.is_zero();
 
-  if radius.is_zero() {
-    // Fast path: if drawing on the entire canvas, we can just replace the entire canvas with the color
-    if rotation == 0.0
-      && color.0[3] == 255
-      && offset.x == 0
-      && offset.y == 0
-      && size.width == image.width()
-      && size.height == image.height()
-    {
-      let image_mut = image.as_mut();
-      let image_len = image_mut.len();
+  // Fast path: if drawing on the entire canvas, we can just replace the entire canvas with the color
+  if can_direct_draw
+    && color.0[3] == 255
+    && offset.x == 0
+    && offset.y == 0
+    && size.width == image.width()
+    && size.height == image.height()
+  {
+    let image_mut = image.as_mut();
+    let image_len = image_mut.len();
 
-      for i in (0..image_len).step_by(4) {
-        image_mut[i..i + 4].copy_from_slice(&color.0);
-      }
-
-      return;
+    for i in (0..image_len).step_by(4) {
+      image_mut[i..i + 4].copy_from_slice(&color.0);
     }
 
-    let transform_origin = Point {
-      x: offset.x + (size.width as i32 / 2),
-      y: offset.y + (size.height as i32 / 2),
-    };
+    return;
+  }
 
-    if rotation == 0.0 {
-      for y in 0..size.height as i32 {
-        for x in 0..size.width as i32 {
-          let sx = x + offset.x;
-          let sy = y + offset.y;
-
-          if sx < 0 || sy < 0 {
-            continue;
-          }
-
-          draw_pixel(image, sx as u32, sy as u32, color);
-        }
-      }
-    } else {
-      // Inverse mapping to avoid gaps: iterate destination bounding box and sample from source
-      let (min_x, min_y, max_x, max_y) = rotated_bounding_box(
-        offset,
-        size,
-        transform_origin,
-        Size {
-          width: image.width(),
-          height: image.height(),
-        },
-        rotation,
-      );
-
-      for dy in min_y..=max_y {
-        for dx in min_x..=max_x {
-          let (sx, sy) = inverse_rotate(Point { x: dx, y: dy }, transform_origin, rotation);
-
-          let sx_i = sx as i32;
-          let sy_i = sy as i32;
-
-          if sx_i >= offset.x
-            && sy_i >= offset.y
-            && sx_i < offset.x + size.width as i32
-            && sy_i < offset.y + size.height as i32
-          {
-            draw_pixel(image, dx as u32, dy as u32, color);
-          }
-        }
+  // Fast path: if drawing on the entire canvas, we can just replace the entire canvas with the color
+  if can_direct_draw {
+    for y in 0..size.height as i32 {
+      for x in 0..size.width as i32 {
+        draw_pixel(image, x as u32, y as u32, color);
       }
     }
 
     return;
-  };
+  }
 
   let mut paths = Vec::new();
 
   radius.write_mask_commands(&mut paths);
 
-  let (mask, placement) = Mask::new(&paths).render();
+  let mut mask = Mask::new(&paths);
+
+  mask.transform(transform);
+
+  let (mask, placement) = mask.render();
 
   let mut i = 0;
 
-  let transform_origin = Point {
-    x: offset.x + (size.width as i32 / 2),
-    y: offset.y + (size.height as i32 / 2),
-  };
+  for y in 0..placement.height {
+    for x in 0..placement.width {
+      let alpha = mask[i];
+      i += 1;
 
-  if rotation == 0.0 {
-    for y in 0..placement.height {
-      for x in 0..placement.width {
-        let alpha = mask[i];
-
-        i += 1;
-
-        if alpha == 0 {
-          continue;
-        }
-
-        let x = x as i32 + placement.left;
-        let y = y as i32 + placement.top;
-
-        if x < 0 || y < 0 {
-          continue;
-        }
-
-        let color = if alpha == u8::MAX {
-          color
-        } else {
-          Rgba([
-            color.0[0],
-            color.0[1],
-            color.0[2],
-            (color.0[3] as f32 * (alpha as f32 / 255.0)) as u8,
-          ])
-        };
-
-        draw_pixel(image, x as u32, y as u32, color);
+      if alpha == 0 {
+        continue;
       }
-    }
-  } else {
-    // Inverse mapping using mask sampling to avoid gaps on rounded rectangles
-    let (min_x, min_y, max_x, max_y) = rotated_bounding_box(
-      offset,
-      size,
-      transform_origin,
-      Size {
-        width: image.width(),
-        height: image.height(),
-      },
-      rotation,
-    );
 
-    for dy in min_y..=max_y {
-      for dx in min_x..=max_x {
-        let (sx, sy) = inverse_rotate(Point { x: dx, y: dy }, transform_origin, rotation);
-
-        // Convert source coordinate into mask space
-        let mx = sx as i32 - placement.left;
-        let my = sy as i32 - placement.top;
-
-        if mx >= 0 && my >= 0 && (mx as u32) < placement.width && (my as u32) < placement.height {
-          let idx = my as usize * placement.width as usize + mx as usize;
-          let alpha = mask[idx];
-          if alpha == 0 {
-            continue;
-          }
-
-          let color = if alpha == u8::MAX {
-            color
-          } else {
-            Rgba([
-              color.0[0],
-              color.0[1],
-              color.0[2],
-              (color.0[3] as f32 * (alpha as f32 / 255.0)) as u8,
-            ])
-          };
-
-          draw_pixel(image, dx as u32, dy as u32, color);
-        }
-      }
+      let pixel = apply_mask_alpha_to_pixel(color.0.into(), alpha);
+      draw_pixel(
+        image,
+        x as i32 + placement.left,
+        y as i32 + placement.top,
+        pixel,
+      );
     }
   }
 }
@@ -407,7 +303,7 @@ pub(crate) fn collect_stretched_tile_positions(area_size: u32, tile_size: u32) -
   }
 
   // Calculate number of tiles that fit in the area, at least 1
-  let count = (area_size as f32 / tile_size as f32).floor().max(1.0) as u32;
+  let count = (area_size as f32 / tile_size as f32).max(1.0) as u32;
 
   let new_tile_size = (area_size as f32 / count as f32) as u32;
 

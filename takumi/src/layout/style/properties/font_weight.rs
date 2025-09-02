@@ -44,11 +44,11 @@ impl<'de> Deserialize<'de> for FontWeight {
         })?))
       }
 
-      fn visit_f64<E>(self, v: f64) -> Result<Self::Value, E>
+      fn visit_f32<E>(self, v: f32) -> Result<Self::Value, E>
       where
         E: serde::de::Error,
       {
-        Ok(FontWeight(ParleyFontWeight::new(v as f32)))
+        Ok(FontWeight(ParleyFontWeight::new(v)))
       }
     }
 

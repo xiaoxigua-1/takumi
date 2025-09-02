@@ -13,7 +13,7 @@ pub(crate) fn interpolate_rgba(c1: Color, c2: Color, t: f32) -> Color {
   let mut out = [0u8; 4];
 
   for (i, value) in out.iter_mut().enumerate() {
-    *value = (c1.0[i] as f32 * (1.0 - t) + c2.0[i] as f32 * t + 0.5).floor() as u8;
+    *value = (c1.0[i] as f32 * (1.0 - t) + c2.0[i] as f32 * t).round() as u8;
   }
 
   Color(out)
@@ -176,11 +176,7 @@ pub(crate) fn resolve_stops_along_axis(
 mod tests {
   use crate::{
     GlobalContext,
-    layout::{
-      DEFAULT_FONT_SIZE, Viewport,
-      style::{Angle, StopPosition},
-    },
-    rendering::DEFAULT_SCALE,
+    layout::{DEFAULT_FONT_SIZE, Viewport, style::StopPosition},
   };
 
   use super::*;
@@ -206,8 +202,7 @@ mod tests {
       global: &GlobalContext::default(),
       viewport: Viewport::new(40, 40),
       parent_font_size: DEFAULT_FONT_SIZE,
-      scale: DEFAULT_SCALE,
-      rotation: Angle::new(0.0),
+      transform: None,
     };
 
     let resolved = resolve_stops_along_axis(&stops, ctx.viewport.width as f32, &ctx);
@@ -258,8 +253,7 @@ mod tests {
       global: &GlobalContext::default(),
       viewport: Viewport::new(40, 40),
       parent_font_size: DEFAULT_FONT_SIZE,
-      scale: DEFAULT_SCALE,
-      rotation: Angle::new(0.0),
+      transform: None,
     };
 
     let resolved = resolve_stops_along_axis(&stops, ctx.viewport.width as f32, &ctx);
@@ -307,8 +301,7 @@ mod tests {
       global: &GlobalContext::default(),
       viewport: Viewport::new(100, 40),
       parent_font_size: DEFAULT_FONT_SIZE,
-      scale: DEFAULT_SCALE,
-      rotation: Angle::new(0.0),
+      transform: None,
     };
 
     let resolved = resolve_stops_along_axis(&stops, ctx.viewport.width as f32, &ctx);

@@ -10,12 +10,8 @@ use taffy::{AvailableSpace, NodeId, Point, TaffyTree, geometry::Size};
 
 use crate::{
   GlobalContext,
-  layout::{
-    Viewport,
-    node::Node,
-    style::{Angle, Transforms},
-  },
-  rendering::{Canvas, DEFAULT_SCALE, create_blocking_canvas_loop, draw_debug_border},
+  layout::{Viewport, node::Node, style::Transforms},
+  rendering::{Canvas, create_blocking_canvas_loop, draw_debug_border},
 };
 
 use crate::rendering::RenderContext;
@@ -110,8 +106,7 @@ pub fn render<Nodes: Node<Nodes>>(
     global,
     viewport,
     parent_font_size: viewport.font_size,
-    scale: DEFAULT_SCALE,
-    rotation: Angle::new(0.0),
+    transform: None,
   };
 
   let root_node_id = insert_taffy_node(&mut taffy, root_node, &render_context);
@@ -207,14 +202,14 @@ fn render_node<Nodes: Node<Nodes>>(
     transform.chain(&node_transform);
   }
 
-  transform.apply(&mut render_context, &mut layout);
+  render_context.transform = transform.to_zeno(&render_context, &layout);
 
   node_context
     .node
     .draw_on_canvas(&render_context, canvas, layout);
 
   if node_context.context.global.draw_debug_border {
-    draw_debug_border(canvas, layout, *render_context.rotation);
+    draw_debug_border(canvas, layout, render_context.transform);
   }
 
   for child_id in taffy.children(node_id).unwrap() {

@@ -131,7 +131,7 @@ pub trait Node<N: Node<N>>: Send + Sync + Clone {
         },
         *background_color,
         radius,
-        *context.rotation,
+        context.transform,
       );
     }
   }
