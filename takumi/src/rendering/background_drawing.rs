@@ -227,7 +227,7 @@ pub(crate) fn resolve_length_unit_to_position_component(
 ) -> i32 {
   match length {
     LengthUnit::Auto => available / 2,
-    _ => length.resolve_to_px(context, available as f32).round() as i32,
+    _ => length.resolve_to_px(context, available as f32) as i32,
   }
 }
 
@@ -409,7 +409,7 @@ pub(crate) fn collect_stretched_tile_positions(area_size: u32, tile_size: u32) -
   // Calculate number of tiles that fit in the area, at least 1
   let count = (area_size as f32 / tile_size as f32).floor().max(1.0) as u32;
 
-  let new_tile_size = (area_size as f32 / count as f32).round() as u32;
+  let new_tile_size = (area_size as f32 / count as f32) as u32;
 
   let positions = successors(Some(0i32), move |&x| Some(x + new_tile_size as i32))
     .take(count as usize)
