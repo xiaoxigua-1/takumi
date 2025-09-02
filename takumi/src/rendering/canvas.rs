@@ -606,15 +606,17 @@ pub(crate) fn rotate_position(
     return point;
   }
 
-  let theta = rotation.to_radians();
+  // Use f64 for intermediate trig/math to reduce architecture-dependent
+  // rounding differences, then cast the final coordinates back.
+  let theta = (rotation as f64).to_radians();
   let cos_t = theta.cos();
   let sin_t = theta.sin();
 
-  let dx = point.x - origin.x;
-  let dy = point.y - origin.y;
+  let dx = (point.x - origin.x) as f64;
+  let dy = (point.y - origin.y) as f64;
 
-  let rx = origin.x as f32 + (dx as f32 * cos_t - dy as f32 * sin_t);
-  let ry = origin.y as f32 + (dx as f32 * sin_t + dy as f32 * cos_t);
+  let rx = origin.x as f64 + (dx * cos_t - dy * sin_t);
+  let ry = origin.y as f64 + (dx * sin_t + dy * cos_t);
 
   let max_x = size.width as i32 - 1;
   let max_y = size.height as i32 - 1;
@@ -688,17 +690,18 @@ pub(crate) fn inverse_rotate(point: Point<i32>, origin: Point<i32>, rotation: f3
     return (point.x as f32, point.y as f32);
   }
 
-  let theta = (-rotation).to_radians();
+  // Compute in f64 to reduce cross-platform rounding differences
+  let theta = (-(rotation as f64)).to_radians();
   let cos_t = theta.cos();
   let sin_t = theta.sin();
 
-  let vx = point.x - origin.x;
-  let vy = point.y - origin.y;
+  let vx = (point.x - origin.x) as f64;
+  let vy = (point.y - origin.y) as f64;
 
-  let sx = origin.x as f32 + (vx as f32 * cos_t - vy as f32 * sin_t);
-  let sy = origin.y as f32 + (vx as f32 * sin_t + vy as f32 * cos_t);
+  let sx = origin.x as f64 + (vx * cos_t - vy * sin_t);
+  let sy = origin.y as f64 + (vx * sin_t + vy * cos_t);
 
-  (sx, sy)
+  (sx as f32, sy as f32)
 }
 
 fn draw_mask_with_image(
