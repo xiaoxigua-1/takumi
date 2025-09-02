@@ -23,6 +23,7 @@ mod parser;
 mod radial_gradient;
 mod sides;
 mod transform;
+mod word_break;
 
 use std::borrow::Cow;
 
@@ -46,6 +47,7 @@ pub use parser::*;
 pub use radial_gradient::*;
 pub use sides::*;
 pub use transform::*;
+pub use word_break::*;
 
 use cssparser::{ParseError, Parser};
 use image::imageops::FilterType;

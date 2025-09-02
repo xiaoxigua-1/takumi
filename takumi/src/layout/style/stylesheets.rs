@@ -26,6 +26,8 @@ pub struct ResolvedFontStyle {
   pub font_family: Option<FontFamily>,
   /// Letter spacing for text rendering in em units (relative to font size).
   pub letter_spacing: Option<f32>,
+  /// Word spacing for text rendering in em units (relative to font size).
+  pub word_spacing: Option<f32>,
   /// Text alignment within the element.
   pub text_align: Option<Alignment>,
   /// How text should be overflowed.
@@ -36,6 +38,8 @@ pub struct ResolvedFontStyle {
   pub color: Color,
   /// Text wrap behavior.
   pub overflow_wrap: parley::OverflowWrap,
+  /// How text should be broken at word boundaries.
+  pub word_break: swash::text::WordBreakStrength,
 }
 
 /// Main styling structure that contains all layout and visual properties.
@@ -289,10 +293,14 @@ pub struct InheritableStyle {
   pub text_align: Option<TextAlign>,
   /// Additional spacing between characters in text.
   pub letter_spacing: Option<LengthUnit>,
+  /// Additional spacing between words in text.
+  pub word_spacing: Option<LengthUnit>,
   /// Controls how images are scaled when rendered.
   pub image_rendering: Option<ImageScalingAlgorithm>,
   /// How text should be overflowed.
   pub overflow_wrap: Option<OverflowWrap>,
+  /// How text should be broken at word boundaries.
+  pub word_break: Option<WordBreak>,
 }
 
 impl Style {
@@ -546,6 +554,10 @@ impl Style {
         .inheritable_style
         .letter_spacing
         .map(|spacing| spacing.resolve_to_px(context, font_size) / font_size),
+      word_spacing: self
+        .inheritable_style
+        .word_spacing
+        .map(|spacing| spacing.resolve_to_px(context, font_size) / font_size),
       text_align: self.inheritable_style.text_align.map(Into::into),
       text_overflow: self
         .inheritable_style
@@ -557,6 +569,7 @@ impl Style {
         .overflow_wrap
         .unwrap_or_default()
         .into(),
+      word_break: self.inheritable_style.word_break.unwrap_or_default().into(),
     }
   }
 }

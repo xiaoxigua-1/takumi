@@ -273,6 +273,11 @@ pub(crate) fn create_text_layout(
       builder.push_default(StyleProperty::LetterSpacing(letter_spacing));
     }
 
+    if let Some(word_spacing) = font_style.word_spacing {
+      builder.push_default(StyleProperty::WordSpacing(word_spacing));
+    }
+
+    builder.push_default(StyleProperty::WordBreak(font_style.word_break));
     builder.push_default(StyleProperty::OverflowWrap(font_style.overflow_wrap));
   });
 
