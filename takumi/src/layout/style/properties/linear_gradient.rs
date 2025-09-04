@@ -458,6 +458,8 @@ impl<'i> FromCss<'i> for Angle {
 
 #[cfg(test)]
 mod tests {
+  use zeno::Transform;
+
   use crate::{
     GlobalContext,
     layout::{Viewport, viewport::DEFAULT_FONT_SIZE},
@@ -852,7 +854,7 @@ mod tests {
       global: &GlobalContext::default(),
       viewport: Viewport::new(100, 100),
       parent_font_size: DEFAULT_FONT_SIZE,
-      transform: None,
+      transform: Transform::IDENTITY,
     };
     let ctx = gradient.to_draw_context(100.0, 100.0, &dummy_context);
     let color_top = gradient.at(50, 0, &ctx);
@@ -893,7 +895,7 @@ mod tests {
       global: &GlobalContext::default(),
       viewport: Viewport::new(100, 100),
       parent_font_size: DEFAULT_FONT_SIZE,
-      transform: None,
+      transform: Transform::IDENTITY,
     };
     let ctx = gradient.to_draw_context(100.0, 100.0, &dummy_context);
     let color_left = gradient.at(0, 50, &ctx);
@@ -919,7 +921,7 @@ mod tests {
       global: &GlobalContext::default(),
       viewport: Viewport::new(100, 100),
       parent_font_size: DEFAULT_FONT_SIZE,
-      transform: None,
+      transform: Transform::IDENTITY,
     };
     let ctx = gradient.to_draw_context(100.0, 100.0, &dummy_context);
     let color = gradient.at(50, 50, &ctx);
@@ -938,7 +940,7 @@ mod tests {
       global: &GlobalContext::default(),
       viewport: Viewport::new(100, 100),
       parent_font_size: DEFAULT_FONT_SIZE,
-      transform: None,
+      transform: Transform::IDENTITY,
     };
     let ctx = gradient.to_draw_context(100.0, 100.0, &dummy_context);
     let color = gradient.at(50, 50, &ctx);
@@ -955,7 +957,7 @@ mod tests {
       global: &GlobalContext::default(),
       viewport: Viewport::new(40, 40),
       parent_font_size: DEFAULT_FONT_SIZE,
-      transform: None,
+      transform: Transform::IDENTITY,
     };
     let ctx = gradient.to_draw_context(40.0, 40.0, &dummy_context);
 
@@ -982,7 +984,7 @@ mod tests {
       global: &GlobalContext::default(),
       viewport: Viewport::new(40, 40),
       parent_font_size: DEFAULT_FONT_SIZE,
-      transform: None,
+      transform: Transform::IDENTITY,
     };
     let ctx = gradient.to_draw_context(40.0, 40.0, &dummy_context);
 
@@ -1049,7 +1051,7 @@ mod tests {
       global: &GlobalContext::default(),
       viewport: Viewport::new(200, 100),
       parent_font_size: DEFAULT_FONT_SIZE,
-      transform: None,
+      transform: Transform::IDENTITY,
     };
 
     let resolved = gradient.resolve_stops_for_axis_size(ctx.viewport.width as f32, &ctx);
@@ -1079,7 +1081,7 @@ mod tests {
       global: &GlobalContext::default(),
       viewport: Viewport::new(200, 100),
       parent_font_size: DEFAULT_FONT_SIZE,
-      transform: None,
+      transform: Transform::IDENTITY,
     };
 
     let resolved = gradient.resolve_stops_for_axis_size(ctx.viewport.width as f32, &ctx);

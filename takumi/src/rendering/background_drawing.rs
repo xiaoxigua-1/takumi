@@ -4,8 +4,7 @@ use image::{
   Rgba, RgbaImage,
   imageops::{FilterType, resize},
 };
-use taffy::{Layout, Point, Size};
-use zeno::{Mask, Transform};
+use taffy::{Layout, Point};
 
 use crate::{
   layout::style::{
@@ -13,81 +12,8 @@ use crate::{
     BackgroundRepeatStyle, BackgroundRepeats, BackgroundSize, BackgroundSizes, Gradient,
     LengthUnit, PositionComponent, PositionKeywordX, PositionKeywordY,
   },
-  rendering::{BorderRadius, Canvas, RenderContext, apply_mask_alpha_to_pixel, draw_pixel},
+  rendering::{BorderRadius, Canvas, RenderContext},
 };
-
-/// Draws a filled rectangle with a solid color.
-pub fn draw_filled_rect_color<C: Into<Rgba<u8>>>(
-  image: &mut RgbaImage,
-  size: Size<u32>,
-  offset: Point<i32>,
-  color: C,
-  radius: BorderRadius,
-  transform: Option<Transform>,
-) {
-  let color: Rgba<u8> = color.into();
-  let can_direct_draw = transform.is_none() && radius.is_zero();
-
-  // Fast path: if drawing on the entire canvas, we can just replace the entire canvas with the color
-  if can_direct_draw
-    && color.0[3] == 255
-    && offset.x == 0
-    && offset.y == 0
-    && size.width == image.width()
-    && size.height == image.height()
-  {
-    let image_mut = image.as_mut();
-    let image_len = image_mut.len();
-
-    for i in (0..image_len).step_by(4) {
-      image_mut[i..i + 4].copy_from_slice(&color.0);
-    }
-
-    return;
-  }
-
-  // Fast path: if drawing on the entire canvas, we can just replace the entire canvas with the color
-  if can_direct_draw {
-    for y in 0..size.height as i32 {
-      for x in 0..size.width as i32 {
-        draw_pixel(image, x as u32, y as u32, color);
-      }
-    }
-
-    return;
-  }
-
-  let mut paths = Vec::new();
-
-  radius.write_mask_commands(&mut paths);
-
-  let mut mask = Mask::new(&paths);
-
-  mask.transform(transform);
-
-  let (mask, placement) = mask.render();
-
-  let mut i = 0;
-
-  for y in 0..placement.height {
-    for x in 0..placement.width {
-      let alpha = mask[i];
-      i += 1;
-
-      if alpha == 0 {
-        continue;
-      }
-
-      let pixel = apply_mask_alpha_to_pixel(color.0.into(), alpha);
-      draw_pixel(
-        image,
-        x as i32 + placement.left,
-        y as i32 + placement.top,
-        pixel,
-      );
-    }
-  }
-}
 
 pub(crate) fn resolve_length_against_area(
   unit: LengthUnit,
@@ -386,11 +312,7 @@ pub(crate) fn draw_background_layers(
             y: *y + layout.location.y as i32,
           },
           radius,
-          Point {
-            x: (layout.location.x + layout.size.width / 2.0) as i32,
-            y: (layout.location.y + layout.size.height / 2.0) as i32,
-          },
-          *context.rotation,
+          context.transform,
         );
       }
     }

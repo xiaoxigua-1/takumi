@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use image::{Rgba, RgbaImage, imageops::fast_blur};
 use taffy::{Layout, Point, Size};
-use zeno::{Fill, Mask};
+use zeno::{Fill, Mask, Transform};
 
 use crate::{
   layout::style::{BoxShadow, BoxShadows},
@@ -94,11 +94,7 @@ pub fn draw_box_shadow(
             y: (layout.location.y + draw.offset.y) as i32,
           },
           draw.border_radius,
-          Point {
-            x: (layout.location.x + layout.size.width / 2.0) as i32,
-            y: (layout.location.y + layout.size.height / 2.0) as i32,
-          },
-          *context.rotation,
+          context.transform,
         );
       }
     }
@@ -146,11 +142,7 @@ pub fn draw_box_shadow(
             y: (layout.location.y + draw.offset.y) as i32,
           },
           draw.border_radius,
-          Point {
-            x: (layout.location.x + layout.size.width / 2.0) as i32,
-            y: (layout.location.y + layout.size.height / 2.0) as i32,
-          },
-          *context.rotation,
+          context.transform,
         );
       }
     }
@@ -273,7 +265,7 @@ fn draw_outset_shadow(
     },
     shadow.color,
     border_radius.grow(shadow.spread_radius),
-    0.0,
+    Transform::IDENTITY,
   );
 
   if shadow.blur_radius <= 0.0 {

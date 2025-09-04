@@ -174,6 +174,8 @@ pub(crate) fn resolve_stops_along_axis(
 
 #[cfg(test)]
 mod tests {
+  use zeno::Transform;
+
   use crate::{
     GlobalContext,
     layout::{DEFAULT_FONT_SIZE, Viewport, style::StopPosition},
@@ -202,7 +204,7 @@ mod tests {
       global: &GlobalContext::default(),
       viewport: Viewport::new(40, 40),
       parent_font_size: DEFAULT_FONT_SIZE,
-      transform: None,
+      transform: Transform::IDENTITY,
     };
 
     let resolved = resolve_stops_along_axis(&stops, ctx.viewport.width as f32, &ctx);
@@ -253,7 +255,7 @@ mod tests {
       global: &GlobalContext::default(),
       viewport: Viewport::new(40, 40),
       parent_font_size: DEFAULT_FONT_SIZE,
-      transform: None,
+      transform: Transform::IDENTITY,
     };
 
     let resolved = resolve_stops_along_axis(&stops, ctx.viewport.width as f32, &ctx);
@@ -301,7 +303,7 @@ mod tests {
       global: &GlobalContext::default(),
       viewport: Viewport::new(100, 40),
       parent_font_size: DEFAULT_FONT_SIZE,
-      transform: None,
+      transform: Transform::IDENTITY,
     };
 
     let resolved = resolve_stops_along_axis(&stops, ctx.viewport.width as f32, &ctx);

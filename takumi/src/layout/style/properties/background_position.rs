@@ -40,6 +40,24 @@ pub enum PositionComponent {
   Length(LengthUnit),
 }
 
+impl PositionComponent {
+  pub(crate) fn to_length_unit(self) -> LengthUnit {
+    match self {
+      PositionComponent::KeywordX(keyword) => match keyword {
+        PositionKeywordX::Center => LengthUnit::Percentage(50.0),
+        PositionKeywordX::Left => LengthUnit::Percentage(0.0),
+        PositionKeywordX::Right => LengthUnit::Percentage(100.0),
+      },
+      PositionComponent::KeywordY(keyword) => match keyword {
+        PositionKeywordY::Center => LengthUnit::Percentage(50.0),
+        PositionKeywordY::Top => LengthUnit::Percentage(0.0),
+        PositionKeywordY::Bottom => LengthUnit::Percentage(100.0),
+      },
+      PositionComponent::Length(length) => length,
+    }
+  }
+}
+
 /// Parsed `background-position` value for one layer.
 #[derive(Debug, Clone, Copy, Deserialize, Serialize, TS, PartialEq)]
 #[serde(try_from = "BackgroundPositionValue")]

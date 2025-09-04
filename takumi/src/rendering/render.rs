@@ -1,5 +1,4 @@
 use std::{
-  borrow::Cow,
   io::{Seek, Write},
   sync::mpsc::channel,
 };
@@ -7,10 +6,15 @@ use std::{
 use image::{ExtendedColorType, ImageFormat, RgbaImage, codecs::jpeg::JpegEncoder};
 use serde::{Deserialize, Serialize};
 use taffy::{AvailableSpace, NodeId, Point, TaffyTree, geometry::Size};
+use zeno::Transform;
 
 use crate::{
   GlobalContext,
-  layout::{Viewport, node::Node, style::Transforms},
+  layout::{
+    Viewport,
+    node::Node,
+    style::{BackgroundPosition, PositionComponent, PositionKeywordX, PositionKeywordY},
+  },
   rendering::{Canvas, create_blocking_canvas_loop, draw_debug_border},
 };
 
@@ -106,7 +110,7 @@ pub fn render<Nodes: Node<Nodes>>(
     global,
     viewport,
     parent_font_size: viewport.font_size,
-    transform: None,
+    transform: Transform::IDENTITY,
   };
 
   let root_node_id = insert_taffy_node(&mut taffy, root_node, &render_context);
@@ -162,7 +166,7 @@ pub fn render<Nodes: Node<Nodes>>(
       root_node_id,
       &canvas,
       Point::ZERO,
-      Transforms::default(),
+      Transform::IDENTITY,
     );
 
     drop(canvas);
@@ -178,7 +182,7 @@ fn render_node<Nodes: Node<Nodes>>(
   node_id: NodeId,
   canvas: &Canvas,
   offset: Point<f32>,
-  mut transform: Transforms,
+  mut transform: Transform,
 ) {
   let mut layout = *taffy.layout(node_id).unwrap();
   let node_context = taffy.get_node_context(node_id).unwrap();
@@ -189,31 +193,45 @@ fn render_node<Nodes: Node<Nodes>>(
   layout.location.y += offset.y;
 
   // preserve the offset before the transform is applied
-  let child_offset = layout.location;
   let style = node_context.node.get_style();
 
   if let Some(node_transform) = &style.transform {
-    let mut node_transform = Cow::Borrowed(node_transform);
+    let node_transform = node_transform.to_zeno(&render_context, &layout);
 
-    if let Some(transform_origin) = &style.transform_origin {
-      node_transform = Cow::Owned(node_transform.with_transform_origin(transform_origin));
-    }
+    let transform_origin = style.transform_origin.unwrap_or(BackgroundPosition {
+      x: PositionComponent::KeywordX(PositionKeywordX::Center),
+      y: PositionComponent::KeywordY(PositionKeywordY::Center),
+    });
 
-    transform.chain(&node_transform);
+    let transform_origin_x = transform_origin
+      .x
+      .to_length_unit()
+      .resolve_to_px(&render_context, layout.size.width);
+
+    let transform_origin_y = transform_origin
+      .y
+      .to_length_unit()
+      .resolve_to_px(&render_context, layout.size.height);
+
+    transform = transform.then(
+      &node_transform
+        .pre_translate(transform_origin_x, transform_origin_y)
+        .then_translate(-transform_origin_x, -transform_origin_y),
+    );
   }
 
-  render_context.transform = transform.to_zeno(&render_context, &layout);
+  render_context.transform = transform;
 
   node_context
     .node
     .draw_on_canvas(&render_context, canvas, layout);
 
-  if node_context.context.global.draw_debug_border {
+  if render_context.global.draw_debug_border {
     draw_debug_border(canvas, layout, render_context.transform);
   }
 
   for child_id in taffy.children(node_id).unwrap() {
-    render_node(taffy, child_id, canvas, child_offset, transform.clone());
+    render_node(taffy, child_id, canvas, layout.location, transform);
   }
 }
 

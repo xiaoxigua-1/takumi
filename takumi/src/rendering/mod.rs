@@ -33,5 +33,5 @@ pub struct RenderContext<'g> {
   /// The font size in pixels, used for em and rem units.
   pub parent_font_size: f32,
   /// The scale factor for the image renderer.
-  pub transform: Option<Transform>,
+  pub transform: Transform,
 }

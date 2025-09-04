@@ -9,6 +9,7 @@ use takumi::{
   },
   rendering::{RenderContext, render_gradient_tile},
 };
+use zeno::Transform;
 
 fn bench_sizes() -> Vec<(u32, u32)> {
   vec![(1920, 1080)]
@@ -51,7 +52,7 @@ fn bench_takumi(c: &mut Criterion) {
               global: &global,
               viewport,
               parent_font_size: viewport.font_size,
-              transform: None,
+              transform: Transform::IDENTITY,
             };
             (sample_gradient(), w, h, context)
           },

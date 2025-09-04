@@ -1,13 +1,10 @@
 use cssparser::{Parser, ParserInput, Token, match_ignore_ascii_case};
 use serde::{Deserialize, Serialize};
-use taffy::{Layout, Rect};
+use taffy::Layout;
 use ts_rs::TS;
 
 use crate::{
-  layout::style::{
-    Angle, BackgroundPosition, FromCss, LengthUnit, ParseResult, PositionComponent,
-    PositionKeywordX, PositionKeywordY, parse_length_percentage,
-  },
+  layout::style::{Angle, FromCss, LengthUnit, ParseResult, parse_length_percentage},
   rendering::RenderContext,
 };
 
@@ -23,29 +20,6 @@ pub enum Transform {
   Rotate(Angle),
 }
 
-fn scale_rect(rect: &mut Rect<f32>, x_scale: f32, y_scale: f32) {
-  rect.left *= x_scale;
-  rect.right *= x_scale;
-  rect.top *= y_scale;
-  rect.bottom *= y_scale;
-}
-
-fn to_length_unit(component: PositionComponent) -> LengthUnit {
-  match component {
-    PositionComponent::KeywordX(keyword) => match keyword {
-      PositionKeywordX::Center => LengthUnit::Percentage(0.5),
-      PositionKeywordX::Left => LengthUnit::Percentage(0.0),
-      PositionKeywordX::Right => LengthUnit::Percentage(1.0),
-    },
-    PositionComponent::KeywordY(keyword) => match keyword {
-      PositionKeywordY::Center => LengthUnit::Percentage(0.5),
-      PositionKeywordY::Top => LengthUnit::Percentage(0.0),
-      PositionKeywordY::Bottom => LengthUnit::Percentage(1.0),
-    },
-    PositionComponent::Length(length) => length,
-  }
-}
-
 /// A collection of transform operations that can be applied together
 #[derive(Debug, Clone, Deserialize, Serialize, TS, Default)]
 #[ts(as = "TransformsValue")]
@@ -53,59 +27,23 @@ fn to_length_unit(component: PositionComponent) -> LengthUnit {
 pub struct Transforms(pub Vec<Transform>);
 
 impl Transforms {
-  /// Chains two transform collections together
-  pub fn chain(&mut self, other: &Transforms) {
-    self.0.extend_from_slice(&other.0);
-  }
-
-  /// Adds a transform origin to the transforms
-  pub fn with_transform_origin(&self, transform_origin: &BackgroundPosition) -> Transforms {
-    let mut transforms = Vec::with_capacity(self.0.len() + 2);
-
-    transforms.push(Transform::Translate(
-      to_length_unit(transform_origin.x),
-      to_length_unit(transform_origin.y),
-    ));
-    transforms.extend_from_slice(&self.0);
-    transforms.push(Transform::Translate(
-      to_length_unit(transform_origin.x),
-      to_length_unit(transform_origin.y),
-    ));
-
-    Transforms(transforms)
-  }
-
-  pub fn to_zeno(&self, context: &RenderContext, layout: &Layout) -> Option<zeno::Transform> {
-    let mut instance: Option<zeno::Transform> = None;
+  /// Converts the transforms to a [`zeno::Transform`] instance
+  pub fn to_zeno(&self, context: &RenderContext, layout: &Layout) -> zeno::Transform {
+    let mut instance = zeno::Transform::IDENTITY;
 
     for transform in self.0.iter() {
       match *transform {
         Transform::Translate(x_length, y_length) => {
-          if let Some(instance) = instance.as_mut() {
-            *instance = instance.then_translate(
-              x_length.resolve_to_px(context, layout.size.width),
-              y_length.resolve_to_px(context, layout.size.height),
-            );
-          } else {
-            instance = Some(zeno::Transform::translation(
-              x_length.resolve_to_px(context, layout.size.width),
-              y_length.resolve_to_px(context, layout.size.height),
-            ));
-          }
+          instance = instance.then_translate(
+            x_length.resolve_to_px(context, layout.size.width),
+            y_length.resolve_to_px(context, layout.size.height),
+          );
         }
         Transform::Scale(x_scale, y_scale) => {
-          if let Some(instance) = instance.as_mut() {
-            *instance = instance.then_scale(x_scale, y_scale);
-          } else {
-            instance = Some(zeno::Transform::scale(x_scale, y_scale));
-          }
+          instance = instance.then_scale(x_scale, y_scale);
         }
         Transform::Rotate(angle) => {
-          if let Some(instance) = instance.as_mut() {
-            *instance = instance.then_rotate(zeno::Angle::from_degrees(*angle));
-          } else {
-            instance = Some(zeno::Transform::rotation(zeno::Angle::from_degrees(*angle)));
-          }
+          instance = instance.then_rotate(zeno::Angle::from_degrees(*angle));
         }
       }
     }

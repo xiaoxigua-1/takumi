@@ -3,9 +3,13 @@ use std::sync::Arc;
 
 use image::RgbaImage;
 use parley::{PositionedLayoutItem, StyleProperty};
-use swash::scale::{Render, Source, StrikeWith, image::Content};
-use taffy::{Layout, Point, Size};
-use zeno::{Format, Vector};
+use swash::{
+  Setting,
+  scale::{Render, Source, StrikeWith, image::Content},
+  tag_from_bytes,
+};
+use taffy::{Layout, Point};
+use zeno::{Format, Transform};
 
 use crate::{
   GlobalContext,
@@ -97,8 +101,7 @@ pub fn draw_text(
             &tile_image,
             Point { x: *x, y: *y },
             Default::default(),
-            Point { x: 0, y: 0 },
-            0.0,
+            Transform::IDENTITY,
           )
         }
       }
@@ -110,20 +113,12 @@ pub fn draw_text(
       canvas,
       style.inheritable_style.color.unwrap_or_else(Color::black),
       (start_x, start_y),
-      Point {
-        x: (layout.location.x + layout.size.width / 2.0) as i32,
-        y: (layout.location.y + layout.size.height / 2.0) as i32,
-      },
-      Some(Arc::new(composed)),
+      layout,
+      Some(composed),
     );
 
     return;
   }
-
-  let transform_origin = Point {
-    x: (layout.location.x + layout.size.width / 2.0) as i32,
-    y: (layout.location.y + layout.size.height / 2.0) as i32,
-  };
 
   draw_buffer(
     context,
@@ -131,7 +126,7 @@ pub fn draw_text(
     canvas,
     style.inheritable_style.color.unwrap_or_else(Color::black),
     (start_x, start_y),
-    transform_origin,
+    layout,
     None,
   );
 }
@@ -142,8 +137,8 @@ fn draw_buffer(
   canvas: &Canvas,
   color: Color,
   (start_x, start_y): (f32, f32),
-  transform_origin: Point<i32>,
-  image_fill: Option<Arc<RgbaImage>>,
+  _layout: Layout,
+  image_fill: Option<RgbaImage>,
 ) {
   for line in buffer.lines() {
     for item in line.items() {
@@ -161,82 +156,53 @@ fn draw_buffer(
             Source::Outline,
           ])
           .format(Format::Alpha)
-          .offset(Vector::new(glyph.x.fract(), glyph.y.fract()))
+          .transform(Some(context.transform))
           .render(scaler, glyph.id) else {
             continue;
           };
 
-          let offset = Point {
-            x: (start_x + glyph.x.trunc()) as i32 + image.placement.left,
-            y: (start_y + glyph.y.trunc()) as i32 - image.placement.top,
-          };
+          image.placement.left += (glyph.x + start_x) as i32;
+          image.placement.top = (start_y + glyph.y) as i32 - image.placement.top;
 
-          let src_offset = Point {
-            x: offset.x - start_x as i32,
-            y: offset.y - start_y as i32,
-          };
-
-          match image.content {
-            Content::Mask => {
-              if let Some(fill) = image_fill.clone() {
-                canvas.draw_mask_with_image(
-                  image.data,
-                  offset,
-                  Size {
-                    width: image.placement.width,
-                    height: image.placement.height,
-                  },
-                  fill,
-                  src_offset,
-                );
-              } else {
-                canvas.draw_mask(
-                  image.data,
-                  offset,
-                  Size {
-                    width: image.placement.width,
-                    height: image.placement.height,
-                  },
-                  color,
-                  transform_origin,
-                  *context.rotation,
-                );
-              }
+          match (image.content, image_fill.clone()) {
+            (Content::Mask, Some(fill)) => {
+              // TODO: fix this
+              canvas.draw_mask(image.data, image.placement, color, Some(fill));
             }
-            Content::Color => {
-              if let Some(fill) = image_fill.clone() {
-                canvas.draw_mask_with_image(
-                  // collect the alpha values from [r, g, b, a] sequence
-                  image.data.into_iter().skip(3).step_by(4).collect(),
-                  offset,
-                  Size {
-                    width: image.placement.width,
-                    height: image.placement.height,
-                  },
-                  fill,
-                  src_offset,
-                );
-              } else {
-                // apply alpha to the image based on the glyph color alpha
-                if color.0[3] != 255 {
-                  let target_alpha = color.0[3] as f32 / 255.0;
+            (Content::Mask, None) => canvas.draw_mask(image.data, image.placement, color, None),
+            (Content::Color, Some(fill)) => {
+              canvas.draw_mask(
+                // collect the alpha values from [r, g, b, a] sequence
+                image.data.into_iter().skip(3).step_by(4).collect(),
+                image.placement,
+                color,
+                Some(fill),
+              );
+            }
+            (Content::Color, None) => {
+              // apply alpha to the image based on the glyph color alpha
+              if color.0[3] != 255 {
+                let target_alpha = color.0[3] as f32 / 255.0;
 
-                  for alpha in image.data.iter_mut().skip(3).step_by(4) {
-                    *alpha = (*alpha as f32 * target_alpha) as u8;
-                  }
+                for alpha in image.data.iter_mut().skip(3).step_by(4) {
+                  *alpha = (*alpha as f32 * target_alpha) as u8;
                 }
-
-                canvas.overlay_image(
-                  Arc::new(
-                    RgbaImage::from_raw(image.placement.width, image.placement.height, image.data)
-                      .unwrap(),
-                  ),
-                  offset,
-                  BorderRadius::default(),
-                  transform_origin,
-                  *context.rotation,
-                );
               }
+
+              let offset = Point {
+                x: image.placement.left,
+                y: image.placement.top,
+              };
+
+              canvas.overlay_image(
+                Arc::new(
+                  RgbaImage::from_raw(image.placement.width, image.placement.height, image.data)
+                    .unwrap(),
+                ),
+                offset,
+                BorderRadius::default(),
+                context.transform,
+              );
             }
             _ => {}
           }
@@ -252,6 +218,8 @@ pub(crate) enum MaxHeight {
   Both(f32, u32),
 }
 
+const VARIABLE_FONT_WEIGHT_TAG: u32 = tag_from_bytes(b"wght");
+
 pub(crate) fn create_text_layout(
   text: &str,
   font_style: &ResolvedFontStyle,
@@ -264,6 +232,12 @@ pub(crate) fn create_text_layout(
     builder.push_default(StyleProperty::LineHeight(font_style.line_height));
     builder.push_default(StyleProperty::FontWeight(font_style.font_weight));
     builder.push_default(StyleProperty::FontStyle(font_style.font_style));
+    builder.push_default(StyleProperty::FontVariations(parley::FontSettings::List(
+      Cow::Borrowed(&[Setting {
+        tag: VARIABLE_FONT_WEIGHT_TAG,
+        value: font_style.font_weight.value(),
+      }]),
+    )));
 
     if let Some(font_family) = font_style.font_family.as_ref() {
       builder.push_default(StyleProperty::FontStack(font_family.into()));

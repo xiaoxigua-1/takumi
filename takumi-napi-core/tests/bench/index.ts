@@ -1,3 +1,4 @@
+import { writeFile } from "node:fs/promises";
 import { fromJsx } from "@takumi-rs/helpers/jsx";
 import { bench, run, summary } from "mitata";
 import { Renderer } from "../..";
@@ -211,5 +212,15 @@ summary(() => {
     });
   });
 });
+
+if (process.argv.includes("--write")) {
+  await writeFile(
+    "output.png",
+    renderer.render(await createNode(), {
+      width: 1200,
+      height: 630,
+    }),
+  );
+}
 
 await run();

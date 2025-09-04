@@ -3,9 +3,12 @@
 //! This module provides performance-optimized canvas operations including
 //! fast image blending and pixel manipulation operations.
 
-use std::sync::{
-  Arc,
-  mpsc::{Receiver, Sender},
+use std::{
+  borrow::Cow,
+  sync::{
+    Arc,
+    mpsc::{Receiver, Sender},
+  },
 };
 
 use image::{Pixel, Rgba, RgbaImage};
@@ -14,7 +17,7 @@ use zeno::{Mask, Placement, Transform};
 
 use crate::{
   layout::{Viewport, style::Color},
-  rendering::{BorderRadius, draw_filled_rect_color},
+  rendering::BorderRadius,
 };
 
 /// A canvas handle for sending drawing commands asynchronously.
@@ -47,7 +50,7 @@ impl Canvas {
     image: Arc<RgbaImage>,
     offset: Point<i32>,
     radius: BorderRadius,
-    transform: Option<Transform>,
+    transform: Transform,
   ) {
     let _ = self.0.send(DrawCommand::OverlayImage {
       image,
@@ -61,14 +64,12 @@ impl Canvas {
   pub fn draw_mask(
     &self,
     mask: Vec<u8>,
-    offset: Point<i32>,
     placement: Placement,
     color: Color,
-    image: Option<Arc<RgbaImage>>,
+    image: Option<RgbaImage>,
   ) {
     let _ = self.0.send(DrawCommand::DrawMask {
       mask,
-      offset,
       placement,
       color,
       image,
@@ -88,7 +89,7 @@ impl Canvas {
     size: Size<u32>,
     color: Color,
     radius: BorderRadius,
-    transform: Option<Transform>,
+    transform: Transform,
   ) {
     let _ = self.0.send(DrawCommand::FillColor {
       offset,
@@ -128,20 +129,18 @@ pub enum DrawCommand {
     /// Border radius to apply to the image corners
     radius: BorderRadius,
     /// Transform to apply when drawing
-    transform: Option<Transform>,
+    transform: Transform,
   },
   /// Draw a mask with the specified color onto the canvas.
   DrawMask {
     /// The mask data as a vector of alpha values (0-255)
     mask: Vec<u8>,
-    /// The position offset where to place the mask
-    offset: Point<i32>,
     /// The placement of the mask
     placement: Placement,
     /// The color to apply to the mask
     color: Color,
     /// The image to sample colors from
-    image: Option<Arc<RgbaImage>>,
+    image: Option<RgbaImage>,
   },
   /// Fill a rectangular area with the specified color and optional border radius.
   FillColor {
@@ -154,7 +153,7 @@ pub enum DrawCommand {
     /// Border radius to apply to the filled area
     radius: BorderRadius,
     /// Transform to apply when drawing
-    transform: Option<Transform>,
+    transform: Transform,
   },
 }
 
@@ -180,20 +179,21 @@ impl DrawCommand {
       } => draw_filled_rect_color(canvas, size, offset, color, radius, transform),
       DrawCommand::DrawMask {
         ref mask,
-        offset,
         placement,
         color,
         ref image,
-      } => draw_mask(
-        canvas,
-        mask,
-        offset,
-        placement,
-        color,
-        image.as_ref().map(|image| image.as_ref()),
-      ),
+      } => draw_mask(canvas, mask, placement, color, image.as_ref()),
     }
   }
+}
+
+fn is_transform_identity(transform: Transform) -> bool {
+  transform.xx == 1.0
+    && transform.xy == 0.0
+    && transform.yx == 0.0
+    && transform.yy == 1.0
+    && transform.x == 0.0
+    && transform.y == 0.0
 }
 
 /// Draws a single pixel on the canvas with alpha blending.
@@ -234,55 +234,48 @@ fn is_point_in_bounds(x: f32, y: f32, width: f32, height: f32) -> bool {
   x >= 0.0 && y >= 0.0 && x < width && y < height
 }
 
-fn draw_mask(
-  canvas: &mut RgbaImage,
-  mask: &[u8],
+/// Draws a filled rectangle with a solid color.
+pub(crate) fn draw_filled_rect_color<C: Into<Rgba<u8>>>(
+  image: &mut RgbaImage,
+  size: Size<u32>,
   offset: Point<i32>,
-  placement: Placement,
-  color: Color,
-  image: Option<&RgbaImage>,
-) {
-  let mut i = 0;
-
-  for y in 0..placement.height {
-    for x in 0..placement.width {
-      let alpha = mask[i];
-      i += 1;
-
-      if alpha == 0 {
-        continue;
-      }
-
-      let dest_x = x as i32 + offset.x + placement.left;
-      let dest_y = y as i32 + offset.y + placement.top;
-
-      if dest_x < 0 || dest_y < 0 {
-        continue;
-      }
-
-      let pixel = image
-        .map(|image| {
-          let pixel = *image.get_pixel(x as u32, y as u32);
-          apply_mask_alpha_to_pixel(pixel, alpha)
-        })
-        .unwrap_or_else(|| apply_mask_alpha_to_pixel(color.0.into(), alpha));
-
-      draw_pixel(canvas, dest_x as u32, dest_y as u32, pixel);
-    }
-  }
-}
-
-pub(crate) fn overlay_image(
-  canvas: &mut RgbaImage,
-  image: &RgbaImage,
-  offset: Point<i32>,
+  color: C,
   radius: BorderRadius,
-  transform: Option<Transform>,
+  transform: Transform,
 ) {
-  if transform.is_none() && radius.is_zero() {
-    for y in 0..image.height() {
-      for x in 0..image.width() {
-        draw_pixel(canvas, x as u32, y as u32, *image.get_pixel(x, y));
+  let color: Rgba<u8> = color.into();
+  let can_direct_draw = is_transform_identity(transform) && radius.is_zero();
+
+  // Fast path: if drawing on the entire canvas, we can just replace the entire canvas with the color
+  if can_direct_draw
+    && color.0[3] == 255
+    && offset.x == 0
+    && offset.y == 0
+    && size.width == image.width()
+    && size.height == image.height()
+  {
+    let image_mut = image.as_mut();
+    let image_len = image_mut.len();
+
+    for i in (0..image_len).step_by(4) {
+      image_mut[i..i + 4].copy_from_slice(&color.0);
+    }
+
+    return;
+  }
+
+  // Fast path: if drawing on the entire canvas, we can just replace the entire canvas with the color
+  if can_direct_draw {
+    for y in 0..size.height {
+      for x in 0..size.width {
+        let dest_x = x as i32 + offset.x;
+        let dest_y = y as i32 + offset.y;
+
+        if dest_x < 0 || dest_y < 0 {
+          continue;
+        }
+
+        draw_pixel(image, dest_x as u32, dest_y as u32, color);
       }
     }
 
@@ -295,115 +288,158 @@ pub(crate) fn overlay_image(
 
   let mut mask = Mask::new(&paths);
 
-  mask.transform(transform);
+  mask.transform(Some(transform));
 
   let (mask, mut placement) = mask.render();
 
-  let rotate_radians = transform.map(transform_rotation_radians).unwrap_or(0.0);
+  placement.left += offset.x;
+  placement.top += offset.y;
 
-  if rotate_radians != 0.0 {
-    let (rotated_image, rotated_offset) = rotate_image(image, rotate_radians);
+  draw_mask(image, &mask, placement, color, None);
+}
 
-    placement.left += rotated_offset.x as i32;
-    placement.top += rotated_offset.y as i32;
+fn draw_mask<C: Into<Rgba<u8>>>(
+  canvas: &mut RgbaImage,
+  mask: &[u8],
+  placement: Placement,
+  color: C,
+  image: Option<&RgbaImage>,
+) {
+  let color: Rgba<u8> = color.into();
+  let mut i = 0;
 
-    return draw_mask(
-      canvas,
-      &mask,
-      offset,
-      placement,
-      Color::transparent(),
-      Some(&rotated_image),
-    );
+  for y in 0..placement.height {
+    for x in 0..placement.width {
+      let alpha = mask[i];
+      i += 1;
+
+      if alpha == 0 {
+        continue;
+      }
+
+      let dest_x = x as i32 + placement.left;
+      let dest_y = y as i32 + placement.top;
+
+      if dest_x < 0 || dest_y < 0 {
+        continue;
+      }
+
+      let pixel = image
+        .map(|image| {
+          let pixel = *image.get_pixel(x, y);
+          apply_mask_alpha_to_pixel(pixel, alpha)
+        })
+        .unwrap_or_else(|| apply_mask_alpha_to_pixel(color, alpha));
+
+      draw_pixel(canvas, dest_x as u32, dest_y as u32, pixel);
+    }
   }
+}
+
+pub(crate) fn overlay_image(
+  canvas: &mut RgbaImage,
+  image: &RgbaImage,
+  offset: Point<i32>,
+  radius: BorderRadius,
+  transform: Transform,
+) {
+  if is_transform_identity(transform) && radius.is_zero() {
+    for y in 0..image.height() {
+      for x in 0..image.width() {
+        let dest_x = offset.x + x as i32;
+        let dest_y = offset.y + y as i32;
+
+        if dest_x < 0 || dest_y < 0 {
+          continue;
+        }
+
+        draw_pixel(canvas, dest_x as u32, dest_y as u32, *image.get_pixel(x, y));
+      }
+    }
+
+    return;
+  }
+
+  let mut paths = Vec::new();
+
+  radius.write_mask_commands(&mut paths);
+
+  let mut mask = Mask::new(&paths);
+
+  mask.transform(Some(transform));
+
+  let (mask, mut placement) = mask.render();
+
+  // Fast path: if only the radius needs to be applied, we can draw the mask directly
+  if is_transform_identity(transform) {
+    placement.left += offset.x;
+    placement.top += offset.y;
+
+    return draw_mask(canvas, &mask, placement, Color::transparent(), Some(image));
+  }
+
+  let mut image_cow = Cow::Borrowed(image);
+
+  if !radius.is_zero() {
+    let mut bottom_image = RgbaImage::new(image.width(), image.height());
+
+    overlay_image(
+      &mut bottom_image,
+      image,
+      Point::default(),
+      radius,
+      Transform::default(),
+    );
+
+    image_cow = Cow::Owned(bottom_image);
+  }
+
+  let transformed_image = transform_image(image_cow.as_ref(), transform, &mask, placement);
+
+  placement.left += offset.x;
+  placement.top += offset.y;
 
   draw_mask(
     canvas,
     &mask,
-    offset,
     placement,
     Color::transparent(),
-    Some(image),
+    Some(&transformed_image),
   );
 }
 
-fn transform_rotation_radians(transform: Transform) -> f32 {
-  transform.yx.atan2(transform.xx)
-}
+fn transform_image(
+  image: &RgbaImage,
+  transform: Transform,
+  mask: &[u8],
+  placement: Placement,
+) -> RgbaImage {
+  let inverse = match transform.invert() {
+    Some(inv) => inv,
+    None => return RgbaImage::new(0, 0),
+  };
 
-fn rotate_image(image: &RgbaImage, theta: f32) -> (RgbaImage, Point<f32>) {
-  let (width, height) = image.dimensions();
-  let center_x = width as f32 / 2.0;
-  let center_y = height as f32 / 2.0;
+  let mut rotated_image = RgbaImage::new(placement.width, placement.height);
 
-  let cos_theta = theta.cos();
-  let sin_theta = theta.sin();
+  let mut i = 0;
 
-  // Calculate the bounds of the rotated image by transforming corners
-  let corners = [
-    (0.0, 0.0),
-    (width as f32, 0.0),
-    (0.0, height as f32),
-    (width as f32, height as f32),
-  ];
+  for y in 0..placement.height {
+    for x in 0..placement.width {
+      let alpha = mask[i];
+      i += 1;
 
-  let mut min_x = f32::INFINITY;
-  let mut max_x = f32::NEG_INFINITY;
-  let mut min_y = f32::INFINITY;
-  let mut max_y = f32::NEG_INFINITY;
+      if alpha == 0 {
+        continue;
+      }
 
-  // Transform each corner to find the bounding box
-  for &(x, y) in corners.iter() {
-    // Translate to center, rotate, then translate back
-    let centered_x = x - center_x;
-    let centered_y = y - center_y;
+      let point = inverse.transform_vector(zeno::Point::new(x as f32, y as f32));
 
-    let rotated_x = centered_x * cos_theta - centered_y * sin_theta + center_x;
-    let rotated_y = centered_x * sin_theta + centered_y * cos_theta + center_y;
-
-    min_x = min_x.min(rotated_x);
-    max_x = max_x.max(rotated_x);
-    min_y = min_y.min(rotated_y);
-    max_y = max_y.max(rotated_y);
-  }
-
-  // Calculate new dimensions and offset
-  let new_width = (max_x - min_x).ceil() as u32;
-  let new_height = (max_y - min_y).ceil() as u32;
-  let offset_x = -min_x;
-  let offset_y = -min_y;
-
-  // Create the output image
-  let mut rotated_image = RgbaImage::new(new_width, new_height);
-
-  // Fill the rotated image using inverse transformation
-  for y in 0..new_height {
-    for x in 0..new_width {
-      // Convert output coordinates to original image space
-      let out_x = x as f32 - offset_x;
-      let out_y = y as f32 - offset_y;
-
-      // Translate to center
-      let centered_x = out_x - center_x;
-      let centered_y = out_y - center_y;
-
-      // Apply inverse rotation (rotate by -theta)
-      let orig_x = centered_x * cos_theta + centered_y * sin_theta + center_x;
-      let orig_y = -centered_x * sin_theta + centered_y * cos_theta + center_y;
-
-      // Use bilinear interpolation to sample from the original image
-      let pixel = sample_bilinear(image, orig_x, orig_y);
+      let pixel = sample_bilinear(image, point.x, point.y);
       rotated_image.put_pixel(x, y, pixel);
     }
   }
 
-  (
-    rotated_image,
-    Point {
-      x: offset_x,
-      y: offset_y,
-    },
-  )
+  rotated_image
 }
 
 fn sample_bilinear(image: &RgbaImage, x: f32, y: f32) -> Rgba<u8> {
@@ -411,7 +447,7 @@ fn sample_bilinear(image: &RgbaImage, x: f32, y: f32) -> Rgba<u8> {
 
   // Check bounds
   if !is_point_in_bounds(x, y, width as f32, height as f32) {
-    return Rgba([0, 0, 0, 0]);
+    return Rgba([0, 0, 0, 100]);
   }
 
   // Get the four surrounding pixels
@@ -432,10 +468,10 @@ fn sample_bilinear(image: &RgbaImage, x: f32, y: f32) -> Rgba<u8> {
 
   // Perform bilinear interpolation for each channel
   let mut result = [0u8; 4];
-  for i in 0..4 {
+  for (i, value) in result.iter_mut().enumerate() {
     let top = p00.0[i] as f32 * (1.0 - fx) + p10.0[i] as f32 * fx;
     let bottom = p01.0[i] as f32 * (1.0 - fx) + p11.0[i] as f32 * fx;
-    result[i] = (top * (1.0 - fy) + bottom * fy).round() as u8;
+    *value = (top * (1.0 - fy) + bottom * fy).round() as u8;
   }
 
   Rgba(result)

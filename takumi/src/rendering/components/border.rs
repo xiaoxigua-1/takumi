@@ -20,7 +20,7 @@ pub struct BorderProperties {
   /// The radius of the border.
   pub radius: BorderRadius,
   /// The transform of the border.
-  pub transform: Option<Transform>,
+  pub transform: Transform,
 }
 
 impl BorderProperties {
@@ -67,18 +67,12 @@ pub fn draw_border(canvas: &Canvas, border: BorderProperties) {
   let mut mask = Mask::new(&paths);
 
   mask.style(Fill::EvenOdd);
-  mask.transform(border.transform);
+  mask.transform(Some(border.transform));
 
-  let (mask, placement) = mask.render();
+  let (mask, mut placement) = mask.render();
 
-  canvas.draw_mask(
-    mask,
-    Point {
-      x: border.offset.x as i32,
-      y: border.offset.y as i32,
-    },
-    placement,
-    border.color,
-    None,
-  );
+  placement.left += border.offset.x as i32;
+  placement.top += border.offset.y as i32;
+
+  canvas.draw_mask(mask, placement, border.color, None);
 }
