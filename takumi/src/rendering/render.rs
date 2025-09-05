@@ -10,11 +10,7 @@ use zeno::Transform;
 
 use crate::{
   GlobalContext,
-  layout::{
-    Viewport,
-    node::Node,
-    style::{BackgroundPosition, PositionComponent, PositionKeywordX, PositionKeywordY},
-  },
+  layout::{Viewport, node::Node},
   rendering::{Canvas, create_blocking_canvas_loop, draw_debug_border},
 };
 
@@ -196,28 +192,13 @@ fn render_node<Nodes: Node<Nodes>>(
   let style = node_context.node.get_style();
 
   if let Some(node_transform) = &style.transform {
-    let node_transform = node_transform.to_zeno(&render_context, &layout);
-
-    let transform_origin = style.transform_origin.unwrap_or(BackgroundPosition {
-      x: PositionComponent::KeywordX(PositionKeywordX::Center),
-      y: PositionComponent::KeywordY(PositionKeywordY::Center),
-    });
-
-    let transform_origin_x = transform_origin
-      .x
-      .to_length_unit()
-      .resolve_to_px(&render_context, layout.size.width);
-
-    let transform_origin_y = transform_origin
-      .y
-      .to_length_unit()
-      .resolve_to_px(&render_context, layout.size.height);
-
-    transform = transform.then(
-      &node_transform
-        .pre_translate(transform_origin_x, transform_origin_y)
-        .then_translate(-transform_origin_x, -transform_origin_y),
+    let node_transform = node_transform.to_zeno(
+      &render_context,
+      &layout,
+      style.transform_origin.unwrap_or_default(),
     );
+
+    transform = transform.then(&node_transform);
   }
 
   render_context.transform = transform;

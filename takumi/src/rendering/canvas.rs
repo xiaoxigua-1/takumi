@@ -5,6 +5,7 @@
 
 use std::{
   borrow::Cow,
+  fmt::Display,
   sync::{
     Arc,
     mpsc::{Receiver, Sender},
@@ -110,6 +111,8 @@ pub fn create_blocking_canvas_loop(
 
   while let Ok(task) = receiver.recv() {
     task.draw(&mut canvas);
+
+    println!("{task}");
   }
 
   canvas
@@ -155,6 +158,39 @@ pub enum DrawCommand {
     /// Transform to apply when drawing
     transform: Transform,
   },
+}
+
+impl Display for DrawCommand {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    match *self {
+      DrawCommand::OverlayImage {
+        ref image,
+        offset,
+        radius,
+        transform,
+      } => write!(
+        f,
+        "OverlayImage(width={}, height={}, offset={offset:?}, radius={radius:?}, transform={transform:?})",
+        image.width(),
+        image.height(),
+      ),
+      DrawCommand::FillColor {
+        size,
+        color,
+        radius,
+        transform,
+        ..
+      } => write!(
+        f,
+        "FillColor(size={size:?}, color={color}, radius={radius:?}, transform={transform:?})",
+      ),
+      DrawCommand::DrawMask {
+        placement, color, ..
+      } => {
+        write!(f, "DrawMask(placement={placement:?}, color={color})")
+      }
+    }
+  }
 }
 
 impl DrawCommand {

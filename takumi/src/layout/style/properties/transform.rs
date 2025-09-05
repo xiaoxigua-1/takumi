@@ -4,7 +4,9 @@ use taffy::Layout;
 use ts_rs::TS;
 
 use crate::{
-  layout::style::{Angle, FromCss, LengthUnit, ParseResult, parse_length_percentage},
+  layout::style::{
+    Angle, BackgroundPosition, FromCss, LengthUnit, ParseResult, parse_length_percentage,
+  },
   rendering::RenderContext,
 };
 
@@ -28,10 +30,29 @@ pub struct Transforms(pub Vec<Transform>);
 
 impl Transforms {
   /// Converts the transforms to a [`zeno::Transform`] instance
-  pub fn to_zeno(&self, context: &RenderContext, layout: &Layout) -> zeno::Transform {
-    let mut instance = zeno::Transform::IDENTITY;
+  pub fn to_zeno(
+    &self,
+    context: &RenderContext,
+    layout: &Layout,
+    transform_origin: BackgroundPosition,
+  ) -> zeno::Transform {
+    let width = layout.size.width / 2.0;
+    let height = layout.size.height / 2.0;
 
-    for transform in self.0.iter() {
+    let transform_origin_x = transform_origin
+      .x
+      .to_length_unit()
+      .resolve_to_px(context, layout.size.width)
+      + width;
+    let transform_origin_y = transform_origin
+      .y
+      .to_length_unit()
+      .resolve_to_px(context, layout.size.height)
+      + height;
+
+    let mut instance = zeno::Transform::translation(transform_origin_x, transform_origin_y);
+
+    for transform in self.0.iter().rev() {
       match *transform {
         Transform::Translate(x_length, y_length) => {
           instance = instance.then_translate(
@@ -48,7 +69,7 @@ impl Transforms {
       }
     }
 
-    instance
+    instance.then_translate(-transform_origin_x, -transform_origin_y)
   }
 }
 

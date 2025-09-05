@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use csscolorparser::{NAMED_COLORS, ParseColorError};
 use cssparser::{Parser, ToCss, Token};
 use image::Rgba;
@@ -29,6 +31,19 @@ pub struct Color(pub [u8; 4]);
 impl From<Color> for Rgba<u8> {
   fn from(color: Color) -> Self {
     Rgba(color.0)
+  }
+}
+
+impl Display for Color {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    write!(
+      f,
+      "rgba({} {} {} / {})",
+      self.0[0],
+      self.0[1],
+      self.0[2],
+      self.0[3] as f32 / 255.0
+    )
   }
 }
 
