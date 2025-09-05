@@ -1,8 +1,8 @@
 use taffy::{Layout, Point, Size};
-use zeno::{Fill, Mask, Transform};
+use zeno::{Fill, Mask};
 
 use crate::{
-  layout::style::{Color, Style},
+  layout::style::{Affine, Color, Style},
   rendering::{BorderRadius, Canvas, RenderContext},
 };
 
@@ -20,7 +20,7 @@ pub struct BorderProperties {
   /// The radius of the border.
   pub radius: BorderRadius,
   /// The transform of the border.
-  pub transform: Transform,
+  pub transform: Affine,
 }
 
 impl BorderProperties {
@@ -67,7 +67,6 @@ pub fn draw_border(canvas: &Canvas, border: BorderProperties) {
   let mut mask = Mask::new(&paths);
 
   mask.style(Fill::EvenOdd);
-  mask.transform(Some(border.transform));
 
   let (mask, mut placement) = mask.render();
 

@@ -1,8 +1,7 @@
 use taffy::{Layout, Point};
-use zeno::Transform;
 
 use crate::{
-  layout::style::{Color, Sides},
+  layout::style::{Affine, Color, Sides},
   rendering::{BorderProperties, BorderRadius, Canvas, draw_border},
 };
 
@@ -10,7 +9,7 @@ use crate::{
 ///
 /// This function draws colored rectangles to visualize the content box
 /// (red) and the full layout box (green) for debugging purposes.
-pub fn draw_debug_border(canvas: &Canvas, layout: Layout, transform: Transform) {
+pub fn draw_debug_border(canvas: &Canvas, layout: Layout, transform: Affine) {
   let x = layout.content_box_x();
   let y = layout.content_box_y();
   let size = layout.content_box_size();

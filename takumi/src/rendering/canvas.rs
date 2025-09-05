@@ -4,7 +4,6 @@
 //! fast image blending and pixel manipulation operations.
 
 use std::{
-  borrow::Cow,
   fmt::Display,
   sync::{
     Arc,
@@ -14,10 +13,13 @@ use std::{
 
 use image::{Pixel, Rgba, RgbaImage};
 use taffy::{Point, Size};
-use zeno::{Mask, Placement, Transform};
+use zeno::{Mask, Placement};
 
 use crate::{
-  layout::{Viewport, style::Color},
+  layout::{
+    Viewport,
+    style::{Affine, Color},
+  },
   rendering::BorderRadius,
 };
 
@@ -51,7 +53,7 @@ impl Canvas {
     image: Arc<RgbaImage>,
     offset: Point<i32>,
     radius: BorderRadius,
-    transform: Transform,
+    transform: Affine,
   ) {
     let _ = self.0.send(DrawCommand::OverlayImage {
       image,
@@ -90,7 +92,7 @@ impl Canvas {
     size: Size<u32>,
     color: Color,
     radius: BorderRadius,
-    transform: Transform,
+    transform: Affine,
   ) {
     let _ = self.0.send(DrawCommand::FillColor {
       offset,
@@ -132,7 +134,7 @@ pub enum DrawCommand {
     /// Border radius to apply to the image corners
     radius: BorderRadius,
     /// Transform to apply when drawing
-    transform: Transform,
+    transform: Affine,
   },
   /// Draw a mask with the specified color onto the canvas.
   DrawMask {
@@ -156,7 +158,7 @@ pub enum DrawCommand {
     /// Border radius to apply to the filled area
     radius: BorderRadius,
     /// Transform to apply when drawing
-    transform: Transform,
+    transform: Affine,
   },
 }
 
@@ -223,15 +225,6 @@ impl DrawCommand {
   }
 }
 
-fn is_transform_identity(transform: Transform) -> bool {
-  transform.xx == 1.0
-    && transform.xy == 0.0
-    && transform.yx == 0.0
-    && transform.yy == 1.0
-    && transform.x == 0.0
-    && transform.y == 0.0
-}
-
 /// Draws a single pixel on the canvas with alpha blending.
 ///
 /// If the color is fully transparent (alpha = 0), no operation is performed.
@@ -277,10 +270,10 @@ pub(crate) fn draw_filled_rect_color<C: Into<Rgba<u8>>>(
   offset: Point<i32>,
   color: C,
   radius: BorderRadius,
-  transform: Transform,
+  transform: Affine,
 ) {
   let color: Rgba<u8> = color.into();
-  let can_direct_draw = is_transform_identity(transform) && radius.is_zero();
+  let can_direct_draw = transform.is_identity() && radius.is_zero();
 
   // Fast path: if drawing on the entire canvas, we can just replace the entire canvas with the color
   if can_direct_draw
@@ -320,11 +313,11 @@ pub(crate) fn draw_filled_rect_color<C: Into<Rgba<u8>>>(
 
   let mut paths = Vec::new();
 
-  radius.write_mask_commands(&mut paths);
+  radius.offset_by_half().write_mask_commands(&mut paths);
 
   let mut mask = Mask::new(&paths);
 
-  mask.transform(Some(transform));
+  mask.render_offset((radius.size.width / 2.0, radius.size.height / 2.0));
 
   let (mask, mut placement) = mask.render();
 
@@ -377,105 +370,107 @@ pub(crate) fn overlay_image(
   image: &RgbaImage,
   offset: Point<i32>,
   radius: BorderRadius,
-  transform: Transform,
+  transform: Affine,
 ) {
-  if is_transform_identity(transform) && radius.is_zero() {
-    for y in 0..image.height() {
-      for x in 0..image.width() {
-        let dest_x = offset.x + x as i32;
-        let dest_y = offset.y + y as i32;
+  // if is_transform_identity(transform) && radius.is_zero() {
+  //   for y in 0..image.height() {
+  //     for x in 0..image.width() {
+  //       let dest_x = offset.x + x as i32;
+  //       let dest_y = offset.y + y as i32;
 
-        if dest_x < 0 || dest_y < 0 {
-          continue;
-        }
+  //       if dest_x < 0 || dest_y < 0 {
+  //         continue;
+  //       }
 
-        draw_pixel(canvas, dest_x as u32, dest_y as u32, *image.get_pixel(x, y));
-      }
-    }
+  //       draw_pixel(canvas, dest_x as u32, dest_y as u32, *image.get_pixel(x, y));
+  //     }
+  //   }
 
+  //   return;
+  // }
+
+  draw_image_with_transform(canvas, image, transform, offset);
+}
+
+fn draw_image_with_transform(
+  canvas: &mut RgbaImage,
+  image: &RgbaImage,
+  transform: Affine,
+  offset: Point<i32>,
+) {
+  let Some(inverse) = transform.invert() else {
+    return;
+  };
+
+  let corners = [
+    (0, 0),
+    (image.width() as i32, 0),
+    (image.width() as i32, image.height() as i32),
+    (0, image.height() as i32),
+  ];
+
+  let corners_transformed = corners
+    .iter()
+    .map(|(x, y)| {
+      let point = Point {
+        x: *x as f32,
+        y: *y as f32,
+      } * transform;
+      (point.x + offset.x as f32, point.y + offset.y as f32)
+    })
+    .collect::<Vec<_>>();
+
+  let mut min_x = f32::MAX;
+  let mut min_y = f32::MAX;
+  let mut max_x = f32::MIN;
+  let mut max_y = f32::MIN;
+
+  for (x, y) in corners_transformed {
+    min_x = min_x.min(x);
+    min_y = min_y.min(y);
+    max_x = max_x.max(x);
+    max_y = max_y.max(y);
+  }
+
+  // Compute integer canvas-space bounds and clamp to canvas size to avoid iterating off-canvas
+  let mut start_x = min_x.floor() as i32;
+  let mut start_y = min_y.floor() as i32;
+  let mut end_x = max_x.ceil() as i32;
+  let mut end_y = max_y.ceil() as i32;
+
+  let canvas_min_x = 0i32;
+  let canvas_min_y = 0i32;
+  let canvas_max_x = canvas.width() as i32;
+  let canvas_max_y = canvas.height() as i32;
+
+  if start_x < canvas_min_x {
+    start_x = canvas_min_x;
+  }
+  if start_y < canvas_min_y {
+    start_y = canvas_min_y;
+  }
+  if end_x > canvas_max_x {
+    end_x = canvas_max_x;
+  }
+  if end_y > canvas_max_y {
+    end_y = canvas_max_y;
+  }
+
+  if start_x >= end_x || start_y >= end_y {
     return;
   }
 
-  let mut paths = Vec::new();
+  for y in start_y..end_y {
+    for x in start_x..end_x {
+      let src_x = (x - offset.x) as f32;
+      let src_y = (y - offset.y) as f32;
+      let point = Point { x: src_x, y: src_y } * inverse;
 
-  radius.write_mask_commands(&mut paths);
-
-  let mut mask = Mask::new(&paths);
-
-  mask.transform(Some(transform));
-
-  let (mask, mut placement) = mask.render();
-
-  // Fast path: if only the radius needs to be applied, we can draw the mask directly
-  if is_transform_identity(transform) {
-    placement.left += offset.x;
-    placement.top += offset.y;
-
-    return draw_mask(canvas, &mask, placement, Color::transparent(), Some(image));
-  }
-
-  let mut image_cow = Cow::Borrowed(image);
-
-  if !radius.is_zero() {
-    let mut bottom_image = RgbaImage::new(image.width(), image.height());
-
-    overlay_image(
-      &mut bottom_image,
-      image,
-      Point::default(),
-      radius,
-      Transform::default(),
-    );
-
-    image_cow = Cow::Owned(bottom_image);
-  }
-
-  let transformed_image = transform_image(image_cow.as_ref(), transform, &mask, placement);
-
-  placement.left += offset.x;
-  placement.top += offset.y;
-
-  draw_mask(
-    canvas,
-    &mask,
-    placement,
-    Color::transparent(),
-    Some(&transformed_image),
-  );
-}
-
-fn transform_image(
-  image: &RgbaImage,
-  transform: Transform,
-  mask: &[u8],
-  placement: Placement,
-) -> RgbaImage {
-  let inverse = match transform.invert() {
-    Some(inv) => inv,
-    None => return RgbaImage::new(0, 0),
-  };
-
-  let mut rotated_image = RgbaImage::new(placement.width, placement.height);
-
-  let mut i = 0;
-
-  for y in 0..placement.height {
-    for x in 0..placement.width {
-      let alpha = mask[i];
-      i += 1;
-
-      if alpha == 0 {
-        continue;
-      }
-
-      let point = inverse.transform_vector(zeno::Point::new(x as f32, y as f32));
-
+      // sample_bilinear will return transparent for OOB source coordinates
       let pixel = sample_bilinear(image, point.x, point.y);
-      rotated_image.put_pixel(x, y, pixel);
+      draw_pixel(canvas, x as u32, y as u32, pixel);
     }
   }
-
-  rotated_image
 }
 
 fn sample_bilinear(image: &RgbaImage, x: f32, y: f32) -> Rgba<u8> {
@@ -483,7 +478,7 @@ fn sample_bilinear(image: &RgbaImage, x: f32, y: f32) -> Rgba<u8> {
 
   // Check bounds
   if !is_point_in_bounds(x, y, width as f32, height as f32) {
-    return Rgba([0, 0, 0, 100]);
+    return Rgba([0, 0, 0, 0]);
   }
 
   // Get the four surrounding pixels

@@ -19,9 +19,11 @@ pub use debug_drawing::*;
 pub use image_drawing::*;
 pub use render::*;
 pub use text_drawing::*;
-use zeno::Transform;
 
-use crate::{GlobalContext, layout::Viewport};
+use crate::{
+  GlobalContext,
+  layout::{Viewport, style::Affine},
+};
 
 /// The context for the image renderer.
 #[derive(Clone, Copy)]
@@ -33,5 +35,5 @@ pub struct RenderContext<'g> {
   /// The font size in pixels, used for em and rem units.
   pub parent_font_size: f32,
   /// The scale factor for the image renderer.
-  pub transform: Transform,
+  pub transform: Affine,
 }

@@ -66,6 +66,17 @@ impl BorderRadius {
     }
   }
 
+  /// Offsets the radius by half of the size.
+  pub fn offset_by_half(&self) -> Self {
+    Self {
+      offset: Point {
+        x: self.offset.x - self.size.width / 2.0,
+        y: self.offset.y - self.size.height / 2.0,
+      },
+      ..*self
+    }
+  }
+
   /// Generates path commands to create a mask representing the border radius shape.
   /// Uses cubic Bézier curves to approximate CSS border-radius quarter-circles.
   pub fn write_mask_commands(&self, path: &mut Vec<Command>) {

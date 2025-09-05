@@ -9,11 +9,10 @@ use takumi::{
   GlobalContext,
   layout::{
     DEFAULT_FONT_SIZE, DEFAULT_LINE_HEIGHT_SCALER, Viewport,
-    style::{Color, ResolvedFontStyle, TextOverflow, TextTransform},
+    style::{Affine, Color, ResolvedFontStyle, TextOverflow, TextTransform},
   },
   rendering::RenderContext,
 };
-use zeno::Transform;
 
 const NOTO_SANS_REGULAR_BUFFER: &[u8] =
   include_bytes!("../../assets/fonts/noto-sans/NotoSans-Regular.ttf");
@@ -43,7 +42,7 @@ fn create_test_context() -> RenderContext<'static> {
       height: VIEWPORT_HEIGHT,
       font_size: DEFAULT_FONT_SIZE,
     },
-    transform: Transform::IDENTITY,
+    transform: Affine::identity(),
   }
 }
 

@@ -9,11 +9,11 @@ use swash::{
   tag_from_bytes,
 };
 use taffy::{Layout, Point};
-use zeno::{Format, Transform};
+use zeno::Format;
 
 use crate::{
   GlobalContext,
-  layout::style::{Color, ResolvedFontStyle, Style, TextOverflow, TextTransform},
+  layout::style::{Affine, Color, ResolvedFontStyle, Style, TextOverflow, TextTransform},
   rendering::{BorderRadius, Canvas, RenderContext, overlay_image, resolve_layers_tiles},
 };
 
@@ -101,7 +101,7 @@ pub fn draw_text(
             &tile_image,
             Point { x: *x, y: *y },
             Default::default(),
-            Transform::IDENTITY,
+            Affine::identity(),
           )
         }
       }
@@ -156,7 +156,6 @@ fn draw_buffer(
             Source::Outline,
           ])
           .format(Format::Alpha)
-          .transform(Some(context.transform))
           .render(scaler, glyph.id) else {
             continue;
           };

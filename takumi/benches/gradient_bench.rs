@@ -4,12 +4,11 @@ use takumi::{
   layout::{
     Viewport,
     style::{
-      Angle, BackgroundImage, Color, GradientStop, LengthUnit, LinearGradient, StopPosition,
+      Affine, Angle, BackgroundImage, Color, GradientStop, LengthUnit, LinearGradient, StopPosition,
     },
   },
   rendering::{RenderContext, render_gradient_tile},
 };
-use zeno::Transform;
 
 fn bench_sizes() -> Vec<(u32, u32)> {
   vec![(1920, 1080)]
@@ -52,7 +51,7 @@ fn bench_takumi(c: &mut Criterion) {
               global: &global,
               viewport,
               parent_font_size: viewport.font_size,
-              transform: Transform::IDENTITY,
+              transform: Affine::identity(),
             };
             (sample_gradient(), w, h, context)
           },

@@ -1,5 +1,5 @@
 use takumi::layout::{
-  node::{ContainerNode, ImageNode, NodeKind, TextNode},
+  node::{ContainerNode, ImageNode, TextNode},
   style::{
     Angle, BackgroundPosition, Color, Display, InheritableStyle,
     LengthUnit::{Percentage, Px},
@@ -11,15 +11,12 @@ use takumi::layout::{
 mod test_utils;
 use test_utils::run_style_width_test;
 
-fn create_rotated_container(
-  angle: f32,
-  transform_origin: Option<BackgroundPosition>,
-) -> ContainerNode<NodeKind> {
-  ContainerNode {
+fn create_rotated_container(angle: f32, transform_origin: Option<BackgroundPosition>) -> ImageNode {
+  ImageNode {
     style: Style {
       transform: Some(Transforms(vec![
-        Transform::Rotate(Angle::new(angle)),
         Transform::Translate(Percentage(-50.0), Percentage(-50.0)),
+        Transform::Rotate(Angle::new(angle)),
       ])),
       position: Position::Absolute,
       inset: Sides([
@@ -32,20 +29,16 @@ fn create_rotated_container(
       width: Px(200.0),
       height: Px(200.0),
       background_color: Some(Color([255, 0, 0, 30])),
-      border_width: Sides([Px(1.0); 4]),
+      // border_width: Sides([Px(1.0); 4]),
       ..Default::default()
     },
-    children: Some(vec![
-      TextNode {
-        text: format!("Rotated {angle}deg"),
-        style: Style::default(),
-      }
-      .into(),
-    ]),
+    width: None,
+    height: None,
+    src: "assets/images/yeecord.png".to_string(),
   }
 }
 
-const ROTATED_ANGLES: &[f32] = &[0.0, 45.0];
+const ROTATED_ANGLES: &[f32] = &[0.0, 45.0, 90.0, 135.0, 180.0, 225.0, 270.0, 315.0];
 
 #[test]
 fn test_style_transform_origin_center() {

@@ -6,11 +6,10 @@ use std::{
 use image::{ExtendedColorType, ImageFormat, RgbaImage, codecs::jpeg::JpegEncoder};
 use serde::{Deserialize, Serialize};
 use taffy::{AvailableSpace, NodeId, Point, TaffyTree, geometry::Size};
-use zeno::Transform;
 
 use crate::{
   GlobalContext,
-  layout::{Viewport, node::Node},
+  layout::{Viewport, node::Node, style::Affine},
   rendering::{Canvas, create_blocking_canvas_loop, draw_debug_border},
 };
 
@@ -106,7 +105,7 @@ pub fn render<Nodes: Node<Nodes>>(
     global,
     viewport,
     parent_font_size: viewport.font_size,
-    transform: Transform::IDENTITY,
+    transform: Affine::identity(),
   };
 
   let root_node_id = insert_taffy_node(&mut taffy, root_node, &render_context);
@@ -145,7 +144,7 @@ pub fn render<Nodes: Node<Nodes>>(
       root_node_id,
       &canvas,
       Point::ZERO,
-      Transforms::default(),
+      Affine::identity(),
     );
 
     drop(canvas);
@@ -162,7 +161,7 @@ pub fn render<Nodes: Node<Nodes>>(
       root_node_id,
       &canvas,
       Point::ZERO,
-      Transform::IDENTITY,
+      Affine::identity(),
     );
 
     drop(canvas);
@@ -178,7 +177,7 @@ fn render_node<Nodes: Node<Nodes>>(
   node_id: NodeId,
   canvas: &Canvas,
   offset: Point<f32>,
-  mut transform: Transform,
+  mut transform: Affine,
 ) {
   let mut layout = *taffy.layout(node_id).unwrap();
   let node_context = taffy.get_node_context(node_id).unwrap();
@@ -192,13 +191,13 @@ fn render_node<Nodes: Node<Nodes>>(
   let style = node_context.node.get_style();
 
   if let Some(node_transform) = &style.transform {
-    let node_transform = node_transform.to_zeno(
+    let node_transform = node_transform.to_affine(
       &render_context,
       &layout,
       style.transform_origin.unwrap_or_default(),
     );
 
-    transform = transform.then(&node_transform);
+    transform = transform * node_transform;
   }
 
   render_context.transform = transform;

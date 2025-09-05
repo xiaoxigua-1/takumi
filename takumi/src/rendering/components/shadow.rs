@@ -2,10 +2,10 @@ use std::sync::Arc;
 
 use image::{Rgba, RgbaImage, imageops::fast_blur};
 use taffy::{Layout, Point, Size};
-use zeno::{Fill, Mask, Transform};
+use zeno::{Fill, Mask};
 
 use crate::{
-  layout::style::{BoxShadow, BoxShadows},
+  layout::style::{Affine, BoxShadow, BoxShadows},
   rendering::{
     BorderRadius, Canvas, RenderContext, apply_mask_alpha_to_pixel, draw_filled_rect_color,
   },
@@ -265,7 +265,7 @@ fn draw_outset_shadow(
     },
     shadow.color,
     border_radius.grow(shadow.spread_radius),
-    Transform::IDENTITY,
+    Affine::identity(),
   );
 
   if shadow.blur_radius <= 0.0 {
