@@ -313,11 +313,10 @@ pub(crate) fn draw_filled_rect_color<C: Into<Rgba<u8>>>(
 
   let mut paths = Vec::new();
 
-  radius.offset_by_half().write_mask_commands(&mut paths);
+  radius.write_mask_commands(&mut paths);
+  transform.apply_on_paths(&mut paths);
 
-  let mut mask = Mask::new(&paths);
-
-  mask.render_offset((radius.size.width / 2.0, radius.size.height / 2.0));
+  let mask = Mask::new(&paths);
 
   let (mask, mut placement) = mask.render();
 
@@ -372,22 +371,44 @@ pub(crate) fn overlay_image(
   radius: BorderRadius,
   transform: Affine,
 ) {
-  // if is_transform_identity(transform) && radius.is_zero() {
-  //   for y in 0..image.height() {
-  //     for x in 0..image.width() {
-  //       let dest_x = offset.x + x as i32;
-  //       let dest_y = offset.y + y as i32;
+  if transform.is_identity() && radius.is_zero() {
+    for y in 0..image.height() {
+      for x in 0..image.width() {
+        let dest_x = offset.x + x as i32;
+        let dest_y = offset.y + y as i32;
 
-  //       if dest_x < 0 || dest_y < 0 {
-  //         continue;
-  //       }
+        if dest_x < 0 || dest_y < 0 {
+          continue;
+        }
 
-  //       draw_pixel(canvas, dest_x as u32, dest_y as u32, *image.get_pixel(x, y));
-  //     }
-  //   }
+        draw_pixel(canvas, dest_x as u32, dest_y as u32, *image.get_pixel(x, y));
+      }
+    }
 
-  //   return;
-  // }
+    return;
+  }
+
+  if !radius.is_zero() {
+    let mut paths = Vec::new();
+
+    radius.write_mask_commands(&mut paths);
+
+    let mask = Mask::new(&paths);
+
+    let (mask, placement) = mask.render();
+
+    let mut bottom = RgbaImage::new(image.width(), image.height());
+
+    draw_mask(
+      &mut bottom,
+      &mask,
+      placement,
+      Rgba([0, 0, 0, 0]),
+      Some(image),
+    );
+
+    return overlay_image(canvas, &bottom, offset, BorderRadius::zero(), transform);
+  }
 
   draw_image_with_transform(canvas, image, transform, offset);
 }

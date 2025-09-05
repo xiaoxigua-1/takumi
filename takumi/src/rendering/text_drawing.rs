@@ -156,6 +156,7 @@ fn draw_buffer(
             Source::Outline,
           ])
           .format(Format::Alpha)
+          // .transform(Some(context.transform.into()))
           .render(scaler, glyph.id) else {
             continue;
           };

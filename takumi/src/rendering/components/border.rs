@@ -63,6 +63,7 @@ pub fn draw_border(canvas: &Canvas, border: BorderProperties) {
   let inner_border_radius = border.radius.grow(-avg_border_width);
 
   inner_border_radius.write_mask_commands(&mut paths);
+  border.transform.apply_on_paths(&mut paths);
 
   let mut mask = Mask::new(&paths);
 

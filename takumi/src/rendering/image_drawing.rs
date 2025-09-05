@@ -138,12 +138,9 @@ pub fn draw_image(
   canvas: &Canvas,
   layout: Layout,
 ) {
-  let content_box = layout.content_box_size();
   let x = layout.content_box_x();
   let y = layout.content_box_y();
-
-  let container_width = content_box.width as u32;
-  let container_height = content_box.height as u32;
+  let content_box = layout.content_box_size();
 
   let (image, offset_x, offset_y) = process_image_for_object_fit(
     image,
@@ -153,8 +150,8 @@ pub fn draw_image(
       .image_rendering
       .unwrap_or_default()
       .into(),
-    container_width,
-    container_height,
+    content_box.width as u32,
+    content_box.height as u32,
   );
 
   canvas.overlay_image(

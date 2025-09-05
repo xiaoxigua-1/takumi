@@ -29,7 +29,7 @@ fn create_rotated_container(angle: f32, transform_origin: Option<BackgroundPosit
       width: Px(200.0),
       height: Px(200.0),
       background_color: Some(Color([255, 0, 0, 30])),
-      // border_width: Sides([Px(1.0); 4]),
+      border_width: Sides([Px(2.0); 4]),
       ..Default::default()
     },
     width: None,

@@ -4,6 +4,7 @@ use cssparser::{Parser, ParserInput, Token, match_ignore_ascii_case};
 use serde::{Deserialize, Serialize};
 use taffy::{Layout, Point, Size};
 use ts_rs::TS;
+use zeno::Command;
 
 use crate::{
   layout::style::{
@@ -275,6 +276,66 @@ impl Affine {
       d: 1.0,
       x: 0.0,
       y: 0.0,
+    }
+  }
+
+  /// Applies the transform on the paths
+  pub fn apply_on_paths(self, mask: &mut [Command]) {
+    for command in mask {
+      match command {
+        Command::MoveTo(target) => {
+          let point = Point {
+            x: target.x,
+            y: target.y,
+          };
+          let point = point * self;
+          *command = Command::MoveTo((point.x, point.y).into());
+        }
+        Command::LineTo(target) => {
+          let point = Point {
+            x: target.x,
+            y: target.y,
+          };
+          let point = point * self;
+          *command = Command::LineTo((point.x, point.y).into());
+        }
+        Command::CurveTo(target1, target2, target3) => {
+          let point1 = Point {
+            x: target1.x,
+            y: target1.y,
+          };
+          let point1 = point1 * self;
+          let point2 = Point {
+            x: target2.x,
+            y: target2.y,
+          };
+          let point2 = point2 * self;
+          let point3 = Point {
+            x: target3.x,
+            y: target3.y,
+          };
+          let point3 = point3 * self;
+          *command = Command::CurveTo(
+            (point1.x, point1.y).into(),
+            (point2.x, point2.y).into(),
+            (point3.x, point3.y).into(),
+          );
+        }
+        Command::QuadTo(target1, target2) => {
+          let point1 = Point {
+            x: target1.x,
+            y: target1.y,
+          };
+          let point1 = point1 * self;
+          let point2 = Point {
+            x: target2.x,
+            y: target2.y,
+          };
+          let point2 = point2 * self;
+          *command = Command::QuadTo((point1.x, point1.y).into(), (point2.x, point2.y).into());
+        }
+        Command::Close => {}
+      }
     }
   }
 
