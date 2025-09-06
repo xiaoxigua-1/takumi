@@ -9,14 +9,17 @@ use swash::{
   tag_from_bytes,
 };
 use taffy::{Layout, Point, Size};
-use zeno::{Command, Mask, PathData};
+use zeno::{Command, Mask, PathData, Placement};
 
 use crate::{
   GlobalContext,
   layout::style::{
     Affine, Color, ImageScalingAlgorithm, ResolvedFontStyle, Style, TextOverflow, TextTransform,
   },
-  rendering::{BorderProperties, Canvas, RenderContext, overlay_image, resolve_layers_tiles},
+  rendering::{
+    BorderProperties, Canvas, RenderContext, apply_mask_alpha_to_pixel, overlay_image,
+    resolve_layers_tiles,
+  },
 };
 
 const ELLIPSIS_CHAR: &str = "…";
@@ -162,18 +165,18 @@ fn draw_buffer(
   }
 }
 
-// fn image_to_mask(image: &RgbaImage) -> (Vec<u8>, Placement) {
-//   let placement = Placement {
-//     left: 0,
-//     top: 0,
-//     width: image.width(),
-//     height: image.height(),
-//   };
+fn image_to_mask(image: &RgbaImage) -> (Vec<u8>, Placement) {
+  let placement = Placement {
+    left: 0,
+    top: 0,
+    width: image.width(),
+    height: image.height(),
+  };
 
-//   let mask = image.iter().skip(3).step_by(4).copied().collect::<Vec<_>>();
+  let mask = image.iter().skip(3).step_by(4).copied().collect::<Vec<_>>();
 
-//   (mask, placement)
-// }
+  (mask, placement)
+}
 
 fn draw_glyph(
   glyph: Glyph,
@@ -193,40 +196,61 @@ fn draw_glyph(
     let image =
       RgbaImage::from_raw(bitmap.placement.width, bitmap.placement.height, bitmap.data).unwrap();
 
-    // TODO: image mask, support generic image view
-    // if image_fill.is_some() {
-    //   let (mask, mut placement) = image_to_mask(&image);
+    let border = BorderProperties {
+      size: Size {
+        width: bitmap.placement.width as f32,
+        height: bitmap.placement.height as f32,
+      },
+      ..Default::default()
+    };
 
-    //   let cropped_fill_image = image_fill.map(|image| {
-    //     crop_imm(
-    //       image,
-    //       (placement.left + glyph.x as i32) as u32,
-    //       (placement.top + glyph.y as i32) as u32,
-    //       placement.width,
-    //       placement.height,
-    //     )
-    //     .to_image()
-    //   });
+    let offset = Point {
+      x: layout.location.x as i32 + bitmap.placement.left,
+      y: layout.location.y as i32 - bitmap.placement.top,
+    };
 
-    //   placement.left += layout.location.x as i32;
-    //   placement.top += layout.location.y as i32;
+    if let Some(image_fill) = image_fill {
+      let (mask, placement) = image_to_mask(&image);
 
-    //   return canvas.draw_mask(mask, placement, color, cropped_fill_image);
-    // }
+      let mut bottom = RgbaImage::new(placement.width, placement.height);
+
+      let mut i = 0;
+
+      for y in 0..placement.height {
+        for x in 0..placement.width {
+          let alpha = mask[i];
+          i += 1;
+
+          if alpha == 0 {
+            continue;
+          }
+
+          let source_x = x + glyph.x as u32;
+          let source_y = y + glyph.y as u32 - bitmap.placement.top as u32;
+
+          let Some(pixel) = image_fill.get_pixel_checked(source_x, source_y) else {
+            continue;
+          };
+
+          let pixel = apply_mask_alpha_to_pixel(*pixel, alpha);
+
+          bottom.put_pixel(x, y, pixel);
+        }
+      }
+
+      return canvas.overlay_image(
+        Arc::new(bottom),
+        offset,
+        border,
+        transform,
+        ImageScalingAlgorithm::Auto,
+      );
+    }
 
     return canvas.overlay_image(
       Arc::new(image),
-      Point {
-        x: layout.location.x as i32 + bitmap.placement.left,
-        y: layout.location.y as i32 - bitmap.placement.top,
-      },
-      BorderProperties {
-        size: Size {
-          width: bitmap.placement.width as f32,
-          height: bitmap.placement.height as f32,
-        },
-        ..Default::default()
-      },
+      offset,
+      border,
       transform,
       ImageScalingAlgorithm::Auto,
     );
