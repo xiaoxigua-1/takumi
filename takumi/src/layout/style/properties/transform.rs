@@ -13,6 +13,8 @@ use crate::{
   rendering::RenderContext,
 };
 
+const DEFAULT_SCALE: f32 = 1.0;
+
 /// Represents a single CSS transform operation
 #[derive(Debug, Clone, Deserialize, Serialize, Copy, TS)]
 #[serde(rename_all = "camelCase")]
@@ -166,10 +168,10 @@ impl<'i> FromCss<'i> for Transform {
       )),
       "scalex" => Ok(Transform::Scale(
         parser.parse_nested_block(parse_length_percentage)?,
-        1.0,
+        DEFAULT_SCALE,
       )),
       "scaley" => Ok(Transform::Scale(
-        1.0,
+        DEFAULT_SCALE,
         parser.parse_nested_block(parse_length_percentage)?,
       )),
       "skew" => Ok(Transform::Skew(

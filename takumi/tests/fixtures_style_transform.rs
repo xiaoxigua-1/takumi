@@ -152,22 +152,10 @@ fn test_style_transform_translate_and_scale() {
         style: Style {
           width: Percentage(100.0),
           height: Percentage(100.0),
-          // background_image: Some(
-          //   BackgroundImagesValue::Css("linear-gradient(180deg, #0000ff, #00ff00)".to_string())
-          //     .try_into()
-          //     .unwrap(),
-          // ),
           ..Default::default()
         },
         width: None,
         height: None,
-        // children: Some(vec![
-        //   TextNode {
-        //     text: "300px x 300px, translate(100px, 50px)".to_string(),
-        //     style: Style::default(),
-        //   }
-        //   .into(),
-        // ]),
       }
       .into(),
     ]),
