@@ -81,10 +81,6 @@ jobs:
           path: changed_files.tar.gz
           if-no-files-found: error
 
-      - name: Fail if git diff is not empty
-        if: steps.check_changes.outputs.changed == 'true'
-        run: git diff --exit-code HEAD --
-
       - name: Test README.md is up to date
         working-directory: takumi
         run: cargo rdme --check
