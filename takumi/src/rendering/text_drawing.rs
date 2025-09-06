@@ -184,11 +184,10 @@ fn draw_glyph(
   image_fill: Option<&RgbaImage>,
   transform: Affine,
 ) {
-  let transform = transform
-    * Affine::translation(Size {
-      width: layout.border.left + layout.padding.left + glyph.x,
-      height: layout.border.top + layout.padding.top + glyph.y,
-    });
+  let transform = Affine::translation(Size {
+    width: layout.border.left + layout.padding.left + glyph.x,
+    height: layout.border.top + layout.padding.top + glyph.y,
+  }) * transform;
 
   if let Some(bitmap) = scaler.scale_color_bitmap(glyph.id, StrikeWith::BestFit) {
     let image =
