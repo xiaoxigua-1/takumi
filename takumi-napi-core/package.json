@@ -14,6 +14,7 @@
     "@napi-rs/cli": "3.1.5",
     "@takumi-rs/helpers": "workspace:*",
     "@types/bun": "catalog:",
+    "mitata": "^1.0.34",
     "typescript": "catalog:"
   },
   "browser": "browser.js",
@@ -38,7 +39,8 @@
     "build:debug": "napi build",
     "prepublishOnly": "bunx napi prepublish -t npm --no-gh-release",
     "artifacts": "napi create-npm-dirs && napi artifacts",
-    "version": "napi version"
+    "version": "napi version",
+    "bench": "bun tests/bench/index.ts"
   },
   "type": "commonjs",
   "types": "index.d.ts"

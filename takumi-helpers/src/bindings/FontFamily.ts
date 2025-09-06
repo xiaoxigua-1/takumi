@@ -2,7 +2,6 @@
 
 /**
  * Represents a font family for text rendering.
- * Use only the family name (no style suffixes like "Bold", "Italic", "Regular").
- * Multi-word names are allowed (e.g., "Noto Sans") and should be provided as-is without quotes.
+ * Multi value fallback is supported.
  */
-export type FontFamily = "sans-serif" | "serif" | "monospace" | "cursive" | "fantasy" | string;
+export type FontFamily = string;

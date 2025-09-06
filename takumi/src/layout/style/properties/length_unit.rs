@@ -214,12 +214,8 @@ impl LengthUnit {
     match self {
       LengthUnit::Auto => CompactLength::auto(),
       LengthUnit::Percentage(value) => CompactLength::percent(value / 100.0),
-      LengthUnit::Rem(value) => {
-        CompactLength::length(value * context.viewport.font_size * context.scale.width)
-      }
-      LengthUnit::Em(value) => {
-        CompactLength::length(value * context.parent_font_size * context.scale.width)
-      }
+      LengthUnit::Rem(value) => CompactLength::length(value * context.viewport.font_size),
+      LengthUnit::Em(value) => CompactLength::length(value * context.parent_font_size),
       LengthUnit::Vh(value) => {
         CompactLength::length(context.viewport.height as f32 * value / 100.0)
       }
@@ -249,7 +245,7 @@ impl LengthUnit {
     const ONE_PT_IN_PX: f32 = ONE_IN_PX / 72.0;
     const ONE_PC_IN_PX: f32 = ONE_IN_PX / 6.0;
 
-    let value = match self {
+    match self {
       LengthUnit::Auto => 0.0,
       LengthUnit::Px(value) => value,
       LengthUnit::Percentage(value) => (value / 100.0) * percentage_full_px,
@@ -263,9 +259,7 @@ impl LengthUnit {
       LengthUnit::Q(value) => value * ONE_Q_IN_PX,
       LengthUnit::Pt(value) => value * ONE_PT_IN_PX,
       LengthUnit::Pc(value) => value * ONE_PC_IN_PX,
-    };
-
-    value * context.scale.width
+    }
   }
 
   /// Resolves the length unit to a `LengthPercentageAuto`.

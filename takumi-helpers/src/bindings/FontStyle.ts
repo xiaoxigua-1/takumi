@@ -3,4 +3,4 @@
 /**
  * Controls the slant (italic/oblique) of text rendering.
  */
-export type TextStyle = "normal" | "italic" | "oblique";
+export type FontStyle = "normal" | "italic" | "oblique" | `oblique ${string}deg`;

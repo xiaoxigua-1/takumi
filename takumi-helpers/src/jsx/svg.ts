@@ -1,6 +1,10 @@
-import type { ComponentProps } from "react";
-import type { ReactElementLike } from "./jsx";
-import { camelToKebab, isReactElement } from "./utils";
+import type { ComponentProps, ReactElement } from "react";
+import {
+  camelToKebab,
+  isFunctionComponent,
+  isValidElement,
+  type ReactElementLike,
+} from "./utils";
 
 function isTextNode(node: unknown): node is string | number {
   return typeof node === "string" || typeof node === "number";
@@ -137,6 +141,14 @@ const serializeElementNode = (
 ): string => {
   const props = (obj.props as Record<string, unknown>) || {};
 
+  if (isFunctionComponent(obj.type)) return serialize(obj.type(obj.props));
+
+  // Handle symbols (like React fragments) - they can't be serialized as HTML/SVG tags
+  if (typeof obj.type === "symbol") return "";
+
+  // Only string types can be used as HTML/SVG tag names
+  if (typeof obj.type !== "string") return "";
+
   const attrs = propsToAttrStrings(props);
   const children = props.children;
   const childrenString = Array.isArray(children)
@@ -150,24 +162,24 @@ const serialize = (node: unknown): string => {
   if (node === null || node === undefined || node === false) return "";
   if (isTextNode(node)) return String(node);
   if (Array.isArray(node)) return node.map(serialize).join("");
-  if (!isReactElement(node)) return "";
+  if (!isValidElement(node)) return "";
 
   return serializeElementNode(node, serialize);
 };
 
 export function serializeSvg(
-  element: ReactElementLike<"svg", ComponentProps<"svg">>,
+  element: ReactElement<ComponentProps<"svg">, "svg">,
 ): string {
   const props = (element.props as Record<string, unknown>) || {};
 
   if (!("xmlns" in props)) {
-    const cloned: ReactElementLike<"svg", ComponentProps<"svg">> = {
+    const cloned: ReactElement<ComponentProps<"svg">, "svg"> = {
       ...element,
       props: {
         ...props,
         xmlns: "http://www.w3.org/2000/svg",
       },
-    } as ReactElementLike<"svg", ComponentProps<"svg">>;
+    } as ReactElement<ComponentProps<"svg">, "svg">;
 
     return serialize(cloned) || "";
   }

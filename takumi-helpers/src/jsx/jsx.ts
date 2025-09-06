@@ -1,35 +1,22 @@
-import type { ComponentProps, CSSProperties, JSX, ReactNode } from "react";
+import type {
+  ComponentProps,
+  CSSProperties,
+  JSX,
+  ReactElement,
+  ReactNode,
+} from "react";
 import { container, image, percentage, text } from "../helpers";
 import type { Node, PartialStyle } from "../types";
 import { stylePresets } from "./style-presets";
 import { serializeSvg } from "./svg";
-import { isHtmlElement } from "./utils";
-
-const REACT_FORWARD_REF_TYPE = Symbol.for("react.forward_ref");
-const REACT_MEMO_TYPE = Symbol.for("react.memo");
-
-export type ReactElementLike<K extends string = string, P = unknown> = {
-  type: K;
-  props: P;
-};
-
-type ForwardRefLike = {
-  $$typeof: symbol;
-  render: (props: unknown, ref: unknown) => ReactNode;
-};
-
-type MemoLike = {
-  $$typeof: symbol;
-  type: unknown;
-};
-
-function isValidElement(object: unknown): object is ReactElementLike {
-  return (
-    (typeof object === "object" || typeof object === "function") &&
-    object !== null &&
-    "type" in object
-  );
-}
+import {
+  isFunctionComponent,
+  isHtmlElement,
+  isReactForwardRef,
+  isReactMemo,
+  isValidElement,
+  type ReactElementLike,
+} from "./utils";
 
 export async function fromJsx(
   element: ReactNode | ReactElementLike,
@@ -73,21 +60,18 @@ async function fromJsxInternal(
   return [text(String(element))];
 }
 
-function isFunctionComponent(
-  value: unknown,
-): value is (props: unknown) => ReactNode {
-  return typeof value === "function";
-}
-
 function tryHandleForwardRef(
   element: ReactElementLike,
 ): Promise<Node[]> | undefined {
   if (typeof element.type !== "object" || element.type === null)
     return undefined;
 
-  const typeObject = element.type as unknown as Partial<ForwardRefLike>;
-  if (typeObject.$$typeof === REACT_FORWARD_REF_TYPE && typeObject.render) {
-    return fromJsxInternal(typeObject.render(element.props, null));
+  // Check if this is a forwardRef component
+  if (isReactForwardRef(element.type) && "render" in element.type) {
+    const forwardRefType = element.type as {
+      render: (props: unknown, ref: unknown) => ReactNode;
+    };
+    return fromJsxInternal(forwardRefType.render(element.props, null));
   }
 }
 
@@ -95,20 +79,22 @@ function tryHandleMemo(element: ReactElementLike): Promise<Node[]> | undefined {
   if (typeof element.type !== "object" || element.type === null)
     return undefined;
 
-  const typeObject = element.type as unknown as Partial<MemoLike>;
-  if (typeObject.$$typeof !== REACT_MEMO_TYPE) return undefined;
+  // Check if this is a memo component
+  if (isReactMemo(element.type) && "type" in element.type) {
+    const memoType = element.type as { type: unknown };
+    const innerType = memoType.type;
 
-  const innerType = typeObject.type;
-  if (isFunctionComponent(innerType)) {
-    return fromJsxInternal(innerType(element.props));
+    if (isFunctionComponent(innerType)) {
+      return fromJsxInternal(innerType(element.props));
+    }
+
+    const cloned: ReactElementLike = {
+      ...element,
+      type: innerType as ReactElementLike["type"],
+    } as ReactElementLike;
+
+    return processReactElement(cloned);
   }
-
-  const cloned: ReactElementLike = {
-    ...element,
-    type: innerType as ReactElementLike["type"],
-  } as ReactElementLike;
-
-  return processReactElement(cloned);
 }
 
 async function processReactElement(element: ReactElementLike): Promise<Node[]> {
@@ -158,7 +144,7 @@ async function processReactElement(element: ReactElementLike): Promise<Node[]> {
 }
 
 function createImageElement(
-  element: ReactElementLike<"img", ComponentProps<"img">>,
+  element: ReactElement<ComponentProps<"img">, "img">,
 ) {
   if (!element.props.src) {
     throw new Error("Image element must have a 'src' prop.");
@@ -172,9 +158,7 @@ function createImageElement(
   });
 }
 
-function createSvgElement(
-  element: ReactElementLike<"svg", ComponentProps<"svg">>,
-) {
+function createSvgElement(element: ReactElement<ComponentProps<"svg">, "svg">) {
   const style = extractStyleFromProps(element.props) as PartialStyle;
 
   const svg = serializeSvg(element);

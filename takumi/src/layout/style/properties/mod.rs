@@ -9,6 +9,7 @@ mod background_repeat;
 mod background_size;
 mod box_shadow;
 mod color;
+mod font_style;
 mod font_weight;
 mod gap;
 mod gradient_utils;
@@ -17,10 +18,12 @@ mod length_unit;
 mod line_height;
 mod linear_gradient;
 mod noise_v1;
+mod overflow_wrap;
 mod parser;
 mod radial_gradient;
 mod sides;
 mod transform;
+mod word_break;
 
 use std::borrow::Cow;
 
@@ -30,6 +33,7 @@ pub use background_repeat::*;
 pub use background_size::*;
 pub use box_shadow::*;
 pub use color::*;
+pub use font_style::*;
 pub use font_weight::*;
 pub use gap::*;
 pub use grid::*;
@@ -37,12 +41,14 @@ pub use length_unit::*;
 pub use line_height::*;
 pub use linear_gradient::*;
 pub use noise_v1::*;
+pub use overflow_wrap::*;
+use parley::{Alignment, FontStack};
 pub use parser::*;
 pub use radial_gradient::*;
 pub use sides::*;
 pub use transform::*;
+pub use word_break::*;
 
-use cosmic_text::{Align, FamilyOwned};
 use cssparser::{ParseError, Parser};
 use image::imageops::FilterType;
 use serde::{Deserialize, Serialize};
@@ -117,15 +123,15 @@ pub enum TextAlign {
   End,
 }
 
-impl From<TextAlign> for Option<Align> {
+impl From<TextAlign> for Alignment {
   fn from(value: TextAlign) -> Self {
     match value {
-      TextAlign::Left => Some(Align::Left),
-      TextAlign::Right => Some(Align::Right),
-      TextAlign::Center => Some(Align::Center),
-      TextAlign::Justify => Some(Align::Justified),
-      TextAlign::End => Some(Align::End),
-      TextAlign::Start => None,
+      TextAlign::Left => Alignment::Left,
+      TextAlign::Right => Alignment::Right,
+      TextAlign::Center => Alignment::Middle,
+      TextAlign::Justify => Alignment::Justified,
+      TextAlign::End => Alignment::End,
+      TextAlign::Start => Alignment::Start,
     }
   }
 }
@@ -313,36 +319,19 @@ pub enum TextTransform {
 }
 
 /// Represents a font family for text rendering.
-/// Use only the family name (no style suffixes like "Bold", "Italic", "Regular").
-/// Multi-word names are allowed (e.g., "Noto Sans") and should be provided as-is without quotes.
+/// Multi value fallback is supported.
 #[derive(Debug, Clone, Deserialize, Serialize, TS, PartialEq)]
-#[serde(rename_all = "kebab-case")]
-pub enum FontFamily {
-  /// CSS 'sans-serif' generic family
-  SansSerif,
-  /// CSS 'serif' generic family
-  Serif,
-  /// CSS 'monospace' generic family
-  Monospace,
-  /// CSS 'cursive' generic family
-  Cursive,
-  /// CSS 'fantasy' generic family
-  Fantasy,
-  /// A specific font family name, no suffixes like "Bold", "Italic", etc.
-  #[serde(untagged)]
-  Custom(String),
+pub struct FontFamily(String);
+
+impl<'a> From<FontFamily> for FontStack<'a> {
+  fn from(family: FontFamily) -> Self {
+    FontStack::Source(family.0.into())
+  }
 }
 
-impl From<FontFamily> for FamilyOwned {
-  fn from(family: FontFamily) -> Self {
-    match family {
-      FontFamily::SansSerif => FamilyOwned::SansSerif,
-      FontFamily::Serif => FamilyOwned::Serif,
-      FontFamily::Monospace => FamilyOwned::Monospace,
-      FontFamily::Cursive => FamilyOwned::Cursive,
-      FontFamily::Fantasy => FamilyOwned::Fantasy,
-      FontFamily::Custom(name) => FamilyOwned::Name(name.into()),
-    }
+impl<'a> From<&'a FontFamily> for FontStack<'a> {
+  fn from(family: &'a FontFamily) -> Self {
+    FontStack::Source(family.0.as_str().into())
   }
 }
 
@@ -397,18 +386,3 @@ impl From<ImageScalingAlgorithm> for FilterType {
     }
   }
 }
-
-/// Controls the slant (italic/oblique) of text rendering.
-#[derive(Default, Debug, Clone, Copy, Deserialize, Serialize, TS, PartialEq)]
-#[serde(rename_all = "kebab-case")]
-pub enum TextStyle {
-  /// A face that is neither italic nor obliqued.
-  #[default]
-  Normal,
-  /// A form that is generally cursive in nature.
-  Italic,
-  /// A typically-sloped version of the regular face.
-  Oblique,
-}
-
-impl_from_taffy_enum!(TextStyle, cosmic_text::Style, Normal, Italic, Oblique);

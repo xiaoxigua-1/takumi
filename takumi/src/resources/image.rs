@@ -4,6 +4,7 @@
 //! including loading states, error handling, and image processing operations.
 
 use std::{
+  borrow::Cow,
   collections::HashMap,
   sync::{Arc, RwLock},
 };
@@ -64,14 +65,20 @@ impl ImageSource {
   }
 
   /// Render the image source to an RGBA image with the specified dimensions.
-  pub fn render_to_rgba_image(
-    &self,
+  pub fn render_to_rgba_image<'i>(
+    &'i self,
     width: u32,
     height: u32,
     filter_type: FilterType,
-  ) -> RgbaImage {
+  ) -> Cow<'i, RgbaImage> {
     match self {
-      ImageSource::Bitmap(bitmap) => resize(bitmap, width, height, filter_type),
+      ImageSource::Bitmap(bitmap) => {
+        if bitmap.width() == width && bitmap.height() == height {
+          return Cow::Borrowed(bitmap);
+        }
+
+        Cow::Owned(resize(bitmap, width, height, filter_type))
+      }
       #[cfg(feature = "svg")]
       ImageSource::Svg(svg) => {
         use resvg::{tiny_skia::Pixmap, usvg::Transform};
@@ -84,7 +91,7 @@ impl ImageSource {
 
         resvg::render(svg, Transform::from_scale(sx, sy), &mut pixmap.as_mut());
 
-        RgbaImage::from_raw(width, height, pixmap.take()).unwrap()
+        Cow::Owned(RgbaImage::from_raw(width, height, pixmap.take()).unwrap())
       }
     }
   }

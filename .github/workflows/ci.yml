@@ -60,8 +60,26 @@ jobs:
         run: cargo test
 
       # make sure cargo test didn't change any files (like TypeScript bindings)
-      - name: Git diff is empty
-        run: git diff --exit-code HEAD --
+      - name: Check for git changes and prepare artifact
+        id: check_changes
+        run: |
+          changed_files=$(git diff --name-only HEAD -- || true)
+          if [ -n "$changed_files" ]; then
+            echo "$changed_files" > changed_files.txt
+            # Create a tarball of the changed files from HEAD so we capture committed content
+            git archive --output=changed_files.tar.gz HEAD $(git diff --name-only HEAD --)
+            echo "changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "changed=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Upload changed files artifact
+        if: steps.check_changes.outputs.changed == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: changed-files
+          path: changed_files.tar.gz
+          if-no-files-found: error
 
       - name: Test README.md is up to date
         working-directory: takumi

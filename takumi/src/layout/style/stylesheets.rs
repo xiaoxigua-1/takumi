@@ -1,39 +1,45 @@
-use cosmic_text::{Align, FamilyOwned, Weight};
 use merge::{Merge, option::overwrite_none};
+use parley::Alignment;
 use serde::{Deserialize, Serialize};
 use taffy::{Layout, Size, Style as TaffyStyle};
 use ts_rs::TS;
 
 use crate::{
   layout::{DEFAULT_LINE_HEIGHT_SCALER, style::properties::*},
-  rendering::{BorderRadius, RenderContext},
+  rendering::{BorderProperties, RenderContext},
 };
 
 /// Represents the resolved font style for a text node.
 #[derive(Debug, Clone)]
-pub struct FontStyle {
+pub struct ResolvedFontStyle {
   /// Font size in pixels for text rendering.
   pub font_size: f32,
   /// Line height as an absolute value in pixels.
-  pub line_height: f32,
+  pub line_height: parley::LineHeight,
   /// Font weight for text rendering.
-  pub font_weight: Weight,
+  pub font_weight: parley::FontWeight,
   /// Font slant style (normal, italic, oblique).
-  pub text_style: TextStyle,
+  pub font_style: parley::FontStyle,
   /// Maximum number of lines for text before truncation.
   pub line_clamp: Option<u32>,
   /// Font family for text rendering.
-  pub font_family: Option<FamilyOwned>,
+  pub font_family: Option<FontFamily>,
   /// Letter spacing for text rendering in em units (relative to font size).
   pub letter_spacing: Option<f32>,
+  /// Word spacing for text rendering in em units (relative to font size).
+  pub word_spacing: Option<f32>,
   /// Text alignment within the element.
-  pub text_align: Option<Align>,
+  pub text_align: Option<Alignment>,
   /// How text should be overflowed.
   pub text_overflow: TextOverflow,
   /// Text transform behavior (uppercase, lowercase, capitalize, none)
   pub text_transform: TextTransform,
   /// Text color for child text elements.
   pub color: Color,
+  /// Text wrap behavior.
+  pub overflow_wrap: parley::OverflowWrap,
+  /// How text should be broken at word boundaries.
+  pub word_break: swash::text::WordBreakStrength,
 }
 
 /// Main styling structure that contains all layout and visual properties.
@@ -268,7 +274,7 @@ pub struct InheritableStyle {
   /// Controls text case transformation when rendering.
   pub text_transform: Option<TextTransform>,
   /// Font slant style (normal, italic, oblique).
-  pub text_style: Option<TextStyle>,
+  pub font_style: Option<FontStyle>,
   /// Color of the element's border.
   pub border_color: Option<Color>,
   /// Text color for child text elements.
@@ -287,8 +293,14 @@ pub struct InheritableStyle {
   pub text_align: Option<TextAlign>,
   /// Additional spacing between characters in text.
   pub letter_spacing: Option<LengthUnit>,
+  /// Additional spacing between words in text.
+  pub word_spacing: Option<LengthUnit>,
   /// Controls how images are scaled when rendered.
   pub image_rendering: Option<ImageScalingAlgorithm>,
+  /// How text should be overflowed.
+  pub overflow_wrap: Option<OverflowWrap>,
+  /// How text should be broken at word boundaries.
+  pub word_break: Option<WordBreak>,
 }
 
 impl Style {
@@ -434,10 +446,12 @@ impl Style {
     )
   }
 
-  /// Creates a `BorderRadius` from the style's border radius properties.
+  /// Creates `BorderProperties` (including resolved corner radii) from the style's border radius properties.
   #[inline]
-  pub fn create_border_radius(&self, layout: &Layout, context: &RenderContext) -> BorderRadius {
-    BorderRadius::from_layout(context, layout, self.resolved_border_radius())
+  pub fn create_border_radius(&self, layout: &Layout, context: &RenderContext) -> BorderProperties {
+    let rect = self.resolved_border_radius();
+
+    BorderProperties::from_resolved(context, layout, rect, self)
   }
 
   /// Converts this style to a Taffy-compatible style for layout calculations.
@@ -511,20 +525,22 @@ impl Style {
   }
 
   /// Resolves inheritable style properties to concrete values for text rendering.
-  pub fn resolve_to_font_style(&self, context: &RenderContext) -> FontStyle {
+  pub fn resolve_to_font_style(&self, context: &RenderContext) -> ResolvedFontStyle {
     let font_size = self
       .inheritable_style
       .font_size
       .map(|f| f.resolve_to_px(context, context.parent_font_size))
-      .unwrap_or(context.parent_font_size * context.scale.width);
+      .unwrap_or(context.parent_font_size);
 
     let line_height = self
       .inheritable_style
       .line_height
-      .map(|f| f.0.resolve_to_px(context, font_size / context.scale.width))
-      .unwrap_or_else(|| font_size * DEFAULT_LINE_HEIGHT_SCALER);
+      .map(|line_height| line_height.into_parley(context))
+      .unwrap_or(parley::LineHeight::FontSizeRelative(
+        DEFAULT_LINE_HEIGHT_SCALER,
+      ));
 
-    FontStyle {
+    ResolvedFontStyle {
       color: self.inheritable_style.color.unwrap_or_else(Color::black),
       font_size,
       line_height,
@@ -533,19 +549,29 @@ impl Style {
         .font_weight
         .unwrap_or_default()
         .into(),
-      text_style: self.inheritable_style.text_style.unwrap_or_default(),
+      font_style: self.inheritable_style.font_style.unwrap_or_default().into(),
       line_clamp: self.inheritable_style.line_clamp,
-      font_family: self.inheritable_style.font_family.clone().map(Into::into),
+      font_family: self.inheritable_style.font_family.clone(),
       letter_spacing: self
         .inheritable_style
         .letter_spacing
         .map(|spacing| spacing.resolve_to_px(context, font_size) / font_size),
-      text_align: self.inheritable_style.text_align.and_then(Into::into),
+      word_spacing: self
+        .inheritable_style
+        .word_spacing
+        .map(|spacing| spacing.resolve_to_px(context, font_size) / font_size),
+      text_align: self.inheritable_style.text_align.map(Into::into),
       text_overflow: self
         .inheritable_style
         .text_overflow
         .unwrap_or(TextOverflow::Clip),
       text_transform: self.inheritable_style.text_transform.unwrap_or_default(),
+      overflow_wrap: self
+        .inheritable_style
+        .overflow_wrap
+        .unwrap_or_default()
+        .into(),
+      word_break: self.inheritable_style.word_break.unwrap_or_default().into(),
     }
   }
 }

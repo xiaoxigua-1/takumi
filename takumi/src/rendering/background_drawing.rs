@@ -4,197 +4,16 @@ use image::{
   Rgba, RgbaImage,
   imageops::{FilterType, resize},
 };
-use taffy::{Layout, Point, Size};
-use zeno::Mask;
+use taffy::{Layout, Point};
 
 use crate::{
   layout::style::{
     BackgroundImage, BackgroundImages, BackgroundPosition, BackgroundPositions, BackgroundRepeat,
     BackgroundRepeatStyle, BackgroundRepeats, BackgroundSize, BackgroundSizes, Gradient,
-    LengthUnit, PositionComponent, PositionKeywordX, PositionKeywordY,
+    ImageScalingAlgorithm, LengthUnit, PositionComponent, PositionKeywordX, PositionKeywordY,
   },
-  rendering::{
-    BorderRadius, Canvas, RenderContext,
-    canvas::{inverse_rotate, rotated_bounding_box},
-    draw_pixel,
-  },
+  rendering::{BorderProperties, Canvas, RenderContext},
 };
-
-/// Draws a filled rectangle with a solid color.
-pub fn draw_filled_rect_color<C: Into<Rgba<u8>>>(
-  image: &mut RgbaImage,
-  size: Size<u32>,
-  offset: Point<i32>,
-  color: C,
-  radius: BorderRadius,
-  rotation: f32,
-) {
-  let color: Rgba<u8> = color.into();
-
-  if radius.is_zero() {
-    // Fast path: if drawing on the entire canvas, we can just replace the entire canvas with the color
-    if rotation == 0.0
-      && color.0[3] == 255
-      && offset.x == 0
-      && offset.y == 0
-      && size.width == image.width()
-      && size.height == image.height()
-    {
-      let image_mut = image.as_mut();
-      let image_len = image_mut.len();
-
-      for i in (0..image_len).step_by(4) {
-        image_mut[i..i + 4].copy_from_slice(&color.0);
-      }
-
-      return;
-    }
-
-    let transform_origin = Point {
-      x: offset.x + (size.width as i32 / 2),
-      y: offset.y + (size.height as i32 / 2),
-    };
-
-    if rotation == 0.0 {
-      for y in 0..size.height as i32 {
-        for x in 0..size.width as i32 {
-          let sx = x + offset.x;
-          let sy = y + offset.y;
-
-          if sx < 0 || sy < 0 {
-            continue;
-          }
-
-          draw_pixel(image, sx as u32, sy as u32, color);
-        }
-      }
-    } else {
-      // Inverse mapping to avoid gaps: iterate destination bounding box and sample from source
-      let (min_x, min_y, max_x, max_y) = rotated_bounding_box(
-        offset,
-        size,
-        transform_origin,
-        Size {
-          width: image.width(),
-          height: image.height(),
-        },
-        rotation,
-      );
-
-      for dy in min_y..=max_y {
-        for dx in min_x..=max_x {
-          let (sx, sy) = inverse_rotate(Point { x: dx, y: dy }, transform_origin, rotation);
-
-          let sx_i = sx.floor() as i32;
-          let sy_i = sy.floor() as i32;
-
-          if sx_i >= offset.x
-            && sy_i >= offset.y
-            && sx_i < offset.x + size.width as i32
-            && sy_i < offset.y + size.height as i32
-          {
-            draw_pixel(image, dx as u32, dy as u32, color);
-          }
-        }
-      }
-    }
-
-    return;
-  };
-
-  let mut paths = Vec::new();
-
-  radius.write_mask_commands(&mut paths);
-
-  let (mask, placement) = Mask::new(&paths).render();
-
-  let mut i = 0;
-
-  let transform_origin = Point {
-    x: offset.x + (size.width as i32 / 2),
-    y: offset.y + (size.height as i32 / 2),
-  };
-
-  if rotation == 0.0 {
-    for y in 0..placement.height {
-      for x in 0..placement.width {
-        let alpha = mask[i];
-
-        i += 1;
-
-        if alpha == 0 {
-          continue;
-        }
-
-        let x = x as i32 + placement.left;
-        let y = y as i32 + placement.top;
-
-        if x < 0 || y < 0 {
-          continue;
-        }
-
-        let color = if alpha == u8::MAX {
-          color
-        } else {
-          Rgba([
-            color.0[0],
-            color.0[1],
-            color.0[2],
-            (color.0[3] as f32 * (alpha as f32 / 255.0)) as u8,
-          ])
-        };
-
-        draw_pixel(image, x as u32, y as u32, color);
-      }
-    }
-  } else {
-    // Inverse mapping using mask sampling to avoid gaps on rounded rectangles
-    let (min_x, min_y, max_x, max_y) = rotated_bounding_box(
-      offset,
-      size,
-      transform_origin,
-      Size {
-        width: image.width(),
-        height: image.height(),
-      },
-      rotation,
-    );
-
-    for dy in min_y..=max_y {
-      for dx in min_x..=max_x {
-        let (sx, sy) = inverse_rotate(Point { x: dx, y: dy }, transform_origin, rotation);
-
-        let sx_i = sx.round() as i32;
-        let sy_i = sy.round() as i32;
-
-        // Convert source coordinate into mask space
-        let mx = sx_i - placement.left;
-        let my = sy_i - placement.top;
-
-        if mx >= 0 && my >= 0 && (mx as u32) < placement.width && (my as u32) < placement.height {
-          let idx = my as usize * placement.width as usize + mx as usize;
-          let alpha = mask[idx];
-          if alpha == 0 {
-            continue;
-          }
-
-          let color = if alpha == u8::MAX {
-            color
-          } else {
-            Rgba([
-              color.0[0],
-              color.0[1],
-              color.0[2],
-              (color.0[3] as f32 * (alpha as f32 / 255.0)) as u8,
-            ])
-          };
-
-          draw_pixel(image, dx as u32, dy as u32, color);
-        }
-      }
-    }
-  }
-}
 
 pub(crate) fn resolve_length_against_area(
   unit: LengthUnit,
@@ -230,7 +49,7 @@ pub(crate) fn resolve_length_unit_to_position_component(
 ) -> i32 {
   match length {
     LengthUnit::Auto => available / 2,
-    _ => length.resolve_to_px(context, available as f32).round() as i32,
+    _ => length.resolve_to_px(context, available as f32) as i32,
   }
 }
 
@@ -410,9 +229,9 @@ pub(crate) fn collect_stretched_tile_positions(area_size: u32, tile_size: u32) -
   }
 
   // Calculate number of tiles that fit in the area, at least 1
-  let count = (area_size as f32 / tile_size as f32).floor().max(1.0) as u32;
+  let count = (area_size as f32 / tile_size as f32).max(1.0) as u32;
 
-  let new_tile_size = (area_size as f32 / count as f32).round() as u32;
+  let new_tile_size = (area_size as f32 / count as f32) as u32;
 
   let positions = successors(Some(0i32), move |&x| Some(x + new_tile_size as i32))
     .take(count as usize)
@@ -476,7 +295,7 @@ pub(crate) fn resolve_layers_tiles(
 /// Draw layered backgrounds (gradients) with support for background-size, -position, and -repeat.
 pub(crate) fn draw_background_layers(
   tiles: Vec<(RgbaImage, Vec<i32>, Vec<i32>)>,
-  radius: BorderRadius,
+  radius: BorderProperties,
   context: &RenderContext,
   canvas: &Canvas,
   layout: Layout,
@@ -486,6 +305,7 @@ pub(crate) fn draw_background_layers(
 
     for y in &ys {
       for x in &xs {
+        // radius is Copy, pass by value
         canvas.overlay_image(
           tile_image.clone(),
           Point {
@@ -493,11 +313,8 @@ pub(crate) fn draw_background_layers(
             y: *y + layout.location.y as i32,
           },
           radius,
-          Point {
-            x: (layout.location.x + layout.size.width / 2.0) as i32,
-            y: (layout.location.y + layout.size.height / 2.0) as i32,
-          },
-          *context.rotation,
+          context.transform,
+          ImageScalingAlgorithm::Auto,
         );
       }
     }

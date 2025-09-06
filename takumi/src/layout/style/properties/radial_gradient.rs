@@ -410,8 +410,7 @@ impl TryFrom<RadialGradientValue> for RadialGradient {
 mod tests {
   use super::*;
   use crate::layout::DEFAULT_FONT_SIZE;
-  use crate::layout::style::{Angle, LengthUnit, StopPosition};
-  use crate::rendering::DEFAULT_SCALE;
+  use crate::layout::style::{Affine, LengthUnit, StopPosition};
   use crate::{GlobalContext, layout::Viewport, rendering::RenderContext};
 
   #[test]
@@ -576,8 +575,7 @@ mod tests {
       global: &GlobalContext::default(),
       viewport: Viewport::new(200, 100),
       parent_font_size: DEFAULT_FONT_SIZE,
-      scale: DEFAULT_SCALE,
-      rotation: Angle::new(0.0),
+      transform: Affine::identity(),
     };
     let resolved = gradient.resolve_stops_for_radius(ctx.viewport.width as f32, &ctx);
 
@@ -612,8 +610,7 @@ mod tests {
       global: &GlobalContext::default(),
       viewport: Viewport::new(200, 100),
       parent_font_size: DEFAULT_FONT_SIZE,
-      scale: DEFAULT_SCALE,
-      rotation: Angle::new(0.0),
+      transform: Affine::identity(),
     };
     let resolved = gradient.resolve_stops_for_radius(ctx.viewport.width as f32, &ctx);
 

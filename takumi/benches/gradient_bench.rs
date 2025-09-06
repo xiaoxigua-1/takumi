@@ -4,10 +4,10 @@ use takumi::{
   layout::{
     Viewport,
     style::{
-      Angle, BackgroundImage, Color, GradientStop, LengthUnit, LinearGradient, StopPosition,
+      Affine, Angle, BackgroundImage, Color, GradientStop, LengthUnit, LinearGradient, StopPosition,
     },
   },
-  rendering::{DEFAULT_SCALE, RenderContext, render_gradient_tile},
+  rendering::{RenderContext, render_gradient_tile},
 };
 
 fn bench_sizes() -> Vec<(u32, u32)> {
@@ -51,8 +51,7 @@ fn bench_takumi(c: &mut Criterion) {
               global: &global,
               viewport,
               parent_font_size: viewport.font_size,
-              scale: DEFAULT_SCALE,
-              rotation: Angle::new(0.0),
+              transform: Affine::identity(),
             };
             (sample_gradient(), w, h, context)
           },

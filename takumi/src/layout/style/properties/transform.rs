@@ -1,15 +1,19 @@
+use std::{fmt::Display, ops::Mul};
+
 use cssparser::{Parser, ParserInput, Token, match_ignore_ascii_case};
 use serde::{Deserialize, Serialize};
-use taffy::{Layout, Rect};
+use taffy::{Layout, Point, Size};
 use ts_rs::TS;
+use zeno::{Command, Vector};
 
 use crate::{
   layout::style::{
-    Angle, BackgroundPosition, FromCss, LengthUnit, ParseResult, PositionComponent,
-    PositionKeywordX, PositionKeywordY, parse_length_percentage,
+    Angle, BackgroundPosition, FromCss, LengthUnit, ParseResult, parse_length_percentage,
   },
-  rendering::{DEFAULT_SCALE, RenderContext},
+  rendering::RenderContext,
 };
+
+const DEFAULT_SCALE: f32 = 1.0;
 
 /// Represents a single CSS transform operation
 #[derive(Debug, Clone, Deserialize, Serialize, Copy, TS)]
@@ -21,29 +25,10 @@ pub enum Transform {
   Scale(f32, f32),
   /// Rotates an element (2D rotation) by angle in degrees
   Rotate(Angle),
-}
-
-fn scale_rect(rect: &mut Rect<f32>, x_scale: f32, y_scale: f32) {
-  rect.left *= x_scale;
-  rect.right *= x_scale;
-  rect.top *= y_scale;
-  rect.bottom *= y_scale;
-}
-
-fn to_length_unit(component: PositionComponent) -> LengthUnit {
-  match component {
-    PositionComponent::KeywordX(keyword) => match keyword {
-      PositionKeywordX::Center => LengthUnit::Percentage(0.5),
-      PositionKeywordX::Left => LengthUnit::Percentage(0.0),
-      PositionKeywordX::Right => LengthUnit::Percentage(1.0),
-    },
-    PositionComponent::KeywordY(keyword) => match keyword {
-      PositionKeywordY::Center => LengthUnit::Percentage(0.5),
-      PositionKeywordY::Top => LengthUnit::Percentage(0.0),
-      PositionKeywordY::Bottom => LengthUnit::Percentage(1.0),
-    },
-    PositionComponent::Length(length) => length,
-  }
+  /// Skews an element by the specified angles
+  Skew(Angle, Angle),
+  /// Applies raw affine matrix values
+  Matrix(Affine),
 }
 
 /// A collection of transform operations that can be applied together
@@ -53,59 +38,68 @@ fn to_length_unit(component: PositionComponent) -> LengthUnit {
 pub struct Transforms(pub Vec<Transform>);
 
 impl Transforms {
-  /// Chains two transform collections together
-  pub fn chain(&mut self, other: &Transforms) {
-    self.0.extend_from_slice(&other.0);
-  }
+  /// Converts the transforms to a [`Affine`] instance
+  pub fn to_affine(
+    &self,
+    context: &RenderContext,
+    layout: &Layout,
+    transform_origin: BackgroundPosition,
+  ) -> Affine {
+    let transform_origin_x = transform_origin
+      .x
+      .to_length_unit()
+      .resolve_to_px(context, layout.size.width);
+    let transform_origin_y = transform_origin
+      .y
+      .to_length_unit()
+      .resolve_to_px(context, layout.size.height);
 
-  /// Adds a transform origin to the transforms
-  pub fn with_transform_origin(&self, transform_origin: &BackgroundPosition) -> Transforms {
-    let mut transforms = Vec::with_capacity(self.0.len() + 2);
+    let center = Point {
+      x: transform_origin_x,
+      y: transform_origin_y,
+    };
 
-    transforms.push(Transform::Translate(
-      to_length_unit(transform_origin.x),
-      to_length_unit(transform_origin.y),
-    ));
-    transforms.extend_from_slice(&self.0);
-    transforms.push(Transform::Translate(
-      to_length_unit(transform_origin.x),
-      to_length_unit(transform_origin.y),
-    ));
+    let mut instance = Affine::identity();
 
-    Transforms(transforms)
-  }
-
-  /// Applies the transforms to the layout
-  pub fn apply(&self, context: &mut RenderContext, layout: &mut Layout) {
     for transform in self.0.iter().rev() {
       match *transform {
         Transform::Translate(x_length, y_length) => {
-          layout.location.x += x_length.resolve_to_px(context, layout.size.width);
-          layout.location.y += y_length.resolve_to_px(context, layout.size.height);
+          instance = instance
+            * Affine::translation(Size {
+              width: x_length.resolve_to_px(context, layout.size.width),
+              height: y_length.resolve_to_px(context, layout.size.height),
+            });
         }
         Transform::Scale(x_scale, y_scale) => {
-          let original_size = layout.size;
-
-          layout.size.width *= x_scale;
-          layout.size.height *= y_scale;
-
-          // assume center of the element is the origin of the transform
-          layout.location.x -= (layout.size.width - original_size.width) / 2.0;
-          layout.location.y -= (layout.size.height - original_size.height) / 2.0;
-
-          scale_rect(&mut layout.border, x_scale, y_scale);
-          scale_rect(&mut layout.padding, x_scale, y_scale);
-          scale_rect(&mut layout.margin, x_scale, y_scale);
-
-          // update the scale of the render context
-          context.scale.width *= x_scale;
-          context.scale.height *= y_scale;
+          instance = instance
+            * Affine::scale(
+              Size {
+                width: x_scale,
+                height: y_scale,
+              },
+              center,
+            );
         }
         Transform::Rotate(angle) => {
-          context.rotation = Angle::new(*context.rotation + *angle);
+          instance = instance * Affine::rotation(angle, center);
+        }
+        Transform::Skew(x_angle, y_angle) => {
+          instance = instance
+            * Affine::skew(
+              Size {
+                width: x_angle,
+                height: y_angle,
+              },
+              center,
+            );
+        }
+        Transform::Matrix(affine) => {
+          instance = instance * affine;
         }
       }
     }
+
+    instance
   }
 }
 
@@ -174,16 +168,269 @@ impl<'i> FromCss<'i> for Transform {
       )),
       "scalex" => Ok(Transform::Scale(
         parser.parse_nested_block(parse_length_percentage)?,
-        DEFAULT_SCALE.height,
+        DEFAULT_SCALE,
       )),
       "scaley" => Ok(Transform::Scale(
-        DEFAULT_SCALE.width,
+        DEFAULT_SCALE,
         parser.parse_nested_block(parse_length_percentage)?,
+      )),
+      "skew" => Ok(Transform::Skew(
+        parser.parse_nested_block(Angle::from_css)?,
+        parser.parse_nested_block(Angle::from_css)?,
+      )),
+      "skewx" => Ok(Transform::Skew(
+        parser.parse_nested_block(Angle::from_css)?,
+        Angle::default(),
+      )),
+      "skewy" => Ok(Transform::Skew(
+        Angle::default(),
+        parser.parse_nested_block(Angle::from_css)?,
       )),
       "rotate" => Ok(Transform::Rotate(
         parser.parse_nested_block(Angle::from_css)?,
       )),
+      "matrix" => Ok(Transform::Matrix(
+        parser.parse_nested_block(Affine::from_css)?,
+      )),
       _ => Err(location.new_basic_unexpected_token_error(token.clone()).into()),
     }
+  }
+}
+
+/// Represents an affine transform matrix
+#[derive(PartialEq, Deserialize, Serialize, Debug, Clone, Copy, TS)]
+pub struct Affine {
+  /// Horizontal scaling / cosine of rotation
+  pub a: f32,
+  /// Vertical shear / sine of rotation
+  pub b: f32,
+  /// Horizontal shear / negative sine of rotation
+  pub c: f32,
+  /// Vertical scaling / cosine of rotation
+  pub d: f32,
+  /// Horizontal translation (always orthogonal regardless of rotation)
+  pub x: f32,
+  /// Vertical translation (always orthogonal regardless of rotation)
+  pub y: f32,
+}
+
+impl<'i> FromCss<'i> for Affine {
+  fn from_css(input: &mut Parser<'i, '_>) -> ParseResult<'i, Self> {
+    let a = input.expect_number()?;
+    let b = input.expect_number()?;
+    let c = input.expect_number()?;
+    let d = input.expect_number()?;
+    let x = input.expect_number()?;
+    let y = input.expect_number()?;
+
+    Ok(Self { a, b, c, d, x, y })
+  }
+}
+
+impl Default for Affine {
+  fn default() -> Self {
+    Self::identity()
+  }
+}
+
+impl Mul for Affine {
+  type Output = Self;
+
+  #[inline]
+  fn mul(self, rhs: Self) -> Self {
+    let lhs = self;
+
+    Self {
+      a: lhs.a * rhs.a + lhs.b * rhs.c,
+      b: lhs.a * rhs.b + lhs.b * rhs.d,
+      c: lhs.c * rhs.a + lhs.d * rhs.c,
+      d: lhs.c * rhs.b + lhs.d * rhs.d,
+      x: lhs.x * rhs.a + lhs.y * rhs.c + rhs.x,
+      y: lhs.x * rhs.b + lhs.y * rhs.d + rhs.y,
+    }
+  }
+}
+
+impl Mul<Affine> for Point<f32> {
+  type Output = Point<f32>;
+
+  #[inline]
+  fn mul(self, m: Affine) -> Point<f32> {
+    Point {
+      x: self.x * m.a + self.y * m.c + m.x,
+      y: self.x * m.b + self.y * m.d + m.y,
+    }
+  }
+}
+
+impl Mul<Affine> for Vector {
+  type Output = Vector;
+
+  #[inline]
+  fn mul(self, m: Affine) -> Vector {
+    Vector {
+      x: self.x * m.a + self.y * m.c + m.x,
+      y: self.x * m.b + self.y * m.d + m.y,
+    }
+  }
+}
+
+impl Affine {
+  /// Checks if the transform is the identity transform
+  pub fn is_identity(self) -> bool {
+    self == Self::identity()
+  }
+
+  /// Creates a new identity transform
+  pub const fn identity() -> Self {
+    Self {
+      a: 1.0,
+      b: 0.0,
+      c: 0.0,
+      d: 1.0,
+      x: 0.0,
+      y: 0.0,
+    }
+  }
+
+  /// Applies the transform on the paths
+  pub fn apply_on_paths(self, mask: &mut [Command]) {
+    if self.is_identity() {
+      return;
+    }
+
+    for command in mask {
+      match command {
+        Command::MoveTo(target) => {
+          let point = (*target) * self;
+
+          *command = Command::MoveTo(point);
+        }
+        Command::LineTo(target) => {
+          let point = (*target) * self;
+
+          *command = Command::LineTo(point);
+        }
+        Command::CurveTo(target1, target2, target3) => {
+          let point1 = (*target1) * self;
+          let point2 = (*target2) * self;
+          let point3 = (*target3) * self;
+
+          *command = Command::CurveTo(point1, point2, point3);
+        }
+        Command::QuadTo(target1, target2) => {
+          let point1 = (*target1) * self;
+          let point2 = (*target2) * self;
+
+          *command = Command::QuadTo(point1, point2);
+        }
+        Command::Close => {}
+      }
+    }
+  }
+
+  /// Creates a new rotation transform
+  pub fn rotation(angle: Angle, center: Point<f32>) -> Self {
+    let angle = angle.to_radians();
+    let cos = angle.cos();
+    let sin = angle.sin();
+
+    Self {
+      a: cos,
+      b: sin,
+      c: -sin,
+      d: cos,
+      x: center.x - cos * center.x + sin * center.y,
+      y: center.y - cos * center.y - sin * center.x,
+    }
+  }
+
+  /// Creates a new translation transform
+  pub const fn translation(size: Size<f32>) -> Self {
+    Self {
+      x: size.width,
+      y: size.height,
+      ..Self::identity()
+    }
+  }
+
+  /// Creates a new scale transform
+  pub const fn scale(scale: Size<f32>, center: Point<f32>) -> Self {
+    Self {
+      a: scale.width,
+      b: 0.0,
+      c: 0.0,
+      d: scale.height,
+      x: center.x - scale.width * center.x,
+      y: center.y - scale.height * center.y,
+    }
+  }
+
+  /// Creates a new skew transform
+  pub fn skew(angle: Size<Angle>, center: Point<f32>) -> Self {
+    let tanx = angle.width.to_radians().tan();
+    let tany = angle.height.to_radians().tan();
+
+    Self {
+      a: 1.0,
+      b: tany,
+      c: tanx,
+      d: 1.0,
+      x: -center.y * tany,
+      y: -center.x * tanx,
+    }
+  }
+
+  /// Calculates the determinant of the transform
+  pub fn determinant(self) -> f32 {
+    self.a * self.d - self.b * self.c
+  }
+
+  /// Inverts the transform, returns `None` if the transform is not invertible
+  pub fn invert(self) -> Option<Self> {
+    let det = self.determinant();
+    if det.abs() < f32::EPSILON {
+      return None;
+    }
+
+    Some(Self {
+      a: self.d / det,
+      b: self.b / -det,
+      c: self.c / -det,
+      d: self.a / det,
+      x: (self.d * self.x - self.c * self.y) / -det,
+      y: (self.b * self.x - self.a * self.y) / det,
+    })
+  }
+
+  /// Decomposes the transform into a scale, rotation, and translation
+  pub(crate) fn decompose(self) -> DecomposedTransform {
+    DecomposedTransform {
+      scale: Size {
+        width: (self.a * self.a + self.c * self.c).sqrt(),
+        height: (self.b * self.b + self.d * self.d).sqrt(),
+      },
+      rotation: Angle::new(self.b.atan2(self.d).to_degrees()),
+      translation: Size {
+        width: self.x,
+        height: self.y,
+      },
+    }
+  }
+}
+
+pub(crate) struct DecomposedTransform {
+  pub scale: Size<f32>,
+  pub rotation: Angle,
+  pub translation: Size<f32>,
+}
+
+impl Display for DecomposedTransform {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    write!(
+      f,
+      "DecomposedTransform(scale={:?}, rotation={:?}, translation={:?})",
+      self.scale, self.rotation, self.translation
+    )
   }
 }

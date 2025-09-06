@@ -12,11 +12,10 @@ pub(crate) fn interpolate_rgba(c1: Color, c2: Color, t: f32) -> Color {
 
   let mut out = [0u8; 4];
 
-  for ((&a_u8, &b_u8), out_i) in c1.0.iter().zip(c2.0.iter()).zip(out.iter_mut()) {
-    let a = a_u8 as f32;
-    let b = b_u8 as f32;
-    *out_i = (a * (1.0 - t) + b * t).round() as u8;
+  for (i, value) in out.iter_mut().enumerate() {
+    *value = (c1.0[i] as f32 * (1.0 - t) + c2.0[i] as f32 * t).round() as u8;
   }
+
   Color(out)
 }
 
@@ -175,13 +174,13 @@ pub(crate) fn resolve_stops_along_axis(
 
 #[cfg(test)]
 mod tests {
+
   use crate::{
     GlobalContext,
     layout::{
       DEFAULT_FONT_SIZE, Viewport,
-      style::{Angle, StopPosition},
+      style::{Affine, StopPosition},
     },
-    rendering::DEFAULT_SCALE,
   };
 
   use super::*;
@@ -207,8 +206,7 @@ mod tests {
       global: &GlobalContext::default(),
       viewport: Viewport::new(40, 40),
       parent_font_size: DEFAULT_FONT_SIZE,
-      scale: DEFAULT_SCALE,
-      rotation: Angle::new(0.0),
+      transform: Affine::identity(),
     };
 
     let resolved = resolve_stops_along_axis(&stops, ctx.viewport.width as f32, &ctx);
@@ -259,8 +257,7 @@ mod tests {
       global: &GlobalContext::default(),
       viewport: Viewport::new(40, 40),
       parent_font_size: DEFAULT_FONT_SIZE,
-      scale: DEFAULT_SCALE,
-      rotation: Angle::new(0.0),
+      transform: Affine::identity(),
     };
 
     let resolved = resolve_stops_along_axis(&stops, ctx.viewport.width as f32, &ctx);
@@ -308,8 +305,7 @@ mod tests {
       global: &GlobalContext::default(),
       viewport: Viewport::new(100, 40),
       parent_font_size: DEFAULT_FONT_SIZE,
-      scale: DEFAULT_SCALE,
-      rotation: Angle::new(0.0),
+      transform: Affine::identity(),
     };
 
     let resolved = resolve_stops_along_axis(&stops, ctx.viewport.width as f32, &ctx);

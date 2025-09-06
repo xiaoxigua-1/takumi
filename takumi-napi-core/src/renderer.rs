@@ -76,11 +76,14 @@ impl Renderer {
 
     let renderer = Self(Arc::new(GlobalContext {
       draw_debug_border: options.debug.unwrap_or_default(),
-      font_context: FontContext::new(
-        options
-          .load_default_fonts
-          .unwrap_or_else(|| options.fonts.is_none()),
-      ),
+      font_context: if options
+        .load_default_fonts
+        .unwrap_or_else(|| options.fonts.is_none())
+      {
+        FontContext::new_with_default_fonts()
+      } else {
+        FontContext::new()
+      },
       ..Default::default()
     }));
 

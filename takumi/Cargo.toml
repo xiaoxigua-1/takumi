@@ -4,7 +4,7 @@ version = "0.28.5"
 edition = "2024"
 license = "MIT"
 description = "Render your React components to images."
-keywords = ["react", "image", "css", "taffy", "cosmic-text"]
+keywords = ["react", "image", "css", "flexbox"]
 repository = "https://github.com/kane50613/takumi"
 homepage = "https://takumi.kane.tw"
 readme = "README.md"
@@ -16,6 +16,16 @@ cssparser = "0.35"
 csscolorparser = "0.7"
 noise = "0.9"
 zeno = "0.3"
+
+[dependencies.parley]
+version = "0.5"
+default-features = false
+features = ["std"]
+
+[dependencies.swash]
+version = "0.2"
+default-features = false
+features = ["std", "scale"]
 
 [dependencies.rayon]
 version = "1.10"
@@ -40,11 +50,6 @@ optional = true
 [dependencies.woff2-patched]
 version = "0.4"
 optional = true
-
-[dependencies.cosmic-text]
-features = ["shape-run-cache"]
-version = "0.14"
-git = "https://github.com/pop-os/cosmic-text"
 
 [dependencies.taffy]
 version = "0.9"
@@ -79,7 +84,6 @@ woff2 = ["dep:woff2-patched", "dep:bytes"]
 woff = ["dep:flate2"]
 rayon = ["dep:rayon", "image/rayon"]
 embed_fonts = []
-test_update_fixtures = []
 
 [dev-dependencies]
 serde_json = "1"

@@ -2,7 +2,7 @@ use takumi::layout::{
   node::{ContainerNode, NodeKind, TextNode},
   style::{
     BackgroundImagesValue, BackgroundPositionsValue, BackgroundRepeatsValue, BackgroundSizesValue,
-    Color, FontWeight, InheritableStyle,
+    Color, InheritableStyle,
     LengthUnit::{Percentage, Px},
     LineHeight, Style, TextAlign, TextOverflow, TextTransform,
   },
@@ -52,7 +52,7 @@ fn fixtures_text_typography_medium_weight_500() {
       background_color: Some(Color([240, 240, 240, 255])),
       inheritable_style: InheritableStyle {
         font_size: Some(Px(24.0)),
-        font_weight: Some(FontWeight(500)),
+        font_weight: Some(500.0.into()),
         ..Default::default()
       },
       ..Default::default()
