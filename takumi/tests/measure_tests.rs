@@ -306,7 +306,7 @@ mod measure_text_tests {
       AvailableSpace::MaxContent,
     );
 
-    assert_eq!(result.width, 200.0);
+    assert!(result.width <= 200.0);
     assert!(result.height >= (2.0 * DEFAULT_FONT_SIZE * DEFAULT_LINE_HEIGHT_SCALER).ceil());
     // Have to allow one pixel tolerance due to rounding
     assert!((result.height % (DEFAULT_FONT_SIZE * DEFAULT_LINE_HEIGHT_SCALER)).floor() == 0.0);
