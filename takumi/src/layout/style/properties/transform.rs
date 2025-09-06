@@ -1,10 +1,10 @@
-use std::ops::Mul;
+use std::{fmt::Display, ops::Mul};
 
 use cssparser::{Parser, ParserInput, Token, match_ignore_ascii_case};
 use serde::{Deserialize, Serialize};
 use taffy::{Layout, Point, Size};
 use ts_rs::TS;
-use zeno::Command;
+use zeno::{Command, Vector};
 
 use crate::{
   layout::style::{
@@ -261,6 +261,18 @@ impl Mul<Affine> for Point<f32> {
   }
 }
 
+impl Mul<Affine> for Vector {
+  type Output = Vector;
+
+  #[inline]
+  fn mul(self, m: Affine) -> Vector {
+    Vector {
+      x: self.x * m.a + self.y * m.c + m.x,
+      y: self.x * m.b + self.y * m.d + m.y,
+    }
+  }
+}
+
 impl Affine {
   /// Checks if the transform is the identity transform
   pub fn is_identity(self) -> bool {
@@ -284,55 +296,27 @@ impl Affine {
     for command in mask {
       match command {
         Command::MoveTo(target) => {
-          let point = Point {
-            x: target.x,
-            y: target.y,
-          };
-          let point = point * self;
-          *command = Command::MoveTo((point.x, point.y).into());
+          let point = (*target) * self;
+
+          *command = Command::MoveTo(point);
         }
         Command::LineTo(target) => {
-          let point = Point {
-            x: target.x,
-            y: target.y,
-          };
-          let point = point * self;
-          *command = Command::LineTo((point.x, point.y).into());
+          let point = (*target) * self;
+
+          *command = Command::LineTo(point);
         }
         Command::CurveTo(target1, target2, target3) => {
-          let point1 = Point {
-            x: target1.x,
-            y: target1.y,
-          };
-          let point1 = point1 * self;
-          let point2 = Point {
-            x: target2.x,
-            y: target2.y,
-          };
-          let point2 = point2 * self;
-          let point3 = Point {
-            x: target3.x,
-            y: target3.y,
-          };
-          let point3 = point3 * self;
-          *command = Command::CurveTo(
-            (point1.x, point1.y).into(),
-            (point2.x, point2.y).into(),
-            (point3.x, point3.y).into(),
-          );
+          let point1 = (*target1) * self;
+          let point2 = (*target2) * self;
+          let point3 = (*target3) * self;
+
+          *command = Command::CurveTo(point1, point2, point3);
         }
         Command::QuadTo(target1, target2) => {
-          let point1 = Point {
-            x: target1.x,
-            y: target1.y,
-          };
-          let point1 = point1 * self;
-          let point2 = Point {
-            x: target2.x,
-            y: target2.y,
-          };
-          let point2 = point2 * self;
-          *command = Command::QuadTo((point1.x, point1.y).into(), (point2.x, point2.y).into());
+          let point1 = (*target1) * self;
+          let point2 = (*target2) * self;
+
+          *command = Command::QuadTo(point1, point2);
         }
         Command::Close => {}
       }
@@ -411,5 +395,36 @@ impl Affine {
       x: (self.d * self.x - self.c * self.y) / -det,
       y: (self.b * self.x - self.a * self.y) / det,
     })
+  }
+
+  /// Decomposes the transform into a scale, rotation, and translation
+  pub(crate) fn decompose(self) -> DecomposedTransform {
+    DecomposedTransform {
+      scale: Size {
+        width: (self.a * self.a + self.c * self.c).sqrt(),
+        height: (self.b * self.b + self.d * self.d).sqrt(),
+      },
+      rotation: Angle::new(self.b.atan2(self.d).to_degrees()),
+      translation: Size {
+        width: self.x,
+        height: self.y,
+      },
+    }
+  }
+}
+
+pub(crate) struct DecomposedTransform {
+  pub scale: Size<f32>,
+  pub rotation: Angle,
+  pub translation: Size<f32>,
+}
+
+impl Display for DecomposedTransform {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    write!(
+      f,
+      "DecomposedTransform(scale={:?}, rotation={:?}, translation={:?})",
+      self.scale, self.rotation, self.translation
+    )
   }
 }

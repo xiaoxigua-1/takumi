@@ -175,6 +175,41 @@ impl BorderRadius {
   }
 }
 
+impl std::fmt::Display for BorderRadius {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    if self.is_zero() {
+      return write!(f, "zero");
+    }
+
+    let mut parts: Vec<String> = Vec::new();
+
+    if self.top_left != 0.0 {
+      parts.push(format!("top_left={}", self.top_left));
+    }
+    if self.top_right != 0.0 {
+      parts.push(format!("top_right={}", self.top_right));
+    }
+    if self.bottom_right != 0.0 {
+      parts.push(format!("bottom_right={}", self.bottom_right));
+    }
+    if self.bottom_left != 0.0 {
+      parts.push(format!("bottom_left={}", self.bottom_left));
+    }
+    if self.size.width != 0.0 || self.size.height != 0.0 {
+      parts.push(format!("size={}x{}", self.size.width, self.size.height));
+    }
+    if self.offset.x != 0.0 || self.offset.y != 0.0 {
+      parts.push(format!("offset=({}, {})", self.offset.x, self.offset.y));
+    }
+
+    if parts.is_empty() {
+      write!(f, "BorderRadius()")
+    } else {
+      write!(f, "BorderRadius({})", parts.join(", "))
+    }
+  }
+}
+
 fn resolve_border_radius_from_percentage_css(
   context: &RenderContext,
   radius: LengthUnit,

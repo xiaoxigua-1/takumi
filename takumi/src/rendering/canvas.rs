@@ -11,14 +11,17 @@ use std::{
   },
 };
 
-use image::{Pixel, Rgba, RgbaImage};
+use image::{
+  Pixel, Rgba, RgbaImage,
+  imageops::{interpolate_bilinear, interpolate_nearest},
+};
 use taffy::{Point, Size};
 use zeno::{Mask, Placement};
 
 use crate::{
   layout::{
     Viewport,
-    style::{Affine, Color},
+    style::{Affine, Color, ImageScalingAlgorithm},
   },
   rendering::BorderRadius,
 };
@@ -54,12 +57,14 @@ impl Canvas {
     offset: Point<i32>,
     radius: BorderRadius,
     transform: Affine,
+    algorithm: ImageScalingAlgorithm,
   ) {
     let _ = self.0.send(DrawCommand::OverlayImage {
       image,
       offset,
       radius,
       transform,
+      algorithm,
     });
   }
 
@@ -135,6 +140,8 @@ pub enum DrawCommand {
     radius: BorderRadius,
     /// Transform to apply when drawing
     transform: Affine,
+    /// The algorithm to use when transforming the image
+    algorithm: ImageScalingAlgorithm,
   },
   /// Draw a mask with the specified color onto the canvas.
   DrawMask {
@@ -170,11 +177,13 @@ impl Display for DrawCommand {
         offset,
         radius,
         transform,
+        algorithm,
       } => write!(
         f,
-        "OverlayImage(width={}, height={}, offset={offset:?}, radius={radius:?}, transform={transform:?})",
+        "OverlayImage(width={}, height={}, offset={offset:?}, radius={radius:?}, transform={}, algorithm={algorithm:?})",
         image.width(),
         image.height(),
+        transform.decompose()
       ),
       DrawCommand::FillColor {
         size,
@@ -184,7 +193,8 @@ impl Display for DrawCommand {
         ..
       } => write!(
         f,
-        "FillColor(size={size:?}, color={color}, radius={radius:?}, transform={transform:?})",
+        "FillColor(size={size:?}, color={color}, radius={radius:?}, transform={})",
+        transform.decompose()
       ),
       DrawCommand::DrawMask {
         placement, color, ..
@@ -207,7 +217,8 @@ impl DrawCommand {
         offset,
         radius,
         transform,
-      } => overlay_image(canvas, image, offset, radius, transform),
+        algorithm,
+      } => overlay_image(canvas, image, offset, radius, transform, algorithm),
       DrawCommand::FillColor {
         offset,
         size,
@@ -257,10 +268,6 @@ pub(crate) fn apply_mask_alpha_to_pixel(pixel: Rgba<u8>, alpha: u8) -> Rgba<u8> 
       (pixel.0[3] as f32 * (alpha as f32 / 255.0)) as u8,
     ])
   }
-}
-
-fn is_point_in_bounds(x: f32, y: f32, width: f32, height: f32) -> bool {
-  x >= 0.0 && y >= 0.0 && x < width && y < height
 }
 
 /// Draws a filled rectangle with a solid color.
@@ -370,6 +377,7 @@ pub(crate) fn overlay_image(
   offset: Point<i32>,
   radius: BorderRadius,
   transform: Affine,
+  algorithm: ImageScalingAlgorithm,
 ) {
   if transform.is_identity() && radius.is_zero() {
     for y in 0..image.height() {
@@ -407,10 +415,17 @@ pub(crate) fn overlay_image(
       Some(image),
     );
 
-    return overlay_image(canvas, &bottom, offset, BorderRadius::zero(), transform);
+    return overlay_image(
+      canvas,
+      &bottom,
+      offset,
+      BorderRadius::zero(),
+      transform,
+      algorithm,
+    );
   }
 
-  draw_image_with_transform(canvas, image, transform, offset);
+  draw_image_with_transform(canvas, image, transform, offset, algorithm);
 }
 
 fn draw_image_with_transform(
@@ -418,26 +433,24 @@ fn draw_image_with_transform(
   image: &RgbaImage,
   transform: Affine,
   offset: Point<i32>,
+  algorithm: ImageScalingAlgorithm,
 ) {
   let Some(inverse) = transform.invert() else {
     return;
   };
 
   let corners = [
-    (0, 0),
-    (image.width() as i32, 0),
-    (image.width() as i32, image.height() as i32),
-    (0, image.height() as i32),
+    (0.0, 0.0),
+    (image.width() as f32, 0.0),
+    (image.width() as f32, image.height() as f32),
+    (0.0, image.height() as f32),
   ];
 
   let corners_transformed = corners
-    .iter()
+    .into_iter()
     .map(|(x, y)| {
-      let point = Point {
-        x: *x as f32,
-        y: *y as f32,
-      } * transform;
-      (point.x + offset.x as f32, point.y + offset.y as f32)
+      let point = Point { x, y } * transform;
+      (point.x, point.y)
     })
     .collect::<Vec<_>>();
 
@@ -453,78 +466,34 @@ fn draw_image_with_transform(
     max_y = max_y.max(y);
   }
 
-  // Compute integer canvas-space bounds and clamp to canvas size to avoid iterating off-canvas
-  let mut start_x = min_x.floor() as i32;
-  let mut start_y = min_y.floor() as i32;
-  let mut end_x = max_x.ceil() as i32;
-  let mut end_y = max_y.ceil() as i32;
-
-  let canvas_min_x = 0i32;
-  let canvas_min_y = 0i32;
-  let canvas_max_x = canvas.width() as i32;
-  let canvas_max_y = canvas.height() as i32;
-
-  if start_x < canvas_min_x {
-    start_x = canvas_min_x;
-  }
-  if start_y < canvas_min_y {
-    start_y = canvas_min_y;
-  }
-  if end_x > canvas_max_x {
-    end_x = canvas_max_x;
-  }
-  if end_y > canvas_max_y {
-    end_y = canvas_max_y;
-  }
-
-  if start_x >= end_x || start_y >= end_y {
-    return;
-  }
+  let start_x = min_x.floor() as i32;
+  let start_y = min_y.floor() as i32;
+  let end_x = max_x.ceil() as i32;
+  let end_y = max_y.ceil() as i32;
 
   for y in start_y..end_y {
     for x in start_x..end_x {
-      let src_x = (x - offset.x) as f32;
-      let src_y = (y - offset.y) as f32;
-      let point = Point { x: src_x, y: src_y } * inverse;
+      // Transform once per pixel
+      let point = Point {
+        x: x as f32,
+        y: y as f32,
+      } * inverse;
 
-      // sample_bilinear will return transparent for OOB source coordinates
-      let pixel = sample_bilinear(image, point.x, point.y);
-      draw_pixel(canvas, x as u32, y as u32, pixel);
+      let canvas_x = x + offset.x;
+      let canvas_y = y + offset.y;
+
+      if canvas_x < 0 || canvas_y < 0 {
+        continue;
+      }
+
+      let sampled_pixel = match algorithm {
+        ImageScalingAlgorithm::Pixelated => interpolate_nearest(image, point.x, point.y),
+        _ => interpolate_bilinear(image, point.x, point.y),
+      };
+
+      if let Some(pixel) = sampled_pixel {
+        draw_pixel(canvas, canvas_x as u32, canvas_y as u32, pixel);
+      }
     }
   }
-}
-
-fn sample_bilinear(image: &RgbaImage, x: f32, y: f32) -> Rgba<u8> {
-  let (width, height) = image.dimensions();
-
-  // Check bounds
-  if !is_point_in_bounds(x, y, width as f32, height as f32) {
-    return Rgba([0, 0, 0, 0]);
-  }
-
-  // Get the four surrounding pixels
-  let x0 = x.floor() as u32;
-  let y0 = y.floor() as u32;
-  let x1 = (x0 + 1).min(width - 1);
-  let y1 = (y0 + 1).min(height - 1);
-
-  // Calculate interpolation weights
-  let fx = x - x0 as f32;
-  let fy = y - y0 as f32;
-
-  // Get the four corner pixels
-  let p00 = image.get_pixel(x0, y0);
-  let p10 = image.get_pixel(x1, y0);
-  let p01 = image.get_pixel(x0, y1);
-  let p11 = image.get_pixel(x1, y1);
-
-  // Perform bilinear interpolation for each channel
-  let mut result = [0u8; 4];
-  for (i, value) in result.iter_mut().enumerate() {
-    let top = p00.0[i] as f32 * (1.0 - fx) + p10.0[i] as f32 * fx;
-    let bottom = p01.0[i] as f32 * (1.0 - fx) + p11.0[i] as f32 * fx;
-    *value = (top * (1.0 - fy) + bottom * fy).round() as u8;
-  }
-
-  Rgba(result)
 }

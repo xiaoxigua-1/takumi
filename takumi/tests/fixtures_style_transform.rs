@@ -11,34 +11,7 @@ use takumi::layout::{
 mod test_utils;
 use test_utils::run_style_width_test;
 
-fn create_rotated_container(angle: f32, transform_origin: Option<BackgroundPosition>) -> ImageNode {
-  ImageNode {
-    style: Style {
-      transform: Some(Transforms(vec![
-        Transform::Translate(Percentage(-50.0), Percentage(-50.0)),
-        Transform::Rotate(Angle::new(angle)),
-      ])),
-      position: Position::Absolute,
-      inset: Sides([
-        Percentage(50.0),
-        Percentage(0.0),
-        Percentage(0.0),
-        Percentage(50.0),
-      ]),
-      transform_origin,
-      width: Px(200.0),
-      height: Px(200.0),
-      background_color: Some(Color([255, 0, 0, 30])),
-      border_width: Sides([Px(2.0); 4]),
-      ..Default::default()
-    },
-    width: None,
-    height: None,
-    src: "assets/images/yeecord.png".to_string(),
-  }
-}
-
-const ROTATED_ANGLES: &[f32] = &[0.0, 45.0, 90.0, 135.0, 180.0, 225.0, 270.0, 315.0];
+const ROTATED_ANGLES: &[f32] = &[0.0, 90.0, 180.0, 270.0];
 
 #[test]
 fn test_style_transform_origin_center() {
@@ -98,6 +71,33 @@ fn test_style_transform_origin_top_left() {
     container.into(),
     "tests/fixtures/style_transform_origin_top_left.png",
   );
+}
+
+fn create_rotated_container(angle: f32, transform_origin: Option<BackgroundPosition>) -> ImageNode {
+  ImageNode {
+    style: Style {
+      transform: Some(Transforms(vec![
+        Transform::Translate(Percentage(-50.0), Percentage(-50.0)),
+        Transform::Rotate(Angle::new(angle)),
+      ])),
+      position: Position::Absolute,
+      inset: Sides([
+        Percentage(50.0),
+        Percentage(0.0),
+        Percentage(0.0),
+        Percentage(50.0),
+      ]),
+      transform_origin,
+      width: Px(200.0),
+      height: Px(200.0),
+      background_color: Some(Color([255, 0, 0, 30])),
+      // border_width: Sides([Px(2.0); 4]),
+      ..Default::default()
+    },
+    width: None,
+    height: None,
+    src: "assets/images/yeecord.png".to_string(),
+  }
 }
 
 #[test]

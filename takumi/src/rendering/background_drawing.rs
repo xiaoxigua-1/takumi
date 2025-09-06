@@ -10,7 +10,7 @@ use crate::{
   layout::style::{
     BackgroundImage, BackgroundImages, BackgroundPosition, BackgroundPositions, BackgroundRepeat,
     BackgroundRepeatStyle, BackgroundRepeats, BackgroundSize, BackgroundSizes, Gradient,
-    LengthUnit, PositionComponent, PositionKeywordX, PositionKeywordY,
+    ImageScalingAlgorithm, LengthUnit, PositionComponent, PositionKeywordX, PositionKeywordY,
   },
   rendering::{BorderRadius, Canvas, RenderContext},
 };
@@ -313,6 +313,7 @@ pub(crate) fn draw_background_layers(
           },
           radius,
           context.transform,
+          ImageScalingAlgorithm::Auto,
         );
       }
     }

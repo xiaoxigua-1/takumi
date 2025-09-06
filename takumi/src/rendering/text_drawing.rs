@@ -13,7 +13,9 @@ use zeno::Format;
 
 use crate::{
   GlobalContext,
-  layout::style::{Affine, Color, ResolvedFontStyle, Style, TextOverflow, TextTransform},
+  layout::style::{
+    Affine, Color, ImageScalingAlgorithm, ResolvedFontStyle, Style, TextOverflow, TextTransform,
+  },
   rendering::{BorderRadius, Canvas, RenderContext, overlay_image, resolve_layers_tiles},
 };
 
@@ -102,6 +104,7 @@ pub fn draw_text(
             Point { x: *x, y: *y },
             Default::default(),
             Affine::identity(),
+            ImageScalingAlgorithm::Auto,
           )
         }
       }
@@ -202,6 +205,7 @@ fn draw_buffer(
                 offset,
                 BorderRadius::default(),
                 context.transform,
+                ImageScalingAlgorithm::Auto,
               );
             }
             _ => {}

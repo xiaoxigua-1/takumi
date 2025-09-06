@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::sync::Arc;
 
 use image::imageops::crop_imm;
@@ -12,116 +13,128 @@ use crate::resources::image::ImageSource;
 ///
 /// This function handles resizing, cropping, and positioning of images
 /// based on the ObjectFit property, returning the processed image and offset.
-pub fn process_image_for_object_fit(
-  image: &ImageSource,
+pub fn process_image_for_object_fit<'i>(
+  image: &'i ImageSource,
   object_fit: ObjectFit,
   filter_type: FilterType,
-  container_width: u32,
-  container_height: u32,
-) -> (RgbaImage, u32, u32) {
+  container_width: f32,
+  container_height: f32,
+) -> (Cow<'i, RgbaImage>, f32, f32) {
   let (image_width, image_height) = image.size();
-  let image_width = image_width as u32;
-  let image_height = image_height as u32;
 
   match object_fit {
     ObjectFit::Fill => (
-      image.render_to_rgba_image(container_width, container_height, filter_type),
-      0,
-      0,
+      image.render_to_rgba_image(container_width as u32, container_height as u32, filter_type),
+      0.0,
+      0.0,
     ),
     ObjectFit::Contain => {
-      let scale_x = container_width as f32 / image_width as f32;
-      let scale_y = container_height as f32 / image_height as f32;
+      let scale_x = container_width / image_width;
+      let scale_y = container_height / image_height;
       let scale = scale_x.min(scale_y);
 
-      let new_width = (image_width as f32 * scale) as u32;
-      let new_height = (image_height as f32 * scale) as u32;
+      let new_width = image_width * scale;
+      let new_height = image_height * scale;
 
-      let offset_x = container_width.saturating_sub(new_width) / 2;
-      let offset_y = container_height.saturating_sub(new_height) / 2;
+      let offset_x = (container_width - new_width) / 2.0;
+      let offset_y = (container_height - new_height) / 2.0;
 
       (
-        image.render_to_rgba_image(new_width, new_height, filter_type),
+        image.render_to_rgba_image(new_width as u32, new_height as u32, filter_type),
         offset_x,
         offset_y,
       )
     }
     ObjectFit::Cover => {
-      let scale_x = container_width as f32 / image_width as f32;
-      let scale_y = container_height as f32 / image_height as f32;
+      let scale_x = container_width / image_width;
+      let scale_y = container_height / image_height;
       let scale = scale_x.max(scale_y);
 
-      let new_width = (image_width as f32 * scale) as u32;
-      let new_height = (image_height as f32 * scale) as u32;
+      let new_width = image_width * scale;
+      let new_height = image_height * scale;
 
-      let resized = image.render_to_rgba_image(new_width, new_height, filter_type);
+      let resized = image.render_to_rgba_image(new_width as u32, new_height as u32, filter_type);
 
-      let crop_x = new_width.saturating_sub(container_width) / 2;
-      let crop_y = new_height.saturating_sub(container_height) / 2;
+      let crop_x = (new_width - container_width) / 2.0;
+      let crop_y = (new_height - container_height) / 2.0;
 
-      let cropped =
-        crop_imm(&resized, crop_x, crop_y, container_width, container_height).to_image();
+      let cropped = crop_imm(
+        resized.as_ref(),
+        crop_x as u32,
+        crop_y as u32,
+        container_width as u32,
+        container_height as u32,
+      )
+      .to_image();
 
-      (cropped, 0, 0)
+      (Cow::Owned(cropped), 0.0, 0.0)
     }
     ObjectFit::ScaleDown => {
-      let scale_x = container_width as f32 / image_width as f32;
-      let scale_y = container_height as f32 / image_height as f32;
+      let scale_x = container_width / image_width;
+      let scale_y = container_height / image_height;
       let scale = scale_x.min(scale_y).min(1.0);
 
-      let new_width = (image_width as f32 * scale) as u32;
-      let new_height = (image_height as f32 * scale) as u32;
+      let new_width = image_width * scale;
+      let new_height = image_height * scale;
 
       let processed_image = if scale < 1.0 {
-        image.render_to_rgba_image(new_width, new_height, filter_type)
+        image.render_to_rgba_image(new_width as u32, new_height as u32, filter_type)
       } else {
-        image.render_to_rgba_image(image_width, image_height, filter_type)
+        image.render_to_rgba_image(image_width as u32, image_height as u32, filter_type)
       };
 
-      let offset_x = container_width.saturating_sub(new_width) / 2;
-      let offset_y = container_height.saturating_sub(new_height) / 2;
+      let offset_x = (container_width - new_width) / 2.0;
+      let offset_y = (container_height - new_height) / 2.0;
 
       (processed_image, offset_x, offset_y)
     }
     ObjectFit::None => {
       if image_width <= container_width && image_height <= container_height {
-        let offset_x = (container_width - image_width) / 2;
-        let offset_y = (container_height - image_height) / 2;
+        let offset_x = (container_width - image_width) / 2.0;
+        let offset_y = (container_height - image_height) / 2.0;
         (
-          image.render_to_rgba_image(image_width, image_height, filter_type),
+          image.render_to_rgba_image(image_width as u32, image_height as u32, filter_type),
           offset_x,
           offset_y,
         )
       } else {
         let crop_x = if image_width > container_width {
-          (image_width - container_width) / 2
+          (image_width - container_width) / 2.0
         } else {
-          0
+          0.0
         };
         let crop_y = if image_height > container_height {
-          (image_height - container_height) / 2
+          (image_height - container_height) / 2.0
         } else {
-          0
+          0.0
         };
 
         let crop_width = container_width.min(image_width);
         let crop_height = container_height.min(image_height);
 
-        let source_image = image.render_to_rgba_image(image_width, image_height, filter_type);
-        let cropped = crop_imm(&source_image, crop_x, crop_y, crop_width, crop_height).to_image();
+        let source_image =
+          image.render_to_rgba_image(image_width as u32, image_height as u32, filter_type);
+        let cropped = crop_imm(
+          source_image.as_ref(),
+          crop_x as u32,
+          crop_y as u32,
+          crop_width as u32,
+          crop_height as u32,
+        )
+        .to_image();
 
         let offset_x = if crop_width < container_width {
-          (container_width - crop_width) / 2
+          (container_width - crop_width) / 2.0
         } else {
-          0
+          0.0
         };
         let offset_y = if crop_height < container_height {
-          (container_height - crop_height) / 2
+          (container_height - crop_height) / 2.0
         } else {
-          0
+          0.0
         };
 
-        (cropped, offset_x, offset_y)
+        (Cow::Owned(cropped), offset_x, offset_y)
       }
     }
   }
@@ -150,17 +163,18 @@ pub fn draw_image(
       .image_rendering
       .unwrap_or_default()
       .into(),
-    content_box.width as u32,
-    content_box.height as u32,
+    content_box.width,
+    content_box.height,
   );
 
   canvas.overlay_image(
-    Arc::new(image),
+    Arc::new(image.into_owned()),
     Point {
       x: offset_x as i32 + x as i32,
       y: offset_y as i32 + y as i32,
     },
     style.create_border_radius(&layout, context),
     context.transform,
+    style.inheritable_style.image_rendering.unwrap_or_default(),
   );
 }

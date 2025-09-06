@@ -5,7 +5,7 @@ use taffy::{Layout, Point, Size};
 use zeno::{Fill, Mask};
 
 use crate::{
-  layout::style::{Affine, BoxShadow, BoxShadows},
+  layout::style::{Affine, BoxShadow, BoxShadows, ImageScalingAlgorithm},
   rendering::{
     BorderRadius, Canvas, RenderContext, apply_mask_alpha_to_pixel, draw_filled_rect_color,
   },
@@ -95,6 +95,7 @@ pub fn draw_box_shadow(
           },
           draw.border_radius,
           context.transform,
+          ImageScalingAlgorithm::Auto,
         );
       }
     }
@@ -143,6 +144,7 @@ pub fn draw_box_shadow(
           },
           draw.border_radius,
           context.transform,
+          ImageScalingAlgorithm::Auto,
         );
       }
     }
