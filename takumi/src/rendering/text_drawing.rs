@@ -2,14 +2,14 @@ use std::borrow::Cow;
 use std::sync::Arc;
 
 use image::RgbaImage;
-use parley::{PositionedLayoutItem, StyleProperty};
+use parley::{Glyph, PositionedLayoutItem, StyleProperty};
 use swash::{
   Setting,
-  scale::{Render, Source, StrikeWith, image::Content},
+  scale::{Scaler, StrikeWith},
   tag_from_bytes,
 };
-use taffy::{Layout, Point};
-use zeno::Format;
+use taffy::{Layout, Point, Size};
+use zeno::{Command, Mask, PathData};
 
 use crate::{
   GlobalContext,
@@ -35,9 +35,6 @@ pub fn draw_text(
   }
 
   let content_box = layout.content_box_size();
-
-  let start_x = layout.content_box_x();
-  let start_y = layout.content_box_y();
 
   let render_text = apply_text_transform(text, font_style.text_transform);
 
@@ -115,7 +112,6 @@ pub fn draw_text(
       &buffer,
       canvas,
       style.inheritable_style.color.unwrap_or_else(Color::black),
-      (start_x, start_y),
       layout,
       Some(composed),
     );
@@ -128,7 +124,6 @@ pub fn draw_text(
     &buffer,
     canvas,
     style.inheritable_style.color.unwrap_or_else(Color::black),
-    (start_x, start_y),
     layout,
     None,
   );
@@ -139,8 +134,7 @@ fn draw_buffer(
   buffer: &parley::Layout<()>,
   canvas: &Canvas,
   color: Color,
-  (start_x, start_y): (f32, f32),
-  _layout: Layout,
+  layout: Layout,
   image_fill: Option<RgbaImage>,
 ) {
   for line in buffer.lines() {
@@ -153,66 +147,147 @@ fn draw_buffer(
 
       context.global.font_context.with_scaler(run, |scaler| {
         for glyph in glyph_run.positioned_glyphs() {
-          let Some(mut image) = Render::new(&[
-            Source::ColorOutline(0),
-            Source::ColorBitmap(StrikeWith::BestFit),
-            Source::Outline,
-          ])
-          .format(Format::Alpha)
-          // .transform(Some(context.transform.into()))
-          .render(scaler, glyph.id) else {
-            continue;
-          };
-
-          image.placement.left += (glyph.x + start_x) as i32;
-          image.placement.top = (start_y + glyph.y) as i32 - image.placement.top;
-
-          match (image.content, image_fill.clone()) {
-            (Content::Mask, Some(fill)) => {
-              // TODO: fix this
-              canvas.draw_mask(image.data, image.placement, color, Some(fill));
-            }
-            (Content::Mask, None) => canvas.draw_mask(image.data, image.placement, color, None),
-            (Content::Color, Some(fill)) => {
-              canvas.draw_mask(
-                // collect the alpha values from [r, g, b, a] sequence
-                image.data.into_iter().skip(3).step_by(4).collect(),
-                image.placement,
-                color,
-                Some(fill),
-              );
-            }
-            (Content::Color, None) => {
-              // apply alpha to the image based on the glyph color alpha
-              if color.0[3] != 255 {
-                let target_alpha = color.0[3] as f32 / 255.0;
-
-                for alpha in image.data.iter_mut().skip(3).step_by(4) {
-                  *alpha = (*alpha as f32 * target_alpha) as u8;
-                }
-              }
-
-              let offset = Point {
-                x: image.placement.left,
-                y: image.placement.top,
-              };
-
-              canvas.overlay_image(
-                Arc::new(
-                  RgbaImage::from_raw(image.placement.width, image.placement.height, image.data)
-                    .unwrap(),
-                ),
-                offset,
-                BorderProperties::default(),
-                context.transform,
-                ImageScalingAlgorithm::Auto,
-              );
-            }
-            _ => {}
-          }
+          draw_glyph(
+            glyph,
+            scaler,
+            canvas,
+            color,
+            layout,
+            image_fill.as_ref(),
+            context.transform,
+          );
         }
       });
     }
+  }
+}
+
+// fn image_to_mask(image: &RgbaImage) -> (Vec<u8>, Placement) {
+//   let placement = Placement {
+//     left: 0,
+//     top: 0,
+//     width: image.width(),
+//     height: image.height(),
+//   };
+
+//   let mask = image.iter().skip(3).step_by(4).copied().collect::<Vec<_>>();
+
+//   (mask, placement)
+// }
+
+fn draw_glyph(
+  glyph: Glyph,
+  scaler: &mut Scaler<'_>,
+  canvas: &Canvas,
+  color: Color,
+  layout: Layout,
+  image_fill: Option<&RgbaImage>,
+  transform: Affine,
+) {
+  let transform = transform
+    * Affine::translation(Size {
+      width: layout.border.left + layout.padding.left + glyph.x,
+      height: layout.border.top + layout.padding.top + glyph.y,
+    });
+
+  if let Some(bitmap) = scaler.scale_color_bitmap(glyph.id, StrikeWith::BestFit) {
+    let image =
+      RgbaImage::from_raw(bitmap.placement.width, bitmap.placement.height, bitmap.data).unwrap();
+
+    // TODO: image mask, support generic image view
+    // if image_fill.is_some() {
+    //   let (mask, mut placement) = image_to_mask(&image);
+
+    //   let cropped_fill_image = image_fill.map(|image| {
+    //     crop_imm(
+    //       image,
+    //       (placement.left + glyph.x as i32) as u32,
+    //       (placement.top + glyph.y as i32) as u32,
+    //       placement.width,
+    //       placement.height,
+    //     )
+    //     .to_image()
+    //   });
+
+    //   placement.left += layout.location.x as i32;
+    //   placement.top += layout.location.y as i32;
+
+    //   return canvas.draw_mask(mask, placement, color, cropped_fill_image);
+    // }
+
+    return canvas.overlay_image(
+      Arc::new(image),
+      Point {
+        x: layout.location.x as i32 + bitmap.placement.left,
+        y: layout.location.y as i32 - bitmap.placement.top,
+      },
+      BorderProperties {
+        size: Size {
+          width: bitmap.placement.width as f32,
+          height: bitmap.placement.height as f32,
+        },
+        ..Default::default()
+      },
+      transform,
+      ImageScalingAlgorithm::Auto,
+    );
+  }
+
+  if let Some(outline) = scaler
+    .scale_outline(glyph.id)
+    .or_else(|| scaler.scale_color_outline(glyph.id))
+  {
+    // have to invert the y coordinate from y-up to y-down first
+    let mut paths = outline
+      .path()
+      .commands()
+      .map(|command| match command {
+        Command::MoveTo(point) => Command::MoveTo((point.x, -point.y).into()),
+        Command::LineTo(point) => Command::LineTo((point.x, -point.y).into()),
+        Command::CurveTo(point1, point2, point3) => Command::CurveTo(
+          (point1.x, -point1.y).into(),
+          (point2.x, -point2.y).into(),
+          (point3.x, -point3.y).into(),
+        ),
+        Command::QuadTo(point1, point2) => {
+          Command::QuadTo((point1.x, -point1.y).into(), (point2.x, -point2.y).into())
+        }
+        Command::Close => Command::Close,
+      })
+      .collect::<Vec<_>>();
+
+    transform.apply_on_paths(&mut paths);
+
+    let (mask, mut placement) = Mask::new(&paths).render();
+
+    let cropped_fill_image = image_fill.map(|image| {
+      let mut bottom = RgbaImage::new(placement.width, placement.height);
+
+      for y in 0..placement.height {
+        let dest_y = y + placement.top as u32;
+
+        if dest_y >= image.height() {
+          continue;
+        }
+
+        for x in 0..placement.width {
+          let dest_x = x + placement.left as u32;
+
+          if dest_x >= image.width() {
+            continue;
+          }
+
+          bottom.put_pixel(x, y, *image.get_pixel(dest_x, dest_y));
+        }
+      }
+
+      bottom
+    });
+
+    placement.left += layout.location.x as i32;
+    placement.top += layout.location.y as i32;
+
+    canvas.draw_mask(mask, placement, color, cropped_fill_image);
   }
 }
 

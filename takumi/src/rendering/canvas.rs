@@ -35,34 +35,27 @@ pub struct Canvas(Sender<DrawCommand>);
 
 impl Canvas {
   /// Creates a new canvas handle from a draw command sender.
-  ///
-  /// # Arguments
-  /// * `sender` - The channel sender for sending drawing commands
-  ///
-  /// # Returns
-  /// A new `Canvas` instance that can be used to send drawing commands
   pub fn new(sender: Sender<DrawCommand>) -> Self {
     Self(sender)
   }
 
   /// Overlays an image onto the canvas with optional border radius.
-  ///
-  /// # Arguments
-  /// * `image` - The image to overlay on the canvas
-  /// * `offset` - The position offset where to place the image
-  /// * `radius` - Border radius to apply to the image corners
   pub fn overlay_image(
     &self,
     image: Arc<RgbaImage>,
     offset: Point<i32>,
-    radius: BorderProperties,
+    border: BorderProperties,
     transform: Affine,
     algorithm: ImageScalingAlgorithm,
   ) {
+    if image.is_empty() {
+      return;
+    }
+
     let _ = self.0.send(DrawCommand::OverlayImage {
       image,
       offset,
-      border: radius,
+      border,
       transform,
       algorithm,
     });
@@ -76,6 +69,10 @@ impl Canvas {
     color: Color,
     image: Option<RgbaImage>,
   ) {
+    if mask.is_empty() {
+      return;
+    }
+
     let _ = self.0.send(DrawCommand::DrawMask {
       mask,
       placement,
@@ -85,25 +82,23 @@ impl Canvas {
   }
 
   /// Fills a rectangular area with the specified color and optional border radius.
-  ///
-  /// # Arguments
-  /// * `offset` - The position offset where to start filling
-  /// * `size` - The size of the area to fill
-  /// * `color` - The color to fill the area with
-  /// * `radius` - Border radius to apply to the filled area
   pub fn fill_color(
     &self,
     offset: Point<i32>,
     size: Size<u32>,
     color: Color,
-    radius: BorderProperties,
+    border: BorderProperties,
     transform: Affine,
   ) {
+    if color.0[3] == 0 {
+      return;
+    }
+
     let _ = self.0.send(DrawCommand::FillColor {
       offset,
       size,
       color,
-      border: radius,
+      border,
       transform,
     });
   }
@@ -117,10 +112,10 @@ pub fn create_blocking_canvas_loop(
   let mut canvas = RgbaImage::new(viewport.width, viewport.height);
 
   while let Ok(task) = receiver.recv() {
-    task.draw(&mut canvas);
-
     #[cfg(debug_assertions)]
     println!("{task}");
+
+    task.draw(&mut canvas);
   }
 
   canvas
@@ -198,9 +193,18 @@ impl Display for DrawCommand {
         transform.decompose()
       ),
       DrawCommand::DrawMask {
-        placement, color, ..
+        placement,
+        color,
+        ref image,
+        ..
       } => {
-        write!(f, "DrawMask(placement={placement:?}, color={color})")
+        write!(f, "DrawMask(placement={placement:?}, color={color}")?;
+
+        if let Some(image) = image {
+          write!(f, ", image={}x{}", image.width(), image.height())?;
+        }
+
+        write!(f, ")")
       }
     }
   }
@@ -241,12 +245,6 @@ impl DrawCommand {
 ///
 /// If the color is fully transparent (alpha = 0), no operation is performed.
 /// Otherwise, the pixel is blended with the existing canvas pixel using alpha blending.
-///
-/// # Arguments
-/// * `canvas` - The canvas to draw on
-/// * `x` - The x coordinate of the pixel
-/// * `y` - The y coordinate of the pixel
-/// * `color` - The color to draw (RGBA format)
 pub fn draw_pixel(canvas: &mut RgbaImage, x: u32, y: u32, color: Rgba<u8>) {
   if color.0[3] == 0 {
     return;

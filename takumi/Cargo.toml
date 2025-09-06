@@ -24,7 +24,8 @@ features = ["std"]
 
 [dependencies.swash]
 version = "0.2"
-default-features = true
+default-features = false
+features = ["std", "scale"]
 
 [dependencies.rayon]
 version = "1.10"
