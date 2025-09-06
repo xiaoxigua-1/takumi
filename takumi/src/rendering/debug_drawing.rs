@@ -2,7 +2,7 @@ use taffy::{Layout, Point};
 
 use crate::{
   layout::style::{Affine, Color, Sides},
-  rendering::{BorderProperties, BorderRadius, Canvas, draw_border},
+  rendering::{BorderProperties, Canvas, draw_border},
 };
 
 /// Draws debug borders around the node's layout areas.
@@ -16,24 +16,26 @@ pub fn draw_debug_border(canvas: &Canvas, layout: Layout, transform: Affine) {
 
   draw_border(
     canvas,
+    Point { x, y },
     BorderProperties {
       width: Sides([1.0; 4]).into(),
-      offset: Point { x, y },
+      offset: Point::ZERO,
       size,
       color: Color([255, 0, 0, 255]),
-      radius: BorderRadius::zero(),
+      radius: Sides([0.0; 4]),
       transform,
     },
   );
 
   draw_border(
     canvas,
+    Point { x, y },
     BorderProperties {
       width: Sides([1.0; 4]).into(),
-      offset: layout.location,
+      offset: Point::ZERO,
       size: layout.size,
       color: Color([0, 255, 0, 255]),
-      radius: BorderRadius::zero(),
+      radius: Sides([0.0; 4]),
       transform,
     },
   );

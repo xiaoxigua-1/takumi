@@ -293,6 +293,10 @@ impl Affine {
 
   /// Applies the transform on the paths
   pub fn apply_on_paths(self, mask: &mut [Command]) {
+    if self.is_identity() {
+      return;
+    }
+
     for command in mask {
       match command {
         Command::MoveTo(target) => {

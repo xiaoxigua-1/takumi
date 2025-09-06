@@ -6,7 +6,7 @@ use ts_rs::TS;
 
 use crate::{
   layout::{DEFAULT_LINE_HEIGHT_SCALER, style::properties::*},
-  rendering::{BorderRadius, RenderContext},
+  rendering::{BorderProperties, RenderContext},
 };
 
 /// Represents the resolved font style for a text node.
@@ -446,10 +446,12 @@ impl Style {
     )
   }
 
-  /// Creates a `BorderRadius` from the style's border radius properties.
+  /// Creates `BorderProperties` (including resolved corner radii) from the style's border radius properties.
   #[inline]
-  pub fn create_border_radius(&self, layout: &Layout, context: &RenderContext) -> BorderRadius {
-    BorderRadius::from_layout(context, layout, self.resolved_border_radius())
+  pub fn create_border_radius(&self, layout: &Layout, context: &RenderContext) -> BorderProperties {
+    let rect = self.resolved_border_radius();
+
+    BorderProperties::from_resolved(context, layout, rect, self)
   }
 
   /// Converts this style to a Taffy-compatible style for layout calculations.

@@ -3,9 +3,9 @@ use std::sync::Arc;
 
 use image::imageops::crop_imm;
 use image::{RgbaImage, imageops::FilterType};
-use taffy::{Layout, Point};
+use taffy::{Layout, Point, Size};
 
-use crate::layout::style::{ObjectFit, Style};
+use crate::layout::style::{Affine, ObjectFit, Style};
 use crate::rendering::{Canvas, RenderContext};
 use crate::resources::image::ImageSource;
 
@@ -151,8 +151,6 @@ pub fn draw_image(
   canvas: &Canvas,
   layout: Layout,
 ) {
-  let x = layout.content_box_x();
-  let y = layout.content_box_y();
   let content_box = layout.content_box_size();
 
   let (image, offset_x, offset_y) = process_image_for_object_fit(
@@ -167,14 +165,25 @@ pub fn draw_image(
     content_box.height,
   );
 
+  // manually apply the border and padding to ensure rotation with origin is applied correctly
+  let transform_offset_x = layout.border.left + layout.padding.left;
+  let transform_offset_y = layout.border.top + layout.padding.top;
+
+  let transform_with_content_offset = Affine::translation(Size {
+    width: transform_offset_x,
+    height: transform_offset_y,
+  }) * context.transform;
+
   canvas.overlay_image(
     Arc::new(image.into_owned()),
     Point {
-      x: offset_x as i32 + x as i32,
-      y: offset_y as i32 + y as i32,
+      x: offset_x as i32 + layout.location.x as i32,
+      y: offset_y as i32 + layout.location.y as i32,
     },
-    style.create_border_radius(&layout, context),
-    context.transform,
+    style
+      .create_border_radius(&layout, context)
+      .inset_by_border_width(),
+    transform_with_content_offset,
     style.inheritable_style.image_rendering.unwrap_or_default(),
   );
 }

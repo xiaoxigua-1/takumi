@@ -11,7 +11,7 @@ use takumi::layout::{
 mod test_utils;
 use test_utils::run_style_width_test;
 
-const ROTATED_ANGLES: &[f32] = &[0.0, 90.0, 180.0, 270.0];
+const ROTATED_ANGLES: &[f32] = &[0.0, 45.0, 90.0, 135.0, 180.0, 225.0, 270.0, 315.0];
 
 #[test]
 fn test_style_transform_origin_center() {
@@ -91,7 +91,8 @@ fn create_rotated_container(angle: f32, transform_origin: Option<BackgroundPosit
       width: Px(200.0),
       height: Px(200.0),
       background_color: Some(Color([255, 0, 0, 30])),
-      // border_width: Sides([Px(2.0); 4]),
+      border_width: Sides([Px(1.0); 4]),
+      border_radius: Some(Sides([Px(12.0); 4])),
       ..Default::default()
     },
     width: None,

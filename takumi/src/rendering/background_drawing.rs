@@ -12,7 +12,7 @@ use crate::{
     BackgroundRepeatStyle, BackgroundRepeats, BackgroundSize, BackgroundSizes, Gradient,
     ImageScalingAlgorithm, LengthUnit, PositionComponent, PositionKeywordX, PositionKeywordY,
   },
-  rendering::{BorderRadius, Canvas, RenderContext},
+  rendering::{BorderProperties, Canvas, RenderContext},
 };
 
 pub(crate) fn resolve_length_against_area(
@@ -295,7 +295,7 @@ pub(crate) fn resolve_layers_tiles(
 /// Draw layered backgrounds (gradients) with support for background-size, -position, and -repeat.
 pub(crate) fn draw_background_layers(
   tiles: Vec<(RgbaImage, Vec<i32>, Vec<i32>)>,
-  radius: BorderRadius,
+  radius: BorderProperties,
   context: &RenderContext,
   canvas: &Canvas,
   layout: Layout,
@@ -305,6 +305,7 @@ pub(crate) fn draw_background_layers(
 
     for y in &ys {
       for x in &xs {
+        // radius is Copy, pass by value
         canvas.overlay_image(
           tile_image.clone(),
           Point {

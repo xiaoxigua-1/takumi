@@ -16,7 +16,7 @@ use crate::{
   layout::style::{
     Affine, Color, ImageScalingAlgorithm, ResolvedFontStyle, Style, TextOverflow, TextTransform,
   },
-  rendering::{BorderRadius, Canvas, RenderContext, overlay_image, resolve_layers_tiles},
+  rendering::{BorderProperties, Canvas, RenderContext, overlay_image, resolve_layers_tiles},
 };
 
 const ELLIPSIS_CHAR: &str = "…";
@@ -203,7 +203,7 @@ fn draw_buffer(
                     .unwrap(),
                 ),
                 offset,
-                BorderRadius::default(),
+                BorderProperties::default(),
                 context.transform,
                 ImageScalingAlgorithm::Auto,
               );

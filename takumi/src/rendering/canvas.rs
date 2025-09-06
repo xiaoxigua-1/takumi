@@ -23,7 +23,7 @@ use crate::{
     Viewport,
     style::{Affine, Color, ImageScalingAlgorithm},
   },
-  rendering::BorderRadius,
+  rendering::BorderProperties,
 };
 
 /// A canvas handle for sending drawing commands asynchronously.
@@ -55,14 +55,14 @@ impl Canvas {
     &self,
     image: Arc<RgbaImage>,
     offset: Point<i32>,
-    radius: BorderRadius,
+    radius: BorderProperties,
     transform: Affine,
     algorithm: ImageScalingAlgorithm,
   ) {
     let _ = self.0.send(DrawCommand::OverlayImage {
       image,
       offset,
-      radius,
+      border: radius,
       transform,
       algorithm,
     });
@@ -96,14 +96,14 @@ impl Canvas {
     offset: Point<i32>,
     size: Size<u32>,
     color: Color,
-    radius: BorderRadius,
+    radius: BorderProperties,
     transform: Affine,
   ) {
     let _ = self.0.send(DrawCommand::FillColor {
       offset,
       size,
       color,
-      radius,
+      border: radius,
       transform,
     });
   }
@@ -119,6 +119,7 @@ pub fn create_blocking_canvas_loop(
   while let Ok(task) = receiver.recv() {
     task.draw(&mut canvas);
 
+    #[cfg(debug_assertions)]
     println!("{task}");
   }
 
@@ -136,8 +137,8 @@ pub enum DrawCommand {
     image: Arc<RgbaImage>,
     /// The position offset where to place the image
     offset: Point<i32>,
-    /// Border radius to apply to the image corners
-    radius: BorderRadius,
+    /// Border properties (including radii) to apply to the image
+    border: BorderProperties,
     /// Transform to apply when drawing
     transform: Affine,
     /// The algorithm to use when transforming the image
@@ -162,8 +163,8 @@ pub enum DrawCommand {
     size: Size<u32>,
     /// The color to fill the area with
     color: Color,
-    /// Border radius to apply to the filled area
-    radius: BorderRadius,
+    /// Border properties (including radii) to apply to the filled area
+    border: BorderProperties,
     /// Transform to apply when drawing
     transform: Affine,
   },
@@ -175,7 +176,7 @@ impl Display for DrawCommand {
       DrawCommand::OverlayImage {
         ref image,
         offset,
-        radius,
+        border: radius,
         transform,
         algorithm,
       } => write!(
@@ -188,7 +189,7 @@ impl Display for DrawCommand {
       DrawCommand::FillColor {
         size,
         color,
-        radius,
+        border: radius,
         transform,
         ..
       } => write!(
@@ -215,7 +216,7 @@ impl DrawCommand {
       DrawCommand::OverlayImage {
         ref image,
         offset,
-        radius,
+        border: radius,
         transform,
         algorithm,
       } => overlay_image(canvas, image, offset, radius, transform, algorithm),
@@ -223,7 +224,7 @@ impl DrawCommand {
         offset,
         size,
         color,
-        radius,
+        border: radius,
         transform,
       } => draw_filled_rect_color(canvas, size, offset, color, radius, transform),
       DrawCommand::DrawMask {
@@ -276,7 +277,7 @@ pub(crate) fn draw_filled_rect_color<C: Into<Rgba<u8>>>(
   size: Size<u32>,
   offset: Point<i32>,
   color: C,
-  radius: BorderRadius,
+  radius: BorderProperties,
   transform: Affine,
 ) {
   let color: Rgba<u8> = color.into();
@@ -320,7 +321,7 @@ pub(crate) fn draw_filled_rect_color<C: Into<Rgba<u8>>>(
 
   let mut paths = Vec::new();
 
-  radius.write_mask_commands(&mut paths);
+  radius.append_mask_commands(&mut paths);
   transform.apply_on_paths(&mut paths);
 
   let mask = Mask::new(&paths);
@@ -375,11 +376,11 @@ pub(crate) fn overlay_image(
   canvas: &mut RgbaImage,
   image: &RgbaImage,
   offset: Point<i32>,
-  radius: BorderRadius,
+  border: BorderProperties,
   transform: Affine,
   algorithm: ImageScalingAlgorithm,
 ) {
-  if transform.is_identity() && radius.is_zero() {
+  if transform.is_identity() && border.is_zero() {
     for y in 0..image.height() {
       for x in 0..image.width() {
         let dest_x = offset.x + x as i32;
@@ -396,102 +397,51 @@ pub(crate) fn overlay_image(
     return;
   }
 
-  if !radius.is_zero() {
-    let mut paths = Vec::new();
-
-    radius.write_mask_commands(&mut paths);
-
-    let mask = Mask::new(&paths);
-
-    let (mask, placement) = mask.render();
-
-    let mut bottom = RgbaImage::new(image.width(), image.height());
-
-    draw_mask(
-      &mut bottom,
-      &mask,
-      placement,
-      Rgba([0, 0, 0, 0]),
-      Some(image),
-    );
-
-    return overlay_image(
-      canvas,
-      &bottom,
-      offset,
-      BorderRadius::zero(),
-      transform,
-      algorithm,
-    );
-  }
-
-  draw_image_with_transform(canvas, image, transform, offset, algorithm);
-}
-
-fn draw_image_with_transform(
-  canvas: &mut RgbaImage,
-  image: &RgbaImage,
-  transform: Affine,
-  offset: Point<i32>,
-  algorithm: ImageScalingAlgorithm,
-) {
   let Some(inverse) = transform.invert() else {
     return;
   };
 
-  let corners = [
-    (0.0, 0.0),
-    (image.width() as f32, 0.0),
-    (image.width() as f32, image.height() as f32),
-    (0.0, image.height() as f32),
-  ];
+  let mut paths = Vec::new();
 
-  let corners_transformed = corners
-    .into_iter()
-    .map(|(x, y)| {
-      let point = Point { x, y } * transform;
-      (point.x, point.y)
-    })
-    .collect::<Vec<_>>();
+  border.append_mask_commands(&mut paths);
+  transform.apply_on_paths(&mut paths);
 
-  let mut min_x = f32::MAX;
-  let mut min_y = f32::MAX;
-  let mut max_x = f32::MIN;
-  let mut max_y = f32::MIN;
+  let mask = Mask::new(&paths);
+  let (mask, placement) = mask.render();
 
-  for (x, y) in corners_transformed {
-    min_x = min_x.min(x);
-    min_y = min_y.min(y);
-    max_x = max_x.max(x);
-    max_y = max_y.max(y);
-  }
+  let mut i = 0;
 
-  let start_x = min_x.floor() as i32;
-  let start_y = min_y.floor() as i32;
-  let end_x = max_x.ceil() as i32;
-  let end_y = max_y.ceil() as i32;
+  for y in 0..placement.height {
+    for x in 0..placement.width {
+      let alpha = mask[i];
+      i += 1;
 
-  for y in start_y..end_y {
-    for x in start_x..end_x {
-      // Transform once per pixel
-      let point = Point {
-        x: x as f32,
-        y: y as f32,
-      } * inverse;
+      if alpha == 0 {
+        continue;
+      }
 
-      let canvas_x = x + offset.x;
-      let canvas_y = y + offset.y;
+      let canvas_x = x as i32 + offset.x + placement.left;
+      let canvas_y = y as i32 + offset.y + placement.top;
 
       if canvas_x < 0 || canvas_y < 0 {
         continue;
       }
+
+      let point = Point {
+        x: x as f32 + placement.left as f32,
+        y: y as f32 + placement.top as f32,
+      } * inverse;
 
       let sampled_pixel = match algorithm {
         ImageScalingAlgorithm::Pixelated => interpolate_nearest(image, point.x, point.y),
         _ => interpolate_bilinear(image, point.x, point.y),
       };
 
-      if let Some(pixel) = sampled_pixel {
+      if let Some(mut pixel) = sampled_pixel {
+        if alpha != u8::MAX {
+          pixel = apply_mask_alpha_to_pixel(pixel, alpha);
+        }
+
         draw_pixel(canvas, canvas_x as u32, canvas_y as u32, pixel);
       }
     }

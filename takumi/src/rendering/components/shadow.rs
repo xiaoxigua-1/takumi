@@ -7,7 +7,7 @@ use zeno::{Fill, Mask};
 use crate::{
   layout::style::{Affine, BoxShadow, BoxShadows, ImageScalingAlgorithm},
   rendering::{
-    BorderRadius, Canvas, RenderContext, apply_mask_alpha_to_pixel, draw_filled_rect_color,
+    BorderProperties, Canvas, RenderContext, apply_mask_alpha_to_pixel, draw_filled_rect_color,
   },
 };
 
@@ -70,7 +70,7 @@ impl BoxShadowResolved {
 pub fn draw_box_shadow(
   context: &RenderContext,
   box_shadows: &BoxShadows,
-  border_radius: BorderRadius,
+  border_radius: BorderProperties,
   canvas: &Canvas,
   layout: Layout,
   phase: BoxShadowRenderPhase,
@@ -154,35 +154,35 @@ pub fn draw_box_shadow(
 struct ShadowDraw {
   image: RgbaImage,
   offset: Point<f32>,
-  border_radius: BorderRadius,
+  border_radius: BorderProperties,
 }
 
 fn draw_single_box_shadow(
   shadow: &BoxShadowResolved,
-  border_radius: BorderRadius,
+  border: BorderProperties,
   layout: Layout,
 ) -> ShadowDraw {
   if shadow.inset {
     ShadowDraw {
-      image: draw_inset_shadow(shadow, border_radius, layout),
+      image: draw_inset_shadow(shadow, border, layout),
       offset: Point { x: 0.0, y: 0.0 },
-      border_radius,
+      border_radius: border,
     }
   } else {
     ShadowDraw {
-      image: draw_outset_shadow(shadow, border_radius, layout),
+      image: draw_outset_shadow(shadow, border, layout),
       offset: Point {
         x: shadow.offset_x - shadow.blur_radius - shadow.spread_radius,
         y: shadow.offset_y - shadow.blur_radius - shadow.spread_radius,
       },
-      border_radius: BorderRadius::zero(),
+      border_radius: BorderProperties::zero(),
     }
   }
 }
 
 fn draw_inset_shadow(
   shadow: &BoxShadowResolved,
-  border_radius: BorderRadius,
+  border: BorderProperties,
   layout: Layout,
 ) -> RgbaImage {
   let mut shadow_image = RgbaImage::from_pixel(
@@ -193,19 +193,19 @@ fn draw_inset_shadow(
 
   let mut paths = Vec::new();
 
-  let offset_border_radius = BorderRadius {
+  let border = BorderProperties {
     offset: Point {
-      x: border_radius.offset.x + shadow.offset_x,
-      y: border_radius.offset.y + shadow.offset_y,
+      x: shadow.offset_x,
+      y: shadow.offset_y,
     },
-    ..border_radius
+    ..border
   };
 
-  offset_border_radius.write_mask_commands(&mut paths);
+  border.append_mask_commands(&mut paths);
 
-  offset_border_radius
-    .grow(-shadow.spread_radius)
-    .write_mask_commands(&mut paths);
+  border
+    .expand_by(-shadow.spread_radius)
+    .append_mask_commands(&mut paths);
 
   let mut mask = Mask::new(&paths);
 
@@ -244,7 +244,7 @@ fn draw_inset_shadow(
 /// Draws an outset box shadow.
 fn draw_outset_shadow(
   shadow: &BoxShadowResolved,
-  border_radius: BorderRadius,
+  border: BorderProperties,
   layout: Layout,
 ) -> RgbaImage {
   let box_shadow_size = (shadow.blur_radius + shadow.spread_radius) * 2.0;
@@ -266,7 +266,7 @@ fn draw_outset_shadow(
       y: (shadow.spread_radius + shadow.blur_radius) as i32,
     },
     shadow.color,
-    border_radius.grow(shadow.spread_radius),
+    border.expand_by(shadow.spread_radius),
     Affine::identity(),
   );
 
