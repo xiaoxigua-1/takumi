@@ -1,9 +1,9 @@
 use takumi::layout::{
-  node::ContainerNode,
+  node::{ContainerNode, TextNode},
   style::{
     BoxShadow, BoxShadows, Color, InheritableStyle,
     LengthUnit::{Percentage, Px, Rem},
-    Position, Style,
+    LineHeight, Position, Style,
   },
 };
 
@@ -238,5 +238,58 @@ fn test_style_border_radius_circle() {
   run_style_width_test(
     container.into(),
     "tests/fixtures/style_border_radius_circle.png",
+  );
+}
+
+// https://github.com/kane50613/takumi/issues/151
+#[test]
+fn test_style_border_radius_width_offset() {
+  let container = ContainerNode {
+    style: Style {
+      width: Percentage(100.0),
+      height: Percentage(100.0),
+      background_color: Some(Color([128, 128, 128, 255])),
+      padding: Rem(2.0).into(),
+      ..Default::default()
+    },
+    children: Some(vec![
+      ContainerNode {
+        style: Style {
+          width: Percentage(100.0),
+          height: Percentage(100.0),
+          border_width: Px(1.0).into(),
+          border_radius: Some(Px(24.0).into()),
+          inheritable_style: InheritableStyle {
+            border_color: Some(Color([0, 0, 0, 255])),
+            ..Default::default()
+          },
+          background_color: Some(Color::white()),
+          ..Default::default()
+        },
+        children: Some(vec![
+          TextNode {
+            text: "The newest blog post".to_string(),
+            style: Style {
+              width: Percentage(100.0),
+              padding: Rem(4.0).into(),
+              inheritable_style: InheritableStyle {
+                font_size: Some(Rem(4.0)),
+                font_weight: Some(500.0.into()),
+                line_height: Some(LineHeight(Rem(4.0 * 1.5))),
+                ..Default::default()
+              },
+              ..Default::default()
+            },
+          }
+          .into(),
+        ]),
+      }
+      .into(),
+    ]),
+  };
+
+  run_style_width_test(
+    container.into(),
+    "tests/fixtures/style_border_radius_width_offset.png",
   );
 }
