@@ -91,9 +91,10 @@ fn guess_font_format(source: &[u8]) -> Result<FontFormat, FontError> {
 
 /// Embedded fonts
 #[cfg(feature = "embed_fonts")]
-const EMBEDDED_FONTS: &[&[u8]] = &[include_bytes!(
-  "../../../../assets/fonts/geist/Geist[wght].woff2"
-)];
+const EMBEDDED_FONTS: &[&[u8]] = &[
+  include_bytes!("../../../../assets/fonts/geist/GeistMono[wght].woff2"),
+  include_bytes!("../../../../assets/fonts/geist/Geist[wght].woff2"),
+];
 
 /// A context for managing fonts in the rendering system.
 pub struct FontContext {
