@@ -57,6 +57,7 @@ impl From<OutputFormat> for ImageOutputFormat {
 #[napi(object)]
 pub struct PersistentImage<'ctx> {
   pub src: String,
+  #[napi(ts_type = "Buffer | ArrayBuffer")]
   pub data: BufferSlice<'ctx>,
 }
 
@@ -66,7 +67,7 @@ pub struct ConstructRendererOptions<'ctx> {
   pub debug: Option<bool>,
   pub persistent_images: Option<Vec<PersistentImage<'ctx>>>,
   #[napi(
-    ts_type = "({ name?: string, data: Buffer, weight?: number, style?: 'normal' | 'italic' | 'oblique' } | Buffer)[] | undefined"
+    ts_type = "({ name?: string, data: Buffer | ArrayBuffer, weight?: number, style?: 'normal' | 'italic' | 'oblique' } | Buffer | ArrayBuffer)[] | undefined"
   )]
   pub fonts: Option<Vec<Object<'ctx>>>,
   pub load_default_fonts: Option<bool>,
@@ -104,7 +105,7 @@ impl Renderer {
 
     if let Some(fonts) = options.fonts {
       for font in fonts {
-        if font.is_buffer().unwrap() {
+        if font.is_arraybuffer().unwrap() || font.is_buffer().unwrap() {
           // SAFETY: We know the font is a buffer
           let buffer = unsafe { BufferSlice::from_napi_value(env.raw(), font.raw()).unwrap() };
 
@@ -143,7 +144,10 @@ impl Renderer {
     self.0.font_context.purge_cache();
   }
 
-  #[napi(ts_return_type = "Promise<void>")]
+  #[napi(
+    ts_args_type = "src: string, data: Buffer | ArrayBuffer, signal?: AbortSignal",
+    ts_return_type = "Promise<void>"
+  )]
   pub fn put_persistent_image_async(
     &self,
     src: String,
@@ -161,7 +165,7 @@ impl Renderer {
   }
 
   #[napi(
-    ts_args_type = "data: { name?: string, data: Buffer, weight?: number, style?: 'normal' | 'italic' | 'oblique' } | Buffer, signal?: AbortSignal",
+    ts_args_type = "data: { name?: string, data: Buffer | ArrayBuffer, weight?: number, style?: 'normal' | 'italic' | 'oblique' } | Buffer | ArrayBuffer, signal?: AbortSignal",
     ts_return_type = "Promise<number>"
   )]
   pub fn load_font_async(
@@ -174,7 +178,7 @@ impl Renderer {
   }
 
   #[napi(
-    ts_args_type = "fonts: ({ name?: string, data: Buffer, weight?: number, style?: 'normal' | 'italic' | 'oblique' } | Buffer)[], signal?: AbortSignal",
+    ts_args_type = "fonts: ({ name?: string, data: Buffer | ArrayBuffer, weight?: number, style?: 'normal' | 'italic' | 'oblique' } | Buffer | ArrayBuffer)[], signal?: AbortSignal",
     ts_return_type = "Promise<number>"
   )]
   pub fn load_fonts_async(
@@ -186,7 +190,7 @@ impl Renderer {
     let fonts = fonts
       .into_iter()
       .map(|font| {
-        if font.is_buffer().unwrap() {
+        if font.is_arraybuffer().unwrap() || font.is_buffer().unwrap() {
           FontInputOwned {
             name: None,
             // SAFETY: We know the font is a buffer

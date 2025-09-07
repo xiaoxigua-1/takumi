@@ -7,17 +7,15 @@ const glob = new Glob("../assets/fonts/**/*.{woff2,ttf}");
 const files = await Array.fromAsync(glob.scan());
 
 const fontBuffers = await Promise.all(
-  files.map(async (file) => Buffer.from(await Bun.file(file).arrayBuffer())),
+  files.map(async (file) => await Bun.file(file).arrayBuffer()),
 );
 
 const renderer = new Renderer({
   fonts: [
     {
-      data: Buffer.from(
-        await Bun.file(
-          "../assets/fonts/plus-jakarta-sans/PlusJakartaSans-VariableFont_wght.woff2",
-        ).arrayBuffer(),
-      ),
+      data: await Bun.file(
+        "../assets/fonts/plus-jakarta-sans/PlusJakartaSans-VariableFont_wght.woff2",
+      ).arrayBuffer(),
       name: "Plus Jakarta Sans",
       style: "normal",
     },
@@ -27,13 +25,9 @@ const renderer = new Renderer({
 const remoteUrl = "https://yeecord.com/img/logo.png";
 const localImagePath = "../assets/images/yeecord.png";
 
-const remoteImage = await fetch(remoteUrl)
-  .then((r) => r.arrayBuffer())
-  .then(Buffer.from);
+const remoteImage = await fetch(remoteUrl).then((r) => r.arrayBuffer());
+const localImage = await Bun.file(localImagePath).arrayBuffer();
 
-const localImage = await Bun.file(localImagePath)
-  .arrayBuffer()
-  .then(Buffer.from);
 const dataUri = `data:image/png;base64,${Buffer.from(localImage).toString(
   "base64",
 )}`;
@@ -79,11 +73,9 @@ const node = container({
 });
 
 test("Renderer initialization with fonts and images", async () => {
-  const font = Buffer.from(
-    await Bun.file(
-      "../assets/fonts/noto-sans/NotoSansTC-Bold.woff",
-    ).arrayBuffer(),
-  );
+  const font = await Bun.file(
+    "../assets/fonts/noto-sans/NotoSansTC-Bold.woff",
+  ).arrayBuffer();
 
   new Renderer({
     fonts: [font],
