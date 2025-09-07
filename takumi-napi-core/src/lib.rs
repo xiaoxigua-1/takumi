@@ -9,7 +9,7 @@ pub use renderer::Renderer;
 use takumi::parley::FontStyle;
 
 #[napi(object)]
-pub struct FontInput<'ctx> {
+pub(crate) struct FontInput<'ctx> {
   pub name: Option<String>,
   pub data: BufferSlice<'ctx>,
   pub weight: Option<f64>,
@@ -17,7 +17,7 @@ pub struct FontInput<'ctx> {
 }
 
 #[napi(object)]
-pub struct FontInputOwned {
+pub(crate) struct FontInputOwned {
   pub name: Option<String>,
   pub data: Buffer,
   pub weight: Option<f64>,

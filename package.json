@@ -5,6 +5,7 @@
       "takumi-helpers",
       "takumi-napi-core",
       "takumi-wasm",
+      "takumi-image-response",
       "docs",
       "example/*"
     ],

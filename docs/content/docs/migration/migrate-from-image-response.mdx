@@ -5,8 +5,6 @@ description: Migrate from Next.js ImageResponse to Takumi with your existing com
 
 Takumi aims to create a universal image generation library that can be used in any environment and not just limited to JavaScript runtime.
 
-We provide helper functions like [`fromJsx`](/docs/deep-dives/from-jsx-helper) to bridge the gap between JSX and Takumi nodes without refactoring the codebase.
-
 <Callout>
 This guide is for people plan to use Takumi in Next.js, if you are looking for WASM bindings, check out [Use Takumi in Browser (WASM)](/docs/getting-started/wasm-web) instead.
 </Callout>
@@ -14,7 +12,7 @@ This guide is for people plan to use Takumi in Next.js, if you are looking for W
 ## Installation
 
 ```npm
-npm i @takumi-rs/core @takumi-rs/helpers
+npm i @takumi-rs/core @takumi-rs/helpers @takumi-rs/image-response
 ```
 
 ## `next.config.ts`
@@ -29,16 +27,12 @@ export const config = {
 
 ## The `route.ts`
 
-<Callout>
-Might be a `ImageResponse` breaking change in the future.
-</Callout>
-
 ```diff
 - import { ImageResponse } from "next/og";
-+ import { fromJsx } from "@takumi-rs/helpers/jsx";
-+ import { Renderer } from "@takumi-rs/core";
++ import ImageResponse from "@takumi-rs/image-response";
 
-+ // You can use variable fonts with Takumi!
+// Takumi comes with full axis Geist and Geist Mono by default, 
+// if this is what you want, you can just remove fonts array.
 const fonts = [
   {
     name: "Inter",
@@ -56,29 +50,13 @@ function OgImage({ title }: { title: string }) {
   );
 }
 
-+ const renderer = new Renderer({
-+  fonts,
-+ });
-
 export function GET(request: Request) {
--  return ImageResponse(<OgImage title="Satori" />, {
--   width: 1200,
--   height: 630,
--   fonts,
-- });
-
-+  const node = await fromJsx(<OgImage title="Takumi" />);
-+  const webp = await renderer.renderAsync(node, {
-+    width: 1200,
-+    height: 630,
-+    format: "webp",
-+  });
-
-+  return new Response(webp as BodyInit, {
-+    headers: {
-+      "Content-Type": "image/webp",
-+    },
-+  });
+  return ImageResponse(<OgImage title="Next.js" />, {
+   width: 1200,
+   height: 630,
+   fonts,
+ });
+}
 ```
 
 Now you have an `GET` handler with Takumi setup!

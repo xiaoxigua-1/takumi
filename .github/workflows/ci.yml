@@ -266,6 +266,96 @@ jobs:
             takumi-napi-core/index.d.ts
           if-no-files-found: error
 
+  build-image-response:
+    name: Build @takumi-rs/image-response
+    runs-on: ubuntu-latest
+    needs: [build-helpers, build-napi]
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Download helpers artifact
+        uses: actions/download-artifact@v5
+        with:
+          name: helpers-dist
+          path: takumi-helpers/dist
+
+      - name: Download N-API bindings artifact
+        uses: actions/download-artifact@v5
+        with:
+          name: bindings-x86_64-unknown-linux-gnu
+          path: takumi-napi-core
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile --filter ./takumi-image-response
+
+      - name: Build image-response
+        working-directory: takumi-image-response
+        run: bun run build
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-response-dist
+          path: takumi-image-response/dist
+          if-no-files-found: error
+
+  test-image-response:
+    name: Test @takumi-rs/image-response
+    runs-on: ubuntu-latest
+    needs: build-image-response
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Download helpers artifact
+        uses: actions/download-artifact@v5
+        with:
+          name: helpers-dist
+          path: takumi-helpers/dist
+
+      - name: Download N-API bindings artifact
+        uses: actions/download-artifact@v5
+        with:
+          name: bindings-x86_64-unknown-linux-gnu
+          path: takumi-napi-core
+
+      - name: Download image-response artifact
+        uses: actions/download-artifact@v5
+        with:
+          name: image-response-dist
+          path: takumi-image-response/dist
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile --filter ./takumi-image-response
+
+      - name: Test image-response
+        working-directory: takumi-image-response
+        run: bun test
+
+  version-check-image-response:
+    name: Check version for @takumi-rs/image-response
+    if: github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    outputs:
+      exists: ${{ steps.check.outputs.exists }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - uses: ./.github/actions/npm-version-exists-check
+        id: check
+        with:
+          working_directory: takumi-image-response
+
   test-napi:
     needs: build-napi
     name: Test @takumi-rs/core for ${{ matrix.settings.target }}
@@ -482,6 +572,27 @@ jobs:
           npm_token: ${{ secrets.NPM_TOKEN }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
+  publish-image-response:
+    name: Publish @takumi-rs/image-response
+    needs: [build-image-response, test-image-response, version-check-image-response]
+    if: github.ref == 'refs/heads/master' && needs.version-check-image-response.outputs.exists == 'false'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Download artifact
+        uses: actions/download-artifact@v5
+        with:
+          name: image-response-dist
+          path: takumi-image-response/dist
+
+      - name: Publish
+        uses: ./.github/actions/publish-npm
+        with:
+          working_directory: takumi-image-response
+          npm_token: ${{ secrets.NPM_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
   publish-crate:
     name: Publish takumi to crate.io
     runs-on: ubuntu-latest
@@ -559,7 +670,7 @@ jobs:
   pass-test:
     name: Pass Test
     runs-on: ubuntu-latest
-    needs: [biome-lint, test-rust, test-napi, test-wasm, test-helpers]
+    needs: [biome-lint, test-rust, test-napi, test-wasm, test-helpers, test-image-response]
     if: always()
-    steps: 
+    steps:
       - run: echo "Pass test"

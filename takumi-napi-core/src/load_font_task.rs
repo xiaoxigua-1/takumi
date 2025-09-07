@@ -9,7 +9,7 @@ use crate::FontInputOwned;
 
 pub struct LoadFontTask {
   pub context: Arc<GlobalContext>,
-  pub buffers: Vec<FontInputOwned>,
+  pub(crate) buffers: Vec<FontInputOwned>,
 }
 
 impl Task for LoadFontTask {
