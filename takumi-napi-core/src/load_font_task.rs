@@ -1,10 +1,15 @@
 use napi::bindgen_prelude::*;
 use std::sync::Arc;
-use takumi::GlobalContext;
+use takumi::{
+  GlobalContext,
+  parley::{FontWeight, fontique::FontInfoOverride},
+};
+
+use crate::FontInputOwned;
 
 pub struct LoadFontTask {
   pub context: Arc<GlobalContext>,
-  pub buffers: Vec<Buffer>,
+  pub buffers: Vec<FontInputOwned>,
 }
 
 impl Task for LoadFontTask {
@@ -19,7 +24,21 @@ impl Task for LoadFontTask {
     let mut loaded_count = 0;
 
     for buffer in &self.buffers {
-      if self.context.font_context.load_and_store(buffer).is_ok() {
+      if self
+        .context
+        .font_context
+        .load_and_store(
+          &buffer.data,
+          Some(FontInfoOverride {
+            family_name: buffer.name.as_deref(),
+            width: None,
+            style: buffer.style.map(Into::into),
+            weight: buffer.weight.map(|weight| FontWeight::new(weight as f32)),
+            axes: None,
+          }),
+        )
+        .is_ok()
+      {
         loaded_count += 1;
       }
     }

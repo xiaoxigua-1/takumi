@@ -32,7 +32,7 @@ impl<'de> Deserialize<'de> for FontWeight {
       type Value = FontWeight;
 
       fn expecting(&self, formatter: &mut Formatter) -> std::fmt::Result {
-        formatter.write_str(r#""bold", "normal" or number from 0 to 1000"#)
+        formatter.write_str(r#""normal", "bold" or number from 0 to 1000"#)
       }
 
       fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
@@ -49,6 +49,13 @@ impl<'de> Deserialize<'de> for FontWeight {
         E: serde::de::Error,
       {
         Ok(FontWeight(ParleyFontWeight::new(v)))
+      }
+
+      fn visit_i64<E>(self, v: i64) -> Result<Self::Value, E>
+      where
+        E: serde::de::Error,
+      {
+        Ok(FontWeight(ParleyFontWeight::new(v as f32)))
       }
     }
 

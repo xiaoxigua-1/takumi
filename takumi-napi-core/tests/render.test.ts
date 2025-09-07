@@ -3,7 +3,26 @@ import { container, image, percentage, rem, text } from "@takumi-rs/helpers";
 import { Glob } from "bun";
 import { Renderer } from "../index";
 
-const renderer = new Renderer();
+const glob = new Glob("../assets/fonts/**/*.{woff2,ttf}");
+const files = await Array.fromAsync(glob.scan());
+
+const fontBuffers = await Promise.all(
+  files.map(async (file) => Buffer.from(await Bun.file(file).arrayBuffer())),
+);
+
+const renderer = new Renderer({
+  fonts: [
+    {
+      data: Buffer.from(
+        await Bun.file(
+          "../assets/fonts/plus-jakarta-sans/PlusJakartaSans-VariableFont_wght.woff2",
+        ).arrayBuffer(),
+      ),
+      name: "Plus Jakarta Sans",
+      style: "normal",
+    },
+  ],
+});
 
 const remoteUrl = "https://yeecord.com/img/logo.png";
 const localImagePath = "../assets/images/yeecord.png";
@@ -88,16 +107,7 @@ test("no crash without fonts and images", () => {
 
 describe("setup", () => {
   test("loadFontsAsync", async () => {
-    const glob = new Glob("../assets/fonts/**/*.{woff2,ttf}");
-    const files = await Array.fromAsync(glob.scan());
-
-    const buffers = await Promise.all(
-      files.map(async (file) =>
-        Buffer.from(await Bun.file(file).arrayBuffer()),
-      ),
-    );
-
-    const count = await renderer.loadFontsAsync(buffers);
+    const count = await renderer.loadFontsAsync(fontBuffers);
     expect(count).toBe(files.length);
   });
 

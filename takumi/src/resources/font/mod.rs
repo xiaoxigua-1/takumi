@@ -5,7 +5,7 @@ use std::{
 
 use parley::{
   Layout, LayoutContext, RangedBuilder, Run,
-  fontique::{Blob, FallbackKey, Script},
+  fontique::{Blob, FallbackKey, FontInfoOverride, Script},
 };
 use swash::{
   FontRef,
@@ -162,7 +162,7 @@ impl FontContext {
     let inner = Self::new();
 
     for font in EMBEDDED_FONTS {
-      inner.load_and_store(font).unwrap();
+      inner.load_and_store(font, None).unwrap();
     }
 
     inner
@@ -177,7 +177,11 @@ impl FontContext {
   }
 
   /// Loads font into internal font db
-  pub fn load_and_store(&self, source: &[u8]) -> Result<(), FontError> {
+  pub fn load_and_store(
+    &self,
+    source: &[u8],
+    info_override: Option<FontInfoOverride<'_>>,
+  ) -> Result<(), FontError> {
     let font_data = Blob::new(Arc::new(match load_font(source, None)? {
       Cow::Owned(vec) => vec,
       Cow::Borrowed(slice) => slice.to_vec(),
@@ -185,7 +189,7 @@ impl FontContext {
 
     let mut lock = self.layout.lock().unwrap();
 
-    let fonts = lock.0.collection.register_fonts(font_data, None);
+    let fonts = lock.0.collection.register_fonts(font_data, info_override);
 
     for (family, _) in fonts {
       for (script, _) in Script::all_samples() {

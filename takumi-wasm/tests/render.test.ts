@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { container, image, percentage, rem, text } from "@takumi-rs/helpers";
 import { Glob } from "bun";
-import init, { ImageOutputFormat, Renderer } from "../pkg/takumi_wasm";
+import init, { Renderer } from "../pkg/takumi_wasm";
 
 await init({
   module_or_path: readFile("./pkg/takumi_wasm_bg.wasm"),
@@ -68,31 +68,25 @@ describe("setup", () => {
 
 describe("render", () => {
   test("webp", () => {
-    const result = renderer.render(node, 1200, 630, ImageOutputFormat.WebP);
+    const result = renderer.render(node, 1200, 630, "webp");
 
     expect(result).toBeInstanceOf(Uint8Array);
   });
 
   test("png", () => {
-    const result = renderer.render(node, 1200, 630, ImageOutputFormat.Png);
+    const result = renderer.render(node, 1200, 630, "png");
 
     expect(result).toBeInstanceOf(Uint8Array);
   });
 
   test("jpeg 75%", () => {
-    const result = renderer.render(node, 1200, 630, ImageOutputFormat.Jpeg, 75);
+    const result = renderer.render(node, 1200, 630, "jpeg", 75);
 
     expect(result).toBeInstanceOf(Uint8Array);
   });
 
   test("jpeg 100%", () => {
-    const result = renderer.render(
-      node,
-      1200,
-      630,
-      ImageOutputFormat.Jpeg,
-      100,
-    );
+    const result = renderer.render(node, 1200, 630, "jpeg", 100);
 
     expect(result).toBeInstanceOf(Uint8Array);
   });
@@ -107,37 +101,21 @@ describe("renderAsDataUrl", () => {
   });
 
   test("webp format", () => {
-    const result = renderer.renderAsDataUrl(
-      node,
-      1200,
-      630,
-      ImageOutputFormat.WebP,
-    );
+    const result = renderer.renderAsDataUrl(node, 1200, 630, "webp");
 
     expect(result).toMatch(/^data:image\/webp;base64,/);
     expect(result.length).toBeGreaterThan(100);
   });
 
   test("jpeg format with quality", () => {
-    const result = renderer.renderAsDataUrl(
-      node,
-      1200,
-      630,
-      ImageOutputFormat.Jpeg,
-      75,
-    );
+    const result = renderer.renderAsDataUrl(node, 1200, 630, "jpeg", 75);
 
     expect(result).toMatch(/^data:image\/jpeg;base64,/);
     expect(result.length).toBeGreaterThan(100);
   });
 
   test("png format explicit", () => {
-    const result = renderer.renderAsDataUrl(
-      node,
-      1200,
-      630,
-      ImageOutputFormat.Png,
-    );
+    const result = renderer.renderAsDataUrl(node, 1200, 630, "png");
 
     expect(result).toMatch(/^data:image\/png;base64,/);
     expect(result.length).toBeGreaterThan(100);

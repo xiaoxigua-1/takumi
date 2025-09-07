@@ -3,13 +3,14 @@ use napi_derive::napi;
 use takumi::{
   GlobalContext,
   layout::{Viewport, node::NodeKind},
+  parley::{FontWeight, fontique::FontInfoOverride},
   rendering::{ImageOutputFormat, render, write_image},
   resources::{font::FontContext, image::load_image_source_from_bytes},
 };
 
 use crate::{
-  load_font_task::LoadFontTask, put_persistent_image_task::PutPersistentImageTask,
-  render_task::RenderTask,
+  FontInput, FontInputOwned, load_font_task::LoadFontTask,
+  put_persistent_image_task::PutPersistentImageTask, render_task::RenderTask,
 };
 use std::{io::Cursor, sync::Arc};
 
@@ -64,14 +65,17 @@ pub struct PersistentImage<'ctx> {
 pub struct ConstructRendererOptions<'ctx> {
   pub debug: Option<bool>,
   pub persistent_images: Option<Vec<PersistentImage<'ctx>>>,
-  pub fonts: Option<Vec<BufferSlice<'ctx>>>,
+  #[napi(
+    ts_type = "({ name?: string, data: Buffer, weight?: number, style?: 'normal' | 'italic' | 'oblique' } | Buffer)[] | undefined"
+  )]
+  pub fonts: Option<Vec<Object<'ctx>>>,
   pub load_default_fonts: Option<bool>,
 }
 
 #[napi]
 impl Renderer {
   #[napi(constructor)]
-  pub fn new(options: Option<ConstructRendererOptions>) -> Self {
+  pub fn new(env: Env, options: Option<ConstructRendererOptions>) -> Self {
     let options = options.unwrap_or_default();
 
     let renderer = Self(Arc::new(GlobalContext {
@@ -100,7 +104,34 @@ impl Renderer {
 
     if let Some(fonts) = options.fonts {
       for font in fonts {
-        renderer.0.font_context.load_and_store(&font).unwrap();
+        if font.is_buffer().unwrap() {
+          // SAFETY: We know the font is a buffer
+          let buffer = unsafe { BufferSlice::from_napi_value(env.raw(), font.raw()).unwrap() };
+
+          renderer
+            .0
+            .font_context
+            .load_and_store(&buffer, None)
+            .unwrap();
+
+          continue;
+        }
+
+        let font: FontInput = unsafe { FontInput::from_napi_value(env.raw(), font.raw()).unwrap() };
+
+        let font_override = FontInfoOverride {
+          family_name: font.name.as_deref(),
+          style: font.style.map(Into::into),
+          weight: font.weight.map(|weight| FontWeight::new(weight as f32)),
+          axes: None,
+          width: None,
+        };
+
+        renderer
+          .0
+          .font_context
+          .load_and_store(&font.data, Some(font_override))
+          .unwrap();
       }
     }
 
@@ -129,27 +160,46 @@ impl Renderer {
     )
   }
 
-  #[napi(ts_return_type = "Promise<number>")]
+  #[napi(
+    ts_args_type = "data: { name?: string, data: Buffer, weight?: number, style?: 'normal' | 'italic' | 'oblique' } | Buffer, signal?: AbortSignal",
+    ts_return_type = "Promise<number>"
+  )]
   pub fn load_font_async(
     &self,
-    data: Buffer,
+    env: Env,
+    data: Object,
     signal: Option<AbortSignal>,
   ) -> AsyncTask<LoadFontTask> {
-    AsyncTask::with_optional_signal(
-      LoadFontTask {
-        context: Arc::clone(&self.0),
-        buffers: vec![data],
-      },
-      signal,
-    )
+    self.load_fonts_async(env, vec![data], signal)
   }
 
-  #[napi(ts_return_type = "Promise<number>")]
+  #[napi(
+    ts_args_type = "fonts: ({ name?: string, data: Buffer, weight?: number, style?: 'normal' | 'italic' | 'oblique' } | Buffer)[], signal?: AbortSignal",
+    ts_return_type = "Promise<number>"
+  )]
   pub fn load_fonts_async(
     &self,
-    fonts: Vec<Buffer>,
+    env: Env,
+    fonts: Vec<Object>,
     signal: Option<AbortSignal>,
   ) -> AsyncTask<LoadFontTask> {
+    let fonts = fonts
+      .into_iter()
+      .map(|font| {
+        if font.is_buffer().unwrap() {
+          FontInputOwned {
+            name: None,
+            // SAFETY: We know the font is a buffer
+            data: unsafe { Buffer::from_napi_value(env.raw(), font.raw()).unwrap() },
+            weight: None,
+            style: None,
+          }
+        } else {
+          unsafe { FontInputOwned::from_napi_value(env.raw(), font.raw()).unwrap() }
+        }
+      })
+      .collect();
+
     AsyncTask::with_optional_signal(
       LoadFontTask {
         context: Arc::clone(&self.0),

@@ -6,6 +6,7 @@ use takumi::{
   GlobalContext,
   image::load_from_memory,
   layout::{Viewport, node::NodeKind},
+  parley::{FontWeight, fontique::FontInfoOverride},
   rendering::{render, write_image},
   resources::image::ImageSource,
 };
@@ -32,17 +33,44 @@ extern "C" {
 #[wasm_bindgen]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ImageOutputFormat {
-  WebP,
-  Png,
-  Jpeg,
+  WebP = "webp",
+  Png = "png",
+  Jpeg = "jpeg",
+}
+
+#[wasm_bindgen]
+pub struct FontInfo {
+  name: Option<String>,
+  data: Vec<u8>,
+  weight: Option<f64>,
+  style: Option<FontStyle>,
+}
+
+#[wasm_bindgen]
+pub enum FontStyle {
+  Normal = "normal",
+  Italic = "italic",
+  Oblique = "oblique",
+}
+
+impl From<FontStyle> for takumi::parley::FontStyle {
+  fn from(style: FontStyle) -> Self {
+    match style {
+      FontStyle::Italic => takumi::parley::FontStyle::Italic,
+      FontStyle::Oblique => takumi::parley::FontStyle::Oblique(None),
+      FontStyle::Normal | FontStyle::__Invalid => takumi::parley::FontStyle::Normal,
+    }
+  }
 }
 
 impl From<ImageOutputFormat> for takumi::rendering::ImageOutputFormat {
   fn from(format: ImageOutputFormat) -> Self {
     match format {
       ImageOutputFormat::WebP => takumi::rendering::ImageOutputFormat::WebP,
-      ImageOutputFormat::Png => takumi::rendering::ImageOutputFormat::Png,
       ImageOutputFormat::Jpeg => takumi::rendering::ImageOutputFormat::Jpeg,
+      ImageOutputFormat::Png | ImageOutputFormat::__Invalid => {
+        takumi::rendering::ImageOutputFormat::Png
+      }
     }
   }
 }
@@ -64,9 +92,33 @@ impl Renderer {
     }
   }
 
+  #[wasm_bindgen(js_name = loadFontWithInfo)]
+  pub fn load_font_with_info(&self, font_data: FontInfo) {
+    self
+      .context
+      .font_context
+      .load_and_store(
+        &font_data.data,
+        Some(FontInfoOverride {
+          family_name: font_data.name.as_deref(),
+          style: font_data.style.map(Into::into),
+          weight: font_data
+            .weight
+            .map(|weight| FontWeight::new(weight as f32)),
+          axes: None,
+          width: None,
+        }),
+      )
+      .unwrap();
+  }
+
   #[wasm_bindgen(js_name = loadFont)]
-  pub fn load_font(&self, font_data: &[u8]) {
-    self.context.font_context.load_and_store(font_data).unwrap();
+  pub fn load_font(&self, buffer: &[u8]) {
+    self
+      .context
+      .font_context
+      .load_and_store(buffer, None)
+      .unwrap();
   }
 
   #[wasm_bindgen(js_name = putPersistentImage)]

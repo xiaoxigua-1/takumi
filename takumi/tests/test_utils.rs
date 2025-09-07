@@ -22,23 +22,26 @@ fn create_test_context() -> GlobalContext {
 
   context
     .font_context
-    .load_and_store(include_bytes!(
-      "../../assets/fonts/noto-sans/NotoSans-Regular.ttf"
-    ))
+    .load_and_store(
+      include_bytes!("../../assets/fonts/noto-sans/NotoSans-Regular.ttf"),
+      None,
+    )
     .unwrap();
 
   context
     .font_context
-    .load_and_store(include_bytes!(
-      "../../assets/fonts/noto-sans/NotoSans-Medium.ttf"
-    ))
+    .load_and_store(
+      include_bytes!("../../assets/fonts/noto-sans/NotoSans-Medium.ttf"),
+      None,
+    )
     .unwrap();
 
   context
     .font_context
-    .load_and_store(include_bytes!(
-      "../../assets/fonts/noto-sans/NotoColorEmoji.ttf"
-    ))
+    .load_and_store(
+      include_bytes!("../../assets/fonts/noto-sans/NotoColorEmoji.ttf"),
+      None,
+    )
     .unwrap();
 
   context

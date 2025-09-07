@@ -9,6 +9,7 @@ function createNode() {
     props: {
       style: {
         width: "1200px",
+        fontFamily: "Geist",
         height: "630px",
         display: "flex",
         alignItems: "center",
@@ -45,10 +46,13 @@ function createNode() {
                   style: {
                     color: "#000",
                     fontSize: "26px",
+                    fontWeight: "300",
+                    width: "100%",
+                    paddingRight: "1em",
                     lineHeight: "1.4",
                   },
                   children:
-                    "Learn how to integrate LIB_NAME into your Next.js application with this step-by-step guide. Well cover installation, configuration, and basic usage.",
+                    "Learn how to integrate Takumi into your Next.js application with this step-by-step guide. Well cover installation, configuration, and basic usage.",
                 },
               },
               {
@@ -63,7 +67,7 @@ function createNode() {
                     borderColor: "#888",
                     borderRadius: "10px",
                   },
-                  children: "npx LIB_NAME",
+                  children: "bun add @takumi-rs/core",
                 },
               },
             ],
@@ -76,6 +80,7 @@ function createNode() {
               display: "flex",
               flex: "1",
               height: "100%",
+              width: "100vw",
               alignItems: "center",
               justifyContent: "center",
               backgroundImage:
@@ -90,6 +95,7 @@ function createNode() {
                     display: "flex",
                     flexDirection: "column",
                     flex: "1",
+                    width: "100%",
                     borderWidth: "2px",
                     borderColor: "#ccc",
                     borderRadius: "10px",
@@ -116,6 +122,7 @@ function createNode() {
                         style: {
                           color: "#333",
                           fontSize: "16px",
+                          fontWeight: "300",
                         },
                         children:
                           "This site uses cookies to improve your browsing experience, analyze site traffic, and show personalized content.",
@@ -126,13 +133,11 @@ function createNode() {
                       props: {
                         style: {
                           display: "flex",
-                          justifyContent: "flex-start",
                           gap: "10px",
                           marginTop: "20px",
                           paddingTop: "20px",
-                          borderTopWidth: "1px",
-                          borderTopColor: "#ccc",
                           width: "100%",
+                          fontWeight: 500,
                         },
                         children: [
                           {
@@ -215,7 +220,7 @@ summary(() => {
 
 if (process.argv.includes("--write")) {
   await writeFile(
-    "output.png",
+    "tests/bench/bench.png",
     renderer.render(await createNode(), {
       width: 1200,
       height: 630,
