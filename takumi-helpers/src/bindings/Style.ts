@@ -12,7 +12,9 @@ import type { Display } from "./Display";
 import type { FlexDirection } from "./FlexDirection";
 import type { FlexWrap } from "./FlexWrap";
 import type { FontFamily } from "./FontFamily";
+import type { FontFeatureSettings } from "./FontFeatureSettings";
 import type { FontStyle } from "./FontStyle";
+import type { FontVariationSettings } from "./FontVariationSettings";
 import type { FontWeight } from "./FontWeight";
 import type { Gap } from "./Gap";
 import type { GridAutoFlow } from "./GridAutoFlow";
@@ -346,6 +348,14 @@ lineHeight?: LineHeight,
  * Font weight for text rendering.
  */
 fontWeight?: FontWeight, 
+/**
+ * Controls variable font axis values via CSS font-variation-settings property.
+ */
+fontVariationSettings?: FontVariationSettings, 
+/**
+ * Controls OpenType font features via CSS font-feature-settings property.
+ */
+fontFeatureSettings?: FontFeatureSettings, 
 /**
  * Maximum number of lines for text before truncation.
  */

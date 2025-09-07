@@ -2,7 +2,9 @@
 import type { BoxSizing } from "./BoxSizing";
 import type { Color } from "./Color";
 import type { FontFamily } from "./FontFamily";
+import type { FontFeatureSettings } from "./FontFeatureSettings";
 import type { FontStyle } from "./FontStyle";
+import type { FontVariationSettings } from "./FontVariationSettings";
 import type { FontWeight } from "./FontWeight";
 import type { ImageScalingAlgorithm } from "./ImageScalingAlgorithm";
 import type { LengthUnit } from "./LengthUnit";
@@ -57,6 +59,14 @@ lineHeight?: LineHeight,
  * Font weight for text rendering.
  */
 fontWeight?: FontWeight, 
+/**
+ * Controls variable font axis values via CSS font-variation-settings property.
+ */
+fontVariationSettings?: FontVariationSettings, 
+/**
+ * Controls OpenType font features via CSS font-feature-settings property.
+ */
+fontFeatureSettings?: FontFeatureSettings, 
 /**
  * Maximum number of lines for text before truncation.
  */
