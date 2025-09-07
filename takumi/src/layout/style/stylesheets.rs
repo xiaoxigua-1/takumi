@@ -20,6 +20,10 @@ pub struct ResolvedFontStyle {
   pub font_weight: parley::FontWeight,
   /// Font slant style (normal, italic, oblique).
   pub font_style: parley::FontStyle,
+  /// Controls variable font axis values for advanced typography.
+  pub font_variation_settings: Option<FontVariationSettings>,
+  /// Controls OpenType font features for advanced typography.
+  pub font_feature_settings: Option<FontFeatureSettings>,
   /// Maximum number of lines for text before truncation.
   pub line_clamp: Option<u32>,
   /// Font family for text rendering.
@@ -287,6 +291,10 @@ pub struct InheritableStyle {
   pub line_height: Option<LineHeight>,
   /// Font weight for text rendering.
   pub font_weight: Option<FontWeight>,
+  /// Controls variable font axis values via CSS font-variation-settings property.
+  pub font_variation_settings: Option<FontVariationSettings>,
+  /// Controls OpenType font features via CSS font-feature-settings property.
+  pub font_feature_settings: Option<FontFeatureSettings>,
   /// Maximum number of lines for text before truncation.
   pub line_clamp: Option<u32>,
   /// Text alignment within the element.
@@ -550,6 +558,8 @@ impl Style {
         .unwrap_or_default()
         .into(),
       font_style: self.inheritable_style.font_style.unwrap_or_default().into(),
+      font_variation_settings: self.inheritable_style.font_variation_settings.clone(),
+      font_feature_settings: self.inheritable_style.font_feature_settings.clone(),
       line_clamp: self.inheritable_style.line_clamp,
       font_family: self.inheritable_style.font_family.clone(),
       letter_spacing: self

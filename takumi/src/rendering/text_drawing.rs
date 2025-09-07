@@ -6,7 +6,7 @@ use parley::{Glyph, PositionedLayoutItem, StyleProperty};
 use swash::{
   Setting,
   scale::{Scaler, StrikeWith},
-  tag_from_bytes,
+  tag_from_bytes, tag_from_str_lossy,
 };
 use taffy::{Layout, Point, Size};
 use zeno::{Command, Mask, PathData, Placement};
@@ -334,12 +334,45 @@ pub(crate) fn create_text_layout(
     builder.push_default(StyleProperty::LineHeight(font_style.line_height));
     builder.push_default(StyleProperty::FontWeight(font_style.font_weight));
     builder.push_default(StyleProperty::FontStyle(font_style.font_style));
-    builder.push_default(StyleProperty::FontVariations(parley::FontSettings::List(
-      Cow::Borrowed(&[Setting {
+
+    if let Some(font_variation_settings) = font_style.font_variation_settings.as_ref() {
+      builder.push_default(StyleProperty::FontVariations(parley::FontSettings::List(
+        Cow::Owned(
+          font_variation_settings
+            .0
+            .iter()
+            .map(|setting| Setting {
+              tag: tag_from_str_lossy(setting.axis.as_str()),
+              value: setting.value,
+            })
+            .collect::<Vec<_>>(),
+        ),
+      )));
+    } else {
+      let variable_font_setting = Setting {
         tag: VARIABLE_FONT_WEIGHT_TAG,
         value: font_style.font_weight.value(),
-      }]),
-    )));
+      };
+
+      builder.push_default(StyleProperty::FontVariations(parley::FontSettings::List(
+        Cow::Borrowed(&[variable_font_setting]),
+      )));
+    }
+
+    if let Some(font_feature_settings) = font_style.font_feature_settings.as_ref() {
+      builder.push_default(StyleProperty::FontFeatures(parley::FontSettings::List(
+        Cow::Owned(
+          font_feature_settings
+            .0
+            .iter()
+            .map(|setting| Setting {
+              tag: tag_from_str_lossy(setting.tag.as_str()),
+              value: setting.value,
+            })
+            .collect::<Vec<_>>(),
+        ),
+      )));
+    }
 
     if let Some(font_family) = font_style.font_family.as_ref() {
       builder.push_default(StyleProperty::FontStack(font_family.into()));
