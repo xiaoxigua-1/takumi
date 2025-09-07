@@ -26,7 +26,7 @@ static SHARED_GLOBAL_CONTEXT: LazyLock<GlobalContext> = LazyLock::new(|| {
 
   global_context
     .font_context
-    .load_and_store(NOTO_SANS_REGULAR_BUFFER, None)
+    .load_and_store(NOTO_SANS_REGULAR_BUFFER, None, None)
     .unwrap();
 
   global_context

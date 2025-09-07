@@ -4,7 +4,7 @@ use std::{
 };
 
 use parley::{
-  Layout, LayoutContext, RangedBuilder, Run,
+  GenericFamily, Layout, LayoutContext, RangedBuilder, Run,
   fontique::{Blob, FallbackKey, FontInfoOverride, Script},
 };
 use swash::{
@@ -91,14 +91,16 @@ fn guess_font_format(source: &[u8]) -> Result<FontFormat, FontError> {
 
 /// Embedded fonts
 #[cfg(feature = "embed_fonts")]
-const EMBEDDED_FONTS: &[(&[u8], &str)] = &[
+const EMBEDDED_FONTS: &[(&[u8], &str, GenericFamily)] = &[
   (
     include_bytes!("../../../../assets/fonts/geist/Geist[wght].woff2"),
     "Geist",
+    GenericFamily::SansSerif,
   ),
   (
     include_bytes!("../../../../assets/fonts/geist/GeistMono[wght].woff2"),
     "Geist Mono",
+    GenericFamily::Monospace,
   ),
 ];
 
@@ -168,7 +170,7 @@ impl FontContext {
   pub fn new_with_default_fonts() -> Self {
     let inner = Self::new();
 
-    for (font, name) in EMBEDDED_FONTS {
+    for (font, name, generic) in EMBEDDED_FONTS {
       inner
         .load_and_store(
           font,
@@ -176,6 +178,7 @@ impl FontContext {
             family_name: Some(name),
             ..Default::default()
           }),
+          Some(*generic),
         )
         .unwrap();
     }
@@ -196,6 +199,7 @@ impl FontContext {
     &self,
     source: &[u8],
     info_override: Option<FontInfoOverride<'_>>,
+    generic_family: Option<GenericFamily>,
   ) -> Result<(), FontError> {
     let font_data = Blob::new(Arc::new(match load_font(source, None)? {
       Cow::Owned(vec) => vec,
@@ -207,6 +211,13 @@ impl FontContext {
     let fonts = lock.0.collection.register_fonts(font_data, info_override);
 
     for (family, _) in fonts {
+      if let Some(generic_family) = generic_family {
+        lock
+          .0
+          .collection
+          .append_generic_families(generic_family, std::iter::once(family));
+      }
+
       for (script, _) in Script::all_samples() {
         lock
           .0

@@ -1,6 +1,7 @@
 use std::{path::Path, sync::Arc};
 
 use image::{ColorType::Rgba8, load_from_memory, save_buffer};
+use parley::GenericFamily;
 use takumi::{
   GlobalContext,
   layout::{Viewport, node::NodeKind},
@@ -25,6 +26,7 @@ fn create_test_context() -> GlobalContext {
     .load_and_store(
       include_bytes!("../../assets/fonts/noto-sans/NotoColorEmoji.ttf"),
       None,
+      Some(GenericFamily::Emoji),
     )
     .unwrap();
 

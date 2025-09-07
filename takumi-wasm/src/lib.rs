@@ -108,6 +108,7 @@ impl Renderer {
           axes: None,
           width: None,
         }),
+        None,
       )
       .unwrap();
   }
@@ -117,7 +118,7 @@ impl Renderer {
     self
       .context
       .font_context
-      .load_and_store(buffer, None)
+      .load_and_store(buffer, None, None)
       .unwrap();
   }
 

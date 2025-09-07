@@ -111,7 +111,7 @@ impl Renderer {
           renderer
             .0
             .font_context
-            .load_and_store(&buffer, None)
+            .load_and_store(&buffer, None, None)
             .unwrap();
 
           continue;
@@ -130,7 +130,7 @@ impl Renderer {
         renderer
           .0
           .font_context
-          .load_and_store(&font.data, Some(font_override))
+          .load_and_store(&font.data, Some(font_override), None)
           .unwrap();
       }
     }

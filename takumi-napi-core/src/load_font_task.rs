@@ -36,6 +36,7 @@ impl Task for LoadFontTask {
             weight: buffer.weight.map(|weight| FontWeight::new(weight as f32)),
             axes: None,
           }),
+          None,
         )
         .is_ok()
       {
