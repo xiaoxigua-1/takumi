@@ -17,7 +17,7 @@
     "lint": "biome ci ."
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.2.2",
+    "@biomejs/biome": "^2.2.3",
     "simple-git-hooks": "^2.13.1"
   },
   "trustedDependencies": [
