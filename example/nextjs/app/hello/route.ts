@@ -1,6 +1,7 @@
-import { createComponent, createRenderer } from "~/lib/create-renderer";
+import { Renderer } from "@takumi-rs/core";
+import { createComponent } from "~/lib/create-renderer";
 
-const renderer = createRenderer();
+const renderer = new Renderer();
 
 export async function GET(request: Request) {
   const url = new URL(request.url);

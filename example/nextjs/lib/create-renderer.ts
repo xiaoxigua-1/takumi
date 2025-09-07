@@ -1,19 +1,4 @@
-import { readFile } from "node:fs/promises";
-import { Renderer } from "@takumi-rs/core";
 import { container, percentage, rem, rgba, text } from "@takumi-rs/helpers";
-
-const regular = await readFile(
-  "../../assets/fonts/noto-sans/NotoSans-Regular.ttf",
-);
-const medium = await readFile(
-  "../../assets/fonts/noto-sans/NotoSans-Medium.ttf",
-);
-
-export function createRenderer() {
-  return new Renderer({
-    fonts: [regular.buffer as ArrayBuffer, medium.buffer as ArrayBuffer],
-  });
-}
 
 export function createComponent(name: string) {
   const intl = new Intl.DateTimeFormat("en-US", {
@@ -56,13 +41,8 @@ export function createComponent(name: string) {
       text(`Hello, ${name}!`, {
         fontSize: 64,
         fontWeight: 600,
-        color: {
-          angle: 45,
-          stops: [
-            { color: 0xff0f7b, hint: 0 }, // dark text
-            { color: 0xf89b29, hint: 1 }, // lighter text
-          ],
-        },
+        maskImage: "linear-gradient(45deg, #ff0f7b 0%, #f89b29 100%)",
+        color: 0,
       }),
       text("This is a component created with Takumi!", {
         fontSize: 36,

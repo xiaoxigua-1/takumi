@@ -91,9 +91,15 @@ fn guess_font_format(source: &[u8]) -> Result<FontFormat, FontError> {
 
 /// Embedded fonts
 #[cfg(feature = "embed_fonts")]
-const EMBEDDED_FONTS: &[&[u8]] = &[
-  include_bytes!("../../../../assets/fonts/geist/GeistMono[wght].woff2"),
-  include_bytes!("../../../../assets/fonts/geist/Geist[wght].woff2"),
+const EMBEDDED_FONTS: &[(&[u8], &str)] = &[
+  (
+    include_bytes!("../../../../assets/fonts/geist/Geist[wght].woff2"),
+    "Geist",
+  ),
+  (
+    include_bytes!("../../../../assets/fonts/geist/GeistMono[wght].woff2"),
+    "Geist Mono",
+  ),
 ];
 
 /// A context for managing fonts in the rendering system.
@@ -162,8 +168,16 @@ impl FontContext {
   pub fn new_with_default_fonts() -> Self {
     let inner = Self::new();
 
-    for font in EMBEDDED_FONTS {
-      inner.load_and_store(font, None).unwrap();
+    for (font, name) in EMBEDDED_FONTS {
+      inner
+        .load_and_store(
+          font,
+          Some(FontInfoOverride {
+            family_name: Some(name),
+            ..Default::default()
+          }),
+        )
+        .unwrap();
     }
 
     inner
