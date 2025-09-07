@@ -5,7 +5,7 @@ description: Migrate from Next.js ImageResponse to Takumi with your existing com
 
 Takumi aims to create a universal image generation library that can be used in any environment and not just limited to JavaScript runtime.
 
-We still provide helper functions like [`fromJsx`](/docs/deep-dives/from-jsx-helper) to bridge the gap between JSX and Takumi nodes without refactoring the codebase.
+We provide helper functions like [`fromJsx`](/docs/deep-dives/from-jsx-helper) to bridge the gap between JSX and Takumi nodes without refactoring the codebase.
 
 <Callout>
 This guide is for people plan to use Takumi in Next.js, if you are looking for WASM bindings, check out [Use Takumi in Browser (WASM)](/docs/getting-started/wasm-web) instead.
@@ -38,9 +38,15 @@ Might be a `ImageResponse` breaking change in the future.
 + import { fromJsx } from "@takumi-rs/helpers/jsx";
 + import { Renderer } from "@takumi-rs/core";
 
-+ const renderer = new Renderer({
-+  fonts: [/* Add your font buffers */],
-+ });
++ // You can use variable fonts with Takumi!
+const fonts = [
+  {
+    name: "Inter",
+    data: await fetch("/fonts/Inter-Regular.ttf").then((res) => res.arrayBuffer()),
+    style: "normal",
+    weight: 400
+  }
+];
 
 function OgImage({ title }: { title: string }) {
   return (
@@ -50,17 +56,25 @@ function OgImage({ title }: { title: string }) {
   );
 }
 
++ const renderer = new Renderer({
++  fonts,
++ });
+
 export function GET(request: Request) {
--  return ImageResponse(<OgImage title="Satori" />);
+-  return ImageResponse(<OgImage title="Satori" />, {
+-   width: 1200,
+-   height: 630,
+-   fonts,
+- });
 
 +  const node = await fromJsx(<OgImage title="Takumi" />);
-+  const buffer = await renderer.renderAsync(node, {
++  const webp = await renderer.renderAsync(node, {
 +    width: 1200,
 +    height: 630,
-+    format: "WebP",
++    format: "webp",
 +  });
 
-+  return new Response(buffer as BodyInit, {
++  return new Response(webp as BodyInit, {
 +    headers: {
 +      "Content-Type": "image/webp",
 +    },
