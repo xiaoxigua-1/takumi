@@ -63,6 +63,8 @@ fn create_test_font_style() -> ResolvedFontStyle {
     text_transform: TextTransform::None,
     color: Color::black(),
     overflow_wrap: parley::OverflowWrap::BreakWord,
+    font_variation_settings: None,
+    font_feature_settings: None,
   }
 }
 
