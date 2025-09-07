@@ -26,6 +26,12 @@
   "scripts": {
     "build": "tsup-node src/index.ts --minify --dts --format esm,cjs --no-splitting"
   },
+  "files": [
+    "dist",
+    "package.json",
+    "README.md",
+    "tsconfig.json"
+  ],
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
