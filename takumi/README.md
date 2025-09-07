@@ -42,8 +42,8 @@ let mut node = NodeKind::Container(ContainerNode {
 // You should reuse the context to speed up the rendering.
 let context = GlobalContext::default();
 
-// Load fonts
-context.font_context.load_and_store(include_bytes!("../../assets/fonts/noto-sans/google-sans-code-v11-latin-regular.woff2"));
+// Load fonts, pass an optional [`FontInfoOverride`](parley::FontInfoOverride) to override the font's metadata
+context.font_context.load_and_store(include_bytes!("../../assets/fonts/noto-sans/google-sans-code-v11-latin-regular.woff2"), None);
 
 // Create a viewport
 let viewport = Viewport::new(1200, 630);
