@@ -51,7 +51,7 @@ function OgImage({ title }: { title: string }) {
 }
 
 export function GET(request: Request) {
-  return ImageResponse(<OgImage title="Next.js" />, {
+  return new ImageResponse(<OgImage title="Next.js" />, {
    width: 1200,
    height: 630,
    fonts,
