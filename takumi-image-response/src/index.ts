@@ -54,12 +54,28 @@ function createStream(component: ReactNode, options?: ImageResponseOptions) {
   });
 }
 
+const contentTypeMapping = {
+  webp: "image/webp",
+  avif: "image/avif",
+  png: "image/png",
+  jpeg: "image/jpeg",
+  WebP: "image/webp",
+  Jpeg: "image/jpeg",
+  Png: "image/png",
+  Avif: "image/avif",
+};
+
 export default class ImageResponse extends Response {
   constructor(component: ReactNode, options?: ImageResponseOptions) {
     const stream = createStream(component, options);
     const headers = new Headers(options?.headers);
 
-    headers.set("Content-Type", "image/webp");
+    if (!headers.get("content-type")) {
+      headers.set(
+        "content-type",
+        contentTypeMapping[options?.format ?? "webp"],
+      );
+    }
 
     if (!headers.get("cache-control")) {
       headers.set("cache-control", "public, max-age=0, must-revalidate");
