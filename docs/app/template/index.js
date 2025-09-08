@@ -1,5 +1,4 @@
 import { container, percentage } from "@takumi-rs/helpers";
-import { ImageOutputFormat } from "@takumi-rs/wasm";
 import { renderer } from "./shared/renderer";
 
 const root = container({
@@ -10,7 +9,7 @@ const root = container({
   },
 });
 
-const image = renderer.renderAsDataUrl(root, 1200, 630, ImageOutputFormat.WebP);
+const image = renderer.renderAsDataUrl(root, 1200, 630, "webp");
 
 const app = document.getElementById("app");
 

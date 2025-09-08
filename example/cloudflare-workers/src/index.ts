@@ -6,7 +6,7 @@ import {
   rgba,
   text,
 } from "@takumi-rs/helpers";
-import { ImageOutputFormat, initSync, Renderer } from "@takumi-rs/wasm";
+import { initSync, Renderer } from "@takumi-rs/wasm";
 import module from "@takumi-rs/wasm/takumi_wasm_bg.wasm";
 import medium from "../../../assets/fonts/noto-sans/noto-sans-v39-latin-500.woff2";
 import bold from "../../../assets/fonts/noto-sans/noto-sans-v39-latin-700.woff2";
@@ -63,7 +63,7 @@ export default {
       }),
       1200,
       630,
-      ImageOutputFormat.WebP,
+      "webp",
     );
 
     return new Response(webp, {

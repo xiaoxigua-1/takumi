@@ -186,8 +186,6 @@ function createOpenGraphImage(name: string) {
 Finally, render the layout to an image buffer.
 
 ```ts
-import type { ImageOutputFormat } from "@takumi-rs/wasm";
-
 const imageBuffer = await renderer.render(
   // root node
   createOpenGraphImage("John Doe"),
@@ -196,7 +194,7 @@ const imageBuffer = await renderer.render(
   // height
   630,
   // format
-  ImageOutputFormat.WebP,
+  "webp",
 );
 
 // Data URL rendering is also supported through renderer.renderAsDataUrl()

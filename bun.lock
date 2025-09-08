@@ -5,6 +5,7 @@
       "name": "takumi",
       "devDependencies": {
         "@biomejs/biome": "^2.2.3",
+        "@takumi-rs/core": "workspace:*",
         "simple-git-hooks": "^2.13.1",
       },
     },
@@ -123,6 +124,17 @@
         "@takumi-rs/helpers": "workspace:*",
         "@types/bun": "catalog:",
         "mitata": "^1.0.34",
+        "typescript": "catalog:",
+      },
+    },
+    "takumi-template": {
+      "name": "@takumi-rs/template",
+      "version": "0.29.3",
+      "devDependencies": {
+        "@takumi-rs/helpers": "workspace:*",
+        "@types/bun": "catalog:",
+        "react": "^19.1.1",
+        "react-dom": "^19.1.1",
         "typescript": "catalog:",
       },
     },
@@ -815,6 +827,8 @@
     "@takumi-rs/helpers": ["@takumi-rs/helpers@workspace:takumi-helpers"],
 
     "@takumi-rs/image-response": ["@takumi-rs/image-response@workspace:takumi-image-response"],
+
+    "@takumi-rs/template": ["@takumi-rs/template@workspace:takumi-template"],
 
     "@takumi-rs/wasm": ["@takumi-rs/wasm@workspace:takumi-wasm"],
 

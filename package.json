@@ -6,6 +6,7 @@
       "takumi-napi-core",
       "takumi-wasm",
       "takumi-image-response",
+      "takumi-template",
       "docs",
       "example/*"
     ],
@@ -19,6 +20,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.2.3",
+    "@takumi-rs/core": "workspace:*",
     "simple-git-hooks": "^2.13.1"
   },
   "trustedDependencies": [

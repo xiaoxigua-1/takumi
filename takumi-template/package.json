@@ -1,0 +1,29 @@
+{
+  "name": "@takumi-rs/template",
+  "type": "module",
+  "version": "0.29.3",
+  "author": {
+    "email": "me@kane.tw",
+    "name": "Kane Wang",
+    "url": "https://kane.tw"
+  },
+  "repository": {
+    "url": "git+https://github.com/kane50613/takumi.git"
+  },
+  "devDependencies": {
+    "@takumi-rs/helpers": "workspace:*",
+    "@types/bun": "catalog:",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "typescript": "catalog:"
+  },
+  "scripts": {
+    "build": "tsup-node src/templates/*.tsx --minify --dts --format esm,cjs --no-splitting"
+  },
+  "files": [
+    "dist",
+    "package.json",
+    "README.md",
+    "tsconfig.json"
+  ]
+}
