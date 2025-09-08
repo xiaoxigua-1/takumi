@@ -13,3 +13,4 @@ renovate.json
 tests
 artifacts
 *.rs
+src

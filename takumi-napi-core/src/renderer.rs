@@ -66,9 +66,7 @@ pub struct PersistentImage<'ctx> {
 pub struct ConstructRendererOptions<'ctx> {
   pub debug: Option<bool>,
   pub persistent_images: Option<Vec<PersistentImage<'ctx>>>,
-  #[napi(
-    ts_type = "({ name?: string, data: Buffer | ArrayBuffer, weight?: number, style?: 'normal' | 'italic' | 'oblique' } | Buffer | ArrayBuffer)[] | undefined"
-  )]
+  #[napi(ts_type = "Font[] | undefined")]
   pub fonts: Option<Vec<Object<'ctx>>>,
   pub load_default_fonts: Option<bool>,
 }
@@ -165,7 +163,7 @@ impl Renderer {
   }
 
   #[napi(
-    ts_args_type = "data: { name?: string, data: Buffer | ArrayBuffer, weight?: number, style?: 'normal' | 'italic' | 'oblique' } | Buffer | ArrayBuffer, signal?: AbortSignal",
+    ts_args_type = "data: Font, signal?: AbortSignal",
     ts_return_type = "Promise<number>"
   )]
   pub fn load_font_async(
@@ -178,7 +176,7 @@ impl Renderer {
   }
 
   #[napi(
-    ts_args_type = "fonts: ({ name?: string, data: Buffer | ArrayBuffer, weight?: number, style?: 'normal' | 'italic' | 'oblique' } | Buffer | ArrayBuffer)[], signal?: AbortSignal",
+    ts_args_type = "fonts: Font[], signal?: AbortSignal",
     ts_return_type = "Promise<number>"
   )]
   pub fn load_fonts_async(
