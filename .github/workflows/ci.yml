@@ -369,7 +369,7 @@ jobs:
   test-template:
     name: Test @takumi-rs/template
     runs-on: ubuntu-latest
-    needs: build-template
+    needs: [build-template, build-napi]
     steps:
       - uses: actions/checkout@v5
 
