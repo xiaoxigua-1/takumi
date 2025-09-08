@@ -1,20 +1,33 @@
-import { Renderer, type RenderOptions } from "@takumi-rs/core";
+import {
+  type ConstructRendererOptions,
+  type Font,
+  type PersistentImage,
+  Renderer,
+  type RenderOptions,
+} from "@takumi-rs/core";
 import { fromJsx } from "@takumi-rs/helpers/jsx";
-import type { HeadersInit } from "bun";
 import type { ReactNode } from "react";
 
-const renderer = new Renderer();
+let renderer: Renderer | undefined;
 
 const fontLoadMarker = new WeakSet<Font>();
+const persistentImageLoadMarker = new WeakSet<PersistentImage>();
 
-export type Font = Parameters<typeof renderer.loadFontAsync>[0];
-
-export type ImageResponseOptions = RenderOptions &
-  ResponseInit & {
-    headers?: HeadersInit;
+type ImageResponseOptionsWithRenderer = ResponseInit &
+  RenderOptions & {
+    renderer: Renderer;
     signal?: AbortSignal;
-    fonts?: Font[];
   };
+
+type ImageResponseOptionsWithoutRenderer = ResponseInit &
+  RenderOptions &
+  ConstructRendererOptions & {
+    signal?: AbortSignal;
+  };
+
+export type ImageResponseOptions =
+  | ImageResponseOptionsWithRenderer
+  | ImageResponseOptionsWithoutRenderer;
 
 const defaultOptions: ImageResponseOptions = {
   width: 1200,
@@ -22,7 +35,48 @@ const defaultOptions: ImageResponseOptions = {
   format: "webp",
 };
 
-export function loadFonts(fonts: Font[]) {
+async function getRenderer(options?: ImageResponseOptions) {
+  if (options && "renderer" in options) {
+    return options.renderer;
+  }
+
+  if (!renderer) {
+    renderer = new Renderer(options);
+
+    if (options?.fonts) {
+      for (const font of options.fonts) {
+        fontLoadMarker.add(font);
+      }
+    }
+
+    if (options?.persistentImages) {
+      for (const image of options.persistentImages) {
+        persistentImageLoadMarker.add(image);
+      }
+    }
+
+    return renderer;
+  }
+
+  await loadOptions(renderer, options);
+
+  return renderer;
+}
+
+async function loadOptions(
+  renderer: Renderer,
+  options?: ImageResponseOptionsWithoutRenderer,
+) {
+  await loadFonts(renderer, options?.fonts ?? []);
+
+  if (options?.persistentImages) {
+    for (const image of options.persistentImages) {
+      await putPersistentImage(renderer, image);
+    }
+  }
+}
+
+function loadFonts(renderer: Renderer, fonts: Font[]) {
   const fontsToLoad = fonts.filter((font) => !fontLoadMarker.has(font));
 
   for (const font of fontsToLoad) {
@@ -32,11 +86,21 @@ export function loadFonts(fonts: Font[]) {
   return renderer.loadFontsAsync(fontsToLoad);
 }
 
+function putPersistentImage(renderer: Renderer, image: PersistentImage) {
+  if (persistentImageLoadMarker.has(image)) {
+    return;
+  }
+
+  persistentImageLoadMarker.add(image);
+
+  return renderer.putPersistentImageAsync(image.src, image.data);
+}
+
 function createStream(component: ReactNode, options?: ImageResponseOptions) {
   return new ReadableStream({
     async start(controller) {
       try {
-        if (options?.fonts) await loadFonts(options.fonts);
+        const renderer = await getRenderer(options);
 
         const node = await fromJsx(component);
         const image = await renderer.renderAsync(

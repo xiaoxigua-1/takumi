@@ -71,3 +71,15 @@ export function GET(request: Request) {
   return new ImageResponse(<OgImage />, { fonts });
 }
 ```
+
+### Bring-Your-Own-Renderer (BYOR)
+
+If you want to use your own renderer instance, you can pass it to the `ImageResponse` constructor.
+
+```tsx
+import { Renderer } from "@takumi-rs/core";
+
+const renderer = new Renderer();
+
+new ImageResponse(<OgImage />, { renderer });
+```
