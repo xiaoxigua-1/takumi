@@ -150,54 +150,54 @@ fn draw_buffer(
 
       let run = glyph_run.run();
 
-      context.global.font_context.with_scaler(run, |scaler| {
+      let resolved_glyphs = context.global.font_context.with_scaler(run, |scaler| {
         let mut unique_glyph_ids = glyph_run.glyphs().map(|glyph| glyph.id).collect::<Vec<_>>();
 
         unique_glyph_ids.sort_unstable();
         unique_glyph_ids.dedup();
 
-        let resolved_glyphs = unique_glyph_ids
+        unique_glyph_ids
           .iter()
           .filter_map(|glyph_id| Some((*glyph_id, Arc::new(resolve_glyph(*glyph_id, scaler)?))))
-          .collect::<HashMap<u16, Arc<ResolvedGlyph>>>();
-
-        #[cfg(feature = "rayon")]
-        {
-          glyph_run
-            .positioned_glyphs()
-            .filter_map(|glyph| Some((glyph, resolved_glyphs.get(&glyph.id)?.clone())))
-            .par_bridge()
-            .for_each(|(glyph, resolved_glyph)| {
-              draw_glyph(
-                glyph,
-                &resolved_glyph,
-                canvas,
-                color,
-                layout,
-                image_fill.as_ref(),
-                context.transform,
-              );
-            });
-        }
-
-        #[cfg(not(feature = "rayon"))]
-        {
-          glyph_run
-            .positioned_glyphs()
-            .filter_map(|glyph| Some((glyph, resolved_glyphs.get(&glyph.id)?.clone())))
-            .for_each(|(glyph, resolved_glyph)| {
-              draw_glyph(
-                glyph,
-                &resolved_glyph,
-                canvas,
-                color,
-                layout,
-                image_fill.as_ref(),
-                context.transform,
-              );
-            });
-        }
+          .collect::<HashMap<u16, Arc<ResolvedGlyph>>>()
       });
+
+      #[cfg(feature = "rayon")]
+      {
+        glyph_run
+          .positioned_glyphs()
+          .filter_map(|glyph| Some((glyph, resolved_glyphs.get(&glyph.id)?.clone())))
+          .par_bridge()
+          .for_each(|(glyph, resolved_glyph)| {
+            draw_glyph(
+              glyph,
+              &resolved_glyph,
+              canvas,
+              color,
+              layout,
+              image_fill.as_ref(),
+              context.transform,
+            );
+          });
+      }
+
+      #[cfg(not(feature = "rayon"))]
+      {
+        glyph_run
+          .positioned_glyphs()
+          .filter_map(|glyph| Some((glyph, resolved_glyphs.get(&glyph.id)?.clone())))
+          .for_each(|(glyph, resolved_glyph)| {
+            draw_glyph(
+              glyph,
+              &resolved_glyph,
+              canvas,
+              color,
+              layout,
+              image_fill.as_ref(),
+              context.transform,
+            );
+          });
+      }
     }
   }
 }

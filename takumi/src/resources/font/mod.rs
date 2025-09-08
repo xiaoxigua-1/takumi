@@ -125,7 +125,7 @@ impl Default for FontContext {
 impl FontContext {
   /// Create a swash scaler and run the function with it
   /// The inner lock will be released after the function is executed
-  pub fn with_scaler(&self, run: &Run<'_, ()>, func: impl FnOnce(&mut Scaler<'_>)) {
+  pub fn with_scaler<R>(&self, run: &Run<'_, ()>, func: impl FnOnce(&mut Scaler<'_>) -> R) -> R {
     let font = run.font();
     let font_ref = FontRef::from_index(font.data.as_ref(), font.index as usize).unwrap();
 
@@ -138,7 +138,7 @@ impl FontContext {
       .variations(run.synthesis().variations().iter().copied())
       .build();
 
-    func(&mut scaler);
+    func(&mut scaler)
   }
 
   /// Access the inner context, then return the result of the function
