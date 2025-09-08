@@ -131,6 +131,7 @@
       "name": "@takumi-rs/template",
       "version": "0.29.3",
       "devDependencies": {
+        "@takumi-rs/core": "workspace:*",
         "@takumi-rs/helpers": "workspace:*",
         "@types/bun": "catalog:",
         "react": "^19.1.1",

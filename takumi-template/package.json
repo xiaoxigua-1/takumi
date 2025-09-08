@@ -11,6 +11,7 @@
     "url": "git+https://github.com/kane50613/takumi.git"
   },
   "devDependencies": {
+    "@takumi-rs/core": "workspace:*",
     "@takumi-rs/helpers": "workspace:*",
     "@types/bun": "catalog:",
     "react": "^19.1.1",
