@@ -1,15 +1,9 @@
+use std::borrow::Cow;
 use std::sync::Arc;
-use std::{borrow::Cow, collections::HashMap};
 
 use image::RgbaImage;
 use parley::{Glyph, PositionedLayoutItem, StyleProperty};
-#[cfg(feature = "rayon")]
-use rayon::iter::{ParallelBridge, ParallelIterator};
-use swash::{
-  Setting,
-  scale::{Scaler, StrikeWith, image::Image, outline::Outline},
-  tag_from_bytes,
-};
+use swash::{Setting, tag_from_bytes};
 use taffy::{Layout, Point, Size};
 use zeno::{Command, Mask, PathData, Placement};
 
@@ -22,6 +16,7 @@ use crate::{
     BorderProperties, Canvas, RenderContext, apply_mask_alpha_to_pixel, overlay_image,
     resolve_layers_tiles,
   },
+  resources::font::{CachedGlyph, ResolvedGlyph},
 };
 
 const ELLIPSIS_CHAR: &str = "…";
@@ -150,82 +145,36 @@ fn draw_buffer(
 
       let run = glyph_run.run();
 
-      let resolved_glyphs = context.global.font_context.with_scaler(run, |scaler| {
-        let mut unique_glyph_ids = glyph_run.glyphs().map(|glyph| glyph.id).collect::<Vec<_>>();
+      // Collect all glyph IDs for batch processing
+      let glyph_ids = glyph_run.positioned_glyphs().map(|glyph| glyph.id);
 
-        unique_glyph_ids.sort_unstable();
-        unique_glyph_ids.dedup();
+      // Batch resolve all glyphs in one mutex acquisition
+      let resolved_glyphs = context
+        .global
+        .font_context
+        .get_or_resolve_glyphs(run, glyph_ids);
 
-        unique_glyph_ids
-          .iter()
-          .filter_map(|glyph_id| Some((*glyph_id, Arc::new(resolve_glyph(*glyph_id, scaler)?))))
-          .collect::<HashMap<u16, Arc<ResolvedGlyph>>>()
+      // Draw each glyph using the batch-resolved cache
+      glyph_run.positioned_glyphs().for_each(|glyph| {
+        if let Some(cached_glyph) = resolved_glyphs.get(&glyph.id) {
+          draw_glyph(
+            glyph,
+            cached_glyph,
+            canvas,
+            color,
+            layout,
+            image_fill.as_ref(),
+            context.transform,
+          );
+        }
       });
-
-      #[cfg(feature = "rayon")]
-      {
-        glyph_run
-          .positioned_glyphs()
-          .filter_map(|glyph| Some((glyph, resolved_glyphs.get(&glyph.id)?.clone())))
-          .par_bridge()
-          .for_each(|(glyph, resolved_glyph)| {
-            draw_glyph(
-              glyph,
-              &resolved_glyph,
-              canvas,
-              color,
-              layout,
-              image_fill.as_ref(),
-              context.transform,
-            );
-          });
-      }
-
-      #[cfg(not(feature = "rayon"))]
-      {
-        glyph_run
-          .positioned_glyphs()
-          .filter_map(|glyph| Some((glyph, resolved_glyphs.get(&glyph.id)?.clone())))
-          .for_each(|(glyph, resolved_glyph)| {
-            draw_glyph(
-              glyph,
-              &resolved_glyph,
-              canvas,
-              color,
-              layout,
-              image_fill.as_ref(),
-              context.transform,
-            );
-          });
-      }
     }
   }
 }
 
-enum ResolvedGlyph {
-  Outline(Outline),
-  Image(Image),
-}
-
-fn resolve_glyph(glyph_id: u16, scaler: &mut Scaler<'_>) -> Option<ResolvedGlyph> {
-  if let Some(bitmap) = scaler.scale_color_bitmap(glyph_id, StrikeWith::BestFit) {
-    return Some(ResolvedGlyph::Image(bitmap));
-  }
-
-  if let Some(outline) = scaler.scale_color_outline(glyph_id) {
-    return Some(ResolvedGlyph::Outline(outline));
-  }
-
-  if let Some(outline) = scaler.scale_outline(glyph_id) {
-    return Some(ResolvedGlyph::Outline(outline));
-  }
-
-  None
-}
-
 fn draw_glyph(
   glyph: Glyph,
-  resolved_glyph: &ResolvedGlyph,
+  cached_glyph: &CachedGlyph,
   canvas: &Canvas,
   color: Color,
   layout: Layout,
@@ -237,7 +186,7 @@ fn draw_glyph(
     height: layout.border.top + layout.padding.top + glyph.y,
   }) * transform;
 
-  if let ResolvedGlyph::Image(bitmap) = resolved_glyph {
+  if let ResolvedGlyph::Image(bitmap) = &**cached_glyph {
     let border = BorderProperties {
       size: Size {
         width: bitmap.placement.width as f32,
@@ -318,7 +267,7 @@ fn draw_glyph(
     );
   }
 
-  if let ResolvedGlyph::Outline(outline) = resolved_glyph {
+  if let ResolvedGlyph::Outline(outline) = &**cached_glyph {
     // have to invert the y coordinate from y-up to y-down first
     let mut paths = outline
       .path()

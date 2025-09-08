@@ -1,5 +1,6 @@
 use std::{
   borrow::Cow,
+  collections::{HashMap, HashSet},
   sync::{Arc, Mutex},
 };
 
@@ -9,11 +10,113 @@ use parley::{
 };
 use swash::{
   FontRef,
-  scale::{ScaleContext, Scaler},
+  scale::{ScaleContext, image::Image, outline::Outline},
 };
 
 #[cfg(feature = "woff")]
 mod woff;
+
+/// Represents a resolved glyph that can be either a bitmap image or an outline
+#[derive(Clone)]
+pub enum ResolvedGlyph {
+  /// A bitmap glyph image
+  Image(Image),
+  /// A vector outline glyph
+  Outline(Outline),
+}
+
+/// Thread-safe reference-counted glyph for caching
+pub type CachedGlyph = Arc<ResolvedGlyph>;
+
+/// Cache key for glyph resolution
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub struct GlyphCacheKey {
+  /// Font identifier
+  pub font_id: u32,
+  /// Glyph identifier
+  pub glyph_id: u16,
+  /// Font size (quantized to reduce cache fragmentation)
+  pub font_size: u16,
+  /// Hash of font variations
+  pub variations_hash: u64,
+}
+
+/// Combined font scaling and caching context
+pub struct FontScaleCache {
+  /// Swash scale context
+  scale: ScaleContext,
+  /// LRU glyph cache for resolved glyphs
+  glyph_cache: GlyphCache,
+}
+
+/// LRU glyph cache for resolved glyphs
+pub struct GlyphCache {
+  /// Maximum number of entries to keep in cache
+  max_entries: usize,
+  /// Cache entries with access order tracking
+  entries: HashMap<GlyphCacheKey, (CachedGlyph, usize)>,
+  /// Access counter for LRU eviction
+  access_counter: usize,
+}
+
+impl Default for GlyphCache {
+  fn default() -> Self {
+    Self {
+      max_entries: 10000, // Configurable cache size
+      entries: HashMap::new(),
+      access_counter: 0,
+    }
+  }
+}
+
+impl GlyphCache {
+  /// Get a glyph from the cache, updating access order
+  pub fn get(&mut self, key: &GlyphCacheKey) -> Option<CachedGlyph> {
+    if let Some((glyph, access_count)) = self.entries.get_mut(key) {
+      *access_count = self.access_counter;
+      self.access_counter += 1;
+      Some(Arc::clone(glyph))
+    } else {
+      None
+    }
+  }
+
+  /// Insert a glyph into the cache with LRU eviction
+  pub fn insert(&mut self, key: GlyphCacheKey, glyph: ResolvedGlyph) {
+    // Evict least recently used entries if cache is full
+    if self.entries.len() >= self.max_entries {
+      let mut oldest_key = None;
+      let mut oldest_access = usize::MAX;
+
+      for (k, (_, access_count)) in &self.entries {
+        if *access_count < oldest_access {
+          oldest_access = *access_count;
+          oldest_key = Some(*k);
+        }
+      }
+
+      if let Some(oldest_key) = oldest_key {
+        self.entries.remove(&oldest_key);
+      }
+    }
+
+    self
+      .entries
+      .insert(key, (Arc::new(glyph), self.access_counter));
+    self.access_counter += 1;
+  }
+
+  /// Clear all cached glyphs
+  pub fn clear(&mut self) {
+    self.entries.clear();
+    self.access_counter = 0;
+  }
+
+  /// Get cache statistics
+  pub fn stats(&self) -> (usize, usize) {
+    (self.entries.len(), self.max_entries)
+  }
+}
 
 /// Errors that can occur during font loading and conversion.
 #[derive(Debug)]
@@ -107,7 +210,7 @@ const EMBEDDED_FONTS: &[(&[u8], &str, GenericFamily)] = &[
 /// A context for managing fonts in the rendering system.
 pub struct FontContext {
   layout: Mutex<(parley::FontContext, LayoutContext<()>)>,
-  scale: Mutex<ScaleContext>,
+  scale_cache: Mutex<FontScaleCache>,
 }
 
 impl Default for FontContext {
@@ -123,22 +226,97 @@ impl Default for FontContext {
 }
 
 impl FontContext {
-  /// Create a swash scaler and run the function with it
-  /// The inner lock will be released after the function is executed
-  pub fn with_scaler<R>(&self, run: &Run<'_, ()>, func: impl FnOnce(&mut Scaler<'_>) -> R) -> R {
+  /// Generate a cache key for glyph resolution
+  fn create_cache_key(&self, run: &Run<'_, ()>, glyph_id: u16) -> GlyphCacheKey {
+    let font = run.font();
+    let synthesis = run.synthesis();
+    let variations = synthesis.variations();
+
+    let mut variations_hash = 0u64;
+    for variation in variations {
+      variations_hash = variations_hash
+        .wrapping_mul(31)
+        .wrapping_add(variation.tag as u64);
+      variations_hash = variations_hash
+        .wrapping_mul(31)
+        .wrapping_add(variation.value.to_bits() as u64);
+    }
+
+    GlyphCacheKey {
+      font_id: font.index,
+      glyph_id,
+      font_size: (run.font_size() * 10.0) as u16, // Quantize to reduce cache fragmentation
+      variations_hash,
+    }
+  }
+
+  /// Get or resolve multiple glyphs using the cache
+  /// Returns a HashMap of glyph_id -> CachedGlyph for efficient batch processing
+  pub fn get_or_resolve_glyphs(
+    &self,
+    run: &Run<'_, ()>,
+    glyph_ids: impl Iterator<Item = u16> + Clone,
+  ) -> HashMap<u16, CachedGlyph> {
+    // Collect unique glyph IDs to avoid duplicate work
+    let unique_glyph_ids: HashSet<u16> = glyph_ids.collect();
+
+    // Lock both scale and cache together for optimal performance
+    let mut scale_cache = self.scale_cache.lock().unwrap();
+
+    // Prepare font info for scaler creation
     let font = run.font();
     let font_ref = FontRef::from_index(font.data.as_ref(), font.index as usize).unwrap();
 
-    let mut context = self.scale.lock().unwrap();
+    let mut result = HashMap::new();
 
-    let mut scaler = context
-      .builder(font_ref)
-      .size(run.font_size())
-      .hint(true)
-      .variations(run.synthesis().variations().iter().copied())
-      .build();
+    // Process each unique glyph ID
+    for &glyph_id in &unique_glyph_ids {
+      let cache_key = self.create_cache_key(run, glyph_id);
 
-    func(&mut scaler)
+      // Try to get from cache first
+      if let Some(cached_glyph) = scale_cache.glyph_cache.get(&cache_key) {
+        result.insert(glyph_id, cached_glyph);
+        continue;
+      }
+
+      let mut scaler = scale_cache
+        .scale
+        .builder(font_ref)
+        .size(run.font_size())
+        .hint(true)
+        .variations(run.synthesis().variations().iter().copied())
+        .build();
+
+      let resolved = scaler
+        .scale_color_bitmap(glyph_id, swash::scale::StrikeWith::BestFit)
+        .map(ResolvedGlyph::Image)
+        .or_else(|| {
+          scaler
+            .scale_color_outline(glyph_id)
+            .map(ResolvedGlyph::Outline)
+        })
+        .or_else(|| scaler.scale_outline(glyph_id).map(ResolvedGlyph::Outline));
+
+      // Cache and return the result if we got one
+      if let Some(glyph) = resolved {
+        scale_cache.glyph_cache.insert(cache_key, glyph);
+        // Get the cached version (now wrapped in Arc)
+        if let Some(cached_glyph) = scale_cache.glyph_cache.get(&cache_key) {
+          result.insert(glyph_id, cached_glyph);
+        }
+      }
+    }
+
+    result
+  }
+
+  /// Get or resolve a single glyph using the cache (backward compatibility)
+  pub fn get_or_resolve_glyph(&self, run: &Run<'_, ()>, glyph_id: u16) -> Option<CachedGlyph> {
+    self
+      .get_or_resolve_glyphs(run, std::iter::once(glyph_id))
+      .into_iter()
+      .next()
+      .map(|(_, glyph)| glyph)
   }
 
   /// Access the inner context, then return the result of the function
@@ -162,6 +340,18 @@ impl FontContext {
   pub fn purge_cache(&self) {
     let mut lock = self.layout.lock().unwrap();
     lock.0.source_cache.prune(0, true);
+  }
+
+  /// Clear the glyph cache
+  pub fn purge_glyph_cache(&self) {
+    let mut scale_cache = self.scale_cache.lock().unwrap();
+    scale_cache.glyph_cache.clear();
+  }
+
+  /// Get glyph cache statistics (current_entries, max_entries)
+  pub fn glyph_cache_stats(&self) -> (usize, usize) {
+    let scale_cache = self.scale_cache.lock().unwrap();
+    scale_cache.glyph_cache.stats()
   }
 
   /// Creates a new font context with option to opt-in load default fonts,
@@ -190,7 +380,10 @@ impl FontContext {
   pub fn new() -> Self {
     Self {
       layout: Mutex::new((parley::FontContext::default(), LayoutContext::default())),
-      scale: Mutex::new(ScaleContext::default()),
+      scale_cache: Mutex::new(FontScaleCache {
+        scale: ScaleContext::default(),
+        glyph_cache: GlyphCache::default(),
+      }),
     }
   }
 
