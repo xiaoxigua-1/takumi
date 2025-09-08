@@ -1,12 +1,14 @@
-use std::borrow::Cow;
 use std::sync::Arc;
+use std::{borrow::Cow, collections::HashMap};
 
 use image::RgbaImage;
 use parley::{Glyph, PositionedLayoutItem, StyleProperty};
+#[cfg(feature = "rayon")]
+use rayon::iter::{ParallelBridge, ParallelIterator};
 use swash::{
   Setting,
-  scale::{Scaler, StrikeWith},
-  tag_from_bytes, tag_from_str_lossy,
+  scale::{Scaler, StrikeWith, image::Image, outline::Outline},
+  tag_from_bytes,
 };
 use taffy::{Layout, Point, Size};
 use zeno::{Command, Mask, PathData, Placement};
@@ -149,38 +151,81 @@ fn draw_buffer(
       let run = glyph_run.run();
 
       context.global.font_context.with_scaler(run, |scaler| {
-        for glyph in glyph_run.positioned_glyphs() {
-          draw_glyph(
-            glyph,
-            scaler,
-            canvas,
-            color,
-            layout,
-            image_fill.as_ref(),
-            context.transform,
-          );
+        let mut unique_glyph_ids = glyph_run.glyphs().map(|glyph| glyph.id).collect::<Vec<_>>();
+
+        unique_glyph_ids.sort_unstable();
+        unique_glyph_ids.dedup();
+
+        let resolved_glyphs = unique_glyph_ids
+          .iter()
+          .filter_map(|glyph_id| Some((*glyph_id, Arc::new(resolve_glyph(*glyph_id, scaler)?))))
+          .collect::<HashMap<u16, Arc<ResolvedGlyph>>>();
+
+        #[cfg(feature = "rayon")]
+        {
+          glyph_run
+            .positioned_glyphs()
+            .filter_map(|glyph| Some((glyph, resolved_glyphs.get(&glyph.id)?.clone())))
+            .par_bridge()
+            .for_each(|(glyph, resolved_glyph)| {
+              draw_glyph(
+                glyph,
+                &resolved_glyph,
+                canvas,
+                color,
+                layout,
+                image_fill.as_ref(),
+                context.transform,
+              );
+            });
+        }
+
+        #[cfg(not(feature = "rayon"))]
+        {
+          glyph_run
+            .positioned_glyphs()
+            .filter_map(|glyph| Some((glyph, resolved_glyphs.get(&glyph.id)?.clone())))
+            .for_each(|(glyph, resolved_glyph)| {
+              draw_glyph(
+                glyph,
+                &resolved_glyph,
+                canvas,
+                color,
+                layout,
+                image_fill.as_ref(),
+                context.transform,
+              );
+            });
         }
       });
     }
   }
 }
 
-fn image_to_mask(image: &RgbaImage) -> (Vec<u8>, Placement) {
-  let placement = Placement {
-    left: 0,
-    top: 0,
-    width: image.width(),
-    height: image.height(),
-  };
+enum ResolvedGlyph {
+  Outline(Outline),
+  Image(Image),
+}
 
-  let mask = image.iter().skip(3).step_by(4).copied().collect::<Vec<_>>();
+fn resolve_glyph(glyph_id: u16, scaler: &mut Scaler<'_>) -> Option<ResolvedGlyph> {
+  if let Some(bitmap) = scaler.scale_color_bitmap(glyph_id, StrikeWith::BestFit) {
+    return Some(ResolvedGlyph::Image(bitmap));
+  }
 
-  (mask, placement)
+  if let Some(outline) = scaler.scale_color_outline(glyph_id) {
+    return Some(ResolvedGlyph::Outline(outline));
+  }
+
+  if let Some(outline) = scaler.scale_outline(glyph_id) {
+    return Some(ResolvedGlyph::Outline(outline));
+  }
+
+  None
 }
 
 fn draw_glyph(
   glyph: Glyph,
-  scaler: &mut Scaler<'_>,
+  resolved_glyph: &ResolvedGlyph,
   canvas: &Canvas,
   color: Color,
   layout: Layout,
@@ -192,10 +237,7 @@ fn draw_glyph(
     height: layout.border.top + layout.padding.top + glyph.y,
   }) * transform;
 
-  if let Some(bitmap) = scaler.scale_color_bitmap(glyph.id, StrikeWith::BestFit) {
-    let image =
-      RgbaImage::from_raw(bitmap.placement.width, bitmap.placement.height, bitmap.data).unwrap();
-
+  if let ResolvedGlyph::Image(bitmap) = resolved_glyph {
     let border = BorderProperties {
       size: Size {
         width: bitmap.placement.width as f32,
@@ -210,7 +252,20 @@ fn draw_glyph(
     };
 
     if let Some(image_fill) = image_fill {
-      let (mask, placement) = image_to_mask(&image);
+      let mask = bitmap
+        .data
+        .iter()
+        .skip(3)
+        .step_by(4)
+        .copied()
+        .collect::<Vec<_>>();
+
+      let placement = Placement {
+        left: 0,
+        top: 0,
+        width: bitmap.placement.width,
+        height: bitmap.placement.height,
+      };
 
       let mut bottom = RgbaImage::new(placement.width, placement.height);
 
@@ -247,6 +302,13 @@ fn draw_glyph(
       );
     }
 
+    let image = RgbaImage::from_raw(
+      bitmap.placement.width,
+      bitmap.placement.height,
+      bitmap.data.clone(),
+    )
+    .unwrap();
+
     return canvas.overlay_image(
       Arc::new(image),
       offset,
@@ -256,10 +318,7 @@ fn draw_glyph(
     );
   }
 
-  if let Some(outline) = scaler
-    .scale_outline(glyph.id)
-    .or_else(|| scaler.scale_color_outline(glyph.id))
-  {
+  if let ResolvedGlyph::Outline(outline) = resolved_glyph {
     // have to invert the y coordinate from y-up to y-down first
     let mut paths = outline
       .path()
@@ -335,18 +394,11 @@ pub(crate) fn create_text_layout(
     builder.push_default(StyleProperty::FontWeight(font_style.font_weight));
     builder.push_default(StyleProperty::FontStyle(font_style.font_style));
 
-    if let Some(font_variation_settings) = font_style.font_variation_settings.as_ref() {
+    if let Some(font_variation_settings) = font_style.font_variation_settings.as_ref()
+      && !font_variation_settings.0.is_empty()
+    {
       builder.push_default(StyleProperty::FontVariations(parley::FontSettings::List(
-        Cow::Owned(
-          font_variation_settings
-            .0
-            .iter()
-            .map(|setting| Setting {
-              tag: tag_from_str_lossy(setting.axis.as_str()),
-              value: setting.value,
-            })
-            .collect::<Vec<_>>(),
-        ),
+        Cow::Borrowed(&font_variation_settings.0),
       )));
     } else {
       let variable_font_setting = Setting {
@@ -359,18 +411,11 @@ pub(crate) fn create_text_layout(
       )));
     }
 
-    if let Some(font_feature_settings) = font_style.font_feature_settings.as_ref() {
+    if let Some(font_feature_settings) = font_style.font_feature_settings.as_ref()
+      && !font_feature_settings.0.is_empty()
+    {
       builder.push_default(StyleProperty::FontFeatures(parley::FontSettings::List(
-        Cow::Owned(
-          font_feature_settings
-            .0
-            .iter()
-            .map(|setting| Setting {
-              tag: tag_from_str_lossy(setting.tag.as_str()),
-              value: setting.value,
-            })
-            .collect::<Vec<_>>(),
-        ),
+        Cow::Borrowed(&font_feature_settings.0),
       )));
     }
 

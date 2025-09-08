@@ -209,11 +209,20 @@ const renderer = new Renderer();
 summary(() => {
   bench("createNode", createNode);
 
-  bench("createNode + renderAsync", async () => {
+  bench("createNode + renderAsync (png)", async () => {
     const node = await createNode();
     return renderer.renderAsync(node, {
       width: 1200,
       height: 630,
+    });
+  });
+
+  bench("createNode + renderAsync (webp)", async () => {
+    const node = await createNode();
+    return renderer.renderAsync(node, {
+      width: 1200,
+      height: 630,
+      format: "webp",
     });
   });
 });
