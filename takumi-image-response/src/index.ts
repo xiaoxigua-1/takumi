@@ -65,7 +65,7 @@ const contentTypeMapping = {
   Avif: "image/avif",
 };
 
-export default class ImageResponse extends Response {
+export class ImageResponse extends Response {
   constructor(component: ReactNode, options?: ImageResponseOptions) {
     const stream = createStream(component, options);
     const headers = new Headers(options?.headers);
@@ -88,3 +88,5 @@ export default class ImageResponse extends Response {
     });
   }
 }
+
+export default ImageResponse;
