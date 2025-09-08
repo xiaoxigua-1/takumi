@@ -206,9 +206,9 @@ function createNode() {
 
 const renderer = new Renderer();
 
-summary(() => {
-  bench("createNode", createNode);
+bench("createNode", createNode);
 
+summary(() => {
   bench("createNode + renderAsync (png)", async () => {
     const node = await createNode();
     return renderer.renderAsync(node, {
