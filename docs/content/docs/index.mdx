@@ -1,17 +1,33 @@
 ---
 title: Overview
-description: An overview of the Takumi image generation library.
+description: An overview of what is Takumi.
 icon: Axe
 ---
 
-Welcome to the documentation for Takumi!
+Takumi is a **image rendering engine** written in Rust and **provide bindings for Node.js, WebAssembly**. Suitable for high-throughput image rendering workloads like Open Graph images, Twitter images, etc.
 
-Takumi is a library for generating images from code using a CSS Flexbox-like layout engine. It allows you to create complex images with the same flexbox principles you're familiar with from web development.
+The design is mainly inspired by [satori](https://github.com/vercel/satori), but with a focus on portability and performance.
 
-At its core, Takumi works by constructing a tree of nodes, similar to the HTML DOM. You then style them with properties like in CSS, and then render the entire tree into a final image.
+## Why build a satori alternative?
 
-_Takumi (匠) means "artisan" or "craftsman" in Japanese - reflecting the precision and artistry required to craft beautiful images through code._
+- All in one. No need to output SVG then have [resvg-js](https://github.com/thx/resvg-js) rendering it again to output PNG.
+- Minimal binary size targets to run everywhere. Node.js, web, embedded in Rust, pre-built http server.
+- Takes your existing JSX components and drops them in. It should just work.
+- RTL support.
+- Variable fonts support.
+- WOFF2 font format support. Trims your bundle size.
+- PNG, JPEG, WebP, AVIF output support.
+- Host Takumi as a standalone service for easier load balancing and scaling (coming soon).
 
 ## Start Here
 
-Looking to dive in quickly? Check out the [Getting Started](/docs/getting-started) guides to begin learning how to use Takumi
+These two guides are the best way to get started.
+
+<Cards>
+<Card title="Getting Started" url="/docs/getting-started" icon={<BookOpen />}>
+  Learn how to use Takumi for image generation in various environments.
+</Card>
+<Card title="From Next.js ImageResponse" url="/docs/migration/migrate-from-image-response" icon={<ArrowBigRight />}>
+  Start using Takumi just by changing the import.
+</Card>
+</Cards>

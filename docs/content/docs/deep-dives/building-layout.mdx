@@ -3,7 +3,9 @@ title: Building Layouts
 description: Learn how to construct and style nodes to create complex layouts.
 ---
 
-Nodes are the foundation of building layouts with Takumi. The `@takumi-rs/helpers` package provides convenient functions for constructing and styling different types of nodes: containers, text, and images.
+**Node** are the foundation of building layouts with Takumi, its a simplified version of DOM tree but in JSON format, with only three types of nodes by default: `Container`, `Text`, and `Image`. 
+
+If you are building in JavaScript, the `@takumi-rs/helpers` package provides helper functions to build node tree or [convert React components into Takumi nodes](/docs/deep-dives/from-jsx-helper).
 
 ## Prerequisites
 
@@ -15,110 +17,103 @@ npm i @takumi-rs/helpers
 
 ## Constructing Nodes
 
-### Container Nodes
+### Container Node
 
-A container node is used to group other nodes and arrange them in a layout. Use the `container` function:
+A container node is used to group other nodes and arrange them in a layout.
 
+<Tabs items={["@takumi-rs/helpers", "Equivalent JSON"]}>
+<Tab title="@takumi-rs/helpers">
 ```typescript
-import { container } from "@takumi-rs/helpers";
+import { container, percentage } from "@takumi-rs/helpers";
 
 const root = container({
-  // extra styling goes here
+  style: {
+    // styling goes here
+    width: percentage(100),
+    height: percentage(100),
+    backgroundColor: "white",
+  },
   children: [
     // child nodes go here
   ],
 });
 ```
+</Tab>
+<Tab title="Equivalent JSON">
+```json
+{
+  "type": "container",
+  "style": {
+    "width": "100%",
+    "height": "100%",
+    "backgroundColor": "white"
+  },
+  "children": []
+}
+```
+</Tab>
+</Tabs>
 
-### Text Nodes
+### Text Node
 
-A text node displays text. Use the `text` function:
+A text node displays text, check out [Rendering Text](/docs/deep-dives/rendering-text) deep dive guide for more details on how to render text.
 
+<Tabs items={["@takumi-rs/helpers", "Equivalent JSON"]}>
+<Tab title="@takumi-rs/helpers">
 ```typescript
 import { text } from '@takumi-rs/helpers';
 
 const helloText = text('Hello, Takumi!', {
-  // extra styling goes here
+  // styling goes here
+  color: "yellow",
 });
 ```
 
-### Image Nodes
+</Tab>
+<Tab title="Equivalent JSON">
+```json
+{
+  "type": "text",
+  "text": "Hello, Takumi!",
+  "style": {
+    "color": "yellow"
+  }
+}
+```
+</Tab>
+</Tabs>
 
-An image node displays an image from a URL or local path. Use the `image` function:
+### Image Node
 
+An image node displays an image from a URL or local path, check out [Loading External Images](/docs/deep-dives/rendering-extenral-image) deep dive guide for more details on how to load images.
+
+<Tabs items={["@takumi-rs/helpers", "Equivalent JSON"]}>
+<Tab title="@takumi-rs/helpers">
 ```typescript
 import { image, percentage } from '@takumi-rs/helpers';
 
 const logo = image({
-  src: '/logo.png',
+  src: "logo.png",
   width: 64,
   height: 64,
   style: {
+    // styling goes here
     borderRadius: percentage(50),
-    // extra styling goes here
   },
 });
 ```
-
-## Styling Nodes
-
-You can pass a style object as the second argument to `text` and `image`, or as properties to `container`. Style properties are inspired by CSS, but use camelCase or snake_case.
-
-### Example: Styling a Container
-
-```typescript
-import { container } from "@takumi-rs/helpers";
-
-const root = container({
-  style: {
-    width: 400,
-    height: 200,
-    backgroundColor: 0xf0f0f0,
-    padding: 16,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  children: [
-    text("Hello, Takumi!"),
-  ],
-});
+</Tab>
+<Tab title="Equivalent JSON">
+```json
+{
+  "type": "image",
+  "src": "logo.png",
+  "width": 64,
+  "height": 64,
+  "style": {
+    "borderRadius": "50%"
+  }
+}
 ```
-
-### Example: Styling Text
-
-```typescript
-import { text } from "@takumi-rs/helpers";
-
-const heading = text("Hello, Takumi!", {
-  fontSize: 32,
-  color: 0x333333,
-  fontWeight: 700,
-  textAlign: "center",
-});
-```
-
-## Using Helper Functions
-
-The helpers package provides functions for common value types:
-
-- `percentage(50)` — 50% of parent
-- `rem(2)` — x2 root font size
-- `rgb(255, 0, 0)` — Red
-- `rgba(0, 0, 0, 0.5)` — Semi-transparent black
-
-```typescript
-import { container, text, percentage, rem, rgba } from "@takumi-rs/helpers";
-
-const layout = container({
-  style: {
-    width: percentage(100),
-    height: rem(10),
-    backgroundColor: rgba(0, 128, 255, 0.1),
-  },
-  children: [
-    text("50% width, 10rem height", { color: 0x222222 })
-  ],
-});
-```
-
-
+</Tab>
+</Tabs>

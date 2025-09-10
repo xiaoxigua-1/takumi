@@ -3,6 +3,7 @@ import { createCompiler } from "@fumadocs/mdx-remote";
 import { executeMdxSync } from "@fumadocs/mdx-remote/client";
 import { getPageTreePeers, type PageTree } from "fumadocs-core/server";
 import { Card, Cards } from "fumadocs-ui/components/card";
+import { Tab, Tabs } from "fumadocs-ui/components/tabs";
 import { DocsLayout } from "fumadocs-ui/layouts/docs";
 import defaultMdxComponents from "fumadocs-ui/mdx";
 import {
@@ -11,7 +12,7 @@ import {
   DocsPage,
   DocsTitle,
 } from "fumadocs-ui/page";
-import { Hand } from "lucide-react";
+import { ArrowBigRight, BookOpen, Hand } from "lucide-react";
 import { redirect } from "react-router";
 import { baseOptions } from "~/layout-config";
 import { source } from "~/source";
@@ -20,7 +21,11 @@ import type { Route } from "./+types/page";
 const components = {
   ...defaultMdxComponents,
   Hand,
+  BookOpen,
+  ArrowBigRight,
   DocsCategory,
+  Tabs,
+  Tab,
 };
 
 const compiler = createCompiler({

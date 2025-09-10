@@ -5,7 +5,7 @@ description: Takumi aims to support a wide range of CSS properties, read this to
 
 ## How is it implemented?
 
-Takumi uses [Taffy](https://github.com/DioxusLabs/taffy) to layout the positions, and [parley](https://github.com/linebender/parley) to layout the text, so it mostly depends on the features that these two libraries support.
+Takumi uses [Taffy](https://github.com/DioxusLabs/taffy) to layout the positions, and [Parley](https://github.com/linebender/parley) to layout the text, so it mostly depends on the features that these two libraries support.
 
 But for transform, box shadow and linear gradient, Takumi has its own implementation.
 
@@ -13,7 +13,7 @@ But for transform, box shadow and linear gradient, Takumi has its own implementa
 
 We support CSS values parsing or structured values parsing.
 
-You can check the [`Style` interface in `takumi-helpers`](https://github.com/kane50613/takumi/blob/master/takumi-helpers/src/bindings/Style.ts) or [`Style` struct](https://docs.rs/takumi/latest/takumi/style/properties/struct.Style.html) to see how structured values are parsed.
+You can check the [`Style` interface in `@takumi-rs/helpers`](https://github.com/kane50613/takumi/blob/master/takumi-helpers/src/bindings/Style.ts) or [`Style` struct on docs.rs](https://docs.rs/takumi/latest/takumi/layout/style/struct.Style.html) to see how structured values are parsed.
 
 ## All Supported Properties
 
@@ -29,12 +29,12 @@ You can check the [`Style` interface in `takumi-helpers`](https://github.com/kan
   <tbody>
     <tr>
       <td colSpan={2}>`display`</td>
-      <td>Supported</td>
+      <td>`flex`, `grid`</td>
       <td>No</td>
     </tr>
     <tr>
       <td colSpan={2}>`position`</td>
-      <td>Supported</td>
+      <td>`relative`, `absolute`</td>
       <td>No</td>
     </tr>
     <tr>
@@ -140,7 +140,7 @@ You can check the [`Style` interface in `takumi-helpers`](https://github.com/kan
     </tr>
     <tr>
       <td>`flexWrap`</td>
-      <td>Supported</td>
+      <td>`nowrap`, `wrap`, `wrap-reverse`</td>
       <td>No</td>
     </tr>
     <tr>
@@ -171,7 +171,7 @@ You can check the [`Style` interface in `takumi-helpers`](https://github.com/kan
     <tr>
       <td rowSpan={5}>Background</td>
       <td>`backgroundImage`</td>
-      <td>Supported</td>
+      <td>`linear-gradient()`, `radial-gradient()`, `noise-v1()`</td>
       <td>No</td>
     </tr>
     <tr>
@@ -274,12 +274,12 @@ You can check the [`Style` interface in `takumi-helpers`](https://github.com/kan
     <tr>
       <td rowSpan={16}>Typography</td>
       <td>`textOverflow`</td>
-      <td>Supported</td>
+      <td>`ellipsis`, `clip`</td>
       <td>Yes</td>
     </tr>
     <tr>
       <td>`textTransform`</td>
-      <td>Supported</td>
+      <td>`none`, `uppercase`, `lowercase`, `capitalize`</td>
       <td>Yes</td>
     </tr>
     <tr>
@@ -299,7 +299,7 @@ You can check the [`Style` interface in `takumi-helpers`](https://github.com/kan
     </tr>
     <tr>
       <td>`fontFamily`</td>
-      <td>Supported</td>
+      <td>Font fallback supported</td>
       <td>Yes</td>
     </tr>
     <tr>
@@ -364,7 +364,7 @@ You can check the [`Style` interface in `takumi-helpers`](https://github.com/kan
     </tr>
     <tr>
       <td colSpan={2}>`imageRendering`</td>
-      <td>Supported</td>
+      <td>`auto`, `smooth`, `pixelated`</td>
       <td>Yes</td>
     </tr>
   </tbody>

@@ -3,11 +3,17 @@ title: Load Image
 description: How to load and render images in Takumi
 ---
 
-<Callout>
-Before reading this guide, make sure you know how to construct and style image nodes. See [Building Layouts](/docs/how-to/building-layouts) for more details.
-</Callout>
+Image Node can load images via `src` property, it can be a Data URI, SVG string, or [predefined persistent image source](#persistent-image-store).
 
-## Persistent Storage
+## Supported Formats
+
+- SVG
+- PNG
+- JPEG
+- WebP
+- AVIF
+
+## Persistent Image Store
 
 Takumi provides a persistent storage in every renderer instance. It allows you to load images from files or URLs and cache them for later use. 
 

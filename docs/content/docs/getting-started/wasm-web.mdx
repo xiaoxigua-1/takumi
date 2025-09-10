@@ -13,6 +13,14 @@ Takumi provides WebAssembly bindings for browser compatibility, allowing client-
 npm i @takumi-rs/wasm @takumi-rs/helpers
 ```
 
+## Constraints
+
+In order to keep the binary size minimal, WebAssembly version dropped some features compare to `@takumi-rs/core`.
+
+- Only synchronous API
+- `woff` font format is not supported, (but `woff2` is supported)
+- No default fonts are bundled
+
 ## Load the WASM Module
 
 Since WASM files are binary, they need to be loaded and initialized properly. The Takumi WASM package provides an `init` function that takes the URL of the WASM binary.
@@ -171,8 +179,6 @@ const imageBuffer = await renderer.render(
 // Data URL rendering is also supported through renderer.renderAsDataUrl()
 ```
 
-## Deep dive Into Advanced Usages
+Congratulations, now you have Takumi setup! You can try further to offload it to Web Workers to not block the main thread.
 
 If you are interested in more advanced usages of Takumi, consider take a look at [Deep Dives](/docs/deep-dives) section.
-
-
