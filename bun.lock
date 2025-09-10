@@ -17,6 +17,9 @@
         "@monaco-editor/react": "^4.7.0",
         "@react-router/node": "^7.8.1",
         "@react-router/serve": "^7.8.1",
+        "@takumi-rs/core": "^0.29.8",
+        "@takumi-rs/image-response": "^0.29.8",
+        "@takumi-rs/template": "^0.29.8",
         "fumadocs-core": "15.7.10",
         "fumadocs-ui": "15.7.10",
         "gray-matter": "^4.0.3",
@@ -1899,6 +1902,8 @@
     "compression/negotiator": ["negotiator@0.6.4", "", {}, "sha512-myRT3DiWPHqho5PrJaIRyaMv2kgYf0mUVgBNOYMuCH5Ki1yEiQaf/ZJuQ62nvpc44wL5WDbTX7yGJi1Neevw8w=="],
 
     "cross-spawn/which": ["which@2.0.2", "", { "dependencies": { "isexe": "^2.0.0" }, "bin": { "node-which": "./bin/node-which" } }, "sha512-BLI3Tl1TW3Pvl70l3yq3Y64i+awpwXqsGBYWkkqMtnbXgrMD+yj7rhW0kuEDxzJaYXGjEW5ogapKNMEKNMjibA=="],
+
+    "docs/@takumi-rs/image-response": ["@takumi-rs/image-response@0.29.8", "", { "peerDependencies": { "@takumi-rs/core": "^0.29.2", "@takumi-rs/helpers": "^0.29.2" } }, "sha512-v7xE0OAHtgon4yqDyn5VR1ziYs3tFxmHbjoYMBT0Fus31GPq3AioJSzt4ruy0hCXXMGfLkW5reEYhbjY4luJvg=="],
 
     "esast-util-from-js/acorn": ["acorn@8.15.0", "", { "bin": { "acorn": "bin/acorn" } }, "sha512-NZyJarBfL7nWwIq+FDL6Zp/yHEhePMNnnJ0y3qfieCrmNvYct8uvtiV41UvlSe6apAfk0fY1FbWx+NwfmpvtTg=="],
 

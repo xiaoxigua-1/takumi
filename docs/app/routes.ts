@@ -6,5 +6,6 @@ export default [
   route("/llms.txt", "routes/llms.txt.tsx"),
   route("playground", "routes/playground.tsx"),
   route("docs/*", "docs/page.tsx"),
+  route("/og/docs/*", "docs/og.tsx"),
   route("api/search", "docs/search.ts"),
 ] satisfies RouteConfig;

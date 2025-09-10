@@ -11,6 +11,9 @@ export default defineConfig({
       external: ["shiki"],
     },
   },
+  ssr: {
+    external: ["@takumi-rs/core"],
+  },
   plugins: [
     tailwindcss(),
     reactRouter(),

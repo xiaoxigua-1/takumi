@@ -16,6 +16,12 @@ export function meta() {
 export default function Home() {
   return (
     <HomeLayout className="text-center" {...baseOptions}>
+      <head>
+        <meta
+          name="og:image"
+          content="https://raw.githubusercontent.com/kane50613/takumi/master/example/twitter-images/output/og-image.png"
+        />
+      </head>
       <div className="py-12 p-2">
         <h1 className="text-5xl font-bold mb-4">
           Craft Beautiful Images with Code

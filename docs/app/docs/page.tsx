@@ -43,7 +43,10 @@ export async function loader({ params }: Route.LoaderArgs) {
     value: page.data.content,
   });
 
+  const og = ["/og", "docs", ...slugs, "image.webp"].join("/");
+
   return {
+    og,
     page,
     compiled: compiled.toString(),
     tree: source.getPageTree(),
@@ -51,7 +54,7 @@ export async function loader({ params }: Route.LoaderArgs) {
 }
 
 export default function Page(props: Route.ComponentProps) {
-  const { page, compiled, tree } = props.loaderData;
+  const { page, compiled, tree, og } = props.loaderData;
   const { default: Mdx, toc } = executeMdxSync(compiled);
 
   const title = `${page.data.title} - Takumi`;
@@ -63,6 +66,7 @@ export default function Page(props: Route.ComponentProps) {
         <meta name="description" content={page.data.description} />
         <meta name="og:title" content={title} />
         <meta name="og:description" content={page.data.description} />
+        <meta name="og:image" content={og} />
         <DocsTitle>{page.data.title}</DocsTitle>
         <DocsDescription>{page.data.description}</DocsDescription>
         <DocsBody>
