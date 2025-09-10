@@ -15,8 +15,8 @@ We support CSS values parsing or structured values parsing.
 
 You can check the [`Style` interface in `takumi-helpers`](https://github.com/kane50613/takumi/blob/master/takumi-helpers/src/bindings/Style.ts) or [`Style` struct](https://docs.rs/takumi/latest/takumi/style/properties/struct.Style.html) to see how structured values are parsed.
 
-## Compatibility Matrix
-  
+## All Supported Properties
+
 <table>
   <thead>
     <tr>
@@ -92,62 +92,74 @@ You can check the [`Style` interface in `takumi-helpers`](https://github.com/kan
     </tr>
     <tr>
       <td>`borderWidth`</td>
-      <td>`borderWidthTop`, `borderWidthRight`, `borderWidthBottom`, `borderWidthLeft`</td>
+      <td>`borderTopWidth`, `borderRightWidth`, `borderBottomWidth`, `borderLeftWidth`</td>
       <td>Supported</td>
       <td>No</td>
     </tr>
     <tr>
-      <td colSpan={2}>`flexDirection`</td>
+      <td>`borderRadius`</td>
+      <td>`borderTopLeftRadius`, `borderTopRightRadius`, `borderBottomRightRadius`, `borderBottomLeftRadius`</td>
       <td>Supported</td>
       <td>No</td>
     </tr>
     <tr>
-      <td colSpan={2}>`justifyContent`</td>
+      <td rowSpan={12}>Flex</td>
+      <td>`flexDirection`</td>
       <td>Supported</td>
       <td>No</td>
     </tr>
     <tr>
-      <td colSpan={2}>`alignContent`</td>
+      <td>`justifyContent`</td>
       <td>Supported</td>
       <td>No</td>
     </tr>
     <tr>
-      <td colSpan={2}>`justifyItems`</td>
+      <td>`alignContent`</td>
       <td>Supported</td>
       <td>No</td>
     </tr>
     <tr>
-      <td colSpan={2}>`alignItems`</td>
+      <td>`justifyItems`</td>
       <td>Supported</td>
       <td>No</td>
     </tr>
     <tr>
-      <td colSpan={2}>`alignSelf`</td>
+      <td>`alignItems`</td>
       <td>Supported</td>
       <td>No</td>
     </tr>
     <tr>
-      <td colSpan={2}>`flexWrap`</td>
+      <td>`alignSelf`</td>
       <td>Supported</td>
       <td>No</td>
     </tr>
     <tr>
-      <td colSpan={2}>`flexBasis`</td>
+      <td>`justifySelf`</td>
       <td>Supported</td>
       <td>No</td>
     </tr>
     <tr>
-      <td colSpan={2}>`flexGrow`</td>
+      <td>`flexWrap`</td>
       <td>Supported</td>
       <td>No</td>
     </tr>
     <tr>
-      <td colSpan={2}>`flexShrink`</td>
+      <td>`flexBasis`</td>
       <td>Supported</td>
       <td>No</td>
     </tr>
     <tr>
-      <td colSpan={2}>`gap`</td>
+      <td>`flexGrow`</td>
+      <td>Supported</td>
+      <td>No</td>
+    </tr>
+    <tr>
+      <td>`flexShrink`</td>
+      <td>Supported</td>
+      <td>No</td>
+    </tr>
+    <tr>
+      <td>`gap`</td>
       <td>Supported</td>
       <td>No</td>
     </tr>
@@ -157,12 +169,28 @@ You can check the [`Style` interface in `takumi-helpers`](https://github.com/kan
       <td>No</td>
     </tr>
     <tr>
-      <td colSpan={2}>`backgroundImage`</td>
+      <td rowSpan={5}>Background</td>
+      <td>`backgroundImage`</td>
       <td>Supported</td>
       <td>No</td>
     </tr>
     <tr>
-      <td colSpan={2}>`backgroundColor`</td>
+      <td>`backgroundPosition`</td>
+      <td>Supported</td>
+      <td>No</td>
+    </tr>
+    <tr>
+      <td>`backgroundSize`</td>
+      <td>Supported</td>
+      <td>No</td>
+    </tr>
+    <tr>
+      <td>`backgroundRepeat`</td>
+      <td>Supported</td>
+      <td>No</td>
+    </tr>
+    <tr>
+      <td>`backgroundColor`</td>
       <td>Supported</td>
       <td>No</td>
     </tr>
@@ -172,48 +200,155 @@ You can check the [`Style` interface in `takumi-helpers`](https://github.com/kan
       <td>No</td>
     </tr>
     <tr>
-      <td colSpan={2}>`gridAutoColumns`</td>
+      <td rowSpan={4}>Mask</td>
+      <td>`maskImage`</td>
       <td>Supported</td>
       <td>No</td>
     </tr>
     <tr>
-      <td colSpan={2}>`gridAutoRows`</td>
+      <td>`maskSize`</td>
       <td>Supported</td>
       <td>No</td>
     </tr>
     <tr>
-      <td colSpan={2}>`gridAutoFlow`</td>
+      <td>`maskPosition`</td>
       <td>Supported</td>
       <td>No</td>
     </tr>
     <tr>
-      <td colSpan={2}>`gridColumn`</td>
+      <td>`maskRepeat`</td>
       <td>Supported</td>
       <td>No</td>
     </tr>
     <tr>
-      <td colSpan={2}>`gridRow`</td>
+      <td colSpan={2}>`transform`</td>
       <td>Supported</td>
       <td>No</td>
     </tr>
     <tr>
-      <td colSpan={2}>`gridTemplateColumns`</td>
+      <td colSpan={2}>`transformOrigin`</td>
       <td>Supported</td>
       <td>No</td>
     </tr>
     <tr>
-      <td colSpan={2}>`gridTemplateRows`</td>
+      <td rowSpan={8}>Grid</td>
+      <td>`gridAutoColumns`</td>
       <td>Supported</td>
       <td>No</td>
     </tr>
     <tr>
-      <td colSpan={2}>`gridTemplateAreas`</td>
+      <td>`gridAutoRows`</td>
       <td>Supported</td>
       <td>No</td>
     </tr>
     <tr>
-      <td>`borderRadius`</td>
-      <td>`borderRadiusTop`, `borderRadiusRight`, `borderRadiusBottom`, `borderRadiusLeft`</td>
+      <td>`gridAutoFlow`</td>
+      <td>Supported</td>
+      <td>No</td>
+    </tr>
+    <tr>
+      <td>`gridColumn`</td>
+      <td>Supported</td>
+      <td>No</td>
+    </tr>
+    <tr>
+      <td>`gridRow`</td>
+      <td>Supported</td>
+      <td>No</td>
+    </tr>
+    <tr>
+      <td>`gridTemplateColumns`</td>
+      <td>Supported</td>
+      <td>No</td>
+    </tr>
+    <tr>
+      <td>`gridTemplateRows`</td>
+      <td>Supported</td>
+      <td>No</td>
+    </tr>
+    <tr>
+      <td>`gridTemplateAreas`</td>
+      <td>Supported</td>
+      <td>No</td>
+    </tr>
+    <tr>
+      <td rowSpan={16}>Typography</td>
+      <td>`textOverflow`</td>
+      <td>Supported</td>
+      <td>Yes</td>
+    </tr>
+    <tr>
+      <td>`textTransform`</td>
+      <td>Supported</td>
+      <td>Yes</td>
+    </tr>
+    <tr>
+      <td>`fontStyle`</td>
+      <td>Supported</td>
+      <td>Yes</td>
+    </tr>
+    <tr>
+      <td>`color`</td>
+      <td>Supported</td>
+      <td>Yes</td>
+    </tr>
+    <tr>
+      <td>`fontSize`</td>
+      <td>Supported</td>
+      <td>Yes</td>
+    </tr>
+    <tr>
+      <td>`fontFamily`</td>
+      <td>Supported</td>
+      <td>Yes</td>
+    </tr>
+    <tr>
+      <td>`lineHeight`</td>
+      <td>Supported</td>
+      <td>Yes</td>
+    </tr>
+    <tr>
+      <td>`fontWeight`</td>
+      <td>Supported</td>
+      <td>Yes</td>
+    </tr>
+    <tr>
+      <td>`fontVariationSettings`</td>
+      <td>Supported</td>
+      <td>Yes</td>
+    </tr>
+    <tr>
+      <td>`fontFeatureSettings`</td>
+      <td>Supported</td>
+      <td>Yes</td>
+    </tr>
+    <tr>
+      <td>`lineClamp`</td>
+      <td>Supported</td>
+      <td>Yes</td>
+    </tr>
+    <tr>
+      <td>`textAlign`</td>
+      <td>Supported</td>
+      <td>Yes</td>
+    </tr>
+    <tr>
+      <td>`letterSpacing`</td>
+      <td>Supported</td>
+      <td>Yes</td>
+    </tr>
+    <tr>
+      <td>`wordSpacing`</td>
+      <td>Supported</td>
+      <td>Yes</td>
+    </tr>
+    <tr>
+      <td>`overflowWrap`</td>
+      <td>Supported</td>
+      <td>Yes</td>
+    </tr>
+    <tr>
+      <td>`wordBreak`</td>
       <td>Supported</td>
       <td>Yes</td>
     </tr>
@@ -223,62 +358,7 @@ You can check the [`Style` interface in `takumi-helpers`](https://github.com/kan
       <td>Yes</td>
     </tr>
     <tr>
-      <td colSpan={2}>`textOverflow`</td>
-      <td>Supported</td>
-      <td>Yes</td>
-    </tr>
-    <tr>
-      <td colSpan={2}>`textTransform`</td>
-      <td>Supported</td>
-      <td>Yes</td>
-    </tr>
-    <tr>
-      <td colSpan={2}>`textStyle`</td>
-      <td>Supported</td>
-      <td>Yes</td>
-    </tr>
-    <tr>
       <td colSpan={2}>`borderColor`</td>
-      <td>Supported</td>
-      <td>Yes</td>
-    </tr>
-    <tr>
-      <td colSpan={2}>`color`</td>
-      <td>Supported</td>
-      <td>Yes</td>
-    </tr>
-    <tr>
-      <td colSpan={2}>`fontSize`</td>
-      <td>Supported</td>
-      <td>Yes</td>
-    </tr>
-    <tr>
-      <td colSpan={2}>`fontFamily`</td>
-      <td>Supported</td>
-      <td>Yes</td>
-    </tr>
-    <tr>
-      <td colSpan={2}>`lineHeight`</td>
-      <td>Supported</td>
-      <td>Yes</td>
-    </tr>
-    <tr>
-      <td colSpan={2}>`fontWeight`</td>
-      <td>Supported</td>
-      <td>Yes</td>
-    </tr>
-    <tr>
-      <td colSpan={2}>`lineClamp`</td>
-      <td>Supported</td>
-      <td>Yes</td>
-    </tr>
-    <tr>
-      <td colSpan={2}>`textAlign`</td>
-      <td>Supported</td>
-      <td>Yes</td>
-    </tr>
-    <tr>
-      <td colSpan={2}>`letterSpacing`</td>
       <td>Supported</td>
       <td>Yes</td>
     </tr>
