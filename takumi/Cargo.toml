@@ -43,12 +43,8 @@ optional = true
 version = "1.10"
 optional = true
 
-[dependencies.flate2]
-version = "1.1"
-optional = true
-
-[dependencies.woff2-patched]
-version = "0.4"
+[dependencies.wuff]
+version = "0.2"
 optional = true
 
 [dependencies.taffy]
@@ -80,8 +76,8 @@ default = ["woff2", "woff", "image_data_uri", "svg", "rayon", "avif"]
 avif = ["image/avif"]
 image_data_uri = ["dep:base64"]
 svg = ["dep:resvg"]
-woff2 = ["dep:woff2-patched", "dep:bytes"]
-woff = ["dep:flate2"]
+woff2 = ["dep:wuff", "wuff/brotli"]
+woff = ["dep:wuff", "wuff/z"]
 rayon = ["dep:rayon", "image/rayon"]
 embed_fonts = []
 
