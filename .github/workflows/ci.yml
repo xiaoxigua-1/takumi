@@ -404,7 +404,7 @@ jobs:
         run: bun test
 
   deploy-docs:
-    name: Build docs
+    name: Deploy docs
     runs-on: ubuntu-latest
     needs: [build-helpers, build-napi, build-image-response, build-template]
     steps:
