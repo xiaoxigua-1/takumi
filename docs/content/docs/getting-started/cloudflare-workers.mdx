@@ -3,7 +3,9 @@ title: Use Takumi in Cloudflare Workers
 description: Integrate Takumi with Cloudflare Workers image generation at the edge.
 ---
 
-Takumi has fist class support for Cloudflare Workers, allowing you to generate images dynamically at the edge without any cost. This approach offers low latency and global distribution through Cloudflare's network.
+Takumi has first-class support for Cloudflare Workers, allowing you to generate images dynamically at the edge without any cost.
+
+Thanks to awesome performance optimizations, Takumi works within Workers' free plan CPU time constraints. Here's a deployed example: [takumi-on-workers-example.kane.tw?name=your-name](https://takumi-on-workers-example.kane.tw/?name=your-name).
 
 ## Create a New Wrangler Project
 
@@ -29,10 +31,10 @@ npm install @takumi-rs/wasm @takumi-rs/helpers
 
 ## Configure Wrangler
 
-If you are using external font or images, add `rules` configuration to your `wrangler.jsonc` to handle import statements.
+If you are using external fonts or images, add `rules` configuration to your `wrangler.jsonc` to handle import statements.
 
 <Callout type="warn">
-The verified minimum compatibility date is `2025-08-03`, if you are encountering errors related to WASM module initialization, please check your compatibility date.
+The verified minimum compatibility date is `2025-08-03`. If you are encountering errors related to WASM module initialization, please check your compatibility date.
 </Callout>
 
 ```json
@@ -53,7 +55,7 @@ The verified minimum compatibility date is `2025-08-03`, if you are encountering
 
 ## Initialize WASM Module
 
-Import the WASM like this and wrangler will handle the initialization part for you, make sure to call `initSync` before initializing the `Renderer` instance.
+Import the WASM like this and Wrangler will handle the initialization part for you. Make sure to call `initSync` before initializing the `Renderer` instance.
 
 ```ts
 import { initSync, Renderer } from "@takumi-rs/wasm";
@@ -66,7 +68,11 @@ const renderer = new Renderer();
 
 ## Load Static Assets
 
-Load fonts and persistent images when your worker starts
+<Callout type="info">
+To maintain the minimal size of the WASM file, we don't provide default embedded fonts like Geist or Geist Mono. You need to load them manually.
+</Callout>
+
+Load fonts and persistent images when your worker starts.
 
 ```ts
 import { initSync, Renderer } from "@takumi-rs/wasm";
@@ -89,10 +95,10 @@ renderer.loadFontWithInfo({
 
 ## Handle Dynamic Assets
 
-Cloudflare Workers does not support top-level await, so you need to initialize the asset in the fetch handler.
+Cloudflare Workers does not support top-level await, so you need to initialize assets in the fetch handler.
 
 ```ts
-// stores in base64 data uri
+// Store in base64 data URI
 let logoUrl: string;
 
 export default {
@@ -110,6 +116,6 @@ Deploy your worker using Wrangler:
 npm run deploy
 ```
 
-You should now have a working Takumi worker, checkout the full [Cloudflare Workers example](https://github.com/kane50613/takumi/blob/master/example/cloudflare-workers) here to see a working example.
+You should now have a working Takumi worker. Check out the full [Cloudflare Workers example](https://github.com/kane50613/takumi/blob/master/example/cloudflare-workers) here to see a working example.
 
-If you encounter any issues, please [fire an issue](https://github.com/kane50613/takumi/issues) here.
+If you encounter any issues, please [file an issue](https://github.com/kane50613/takumi/issues) here.
