@@ -1,17 +1,13 @@
 ---
-title: Use Takumi in Browser (WASM)
-description: Integrate Takumi with WebAssembly (WASM) for client-side image generation.
+title: Use Takumi in Browser
+description: Integrate Takumi with WebAssembly for client-side image generation.
 ---
 
-<Callout>
-Web worker integration is under development. Contributions welcome!
-</Callout>
-
 <Callout type="warn">
-For server-side rendering, consider using the [Node.js/Bun Integration](/docs/getting-started/nodejs) for improved performance and compatibility.
+For server-side rendering, consider using the [Node.js or Bun Integration](/docs/getting-started/nodejs) for improved performance and compatibility.
 </Callout>
 
-Takumi provides WebAssembly (WASM) bindings for browser compatibility, allowing client-side image generation. The WASM binary is downloaded client-side.
+Takumi provides WebAssembly bindings for browser compatibility, allowing client-side image generation. The WASM binary is downloaded client-side.
 
 ```npm
 npm i @takumi-rs/wasm @takumi-rs/helpers
@@ -22,6 +18,10 @@ npm i @takumi-rs/wasm @takumi-rs/helpers
 Since WASM files are binary, they need to be loaded and initialized properly. The Takumi WASM package provides an `init` function that takes the URL of the WASM binary.
 
 Different bundlers and frameworks have different ways to handle WASM files. Below are examples for popular setups.
+
+### Cloudflare Workers Setup
+
+We have a dedicated guide for [Cloudflare Workers Setup](/docs/getting-started/cloudflare-workers).
 
 ### Vite Setup
 
@@ -97,35 +97,6 @@ useEffect(() => {
     // ... your code ...
   })();
 }, []);
-```
-
-### Cloudflare Workers Setup
-
-This is setup using [worker-sdk](https://github.com/cloudflare/workers-sdk) template, checkout working [cloudflare-workers example](https://github.com/kane50613/takumi/blob/master/example/cloudflare-workers/src/index.ts) here.
-
-Add this rule to `wrangler.jsonc` to allow importing of font files, do the same thing with images if needed.
-
-```json
-{
-  "rules": [
-    {
-      "type": "Data",
-      "globs": ["**/*.ttf", "**/*.woff", "**/*.woff2"],
-      "fallthrough": true
-    }
-  ]
-}
-```
-
-Use `initSync` function to setup initialized WebAssembly module.
-
-```ts
-import module from "@takumi-rs/wasm/takumi_wasm_bg.wasm";
-import { initSync, Renderer } from "@takumi-rs/wasm";
-
-initSync({ module });
-
-const renderer = new Renderer();
 ```
 
 ### No Bundler Setup

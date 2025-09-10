@@ -1,0 +1,115 @@
+---
+title: Use Takumi in Cloudflare Workers
+description: Integrate Takumi with Cloudflare Workers image generation at the edge.
+---
+
+Takumi has fist class support for Cloudflare Workers, allowing you to generate images dynamically at the edge without any cost. This approach offers low latency and global distribution through Cloudflare's network.
+
+## Create a New Wrangler Project
+
+First, create a new Cloudflare Workers project using Wrangler:
+
+```npm
+npm create cloudflare@latest og-image-worker
+```
+
+Navigate to your project directory:
+
+```bash
+cd og-image-worker
+```
+
+## Install Dependencies
+
+Install Takumi packages and Wrangler:
+
+```npm
+npm install @takumi-rs/wasm @takumi-rs/helpers
+```
+
+## Configure Wrangler
+
+If you are using external font or images, add `rules` configuration to your `wrangler.jsonc` to handle import statements.
+
+<Callout type="warn">
+The verified minimum compatibility date is `2025-08-03`, if you are encountering errors related to WASM module initialization, please check your compatibility date.
+</Callout>
+
+```json
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "og-image-worker",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-08-03",
+  "rules": [
+    {
+      "type": "Data",
+      "globs": ["**/*.ttf", "**/*.woff", "**/*.woff2"],
+      "fallthrough": true
+    }
+  ]
+}
+```
+
+## Initialize WASM Module
+
+Import the WASM like this and wrangler will handle the initialization part for you, make sure to call `initSync` before initializing the `Renderer` instance.
+
+```ts
+import { initSync, Renderer } from "@takumi-rs/wasm";
+import module from "@takumi-rs/wasm/takumi_wasm_bg.wasm";
+
+initSync({ module });
+
+const renderer = new Renderer();
+```
+
+## Load Static Assets
+
+Load fonts and persistent images when your worker starts
+
+```ts
+import { initSync, Renderer } from "@takumi-rs/wasm";
+import module from "@takumi-rs/wasm/takumi_wasm_bg.wasm";
+import medium from "../../assets/fonts/noto-sans/noto-sans-v39-latin-500.woff2";
+import bold from "../../assets/fonts/noto-sans/noto-sans-v39-latin-700.woff2";
+
+initSync({ module });
+
+const renderer = new Renderer();
+
+renderer.loadFont(new Uint8Array(medium));
+renderer.loadFontWithInfo({
+  data: new Uint8Array(bold),
+  name: "Noto Sans",
+  weight: 700,
+  style: "normal",
+});
+```
+
+## Handle Dynamic Assets
+
+Cloudflare Workers does not support top-level await, so you need to initialize the asset in the fetch handler.
+
+```ts
+// stores in base64 data uri
+let logoUrl: string;
+
+export default {
+  async fetch(request: Request) {
+    logoUrl ??= await fetchLogo();
+  },
+}
+```
+
+## Deploy
+
+Deploy your worker using Wrangler:
+
+```npm
+npm run deploy
+```
+
+You should now have a working Takumi worker, checkout the full [Cloudflare Workers example](https://github.com/kane50613/takumi/blob/master/example/cloudflare-workers) here to see a working example.
+
+If you encounter any issues, please [fire an issue](https://github.com/kane50613/takumi/issues) here.

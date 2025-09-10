@@ -1,5 +1,5 @@
 {
-  "pages": ["nodejs", "wasm-web", "..."],
+  "pages": ["nodejs", "cloudflare-workers", "wasm-web", "..."],
   "defaultOpen": true,
   "icon": "Book"
 }
