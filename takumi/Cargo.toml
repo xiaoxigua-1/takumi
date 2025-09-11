@@ -16,6 +16,7 @@ cssparser = "0.35"
 csscolorparser = "0.7"
 noise = "0.9"
 zeno = "0.3"
+lru = "0.16"
 
 [dependencies.parley]
 version = "0.5"

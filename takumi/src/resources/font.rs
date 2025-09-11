@@ -1,8 +1,11 @@
 use std::{
   borrow::Cow,
   collections::{HashMap, HashSet},
+  num::NonZeroUsize,
   sync::{Arc, Mutex},
 };
+
+use lru::LruCache;
 
 use parley::{
   GenericFamily, Layout, LayoutContext, RangedBuilder, Run,
@@ -48,20 +51,14 @@ pub struct FontScaleCache {
 
 /// LRU glyph cache for resolved glyphs
 pub struct GlyphCache {
-  /// Maximum number of entries to keep in cache
-  max_entries: usize,
-  /// Cache entries with access order tracking
-  entries: HashMap<GlyphCacheKey, (CachedGlyph, usize)>,
-  /// Access counter for LRU eviction
-  access_counter: usize,
+  /// LRU cache with automatic eviction
+  cache: LruCache<GlyphCacheKey, CachedGlyph>,
 }
 
 impl Default for GlyphCache {
   fn default() -> Self {
     Self {
-      max_entries: 10000, // Configurable cache size
-      entries: HashMap::new(),
-      access_counter: 0,
+      cache: LruCache::new(NonZeroUsize::new(1000).unwrap()),
     }
   }
 }
@@ -69,49 +66,22 @@ impl Default for GlyphCache {
 impl GlyphCache {
   /// Get a glyph from the cache, updating access order
   pub fn get(&mut self, key: &GlyphCacheKey) -> Option<CachedGlyph> {
-    if let Some((glyph, access_count)) = self.entries.get_mut(key) {
-      *access_count = self.access_counter;
-      self.access_counter += 1;
-      Some(Arc::clone(glyph))
-    } else {
-      None
-    }
+    self.cache.get(key).cloned()
   }
 
-  /// Insert a glyph into the cache with LRU eviction
+  /// Insert a glyph into the cache with automatic LRU eviction
   pub fn insert(&mut self, key: GlyphCacheKey, glyph: ResolvedGlyph) {
-    // Evict least recently used entries if cache is full
-    if self.entries.len() >= self.max_entries {
-      let mut oldest_key = None;
-      let mut oldest_access = usize::MAX;
-
-      for (k, (_, access_count)) in &self.entries {
-        if *access_count < oldest_access {
-          oldest_access = *access_count;
-          oldest_key = Some(*k);
-        }
-      }
-
-      if let Some(oldest_key) = oldest_key {
-        self.entries.remove(&oldest_key);
-      }
-    }
-
-    self
-      .entries
-      .insert(key, (Arc::new(glyph), self.access_counter));
-    self.access_counter += 1;
+    self.cache.put(key, Arc::new(glyph));
   }
 
   /// Clear all cached glyphs
   pub fn clear(&mut self) {
-    self.entries.clear();
-    self.access_counter = 0;
+    self.cache.clear();
   }
 
   /// Get cache statistics
   pub fn stats(&self) -> (usize, usize) {
-    (self.entries.len(), self.max_entries)
+    (self.cache.len(), self.cache.cap().get())
   }
 }
 
