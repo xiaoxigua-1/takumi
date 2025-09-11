@@ -13,9 +13,6 @@ use swash::{
   scale::{ScaleContext, image::Image, outline::Outline},
 };
 
-#[cfg(feature = "woff")]
-mod woff;
-
 /// Represents a resolved glyph that can be either a bitmap image or an outline
 #[derive(Clone)]
 pub enum ResolvedGlyph {
@@ -123,12 +120,9 @@ impl GlyphCache {
 pub enum FontError {
   /// I/O error occurred while reading the font file
   Io(std::io::Error),
-  /// Error occurred during WOFF2 to TTF conversion
-  #[cfg(feature = "woff2")]
-  Woff2(woff2_patched::decode::DecodeError),
-  /// Error during woff parsing
-  #[cfg(feature = "woff")]
-  Woff(woff::WoffError),
+  /// Error occurred during WOFF conversion
+  #[cfg(any(feature = "woff", feature = "woff2"))]
+  Woff(wuff::WuffErr),
   /// Unsupported Font Format
   UnsupportedFormat,
 }
@@ -163,16 +157,14 @@ pub fn load_font<'source>(
     FontFormat::Ttf | FontFormat::Otf => Ok(Cow::Borrowed(source)),
     #[cfg(feature = "woff2")]
     FontFormat::Woff2 => {
-      let mut bytes = bytes::Bytes::copy_from_slice(source);
-
-      let ttf = woff2_patched::convert_woff2_to_ttf(&mut bytes).map_err(FontError::Woff2)?;
-
+      let ttf = wuff::decompress_woff2(source).map_err(FontError::Woff)?;
       Ok(Cow::Owned(ttf))
     }
     #[cfg(feature = "woff")]
-    FontFormat::Woff => Ok(Cow::Owned(
-      woff::decompress_woff(source).map_err(FontError::Woff)?,
-    )),
+    FontFormat::Woff => {
+      let ttf = wuff::decompress_woff1(source).map_err(FontError::Woff)?;
+      Ok(Cow::Owned(ttf))
+    }
   }
 }
 
@@ -196,12 +188,12 @@ fn guess_font_format(source: &[u8]) -> Result<FontFormat, FontError> {
 #[cfg(feature = "embed_fonts")]
 const EMBEDDED_FONTS: &[(&[u8], &str, GenericFamily)] = &[
   (
-    include_bytes!("../../../../assets/fonts/geist/Geist[wght].woff2"),
+    include_bytes!("../../../assets/fonts/geist/Geist[wght].woff2"),
     "Geist",
     GenericFamily::SansSerif,
   ),
   (
-    include_bytes!("../../../../assets/fonts/geist/GeistMono[wght].woff2"),
+    include_bytes!("../../../assets/fonts/geist/GeistMono[wght].woff2"),
     "Geist Mono",
     GenericFamily::Monospace,
   ),
