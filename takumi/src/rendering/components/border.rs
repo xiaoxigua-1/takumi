@@ -71,10 +71,7 @@ impl BorderProperties {
       width: layout.border,
       offset: Point::ZERO,
       size: layout.size,
-      color: style
-        .inheritable_style
-        .border_color
-        .unwrap_or_else(Color::black),
+      color: style.border_color.unwrap_or_else(Color::black),
       radius: Sides([top_left, top_right, bottom_right, bottom_left]),
       transform: context.transform,
     }
@@ -210,11 +207,7 @@ pub fn draw_border(canvas: &Canvas, canvas_offset: Point<f32>, border: BorderPro
 
   border.transform.apply_on_paths(&mut paths);
 
-  let mut mask = Mask::new(&paths);
-
-  mask.style(Fill::EvenOdd);
-
-  let (mask, mut placement) = mask.render();
+  let (mask, mut placement) = Mask::new(&paths).style(Fill::EvenOdd).render();
 
   placement.left += border.offset.x as i32 + canvas_offset.x as i32;
   placement.top += border.offset.y as i32 + canvas_offset.y as i32;

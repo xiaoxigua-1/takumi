@@ -11,7 +11,7 @@ use taffy::{AvailableSpace, Layout, Point, Size};
 
 use crate::{
   impl_node_enum,
-  layout::style::Style,
+  layout::style::{CssValue, Style},
   rendering::{
     BoxShadowRenderPhase, Canvas, RenderContext, draw_background_layers, draw_border,
     draw_box_shadow, resolve_layers_tiles,
@@ -39,13 +39,66 @@ pub trait Node<N: Node<N>>: Send + Sync + Clone {
   /// This method merges inheritable style properties from the parent
   /// into this node's style, then propagates the inheritance to children.
   fn inherit_style(&mut self, parent: &Style) {
-    use merge::Merge;
-
     let style = self.get_style_mut();
 
-    style
-      .inheritable_style
-      .merge(parent.inheritable_style.clone());
+    // Inherit properties that are set to Inherit on the child
+    if let CssValue::Inherit = style.box_sizing {
+      style.box_sizing = parent.box_sizing;
+    }
+    if let CssValue::Inherit = style.text_overflow {
+      style.text_overflow = parent.text_overflow;
+    }
+    if let CssValue::Inherit = style.text_transform {
+      style.text_transform = parent.text_transform;
+    }
+    if let CssValue::Inherit = style.font_style {
+      style.font_style = parent.font_style;
+    }
+    if let CssValue::Inherit = style.border_color {
+      style.border_color = parent.border_color;
+    }
+    if let CssValue::Inherit = style.color {
+      style.color = parent.color;
+    }
+    if let CssValue::Inherit = style.font_size {
+      style.font_size = parent.font_size;
+    }
+    if let CssValue::Inherit = style.font_family {
+      style.font_family = parent.font_family.clone();
+    }
+    if let CssValue::Inherit = style.line_height {
+      style.line_height = parent.line_height;
+    }
+    if let CssValue::Inherit = style.font_weight {
+      style.font_weight = parent.font_weight;
+    }
+    if let CssValue::Inherit = style.font_variation_settings {
+      style.font_variation_settings = parent.font_variation_settings.clone();
+    }
+    if let CssValue::Inherit = style.font_feature_settings {
+      style.font_feature_settings = parent.font_feature_settings.clone();
+    }
+    if let CssValue::Inherit = style.line_clamp {
+      style.line_clamp = parent.line_clamp;
+    }
+    if let CssValue::Inherit = style.text_align {
+      style.text_align = parent.text_align;
+    }
+    if let CssValue::Inherit = style.letter_spacing {
+      style.letter_spacing = parent.letter_spacing;
+    }
+    if let CssValue::Inherit = style.word_spacing {
+      style.word_spacing = parent.word_spacing;
+    }
+    if let CssValue::Inherit = style.image_rendering {
+      style.image_rendering = parent.image_rendering;
+    }
+    if let CssValue::Inherit = style.overflow_wrap {
+      style.overflow_wrap = parent.overflow_wrap;
+    }
+    if let CssValue::Inherit = style.word_break {
+      style.word_break = parent.word_break;
+    }
 
     self.inherit_style_for_children();
   }

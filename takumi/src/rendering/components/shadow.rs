@@ -207,11 +207,7 @@ fn draw_inset_shadow(
     .expand_by(-shadow.spread_radius)
     .append_mask_commands(&mut paths);
 
-  let mut mask = Mask::new(&paths);
-
-  mask.style(Fill::EvenOdd);
-
-  let (mask, placement) = mask.render();
+  let (mask, placement) = Mask::new(&paths).style(Fill::EvenOdd).render();
 
   let mut i = 0;
 

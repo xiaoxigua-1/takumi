@@ -13,6 +13,12 @@ use crate::{
 #[ts(as = "LineHeightValue")]
 pub struct LineHeight(pub LengthUnit);
 
+impl Default for LineHeight {
+  fn default() -> Self {
+    Self(LengthUnit::Em(1.2)) // Default line height
+  }
+}
+
 /// Proxy type for `LineHeight` Css deserialization.
 #[derive(Debug, Clone, PartialEq, Deserialize, Serialize, TS)]
 #[serde(untagged)]

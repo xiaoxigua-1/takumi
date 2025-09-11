@@ -156,11 +156,7 @@ pub fn draw_image(
   let (image, offset_x, offset_y) = process_image_for_object_fit(
     image,
     style.object_fit,
-    style
-      .inheritable_style
-      .image_rendering
-      .unwrap_or_default()
-      .into(),
+    style.image_rendering.clone().unwrap_or_default_ref().into(),
     content_box.width,
     content_box.height,
   );
@@ -184,6 +180,6 @@ pub fn draw_image(
       .create_border_radius(&layout, context)
       .inset_by_border_width(),
     transform_with_content_offset,
-    style.inheritable_style.image_rendering.unwrap_or_default(),
+    style.image_rendering.clone().unwrap_or_default_ref(),
   );
 }

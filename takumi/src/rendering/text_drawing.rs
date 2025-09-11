@@ -111,7 +111,7 @@ pub fn draw_text(
       context,
       &buffer,
       canvas,
-      style.inheritable_style.color.unwrap_or_else(Color::black),
+      style.color.unwrap_or_else(Color::black),
       layout,
       Some(composed),
     );
@@ -123,7 +123,7 @@ pub fn draw_text(
     context,
     &buffer,
     canvas,
-    style.inheritable_style.color.unwrap_or_else(Color::black),
+    style.color.unwrap_or_else(Color::black),
     layout,
     None,
   );

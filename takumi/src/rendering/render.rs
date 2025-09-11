@@ -224,8 +224,8 @@ fn insert_taffy_node<'ctx, Nodes: Node<Nodes>>(
 
   let parent_font_size = node
     .get_style()
-    .inheritable_style
     .font_size
+    .as_value()
     .map(|f| f.resolve_to_px(render_context, render_context.parent_font_size))
     .unwrap_or(render_context.parent_font_size);
 

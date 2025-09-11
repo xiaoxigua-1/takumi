@@ -1,12 +1,14 @@
-use merge::{Merge, option::overwrite_none};
 use parley::Alignment;
 use serde::{Deserialize, Serialize};
+use swash::text::WordBreakStrength;
 use taffy::{Layout, Size, Style as TaffyStyle};
 use ts_rs::TS;
 
 use crate::{
-  layout::{DEFAULT_LINE_HEIGHT_SCALER, style::properties::*},
-  rendering::{BorderProperties, RenderContext},
+  define_style, layout::{
+    DEFAULT_LINE_HEIGHT_SCALER,
+    style::{CssValue, properties::*},
+  }, rendering::{BorderProperties, RenderContext}
 };
 
 /// Represents the resolved font style for a text node.
@@ -43,8 +45,28 @@ pub struct ResolvedFontStyle {
   /// Text wrap behavior.
   pub overflow_wrap: parley::OverflowWrap,
   /// How text should be broken at word boundaries.
-  pub word_break: swash::text::WordBreakStrength,
+  pub word_break: WordBreakStrength,
 }
+
+define_style!(
+  box_sizing: BoxSizing = BoxSizing::BorderBox.into(),
+  color: Color = CssValue::Inherit,
+  display: Display = Display::Flex.into(),
+  width: LengthUnit = LengthUnit::Auto.into(),
+  height: LengthUnit = LengthUnit::Auto.into(),
+  max_width: LengthUnit = LengthUnit::Auto.into(),
+  max_height: LengthUnit = LengthUnit::Auto.into(),
+  min_width: LengthUnit = LengthUnit::Auto.into(),
+  min_height: LengthUnit = LengthUnit::Auto.into(),
+  aspect_ratio: Option<f32> = None.into(),
+  padding: Sides<LengthUnit> = Sides([LengthUnit::zero(); 4]).into(),
+  padding_top: Option<LengthUnit> = None.into(),
+  padding_right: Option<LengthUnit> = None.into(),
+  padding_bottom: Option<LengthUnit> = None.into(),
+  padding_left: Option<LengthUnit> = None.into(),
+  margin: Sides<LengthUnit> = Sides([LengthUnit::zero(); 4]).into(),
+  margin_top: Option<LengthUnit> = None.into()
+);
 
 /// Main styling structure that contains all layout and visual properties.
 #[derive(Debug, Clone, Deserialize, Serialize, TS)]
@@ -52,19 +74,19 @@ pub struct ResolvedFontStyle {
 #[ts(export, optional_fields)]
 pub struct Style {
   /// Display algorithm to use for the element.
-  pub display: Display,
+  pub display: CssValue<Display>,
   /// Width of the element.
-  pub width: LengthUnit,
+  pub width: CssValue<LengthUnit>,
   /// Height of the element.
-  pub height: LengthUnit,
+  pub height: CssValue<LengthUnit>,
   /// Max width of the element.
-  pub max_width: LengthUnit,
+  pub max_width: CssValue<LengthUnit>,
   /// Max height of the element.
-  pub max_height: LengthUnit,
+  pub max_height: CssValue<LengthUnit>,
   /// Min width of the element.
-  pub min_width: LengthUnit,
+  pub min_width: CssValue<LengthUnit>,
   /// Min height of the element.
-  pub min_height: LengthUnit,
+  pub min_height: CssValue<LengthUnit>,
   /// Aspect ratio of the element (width/height).
   pub aspect_ratio: Option<f32>,
   /// Internal spacing around the element's content (top, right, bottom, left).
@@ -116,7 +138,7 @@ pub struct Style {
   /// The initial main size of the flex item before growing or shrinking.
   pub flex_basis: LengthUnit,
   /// Positioning method (relative, absolute, etc.).
-  pub position: Position,
+  pub position: CssValue<Position>,
   /// Transform for the element.
   pub transform: Option<Transforms>,
   /// Transform origin for the element.
@@ -185,15 +207,52 @@ pub struct Style {
   pub grid_template_rows: Option<GridTemplateComponents>,
   /// Defines named grid areas specified via `grid-template-areas`.
   pub grid_template_areas: Option<GridTemplateAreas>,
-  /// Inheritable style properties that cascade to child elements.
-  #[serde(flatten)]
-  pub inheritable_style: InheritableStyle,
+
+  // Inheritable style properties that cascade to child elements
+  /// How the width and height of an element are calculated.
+  pub box_sizing: CssValue<BoxSizing>,
+  /// How text should be overflowed.
+  pub text_overflow: CssValue<TextOverflow>,
+  /// Controls text case transformation when rendering.
+  pub text_transform: CssValue<TextTransform>,
+  /// Font slant style (normal, italic, oblique).
+  pub font_style: CssValue<FontStyle>,
+  /// Color of the element's border.
+  pub border_color: CssValue<Color>,
+  /// Text color for child text elements.
+  pub color: CssValue<Color>,
+  /// Font size for text rendering.
+  pub font_size: CssValue<LengthUnit>,
+  /// Font family name for text rendering.
+  pub font_family: CssValue<FontFamily>,
+  /// Line height for text spacing, number is em.
+  pub line_height: CssValue<LineHeight>,
+  /// Font weight for text rendering.
+  pub font_weight: CssValue<FontWeight>,
+  /// Controls variable font axis values via CSS font-variation-settings property.
+  pub font_variation_settings: CssValue<FontVariationSettings>,
+  /// Controls OpenType font features via CSS font-feature-settings property.
+  pub font_feature_settings: CssValue<FontFeatureSettings>,
+  /// Maximum number of lines for text before truncation.
+  pub line_clamp: CssValue<u32>,
+  /// Text alignment within the element.
+  pub text_align: CssValue<TextAlign>,
+  /// Additional spacing between characters in text.
+  pub letter_spacing: CssValue<LengthUnit>,
+  /// Additional spacing between words in text.
+  pub word_spacing: CssValue<LengthUnit>,
+  /// Controls how images are scaled when rendered.
+  pub image_rendering: CssValue<ImageScalingAlgorithm>,
+  /// How text should be overflowed.
+  pub overflow_wrap: CssValue<OverflowWrap>,
+  /// How text should be broken at word boundaries.
+  pub word_break: CssValue<WordBreak>,
 }
 
 impl Default for Style {
   fn default() -> Self {
     Self {
-      display: Display::Flex,
+      display: CssValue::Value(Display::Flex),
       margin: Sides([LengthUnit::zero(); 4]),
       margin_top: None,
       margin_right: None,
@@ -204,12 +263,12 @@ impl Default for Style {
       padding_right: None,
       padding_bottom: None,
       padding_left: None,
-      width: Default::default(),
-      height: Default::default(),
-      max_width: Default::default(),
-      max_height: Default::default(),
-      min_width: Default::default(),
-      min_height: Default::default(),
+      width: CssValue::Unset,
+      height: CssValue::Unset,
+      max_width: CssValue::Unset,
+      max_height: CssValue::Unset,
+      min_width: CssValue::Unset,
+      min_height: CssValue::Unset,
       aspect_ratio: None,
       inset: Default::default(),
       top: None,
@@ -223,7 +282,7 @@ impl Default for Style {
       justify_items: Default::default(),
       align_items: Default::default(),
       align_self: Default::default(),
-      position: Default::default(),
+      position: CssValue::Value(Position::Relative),
       gap: Default::default(),
       flex_grow: 0.0,
       flex_shrink: 1.0,
@@ -260,55 +319,29 @@ impl Default for Style {
       grid_template_columns: None,
       grid_template_rows: None,
       grid_template_areas: None,
-      inheritable_style: Default::default(),
+
+      // Inheritable style properties
+      box_sizing: CssValue::Unset,
+      text_overflow: CssValue::Unset,
+      text_transform: CssValue::Unset,
+      font_style: CssValue::Unset,
+      border_color: CssValue::Unset,
+      color: CssValue::Unset,
+      font_size: CssValue::Unset,
+      font_family: CssValue::Unset,
+      line_height: CssValue::Unset,
+      font_weight: CssValue::Unset,
+      font_variation_settings: CssValue::Unset,
+      font_feature_settings: CssValue::Unset,
+      line_clamp: CssValue::Unset,
+      text_align: CssValue::Unset,
+      letter_spacing: CssValue::Unset,
+      word_spacing: CssValue::Unset,
+      image_rendering: CssValue::Unset,
+      overflow_wrap: CssValue::Unset,
+      word_break: CssValue::Unset,
     }
   }
-}
-
-/// Style properties that can be inherited by child elements.
-#[derive(Debug, Clone, Deserialize, Serialize, Default, TS, Merge)]
-#[merge(strategy = overwrite_none)]
-#[ts(optional_fields, export)]
-#[serde(rename_all = "camelCase")]
-pub struct InheritableStyle {
-  /// How the width and height of an element are calculated.
-  pub box_sizing: Option<BoxSizing>,
-  /// How text should be overflowed.
-  pub text_overflow: Option<TextOverflow>,
-  /// Controls text case transformation when rendering.
-  pub text_transform: Option<TextTransform>,
-  /// Font slant style (normal, italic, oblique).
-  pub font_style: Option<FontStyle>,
-  /// Color of the element's border.
-  pub border_color: Option<Color>,
-  /// Text color for child text elements.
-  pub color: Option<Color>,
-  /// Font size for text rendering.
-  pub font_size: Option<LengthUnit>,
-  /// Font family name for text rendering.
-  pub font_family: Option<FontFamily>,
-  /// Line height for text spacing, number is em.
-  pub line_height: Option<LineHeight>,
-  /// Font weight for text rendering.
-  pub font_weight: Option<FontWeight>,
-  /// Controls variable font axis values via CSS font-variation-settings property.
-  pub font_variation_settings: Option<FontVariationSettings>,
-  /// Controls OpenType font features via CSS font-feature-settings property.
-  pub font_feature_settings: Option<FontFeatureSettings>,
-  /// Maximum number of lines for text before truncation.
-  pub line_clamp: Option<u32>,
-  /// Text alignment within the element.
-  pub text_align: Option<TextAlign>,
-  /// Additional spacing between characters in text.
-  pub letter_spacing: Option<LengthUnit>,
-  /// Additional spacing between words in text.
-  pub word_spacing: Option<LengthUnit>,
-  /// Controls how images are scaled when rendered.
-  pub image_rendering: Option<ImageScalingAlgorithm>,
-  /// How text should be overflowed.
-  pub overflow_wrap: Option<OverflowWrap>,
-  /// How text should be broken at word boundaries.
-  pub word_break: Option<WordBreak>,
 }
 
 impl Style {
@@ -464,6 +497,18 @@ impl Style {
 
   /// Converts this style to a Taffy-compatible style for layout calculations.
   pub fn resolve_to_taffy_style(&self, context: &RenderContext) -> TaffyStyle {
+    // Helper function to resolve CssValue to concrete value with defaults
+    fn resolve_css_value_with_default<T: Default + Clone>(
+      css_value: &CssValue<T>,
+      default_value: T,
+    ) -> T {
+      match css_value {
+        CssValue::Value(v) => v.clone(),
+        CssValue::Inherit => default_value, // For now, fall back to default; inheritance would be handled at a higher level
+        CssValue::Unset => default_value,
+      }
+    }
+
     // Convert grid templates and associated line names
     let (grid_template_columns, grid_template_column_names) =
       Self::convert_template_components(&self.grid_template_columns, context);
@@ -471,18 +516,25 @@ impl Style {
       Self::convert_template_components(&self.grid_template_rows, context);
 
     TaffyStyle {
-      box_sizing: self.inheritable_style.box_sizing.unwrap_or_default().into(),
+      box_sizing: self
+        .box_sizing
+        .as_value()
+        .cloned()
+        .unwrap_or_default()
+        .into(),
       size: Size {
-        width: self.width.resolve_to_dimension(context),
-        height: self.height.resolve_to_dimension(context),
+        width: resolve_css_value_with_default(&self.width, LengthUnit::Auto)
+          .resolve_to_dimension(context),
+        height: resolve_css_value_with_default(&self.height, LengthUnit::Auto)
+          .resolve_to_dimension(context),
       },
       border: resolve_length_unit_rect_to_length_percentage(context, self.resolved_border_width()),
       padding: resolve_length_unit_rect_to_length_percentage(context, self.resolved_padding()),
       inset: resolve_length_unit_rect_to_length_percentage_auto(context, self.resolved_inset()),
       margin: resolve_length_unit_rect_to_length_percentage_auto(context, self.resolved_margin()),
-      display: self.display.into(),
+      display: resolve_css_value_with_default(&self.display, Display::Flex).into(),
       flex_direction: self.flex_direction.into(),
-      position: self.position.into(),
+      position: resolve_css_value_with_default(&self.position, Position::Relative).into(),
       justify_content: self.justify_content.map(Into::into),
       align_content: self.align_content.map(Into::into),
       justify_items: self.justify_items.map(Into::into),
@@ -493,12 +545,16 @@ impl Style {
       flex_shrink: self.flex_shrink,
       flex_wrap: self.flex_wrap.into(),
       min_size: Size {
-        width: self.min_width.resolve_to_dimension(context),
-        height: self.min_height.resolve_to_dimension(context),
+        width: resolve_css_value_with_default(&self.min_width, LengthUnit::Auto)
+          .resolve_to_dimension(context),
+        height: resolve_css_value_with_default(&self.min_height, LengthUnit::Auto)
+          .resolve_to_dimension(context),
       },
       max_size: Size {
-        width: self.max_width.resolve_to_dimension(context),
-        height: self.max_height.resolve_to_dimension(context),
+        width: resolve_css_value_with_default(&self.max_width, LengthUnit::Auto)
+          .resolve_to_dimension(context),
+        height: resolve_css_value_with_default(&self.max_height, LengthUnit::Auto)
+          .resolve_to_dimension(context),
       },
       grid_auto_columns: self.grid_auto_columns.as_ref().map_or_else(Vec::new, |v| {
         v.0.iter().map(|s| s.to_min_max(context)).collect()
@@ -534,54 +590,55 @@ impl Style {
 
   /// Resolves inheritable style properties to concrete values for text rendering.
   pub fn resolve_to_font_style(&self, context: &RenderContext) -> ResolvedFontStyle {
-    let font_size = self
-      .inheritable_style
-      .font_size
-      .map(|f| f.resolve_to_px(context, context.parent_font_size))
-      .unwrap_or(context.parent_font_size);
+    // Helper function to resolve a CssValue to a concrete value
+    fn resolve_css_value<T: Clone>(
+      css_value: &CssValue<T>,
+      inherited_value: Option<&T>,
+      initial_value: T,
+    ) -> T {
+      match css_value {
+        CssValue::Value(v) => v.clone(),
+        CssValue::Inherit => inherited_value.cloned().unwrap_or(initial_value),
+        CssValue::Unset => initial_value,
+      }
+    }
 
-    let line_height = self
-      .inheritable_style
-      .line_height
-      .map(|line_height| line_height.into_parley(context))
-      .unwrap_or(parley::LineHeight::FontSizeRelative(
-        DEFAULT_LINE_HEIGHT_SCALER,
-      ));
+    let font_size = match &self.font_size {
+      CssValue::Value(f) => f.resolve_to_px(context, context.parent_font_size),
+      CssValue::Inherit => context.parent_font_size,
+      CssValue::Unset => context.parent_font_size, // Default font size
+    };
+
+    let line_height = match &self.line_height {
+      CssValue::Value(line_height) => line_height.into_parley(context),
+      CssValue::Inherit | CssValue::Unset => {
+        parley::LineHeight::FontSizeRelative(DEFAULT_LINE_HEIGHT_SCALER)
+      }
+    };
 
     ResolvedFontStyle {
-      color: self.inheritable_style.color.unwrap_or_else(Color::black),
+      color: resolve_css_value(&self.color, None, Color::black()),
       font_size,
       line_height,
-      font_weight: self
-        .inheritable_style
-        .font_weight
-        .unwrap_or_default()
-        .into(),
-      font_style: self.inheritable_style.font_style.unwrap_or_default().into(),
-      font_variation_settings: self.inheritable_style.font_variation_settings.clone(),
-      font_feature_settings: self.inheritable_style.font_feature_settings.clone(),
-      line_clamp: self.inheritable_style.line_clamp,
-      font_family: self.inheritable_style.font_family.clone(),
+      font_weight: resolve_css_value(&self.font_weight, None, FontWeight::default()).into(),
+      font_style: resolve_css_value(&self.font_style, None, FontStyle::default()).into(),
+      font_variation_settings: self.font_variation_settings.as_value().cloned(),
+      font_feature_settings: self.font_feature_settings.as_value().cloned(),
+      line_clamp: self.line_clamp.as_value().copied(),
+      font_family: self.font_family.as_value().cloned(),
       letter_spacing: self
-        .inheritable_style
         .letter_spacing
+        .as_value()
         .map(|spacing| spacing.resolve_to_px(context, font_size) / font_size),
       word_spacing: self
-        .inheritable_style
         .word_spacing
+        .as_value()
         .map(|spacing| spacing.resolve_to_px(context, font_size) / font_size),
-      text_align: self.inheritable_style.text_align.map(Into::into),
-      text_overflow: self
-        .inheritable_style
-        .text_overflow
-        .unwrap_or(TextOverflow::Clip),
-      text_transform: self.inheritable_style.text_transform.unwrap_or_default(),
-      overflow_wrap: self
-        .inheritable_style
-        .overflow_wrap
-        .unwrap_or_default()
-        .into(),
-      word_break: self.inheritable_style.word_break.unwrap_or_default().into(),
+      text_align: self.text_align.as_value().map(|v| (*v).into()),
+      text_overflow: resolve_css_value(&self.text_overflow, None, TextOverflow::Clip),
+      text_transform: resolve_css_value(&self.text_transform, None, TextTransform::default()),
+      overflow_wrap: resolve_css_value(&self.overflow_wrap, None, OverflowWrap::default()).into(),
+      word_break: resolve_css_value(&self.word_break, None, WordBreak::default()).into(),
     }
   }
 }

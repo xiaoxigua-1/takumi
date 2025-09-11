@@ -322,9 +322,7 @@ pub(crate) fn draw_filled_rect_color<C: Into<Rgba<u8>>>(
   radius.append_mask_commands(&mut paths);
   transform.apply_on_paths(&mut paths);
 
-  let mask = Mask::new(&paths);
-
-  let (mask, mut placement) = mask.render();
+  let (mask, mut placement) = Mask::new(&paths).render();
 
   placement.left += offset.x;
   placement.top += offset.y;
@@ -404,8 +402,7 @@ pub(crate) fn overlay_image(
   border.append_mask_commands(&mut paths);
   transform.apply_on_paths(&mut paths);
 
-  let mask = Mask::new(&paths);
-  let (mask, placement) = mask.render();
+  let (mask, placement) = Mask::new(&paths).render();
 
   let mut i = 0;
 

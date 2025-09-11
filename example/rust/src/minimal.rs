@@ -6,7 +6,7 @@ use takumi::{
   layout::{
     Viewport,
     node::{ContainerNode, TextNode},
-    style::{InheritableStyle, Style},
+    style::{CssValue, Style},
   },
   rendering::{ImageOutputFormat, render, write_image},
 };
@@ -33,10 +33,7 @@ pub fn say_hello_to(name: &str) {
   // Font size is set to 48.0 and other styles use default values
   let text = TextNode {
     style: Style {
-      inheritable_style: InheritableStyle {
-        font_size: Some(48.0.into()),
-        ..Default::default()
-      },
+      font_size: CssValue::Value(48.0.into()),
       ..Default::default()
     },
     text: format!("Hello, {name}!"),

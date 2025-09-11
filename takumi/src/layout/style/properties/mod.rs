@@ -232,10 +232,11 @@ impl_from_taffy_enum!(
 );
 
 /// This enum determines the layout algorithm used for the children of a node.
-#[derive(Debug, Clone, Deserialize, Serialize, Copy, TS, PartialEq)]
+#[derive(Debug, Clone, Deserialize, Serialize, Copy, TS, PartialEq, Default)]
 #[serde(rename_all = "kebab-case")]
 pub enum Display {
   /// The element generates a flex container and its children follow the flexbox layout algorithm
+  #[default]
   Flex,
   /// The element generates a grid container and its children follow the CSS Grid layout algorithm
   Grid,
@@ -298,12 +299,13 @@ impl_from_taffy_enum!(FlexWrap, taffy::FlexWrap, NoWrap, Wrap, WrapReverse);
 /// Defines how text should be overflowed.
 ///
 /// This enum determines how text should be handled when it exceeds the container width.
-#[derive(Debug, Clone, Deserialize, Serialize, Copy, TS, PartialEq)]
+#[derive(Debug, Clone, Deserialize, Serialize, Copy, TS, PartialEq, Default)]
 #[serde(rename_all = "kebab-case")]
 pub enum TextOverflow {
   /// Text is truncated with an ellipsis (…) at the end when it overflows
   Ellipsis,
   /// Text is simply clipped at the overflow edge with no visual indication
+  #[default]
   Clip,
 }
 
@@ -326,6 +328,12 @@ pub enum TextTransform {
 /// Multi value fallback is supported.
 #[derive(Debug, Clone, Deserialize, Serialize, TS, PartialEq)]
 pub struct FontFamily(String);
+
+impl Default for FontFamily {
+  fn default() -> Self {
+    Self("sans-serif".to_string())
+  }
+}
 
 impl<'a> From<FontFamily> for FontStack<'a> {
   fn from(family: FontFamily) -> Self {
