@@ -40,7 +40,7 @@
     "README.md",
     "tsconfig.json"
   ],
-  "license": "MIT",
+  "license": "(MIT OR Apache-2.0)",
   "scripts": {
     "build": "tsup-node src/index.ts src/jsx/jsx.ts --minify --dts --format esm,cjs --no-splitting"
   },

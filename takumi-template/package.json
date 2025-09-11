@@ -34,5 +34,6 @@
       "require": "./dist/*.cjs",
       "default": "./dist/*.js"
     }
-  }
+  },
+  "license": "(MIT OR Apache-2.0)"
 }

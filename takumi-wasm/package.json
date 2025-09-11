@@ -13,7 +13,7 @@
     "url": "git+https://github.com/kane50613/takumi.git"
   },
   "readme": "README.md",
-  "license": "MIT",
+  "license": "(MIT OR Apache-2.0)",
   "devDependencies": {
     "@takumi-rs/helpers": "workspace:*",
     "@types/bun": "catalog:",
