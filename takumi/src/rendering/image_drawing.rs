@@ -5,7 +5,7 @@ use image::imageops::crop_imm;
 use image::{RgbaImage, imageops::FilterType};
 use taffy::{Layout, Point, Size};
 
-use crate::layout::style::{Affine, ObjectFit, Style};
+use crate::layout::style::{Affine, InheritedStyle, ObjectFit, Style};
 use crate::rendering::{Canvas, RenderContext};
 use crate::resources::image::ImageSource;
 
@@ -146,7 +146,7 @@ pub fn process_image_for_object_fit<'i>(
 /// Border radius will be applied if specified in the style.
 pub fn draw_image(
   image: &ImageSource,
-  style: &Style,
+  style: &InheritedStyle,
   context: &RenderContext,
   canvas: &Canvas,
   layout: Layout,
@@ -156,7 +156,7 @@ pub fn draw_image(
   let (image, offset_x, offset_y) = process_image_for_object_fit(
     image,
     style.object_fit,
-    style.image_rendering.clone().unwrap_or_default_ref().into(),
+    style.image_rendering.into(),
     content_box.width,
     content_box.height,
   );

@@ -1,5 +1,6 @@
 use cssparser::{Parser, ParserInput};
 use serde::{Deserialize, Serialize};
+use smallvec::SmallVec;
 use ts_rs::TS;
 
 use crate::layout::style::{FromCss, LinearGradient, NoiseV1, ParseResult, RadialGradient};
@@ -37,7 +38,8 @@ impl<'i> FromCss<'i> for BackgroundImage {
 #[serde(untagged)]
 pub enum BackgroundImagesValue {
   /// Structured variant: explicit list of background images
-  Images(Vec<BackgroundImage>),
+  #[ts(as = "Vec<BackgroundImage>")]
+  Images(SmallVec<[BackgroundImage; 4]>),
   /// CSS string variant
   Css(String),
 }
@@ -46,7 +48,7 @@ pub enum BackgroundImagesValue {
 #[derive(Debug, Deserialize, Serialize, Clone, PartialEq, TS)]
 #[ts(as = "BackgroundImagesValue")]
 #[serde(try_from = "BackgroundImagesValue")]
-pub struct BackgroundImages(pub Vec<BackgroundImage>);
+pub struct BackgroundImages(pub SmallVec<[BackgroundImage; 4]>);
 
 impl TryFrom<BackgroundImagesValue> for BackgroundImages {
   type Error = String;
@@ -58,7 +60,8 @@ impl TryFrom<BackgroundImagesValue> for BackgroundImages {
         let mut input = ParserInput::new(&css);
         let mut parser = Parser::new(&mut input);
 
-        let mut images = vec![BackgroundImage::from_css(&mut parser).map_err(|e| e.to_string())?];
+        let mut images = SmallVec::new();
+        images.push(BackgroundImage::from_css(&mut parser).map_err(|e| e.to_string())?);
 
         while parser.expect_comma().is_ok() {
           images.push(BackgroundImage::from_css(&mut parser).map_err(|e| e.to_string())?);

@@ -1,12 +1,3 @@
-//! Style system for the takumi rendering library.
-//!
-//! This module contains all styling-related functionality including:
-//! - Style properties and values
-//! - Color management and gradients
-//! - Length units and measurements
-//! - CSS-like styling abstractions
-
-mod macros;
 mod properties;
 mod stylesheets;
 

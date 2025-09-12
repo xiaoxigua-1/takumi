@@ -2,6 +2,7 @@ use std::{fmt::Display, ops::Mul};
 
 use cssparser::{Parser, ParserInput, Token, match_ignore_ascii_case};
 use serde::{Deserialize, Serialize};
+use smallvec::SmallVec;
 use taffy::{Layout, Point, Size};
 use ts_rs::TS;
 use zeno::{Command, Vector};
@@ -35,7 +36,7 @@ pub enum Transform {
 #[derive(Debug, Clone, Deserialize, Serialize, TS, Default)]
 #[ts(as = "TransformsValue")]
 #[serde(try_from = "TransformsValue")]
-pub struct Transforms(pub Vec<Transform>);
+pub struct Transforms(pub SmallVec<[Transform; 4]>);
 
 impl Transforms {
   /// Converts the transforms to a [`Affine`] instance
@@ -108,7 +109,8 @@ impl Transforms {
 #[serde(untagged)]
 pub enum TransformsValue {
   /// A structured list of transform operations
-  Transforms(Vec<Transform>),
+  #[ts(as = "Vec<Transform>")]
+  Transforms(SmallVec<[Transform; 4]>),
   /// Raw CSS transform string to be parsed
   Css(String),
 }
@@ -123,7 +125,7 @@ impl TryFrom<TransformsValue> for Transforms {
         let mut input = ParserInput::new(&css);
         let mut parser = Parser::new(&mut input);
 
-        let mut transforms = Vec::new();
+        let mut transforms = SmallVec::new();
 
         while !parser.is_exhausted() {
           let transform = Transform::from_css(&mut parser).map_err(|e| e.to_string())?;

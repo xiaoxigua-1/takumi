@@ -302,11 +302,11 @@ impl_from_taffy_enum!(FlexWrap, taffy::FlexWrap, NoWrap, Wrap, WrapReverse);
 #[derive(Debug, Clone, Deserialize, Serialize, Copy, TS, PartialEq, Default)]
 #[serde(rename_all = "kebab-case")]
 pub enum TextOverflow {
-  /// Text is truncated with an ellipsis (…) at the end when it overflows
-  Ellipsis,
   /// Text is simply clipped at the overflow edge with no visual indication
   #[default]
   Clip,
+  /// Text is truncated with an ellipsis (…) at the end when it overflows
+  Ellipsis,
 }
 
 /// Controls text case transformation when rendering.

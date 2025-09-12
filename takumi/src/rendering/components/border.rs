@@ -4,7 +4,7 @@ use taffy::{Layout, Point, Rect, Size};
 use zeno::{Command, Fill, Mask, PathBuilder};
 
 use crate::{
-  layout::style::{Affine, Color, LengthUnit, Sides, Style},
+  layout::style::{Affine, Color, InheritedStyle, LengthUnit, Sides},
   rendering::{Canvas, RenderContext},
 };
 
@@ -55,7 +55,7 @@ impl BorderProperties {
     context: &RenderContext,
     layout: &Layout,
     resolved: Rect<LengthUnit>,
-    style: &Style,
+    style: &InheritedStyle,
   ) -> Self {
     let reference_size = layout.size.width.min(layout.size.height);
 
@@ -71,7 +71,7 @@ impl BorderProperties {
       width: layout.border,
       offset: Point::ZERO,
       size: layout.size,
-      color: style.border_color.unwrap_or_else(Color::black),
+      color: style.border_color,
       radius: Sides([top_left, top_right, bottom_right, bottom_left]),
       transform: context.transform,
     }

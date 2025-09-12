@@ -10,7 +10,7 @@ use zeno::{Command, Mask, PathData, Placement};
 use crate::{
   GlobalContext,
   layout::style::{
-    Affine, Color, ImageScalingAlgorithm, ResolvedFontStyle, Style, TextOverflow, TextTransform,
+    Affine, Color, ImageScalingAlgorithm, InheritedStyle, Style, TextOverflow, TextTransform,
   },
   rendering::{
     BorderProperties, Canvas, RenderContext, apply_mask_alpha_to_pixel, overlay_image,
@@ -24,7 +24,7 @@ const ELLIPSIS_CHAR: &str = "…";
 /// Draws text on the canvas with the specified font style and layout.
 pub fn draw_text(
   text: &str,
-  style: &Style,
+  style: &InheritedStyle,
   context: &RenderContext,
   canvas: &Canvas,
   layout: Layout,

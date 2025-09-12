@@ -2,6 +2,7 @@ use std::{borrow::Cow, fmt::Debug};
 
 use cssparser::{BasicParseErrorKind, ParseError, Parser, ParserInput};
 use serde::{Deserialize, Deserializer, Serialize};
+use smallvec::SmallVec;
 use ts_rs::TS;
 
 use crate::layout::style::{Color, FromCss, LengthUnit, ParseResult};
@@ -87,7 +88,8 @@ impl TryFrom<BoxShadowValue> for BoxShadow {
 
 /// Represents a collection of box shadows, have custom `FromCss` implementation for comma-separated values.
 #[derive(Debug, Clone, PartialEq, TS, Serialize)]
-pub struct BoxShadows(pub Vec<BoxShadow>);
+#[ts(as = "Vec<BoxShadow>")]
+pub struct BoxShadows(pub SmallVec<[BoxShadow; 4]>);
 
 impl<'de> Deserialize<'de> for BoxShadows {
   fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
@@ -99,7 +101,7 @@ impl<'de> Deserialize<'de> for BoxShadows {
     let mut input = ParserInput::new(&s);
     let mut parser = Parser::new(&mut input);
 
-    let mut shadows = Vec::new();
+    let mut shadows = SmallVec::new();
 
     loop {
       let shadow = BoxShadow::from_css(&mut parser)

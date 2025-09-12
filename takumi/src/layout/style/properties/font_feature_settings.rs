@@ -1,5 +1,6 @@
 use parley::FontFeature;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use smallvec::SmallVec;
 use ts_rs::TS;
 
 /// Controls OpenType font features via CSS font-feature-settings property.
@@ -8,7 +9,7 @@ use ts_rs::TS;
 /// such as ligatures, kerning, small caps, and other advanced typography features.
 #[derive(Debug, Clone, Default, PartialEq, TS)]
 #[ts(type = "string")]
-pub struct FontFeatureSettings(pub Vec<FontFeature>);
+pub struct FontFeatureSettings(pub SmallVec<[FontFeature; 4]>);
 
 impl<'de> Deserialize<'de> for FontFeatureSettings {
   fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
