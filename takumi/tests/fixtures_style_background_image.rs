@@ -2,7 +2,7 @@ use takumi::layout::{
   node::{ContainerNode, NodeKind},
   style::{
     BackgroundImagesValue, BackgroundPositionsValue, BackgroundRepeat, BackgroundRepeats,
-    BackgroundRepeatsValue, BackgroundSizesValue, Color, LengthUnit::Percentage, Style,
+    BackgroundRepeatsValue, BackgroundSizesValue, Color, LengthUnit::Percentage, StyleBuilder,
   },
 };
 

@@ -1,3 +1,6 @@
 {
-  "typescript.tsdk": "node_modules/typescript/lib"
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "rust-analyzer.diagnostics.disabled": [
+    "inactive-code"
+  ]
 }

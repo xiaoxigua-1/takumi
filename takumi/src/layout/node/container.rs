@@ -30,20 +30,4 @@ impl<Nodes: Node<Nodes>> Node<Nodes> for ContainerNode<Nodes> {
   fn get_style(&self) -> &Style {
     &self.style
   }
-
-  fn get_style_mut(&mut self) -> &mut Style {
-    &mut self.style
-  }
-
-  fn inherit_style_for_children(&mut self) {
-    let style = self.get_style().clone();
-
-    let Some(children) = &mut self.children else {
-      return;
-    };
-
-    for child in children.iter_mut() {
-      child.inherit_style(&style);
-    }
-  }
 }

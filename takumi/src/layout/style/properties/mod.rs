@@ -56,10 +56,7 @@ pub use word_break::*;
 use cssparser::{ParseError, Parser};
 use image::imageops::FilterType;
 use serde::{Deserialize, Serialize};
-// Grid-specific taffy types moved to `properties::grid`
 use ts_rs::TS;
-
-use crate::impl_from_taffy_enum;
 
 /// Parser result type alias for CSS property parsers.
 pub type ParseResult<'i, T> = Result<T, ParseError<'i, Cow<'i, str>>>;
@@ -70,6 +67,19 @@ pub trait FromCss<'i> {
   fn from_css(input: &mut Parser<'i, '_>) -> ParseResult<'i, Self>
   where
     Self: Sized;
+}
+
+/// Macro to implement From trait for Taffy enum conversions
+macro_rules! impl_from_taffy_enum {
+  ($from_ty:ty, $to_ty:ty, $($variant:ident),*) => {
+    impl From<$from_ty> for $to_ty {
+      fn from(value: $from_ty) -> Self {
+        match value {
+          $(<$from_ty>::$variant => <$to_ty>::$variant,)*
+        }
+      }
+    }
+  };
 }
 
 /// Defines how an image should be resized to fit its container.

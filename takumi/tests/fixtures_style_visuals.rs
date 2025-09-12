@@ -3,7 +3,7 @@ use takumi::layout::{
   style::{
     BoxShadow, BoxShadows, Color, InheritableStyle,
     LengthUnit::{Percentage, Px, Rem},
-    LineHeight, Position, Style,
+    LineHeight, Position, StyleBuilder,
   },
 };
 
@@ -13,12 +13,12 @@ use test_utils::run_style_width_test;
 #[test]
 fn test_style_background_color() {
   let container = ContainerNode {
-    style: Style {
-      width: Percentage(100.0),
-      height: Percentage(100.0),
-      background_color: Some(Color([255, 0, 0, 255])), // Red background
-      ..Default::default()
-    },
+    style: StyleBuilder::default()
+      .width(Percentage(100.0))
+      .height(Percentage(100.0))
+      .background_color(Some(Color([255, 0, 0, 255])))
+      .build()
+      .unwrap(),
     children: None,
   };
 
@@ -31,13 +31,13 @@ fn test_style_background_color() {
 #[test]
 fn test_style_border_radius() {
   let container = ContainerNode {
-    style: Style {
-      width: Percentage(100.0),
-      height: Percentage(100.0),
-      background_color: Some(Color([255, 0, 0, 255])), // Red background to show rounded corners
-      border_radius: Some(Px(20.0).into()),            // Uniform rounded corners of 20px
-      ..Default::default()
-    },
+    style: StyleBuilder::default()
+      .width(Percentage(100.0))
+      .height(Percentage(100.0))
+      .background_color(Some(Color([255, 0, 0, 255])))
+      .border_radius(Some(Px(20.0).into()))
+      .build()
+      .unwrap(),
     children: None,
   };
 

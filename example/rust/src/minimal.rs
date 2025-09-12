@@ -5,13 +5,11 @@ use takumi::{
   GlobalContext,
   layout::{
     Viewport,
-    node::{ContainerNode, TextNode},
+    node::{ContainerNode, NodeKind, TextNode},
     style::{CssValue, Style},
   },
   rendering::{ImageOutputFormat, render, write_image},
 };
-
-use crate::NodeKind;
 
 /// Generates a "Hello, {name}!" image with specified dimensions and styling
 ///

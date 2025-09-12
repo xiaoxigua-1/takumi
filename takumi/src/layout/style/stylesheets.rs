@@ -11,12 +11,13 @@ use crate::{
 /// Helper macro to define the `Style` struct and `InheritedStyle` struct.
 macro_rules! define_style {
   ($($property:ident: $type:ty = $default_global:expr => $initial_value:expr),* $(,)?) => {
+    /// Defines the style of an element.
     #[derive(Debug, Clone, Deserialize, Serialize, TS, Builder)]
     #[serde(default, rename_all = "camelCase")]
     #[ts(export, optional_fields)]
     #[builder(default, setter(into))]
     pub struct Style {
-      $( pub $property: CssValue<$type>, )*
+      $( #[allow(missing_docs)] pub $property: CssValue<$type>, )*
     }
 
     impl Default for Style {
@@ -26,15 +27,23 @@ macro_rules! define_style {
     }
 
     impl Style {
-      pub fn to_inherited_style(&self, parent: Option<&Style>) -> InheritedStyle {
+      /// Inherits the style from the parent element.
+      pub(crate) fn inherit(&self, parent: &InheritedStyle) -> InheritedStyle {
         InheritedStyle {
-          $( $property: self.$property.resolve(parent.and_then(|p| p.$property.as_value()), $initial_value, || $initial_value), )*
+          $( $property: self.$property.resolve(&parent.$property, &$initial_value), )*
         }
       }
     }
 
+    #[derive(Clone)]
     pub(crate) struct InheritedStyle {
       $( pub $property: $type, )*
+    }
+
+    impl Default for InheritedStyle {
+      fn default() -> Self {
+        Self { $( $property: $initial_value, )* }
+      }
     }
   };
 }
@@ -98,7 +107,7 @@ define_style!(
   background_position: Option<BackgroundPositions> = None => None,
   background_size: Option<BackgroundSizes> = None => None,
   background_repeat: Option<BackgroundRepeats> = None => None,
-  background_color: Option<Color> = None => None,
+  background_color: Color = Color::transparent() => Color::transparent(),
   box_shadow: Option<BoxShadows> = None => None,
   grid_auto_columns: Option<GridTrackSizes> = None => None,
   grid_auto_rows: Option<GridTrackSizes> = None => None,
@@ -113,10 +122,10 @@ define_style!(
   font_style: FontStyle = CssValue::Inherit => Default::default(),
   border_color: Color = CssValue::Inherit => Color::black(),
   color: Color = CssValue::Inherit => Color::black(),
-  font_size: LengthUnit = LengthUnit::Auto => LengthUnit::Auto,
-  font_family: FontFamily = CssValue::Inherit => Default::default(),
+  font_size: LengthUnit = CssValue::Inherit => LengthUnit::Px(16.0),
+  font_family: Option<FontFamily> = CssValue::Inherit => None,
   line_height: LineHeight = CssValue::Inherit => Default::default(),
-  font_weight: Option<FontWeight> = CssValue::Inherit => None,
+  font_weight: FontWeight = CssValue::Inherit => Default::default(),
   font_variation_settings: Option<FontVariationSettings> = CssValue::Inherit => None,
   font_feature_settings: Option<FontFeatureSettings> = CssValue::Inherit => None,
   line_clamp: Option<u32> = CssValue::Inherit => None,
@@ -124,9 +133,19 @@ define_style!(
   letter_spacing: Option<LengthUnit> = CssValue::Inherit => None,
   word_spacing: Option<LengthUnit> = CssValue::Inherit => None,
   image_rendering: ImageScalingAlgorithm = CssValue::Inherit => Default::default(),
-  overflow_wrap: Option<OverflowWrap> = CssValue::Inherit => None,
-  word_break: Option<WordBreak> = CssValue::Inherit => Default::default(),
+  overflow_wrap: OverflowWrap = CssValue::Inherit => Default::default(),
+  word_break: WordBreak = CssValue::Inherit => Default::default(),
 );
+
+/// Sized font style with resolved font size and line height.
+#[derive(Clone, Copy)]
+pub(crate) struct SizedFontStyle<'s> {
+  pub parent: &'s InheritedStyle,
+  pub font_size: f32,
+  pub line_height: parley::LineHeight,
+  pub letter_spacing: Option<f32>,
+  pub word_spacing: Option<f32>,
+}
 
 impl InheritedStyle {
   #[inline]
@@ -277,6 +296,25 @@ impl InheritedStyle {
     let rect = self.resolved_border_radius();
 
     BorderProperties::from_resolved(context, layout, rect, self)
+  }
+
+  pub fn to_sized_font_style(&'_ self, context: &RenderContext) -> SizedFontStyle<'_> {
+    let font_size = self
+      .font_size
+      .resolve_to_px(context, context.parent_font_size);
+    let line_height = self.line_height.into_parley(context);
+
+    SizedFontStyle {
+      parent: self,
+      font_size,
+      line_height,
+      letter_spacing: self
+        .letter_spacing
+        .map(|spacing| spacing.resolve_to_px(context, font_size) / font_size),
+      word_spacing: self
+        .word_spacing
+        .map(|spacing| spacing.resolve_to_px(context, font_size) / font_size),
+    }
   }
 
   pub fn to_taffy_style(&self, context: &RenderContext) -> taffy::style::Style {

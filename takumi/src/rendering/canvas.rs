@@ -31,7 +31,7 @@ use crate::{
 /// This struct wraps a channel sender that can be cloned and used to send
 /// drawing commands to a canvas rendering loop without blocking the main thread.
 #[derive(Clone)]
-pub struct Canvas(Sender<DrawCommand>);
+pub(crate) struct Canvas(Sender<DrawCommand>);
 
 impl Canvas {
   /// Creates a new canvas handle from a draw command sender.
@@ -125,7 +125,7 @@ pub fn create_blocking_canvas_loop(
 ///
 /// These commands represent different types of drawing operations that can be
 /// performed on a canvas, such as overlaying images, drawing masks, or filling areas.
-pub enum DrawCommand {
+pub(crate) enum DrawCommand {
   /// Overlay an image onto the canvas with optional border radius.
   OverlayImage {
     /// The image to overlay on the canvas

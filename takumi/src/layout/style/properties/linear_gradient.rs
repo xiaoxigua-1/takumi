@@ -1,6 +1,7 @@
 use cssparser::{Parser, ParserInput, Token, match_ignore_ascii_case};
 use image::RgbaImage;
 use serde::{Deserialize, Serialize};
+use smallvec::SmallVec;
 use std::ops::Deref;
 use ts_rs::TS;
 
@@ -43,7 +44,7 @@ pub struct LinearGradient {
   /// The angle of the gradient.
   pub angle: Angle,
   /// The steps of the gradient.
-  pub stops: Vec<GradientStop>,
+  pub stops: SmallVec<[GradientStop; 4]>,
 }
 
 /// Proxy type for `LinearGradient` Css deserialization.
@@ -55,7 +56,8 @@ pub enum LinearGradientValue {
     /// The angle of the gradient.
     angle: Angle,
     /// The steps of the gradient.
-    stops: Vec<GradientStop>,
+    #[ts(as = "Vec<GradientStop>")]
+    stops: SmallVec<[GradientStop; 4]>,
   },
   /// Represents a CSS string.
   Css(String),
@@ -111,7 +113,7 @@ impl LinearGradient {
     &self,
     axis_size_px: f32,
     context: &RenderContext,
-  ) -> Vec<ResolvedGradientStop> {
+  ) -> SmallVec<[ResolvedGradientStop; 4]> {
     resolve_stops_along_axis(&self.stops, axis_size_px, context)
   }
 }
@@ -136,7 +138,7 @@ pub struct LinearGradientDrawContext {
   /// Full axis length along gradient direction in pixels.
   pub axis_length: f32,
   /// Resolved and ordered color stops (positions in pixels).
-  pub resolved_stops: Vec<ResolvedGradientStop>,
+  pub resolved_stops: SmallVec<[ResolvedGradientStop; 4]>,
 }
 
 impl LinearGradientDrawContext {
@@ -365,7 +367,7 @@ impl<'i> FromCss<'i> for LinearGradient {
         Angle::new(180.0)
       };
 
-      let mut steps = Vec::new();
+      let mut steps = SmallVec::new();
 
       loop {
         if input.try_parse(Parser::expect_comma).is_err() {
@@ -460,8 +462,13 @@ impl<'i> FromCss<'i> for Angle {
 mod tests {
   use crate::{
     GlobalContext,
-    layout::{Viewport, style::Affine, viewport::DEFAULT_FONT_SIZE},
+    layout::{
+      Viewport,
+      style::{Affine, InheritedStyle},
+      viewport::DEFAULT_FONT_SIZE,
+    },
   };
+  use smallvec::smallvec;
 
   use super::*;
 
@@ -475,7 +482,7 @@ mod tests {
       gradient,
       Ok(LinearGradient {
         angle: Angle::new(45.0),
-        stops: vec![
+        stops: smallvec![
           GradientStop::ColorHint {
             color: Color([255, 0, 0, 255]),
             hint: None,
@@ -624,7 +631,7 @@ mod tests {
       gradient,
       Ok(LinearGradient {
         angle: Angle::new(45.0),
-        stops: vec![
+        stops: smallvec![
           GradientStop::ColorHint {
             color: Color([255, 0, 0, 255]),
             hint: None,
@@ -648,7 +655,7 @@ mod tests {
       gradient,
       Ok(LinearGradient {
         angle: Angle::new(90.0), // "to right" = 90deg
-        stops: vec![
+        stops: smallvec![
           GradientStop::ColorHint {
             color: Color([255, 0, 0, 255]),
             hint: Some(StopPosition(LengthUnit::Percentage(0.0))),
@@ -672,7 +679,7 @@ mod tests {
       gradient,
       Ok(LinearGradient {
         angle: Angle::new(90.0), // "to right" = 90deg
-        stops: vec![
+        stops: smallvec![
           GradientStop::ColorHint {
             color: Color([255, 0, 0, 255]),
             hint: None,
@@ -697,7 +704,7 @@ mod tests {
       gradient,
       Ok(LinearGradient {
         angle: Angle::new(180.0),
-        stops: vec![GradientStop::ColorHint {
+        stops: smallvec![GradientStop::ColorHint {
           color: Color([255, 0, 0, 255]),
           hint: None,
         },]
@@ -717,7 +724,7 @@ mod tests {
       gradient,
       Ok(LinearGradient {
         angle: Angle::new(180.0),
-        stops: vec![GradientStop::ColorHint {
+        stops: smallvec![GradientStop::ColorHint {
           color: Color([0, 0, 255, 255]), // Only the last color is parsed due to the parsing logic
           hint: None,
         },]
@@ -811,7 +818,7 @@ mod tests {
       gradient,
       Ok(LinearGradient {
         angle: Angle::new(45.0),
-        stops: vec![
+        stops: smallvec![
           GradientStop::ColorHint {
             color: Color([255, 0, 0, 255]),
             hint: None,
@@ -835,7 +842,7 @@ mod tests {
   fn test_linear_gradient_at_simple() {
     let gradient = LinearGradient {
       angle: Angle::new(180.0), // "to bottom" (default) - Top to bottom
-      stops: vec![
+      stops: smallvec![
         GradientStop::ColorHint {
           color: Color([255, 0, 0, 255]), // Red
           hint: Some(StopPosition(LengthUnit::Percentage(0.0))),
@@ -853,6 +860,7 @@ mod tests {
       viewport: Viewport::new(100, 100),
       parent_font_size: DEFAULT_FONT_SIZE,
       transform: Affine::identity(),
+      style: InheritedStyle::default(),
     };
     let ctx = gradient.to_draw_context(100.0, 100.0, &dummy_context);
     let color_top = gradient.at(50, 0, &ctx);
@@ -876,7 +884,7 @@ mod tests {
   fn test_linear_gradient_at_horizontal() {
     let gradient = LinearGradient {
       angle: Angle::new(90.0), // "to right" - Left to right
-      stops: vec![
+      stops: smallvec![
         GradientStop::ColorHint {
           color: Color([255, 0, 0, 255]), // Red
           hint: Some(StopPosition(LengthUnit::Percentage(0.0))),
@@ -894,6 +902,7 @@ mod tests {
       viewport: Viewport::new(100, 100),
       parent_font_size: DEFAULT_FONT_SIZE,
       transform: Affine::identity(),
+      style: InheritedStyle::default(),
     };
     let ctx = gradient.to_draw_context(100.0, 100.0, &dummy_context);
     let color_left = gradient.at(0, 50, &ctx);
@@ -908,7 +917,7 @@ mod tests {
   fn test_linear_gradient_at_single_color() {
     let gradient = LinearGradient {
       angle: Angle::new(0.0),
-      stops: vec![GradientStop::ColorHint {
+      stops: smallvec![GradientStop::ColorHint {
         color: Color([255, 0, 0, 255]), // Red
         hint: None,
       }],
@@ -920,6 +929,7 @@ mod tests {
       viewport: Viewport::new(100, 100),
       parent_font_size: DEFAULT_FONT_SIZE,
       transform: Affine::identity(),
+      style: InheritedStyle::default(),
     };
     let ctx = gradient.to_draw_context(100.0, 100.0, &dummy_context);
     let color = gradient.at(50, 50, &ctx);
@@ -930,7 +940,7 @@ mod tests {
   fn test_linear_gradient_at_no_steps() {
     let gradient = LinearGradient {
       angle: Angle::new(0.0),
-      stops: vec![],
+      stops: smallvec![],
     };
 
     // Should return transparent
@@ -939,6 +949,7 @@ mod tests {
       viewport: Viewport::new(100, 100),
       parent_font_size: DEFAULT_FONT_SIZE,
       transform: Affine::identity(),
+      style: InheritedStyle::default(),
     };
     let ctx = gradient.to_draw_context(100.0, 100.0, &dummy_context);
     let color = gradient.at(50, 50, &ctx);
@@ -956,6 +967,7 @@ mod tests {
       viewport: Viewport::new(40, 40),
       parent_font_size: DEFAULT_FONT_SIZE,
       transform: Affine::identity(),
+      style: InheritedStyle::default(),
     };
     let ctx = gradient.to_draw_context(40.0, 40.0, &dummy_context);
 
@@ -983,6 +995,7 @@ mod tests {
       viewport: Viewport::new(40, 40),
       parent_font_size: DEFAULT_FONT_SIZE,
       transform: Affine::identity(),
+      style: InheritedStyle::default(),
     };
     let ctx = gradient.to_draw_context(40.0, 40.0, &dummy_context);
 
@@ -1029,7 +1042,7 @@ mod tests {
   fn resolve_stops_percentage_and_px_linear() {
     let gradient = LinearGradient {
       angle: Angle::new(0.0),
-      stops: vec![
+      stops: smallvec![
         GradientStop::ColorHint {
           color: Color::black(),
           hint: Some(StopPosition(LengthUnit::Percentage(0.0))),
@@ -1050,6 +1063,7 @@ mod tests {
       viewport: Viewport::new(200, 100),
       parent_font_size: DEFAULT_FONT_SIZE,
       transform: Affine::identity(),
+      style: InheritedStyle::default(),
     };
 
     let resolved = gradient.resolve_stops_for_axis_size(ctx.viewport.width as f32, &ctx);
@@ -1063,7 +1077,7 @@ mod tests {
   fn resolve_stops_equal_positions_allowed_linear() {
     let gradient = LinearGradient {
       angle: Angle::new(0.0),
-      stops: vec![
+      stops: smallvec![
         GradientStop::ColorHint {
           color: Color::black(),
           hint: Some(StopPosition(LengthUnit::Px(0.0))),
@@ -1074,12 +1088,12 @@ mod tests {
         },
       ],
     };
-
     let ctx = RenderContext {
       global: &GlobalContext::default(),
       viewport: Viewport::new(200, 100),
       parent_font_size: DEFAULT_FONT_SIZE,
       transform: Affine::identity(),
+      style: InheritedStyle::default(),
     };
 
     let resolved = gradient.resolve_stops_for_axis_size(ctx.viewport.width as f32, &ctx);

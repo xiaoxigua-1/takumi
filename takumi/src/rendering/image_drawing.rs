@@ -5,7 +5,7 @@ use image::imageops::crop_imm;
 use image::{RgbaImage, imageops::FilterType};
 use taffy::{Layout, Point, Size};
 
-use crate::layout::style::{Affine, InheritedStyle, ObjectFit, Style};
+use crate::layout::style::{Affine, ObjectFit};
 use crate::rendering::{Canvas, RenderContext};
 use crate::resources::image::ImageSource;
 
@@ -144,19 +144,13 @@ pub fn process_image_for_object_fit<'i>(
 ///
 /// The image will be resized and positioned according to the object_fit style property.
 /// Border radius will be applied if specified in the style.
-pub fn draw_image(
-  image: &ImageSource,
-  style: &InheritedStyle,
-  context: &RenderContext,
-  canvas: &Canvas,
-  layout: Layout,
-) {
+pub fn draw_image(image: &ImageSource, context: &RenderContext, canvas: &Canvas, layout: Layout) {
   let content_box = layout.content_box_size();
 
   let (image, offset_x, offset_y) = process_image_for_object_fit(
     image,
-    style.object_fit,
-    style.image_rendering.into(),
+    context.style.object_fit,
+    context.style.image_rendering.into(),
     content_box.width,
     content_box.height,
   );
@@ -176,10 +170,11 @@ pub fn draw_image(
       x: offset_x as i32 + layout.location.x as i32,
       y: offset_y as i32 + layout.location.y as i32,
     },
-    style
+    context
+      .style
       .create_border_radius(&layout, context)
       .inset_by_border_width(),
     transform_with_content_offset,
-    style.image_rendering.clone().unwrap_or_default_ref(),
+    context.style.image_rendering,
   );
 }

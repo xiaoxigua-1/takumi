@@ -20,7 +20,7 @@ fn resolve_border_radius_from_percentage_css(
 
 /// Represents the properties of a border, including corner radii and drawing metadata.
 #[derive(Debug, Clone, Copy, Default)]
-pub struct BorderProperties {
+pub(crate) struct BorderProperties {
   /// The width of the border on each side (top, right, bottom, left)
   pub width: taffy::Rect<f32>,
   /// The offset of the border in the local coordinate space
@@ -188,7 +188,7 @@ impl BorderProperties {
 ///
 /// This function draws borders with specified size and color. If border_radius is specified,
 /// it creates a rounded border using a custom drawing approach.
-pub fn draw_border(canvas: &Canvas, canvas_offset: Point<f32>, border: BorderProperties) {
+pub(crate) fn draw_border(canvas: &Canvas, canvas_offset: Point<f32>, border: BorderProperties) {
   if border.width.left == 0.0
     && border.width.right == 0.0
     && border.width.top == 0.0

@@ -91,7 +91,7 @@ pub(crate) fn resolve_position_component_y(
 
 /// Rasterize a single background image (gradient) into a tile of the given size.
 /// resolving non-px stop units using the provided `RenderContext`.
-pub fn render_gradient_tile(
+pub(crate) fn render_gradient_tile(
   image: &BackgroundImage,
   tile_w: u32,
   tile_h: u32,

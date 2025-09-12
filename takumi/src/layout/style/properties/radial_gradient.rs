@@ -1,5 +1,6 @@
 use cssparser::{Parser, ParserInput, Token, match_ignore_ascii_case};
 use serde::{Deserialize, Serialize};
+use smallvec::SmallVec;
 use ts_rs::TS;
 
 use super::gradient_utils::{color_from_stops, resolve_stops_along_axis};
@@ -66,7 +67,7 @@ pub struct RadialGradientDrawContext {
   /// Radius Y in pixels (for circle, equals radius_x)
   pub radius_y: f32,
   /// Resolved and ordered color stops.
-  pub resolved_stops: Vec<ResolvedGradientStop>,
+  pub resolved_stops: SmallVec<[ResolvedGradientStop; 4]>,
 }
 
 impl Gradient for RadialGradient {
@@ -98,7 +99,7 @@ impl RadialGradient {
     &self,
     radius_scale_px: f32,
     context: &RenderContext,
-  ) -> Vec<ResolvedGradientStop> {
+  ) -> SmallVec<[ResolvedGradientStop; 4]> {
     resolve_stops_along_axis(&self.stops, radius_scale_px, context)
   }
 
@@ -410,7 +411,7 @@ impl TryFrom<RadialGradientValue> for RadialGradient {
 mod tests {
   use super::*;
   use crate::layout::DEFAULT_FONT_SIZE;
-  use crate::layout::style::{Affine, LengthUnit, StopPosition};
+  use crate::layout::style::{Affine, InheritedStyle, LengthUnit, StopPosition};
   use crate::{GlobalContext, layout::Viewport, rendering::RenderContext};
 
   #[test]
@@ -576,6 +577,7 @@ mod tests {
       viewport: Viewport::new(200, 100),
       parent_font_size: DEFAULT_FONT_SIZE,
       transform: Affine::identity(),
+      style: InheritedStyle::default(),
     };
     let resolved = gradient.resolve_stops_for_radius(ctx.viewport.width as f32, &ctx);
 
@@ -611,6 +613,7 @@ mod tests {
       viewport: Viewport::new(200, 100),
       parent_font_size: DEFAULT_FONT_SIZE,
       transform: Affine::identity(),
+      style: InheritedStyle::default(),
     };
     let resolved = gradient.resolve_stops_for_radius(ctx.viewport.width as f32, &ctx);
 

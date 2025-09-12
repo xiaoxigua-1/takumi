@@ -10,13 +10,92 @@ use serde::{Deserialize, Serialize};
 use taffy::{AvailableSpace, Layout, Point, Size};
 
 use crate::{
-  impl_node_enum,
-  layout::style::{CssValue, Style},
+  layout::style::Style,
   rendering::{
     BoxShadowRenderPhase, Canvas, RenderContext, draw_background_layers, draw_border,
     draw_box_shadow, resolve_layers_tiles,
   },
 };
+
+/// Implements the Node trait for an enum type that contains different node variants.
+macro_rules! impl_node_enum {
+  ($name:ident, $($variant:ident => $variant_type:ty),*) => {
+    impl $crate::layout::node::Node<$name> for $name {
+      fn take_children(&mut self) -> Option<Vec<$name>> {
+        match self {
+          $( $name::$variant(inner) => inner.take_children(), )*
+        }
+      }
+
+      fn get_style(&self) -> &$crate::layout::style::Style {
+        match self {
+          $( $name::$variant(inner) => <_ as $crate::layout::node::Node<$name>>::get_style(inner), )*
+        }
+      }
+
+      fn measure(
+        &self,
+        context: &$crate::rendering::RenderContext,
+        available_space: $crate::taffy::Size<$crate::taffy::AvailableSpace>,
+        known_dimensions: $crate::taffy::Size<Option<f32>>,
+      ) -> $crate::taffy::Size<f32> {
+        match self {
+          $( $name::$variant(inner) => <_ as $crate::layout::node::Node<$name>>::measure(inner, context, available_space, known_dimensions), )*
+        }
+      }
+
+      fn draw_on_canvas(&self, context: &$crate::rendering::RenderContext, canvas: &$crate::rendering::Canvas, layout: $crate::taffy::Layout) {
+        match self {
+          $( $name::$variant(inner) => <_ as $crate::layout::node::Node<$name>>::draw_on_canvas(inner, context, canvas, layout), )*
+        }
+      }
+
+      fn draw_background_color(&self, context: &$crate::rendering::RenderContext, canvas: &$crate::rendering::Canvas, layout: $crate::taffy::Layout) {
+        match self {
+          $( $name::$variant(inner) => <_ as $crate::layout::node::Node<$name>>::draw_background_color(inner, context, canvas, layout), )*
+        }
+      }
+
+      fn draw_content(&self, context: &$crate::rendering::RenderContext, canvas: &$crate::rendering::Canvas, layout: $crate::taffy::Layout) {
+        match self {
+          $( $name::$variant(inner) => <_ as $crate::layout::node::Node<$name>>::draw_content(inner, context, canvas, layout), )*
+        }
+      }
+
+      fn draw_border(&self, context: &$crate::rendering::RenderContext, canvas: &$crate::rendering::Canvas, layout: $crate::taffy::Layout) {
+        match self {
+          $( $name::$variant(inner) => <_ as $crate::layout::node::Node<$name>>::draw_border(inner, context, canvas, layout), )*
+        }
+      }
+
+      fn draw_outset_box_shadow(&self, context: &$crate::rendering::RenderContext, canvas: &$crate::rendering::Canvas, layout: $crate::taffy::Layout) {
+        match self {
+          $( $name::$variant(inner) => <_ as $crate::layout::node::Node<$name>>::draw_outset_box_shadow(inner, context, canvas, layout), )*
+        }
+      }
+
+      fn draw_inset_box_shadow(&self, context: &$crate::rendering::RenderContext, canvas: &$crate::rendering::Canvas, layout: $crate::taffy::Layout) {
+        match self {
+          $( $name::$variant(inner) => <_ as $crate::layout::node::Node<$name>>::draw_inset_box_shadow(inner, context, canvas, layout), )*
+        }
+      }
+
+      fn has_draw_content(&self) -> bool {
+        match self {
+          $( $name::$variant(inner) => <_ as $crate::layout::node::Node<$name>>::has_draw_content(inner), )*
+        }
+      }
+    }
+
+    $(
+      impl From<$variant_type> for $name {
+        fn from(inner: $variant_type) -> Self {
+          $name::$variant(inner)
+        }
+      }
+    )*
+  };
+}
 
 /// A trait representing a node in the layout tree.
 ///
@@ -30,88 +109,6 @@ pub trait Node<N: Node<N>>: Send + Sync + Clone {
 
   /// Returns a reference to the node's style properties.
   fn get_style(&self) -> &Style;
-
-  /// Returns a mutable reference to the node's style properties.
-  fn get_style_mut(&mut self) -> &mut Style;
-
-  /// Inherits style properties from a parent node.
-  ///
-  /// This method merges inheritable style properties from the parent
-  /// into this node's style, then propagates the inheritance to children.
-  fn inherit_style(&mut self, parent: &Style) {
-    let style = self.get_style_mut();
-
-    // Inherit properties that are set to Inherit on the child
-    if let CssValue::Inherit = style.box_sizing {
-      style.box_sizing = parent.box_sizing;
-    }
-    if let CssValue::Inherit = style.text_overflow {
-      style.text_overflow = parent.text_overflow;
-    }
-    if let CssValue::Inherit = style.text_transform {
-      style.text_transform = parent.text_transform;
-    }
-    if let CssValue::Inherit = style.font_style {
-      style.font_style = parent.font_style;
-    }
-    if let CssValue::Inherit = style.border_color {
-      style.border_color = parent.border_color;
-    }
-    if let CssValue::Inherit = style.color {
-      style.color = parent.color;
-    }
-    if let CssValue::Inherit = style.font_size {
-      style.font_size = parent.font_size;
-    }
-    if let CssValue::Inherit = style.font_family {
-      style.font_family = parent.font_family.clone();
-    }
-    if let CssValue::Inherit = style.line_height {
-      style.line_height = parent.line_height;
-    }
-    if let CssValue::Inherit = style.font_weight {
-      style.font_weight = parent.font_weight;
-    }
-    if let CssValue::Inherit = style.font_variation_settings {
-      style.font_variation_settings = parent.font_variation_settings.clone();
-    }
-    if let CssValue::Inherit = style.font_feature_settings {
-      style.font_feature_settings = parent.font_feature_settings.clone();
-    }
-    if let CssValue::Inherit = style.line_clamp {
-      style.line_clamp = parent.line_clamp;
-    }
-    if let CssValue::Inherit = style.text_align {
-      style.text_align = parent.text_align;
-    }
-    if let CssValue::Inherit = style.letter_spacing {
-      style.letter_spacing = parent.letter_spacing;
-    }
-    if let CssValue::Inherit = style.word_spacing {
-      style.word_spacing = parent.word_spacing;
-    }
-    if let CssValue::Inherit = style.image_rendering {
-      style.image_rendering = parent.image_rendering;
-    }
-    if let CssValue::Inherit = style.overflow_wrap {
-      style.overflow_wrap = parent.overflow_wrap;
-    }
-    if let CssValue::Inherit = style.word_break {
-      style.word_break = parent.word_break;
-    }
-
-    self.inherit_style_for_children();
-  }
-
-  /// Called after the style is inherited and before the layout is computed.
-  ///
-  /// You can use this method to modify the node's style before the layout is computed.
-  fn before_layout(&mut self) {}
-
-  /// Propagates style inheritance to child nodes.
-  ///
-  /// Override this method in container nodes to pass styles to children.
-  fn inherit_style_for_children(&mut self) {}
 
   /// Measures the intrinsic size of the node.
   ///
@@ -138,8 +135,8 @@ pub trait Node<N: Node<N>>: Send + Sync + Clone {
 
   /// Draws the outset box shadow of the node.
   fn draw_outset_box_shadow(&self, context: &RenderContext, canvas: &Canvas, layout: Layout) {
-    if let Some(box_shadow) = &self.get_style().box_shadow {
-      let border_radius = self.get_style().create_border_radius(&layout, context);
+    if let Some(box_shadow) = context.style.box_shadow.as_ref() {
+      let border_radius = context.style.create_border_radius(&layout, context);
 
       draw_box_shadow(
         context,
@@ -154,8 +151,8 @@ pub trait Node<N: Node<N>>: Send + Sync + Clone {
 
   /// Draws the inset box shadow of the node.
   fn draw_inset_box_shadow(&self, context: &RenderContext, canvas: &Canvas, layout: Layout) {
-    if let Some(box_shadow) = &self.get_style().box_shadow {
-      let border_radius = self.get_style().create_border_radius(&layout, context);
+    if let Some(box_shadow) = context.style.box_shadow.as_ref() {
+      let border_radius = context.style.create_border_radius(&layout, context);
 
       draw_box_shadow(
         context,
@@ -170,11 +167,7 @@ pub trait Node<N: Node<N>>: Send + Sync + Clone {
 
   /// Draws the background color of the node.
   fn draw_background_color(&self, context: &RenderContext, canvas: &Canvas, layout: Layout) {
-    let Some(background_color) = &self.get_style().background_color else {
-      return;
-    };
-
-    let radius = self.get_style().create_border_radius(&layout, context);
+    let radius = context.style.create_border_radius(&layout, context);
 
     canvas.fill_color(
       Point {
@@ -185,7 +178,7 @@ pub trait Node<N: Node<N>>: Send + Sync + Clone {
         width: layout.size.width as u32,
         height: layout.size.height as u32,
       },
-      *background_color,
+      context.style.background_color,
       radius,
       context.transform,
     );
@@ -193,24 +186,23 @@ pub trait Node<N: Node<N>>: Send + Sync + Clone {
 
   /// Draws the background image(s) of the node.
   fn draw_background_image(&self, context: &RenderContext, canvas: &Canvas, layout: Layout) {
-    let style = self.get_style();
-
-    let Some(background_image) = style.background_image.as_ref() else {
+    let Some(background_image) = context.style.background_image.as_ref() else {
       return;
     };
 
     let tiles = resolve_layers_tiles(
       background_image,
-      style.background_position.as_ref(),
-      style.background_size.as_ref(),
-      style.background_repeat.as_ref(),
+      context.style.background_position.as_ref(),
+      context.style.background_size.as_ref(),
+      context.style.background_repeat.as_ref(),
       context,
       layout,
     );
 
     draw_background_layers(
       tiles,
-      style
+      context
+        .style
         .create_border_radius(&layout, context)
         .inset_by_border_width(),
       context,
@@ -231,7 +223,7 @@ pub trait Node<N: Node<N>>: Send + Sync + Clone {
 
   /// Draws the border of the node.
   fn draw_border(&self, context: &RenderContext, canvas: &Canvas, layout: Layout) {
-    let border = self.get_style().create_border_radius(&layout, context);
+    let border = context.style.create_border_radius(&layout, context);
     draw_border(canvas, layout.location, border);
   }
 }

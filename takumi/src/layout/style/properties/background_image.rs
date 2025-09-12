@@ -36,6 +36,7 @@ impl<'i> FromCss<'i> for BackgroundImage {
 /// Proxy type to deserialize CSS background images as either a list or CSS string
 #[derive(Debug, Clone, PartialEq, TS, Deserialize)]
 #[serde(untagged)]
+#[allow(clippy::large_enum_variant)]
 pub enum BackgroundImagesValue {
   /// Structured variant: explicit list of background images
   #[ts(as = "Vec<BackgroundImage>")]

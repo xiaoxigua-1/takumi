@@ -1,3 +1,5 @@
+use smallvec::SmallVec;
+
 use super::{Color, GradientStop, LengthUnit, ResolvedGradientStop};
 use crate::rendering::RenderContext;
 
@@ -69,8 +71,8 @@ pub(crate) fn resolve_stops_along_axis(
   stops: &[GradientStop],
   axis_size_px: f32,
   context: &RenderContext,
-) -> Vec<ResolvedGradientStop> {
-  let mut resolved: Vec<ResolvedGradientStop> = Vec::new();
+) -> SmallVec<[ResolvedGradientStop; 4]> {
+  let mut resolved: SmallVec<[ResolvedGradientStop; 4]> = SmallVec::new();
   for (i, step) in stops.iter().enumerate() {
     match step {
       GradientStop::ColorHint { color, hint } => {
@@ -179,7 +181,7 @@ mod tests {
     GlobalContext,
     layout::{
       DEFAULT_FONT_SIZE, Viewport,
-      style::{Affine, StopPosition},
+      style::{Affine, InheritedStyle, StopPosition},
     },
   };
 
@@ -207,6 +209,7 @@ mod tests {
       viewport: Viewport::new(40, 40),
       parent_font_size: DEFAULT_FONT_SIZE,
       transform: Affine::identity(),
+      style: InheritedStyle::default(),
     };
 
     let resolved = resolve_stops_along_axis(&stops, ctx.viewport.width as f32, &ctx);
@@ -258,6 +261,7 @@ mod tests {
       viewport: Viewport::new(40, 40),
       parent_font_size: DEFAULT_FONT_SIZE,
       transform: Affine::identity(),
+      style: InheritedStyle::default(),
     };
 
     let resolved = resolve_stops_along_axis(&stops, ctx.viewport.width as f32, &ctx);
@@ -306,6 +310,7 @@ mod tests {
       viewport: Viewport::new(100, 40),
       parent_font_size: DEFAULT_FONT_SIZE,
       transform: Affine::identity(),
+      style: InheritedStyle::default(),
     };
 
     let resolved = resolve_stops_along_axis(&stops, ctx.viewport.width as f32, &ctx);
