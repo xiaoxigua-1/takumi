@@ -225,6 +225,15 @@ summary(() => {
       format: "webp",
     });
   });
+
+  bench("createNode + renderAsync (raw)", async () => {
+    const node = await createNode();
+    return renderer.renderAsync(node, {
+      width: 1200,
+      height: 630,
+      format: "raw",
+    });
+  });
 });
 
 if (process.argv.includes("--write")) {

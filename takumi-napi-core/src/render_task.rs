@@ -5,14 +5,16 @@ use std::sync::Arc;
 use takumi::{
   GlobalContext,
   layout::{Viewport, node::NodeKind},
-  rendering::{ImageOutputFormat, render, write_image},
+  rendering::{render, write_image},
 };
+
+use crate::renderer::OutputFormat;
 
 pub struct RenderTask {
   pub node: Option<NodeKind>,
   pub context: Arc<GlobalContext>,
   pub viewport: Viewport,
-  pub format: ImageOutputFormat,
+  pub format: OutputFormat,
   pub quality: Option<u8>,
 }
 
@@ -26,10 +28,14 @@ impl Task for RenderTask {
     let image = render(self.viewport, &self.context, node)
       .map_err(|e| napi::Error::from_reason(format!("Failed to render: {e:?}")))?;
 
+    if self.format == OutputFormat::raw {
+      return Ok(image.into_raw());
+    }
+
     let mut buffer = Vec::new();
     let mut cursor = Cursor::new(&mut buffer);
 
-    write_image(&image, &mut cursor, self.format, self.quality)
+    write_image(&image, &mut cursor, self.format.into(), self.quality)
       .map_err(|e| napi::Error::from_reason(format!("Failed to write to buffer: {e:?}")))?;
 
     Ok(buffer)

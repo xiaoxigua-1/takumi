@@ -28,6 +28,7 @@ pub struct RenderOptions {
 
 #[napi(string_enum)]
 #[allow(non_camel_case_types)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub enum OutputFormat {
   webp,
   avif,
@@ -37,6 +38,7 @@ pub enum OutputFormat {
   Avif,
   Jpeg,
   Png,
+  raw,
 }
 
 impl From<OutputFormat> for ImageOutputFormat {
@@ -50,6 +52,8 @@ impl From<OutputFormat> for ImageOutputFormat {
       OutputFormat::jpeg => ImageOutputFormat::Jpeg,
       OutputFormat::webp => ImageOutputFormat::WebP,
       OutputFormat::avif => ImageOutputFormat::Avif,
+      // SAFETY: It's handled in the render task
+      OutputFormat::raw => unreachable!(),
     }
   }
 }
@@ -260,7 +264,7 @@ impl Renderer {
         node: Some(node),
         context: Arc::clone(&self.0),
         viewport: Viewport::new(options.width, options.height),
-        format: options.format.unwrap_or(OutputFormat::png).into(),
+        format: options.format.unwrap_or(OutputFormat::png),
         quality: options.quality,
       },
       signal,
@@ -274,16 +278,16 @@ impl Renderer {
     let viewport = Viewport::new(options.width, options.height);
     let image = render(viewport, &self.0, node).unwrap();
 
+    let format = options.format.unwrap_or(OutputFormat::png);
+
+    if format == OutputFormat::raw {
+      return Ok(image.into_raw().into());
+    }
+
     let mut buffer = Vec::new();
     let mut cursor = Cursor::new(&mut buffer);
 
-    write_image(
-      &image,
-      &mut cursor,
-      options.format.unwrap_or(OutputFormat::png).into(),
-      options.quality,
-    )
-    .unwrap();
+    write_image(&image, &mut cursor, format.into(), options.quality).unwrap();
 
     Ok(buffer.into())
   }
