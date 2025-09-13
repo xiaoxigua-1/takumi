@@ -79,7 +79,7 @@
 //! - [taffy](https://github.com/DioxusLabs/taffy) for the layout system.
 //! - [image](https://github.com/image-rs/image) for the image processing.
 //! - [parley](https://github.com/linebender/parley) for the text layout.
-//! - [woff2-patched](https://github.com/zimond/woff2-rs) for the font processing.
+//! - [wuff](https://github.com/nicoburns/wuff) for woff/woff2 decompression.
 //! - [ts-rs](https://github.com/AlephAlpha/ts-rs) for the type-safe serialization.
 //! - [resvg](https://github.com/linebender/resvg) for SVG parsing and rendering.
 
