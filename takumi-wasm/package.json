@@ -1,6 +1,14 @@
 {
   "name": "@takumi-rs/wasm",
   "version": "0.29.8",
+  "keywords": [
+    "image",
+    "rendering",
+    "css",
+    "react",
+    "jsx",
+    "webassembly"
+  ],
   "scripts": {
     "build": "wasm-pack build --no-pack --release --out-dir pkg --target web"
   },

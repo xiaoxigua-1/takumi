@@ -6,6 +6,15 @@
     "name": "Kane Wang",
     "url": "https://kane.tw"
   },
+  "keywords": [
+    "image",
+    "rendering",
+    "css",
+    "react",
+    "jsx",
+    "nodejs",
+    "napi"
+  ],
   "repository": {
     "url": "git+https://github.com/kane50613/takumi.git"
   },
