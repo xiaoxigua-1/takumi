@@ -78,7 +78,7 @@ default-features = false
 features = ["std", "simd"]
 
 [features]
-default = ["woff2", "woff", "image_data_uri", "svg", "rayon", "avif"]
+default = ["woff2", "woff", "image_data_uri", "svg", "rayon", "avif", "embed_fonts"]
 avif = ["image/avif"]
 image_data_uri = ["dep:base64"]
 svg = ["dep:resvg"]

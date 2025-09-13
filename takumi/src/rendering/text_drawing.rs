@@ -5,7 +5,7 @@ use image::RgbaImage;
 use parley::{Glyph, PositionedLayoutItem, StyleProperty};
 use swash::{Setting, tag_from_bytes};
 use taffy::{Layout, Point, Size};
-use zeno::{Command, Mask, PathData, Placement, Stroke};
+use zeno::{Command, Join, Mask, PathData, Placement, Stroke};
 
 use crate::{
   GlobalContext,
@@ -32,7 +32,7 @@ pub fn draw_text(text: &str, context: &RenderContext, canvas: &Canvas, layout: L
 
   let mut buffer = create_text_layout(
     &render_text,
-    font_style,
+    &font_style,
     context.global,
     content_box.width,
     Some(MaxHeight::Absolute(content_box.height)),
@@ -52,14 +52,14 @@ pub fn draw_text(text: &str, context: &RenderContext, canvas: &Canvas, layout: L
       &render_text,
       last_line_range.start,
       last_line_range.end,
-      font_style,
+      &font_style,
       context.global,
       content_box.width,
     );
 
     buffer = create_text_layout(
       &text_with_ellipsis,
-      font_style,
+      &font_style,
       context.global,
       content_box.width,
       Some(MaxHeight::Absolute(content_box.height)),
@@ -139,7 +139,7 @@ fn draw_buffer(
             glyph,
             cached_glyph,
             canvas,
-            style,
+            &style,
             layout,
             image_fill.as_ref(),
             context.transform,
@@ -154,7 +154,7 @@ fn draw_glyph(
   glyph: Glyph,
   cached_glyph: &CachedGlyph,
   canvas: &Canvas,
-  style: SizedFontStyle,
+  style: &SizedFontStyle,
   layout: Layout,
   image_fill: Option<&RgbaImage>,
   transform: Affine,
@@ -269,6 +269,12 @@ fn draw_glyph(
 
     let (mask, mut placement) = Mask::new(&paths).render();
 
+    if let Some(ref shadows) = style.text_shadow {
+      for shadow in shadows.iter() {
+        shadow.draw_outset(canvas, Cow::Borrowed(&mask), placement, layout.location);
+      }
+    }
+
     let cropped_fill_image = image_fill.map(|image| {
       let mut bottom = RgbaImage::new(placement.width, placement.height);
 
@@ -299,9 +305,11 @@ fn draw_glyph(
     canvas.draw_mask(mask, placement, style.parent.color, cropped_fill_image);
 
     if style.stroke_width > 0.0 {
-      let (stroke_mask, mut stroke_placement) = Mask::new(&paths)
-        .style(Stroke::new(style.stroke_width))
-        .render();
+      let mut stroke = Stroke::new(style.stroke_width);
+      stroke.scale = false;
+      stroke.join = Join::Bevel;
+
+      let (stroke_mask, mut stroke_placement) = Mask::new(&paths).style(stroke).render();
 
       stroke_placement.left += layout.location.x as i32;
       stroke_placement.top += layout.location.y as i32;
@@ -323,7 +331,7 @@ const VARIABLE_FONT_WEIGHT_TAG: u32 = tag_from_bytes(b"wght");
 
 pub(crate) fn create_text_layout(
   text: &str,
-  font_style: SizedFontStyle,
+  font_style: &SizedFontStyle,
   global: &GlobalContext,
   max_width: f32,
   max_height: Option<MaxHeight>,
@@ -492,7 +500,7 @@ fn make_ellipsis_text<'s>(
   render_text: &'s str,
   start_index: usize,
   end_index: usize,
-  font_style: SizedFontStyle,
+  font_style: &SizedFontStyle,
   global: &GlobalContext,
   max_width: f32,
 ) -> Cow<'s, str> {

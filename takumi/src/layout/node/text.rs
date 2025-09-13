@@ -103,7 +103,7 @@ pub(crate) fn measure_text(
 
   let buffer = create_text_layout(
     &text,
-    style,
+    &style,
     global,
     width_constraint.unwrap_or(f32::MAX),
     height_constraint_with_max_lines,

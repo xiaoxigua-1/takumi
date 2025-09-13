@@ -54,6 +54,16 @@ let viewport = Viewport::new(1200, 630);
 let image = render(viewport, &context, node).unwrap();
 ```
 
+## Feature Flags
+
+- `embed_fonts`: Embed the pre-bundled [Geist](https://vercel.com/font) and [Geist Mono](https://vercel.com/font) fonts.
+- `woff2`: Enable WOFF2 font support.
+- `woff`: Enable WOFF font support.
+- `image_data_uri`: Enable image data URI support.
+- `svg`: Enable SVG support.
+- `rayon`: Enable rayon support.
+- `avif`: Enable AVIF support.
+
 ## Credits
 
 - [taffy](https://github.com/DioxusLabs/taffy) for the layout system.

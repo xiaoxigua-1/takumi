@@ -8,12 +8,13 @@ pub use text::*;
 
 use serde::{Deserialize, Serialize};
 use taffy::{AvailableSpace, Layout, Point, Size};
+use zeno::Mask;
 
 use crate::{
   layout::style::Style,
   rendering::{
-    BorderProperties, BoxShadowRenderPhase, Canvas, RenderContext, draw_background_layers,
-    draw_border, draw_box_shadow, resolve_layers_tiles,
+    BorderProperties, Canvas, RenderContext, SizedShadow, draw_background_layers, draw_border,
+    resolve_layers_tiles,
   },
 };
 
@@ -138,14 +139,26 @@ pub trait Node<N: Node<N>>: Send + Sync + Clone {
     if let Some(box_shadow) = context.style.box_shadow.as_ref() {
       let border_radius = BorderProperties::from_context(context, &layout);
 
-      draw_box_shadow(
-        context,
-        box_shadow,
-        border_radius,
-        canvas,
-        layout,
-        BoxShadowRenderPhase::Outset,
-      );
+      for shadow in box_shadow.0.iter() {
+        if shadow.inset {
+          continue;
+        }
+
+        let mut paths = Vec::new();
+
+        let shadow = SizedShadow::from_box_shadow(*shadow, context, layout.size);
+
+        border_radius
+          .expand_by(shadow.spread_radius)
+          .append_mask_commands(&mut paths);
+        border_radius.transform.apply_on_paths(&mut paths);
+
+        context.transform.apply_on_paths(&mut paths);
+
+        let (mask, placement) = Mask::new(&paths).render();
+
+        shadow.draw_outset(canvas, mask.into(), placement, layout.location);
+      }
     }
   }
 
@@ -154,14 +167,14 @@ pub trait Node<N: Node<N>>: Send + Sync + Clone {
     if let Some(box_shadow) = context.style.box_shadow.as_ref() {
       let border_radius = BorderProperties::from_context(context, &layout);
 
-      draw_box_shadow(
-        context,
-        box_shadow,
-        border_radius,
-        canvas,
-        layout,
-        BoxShadowRenderPhase::Inset,
-      );
+      for shadow in box_shadow.0.iter() {
+        if !shadow.inset {
+          continue;
+        }
+
+        let shadow = SizedShadow::from_box_shadow(*shadow, context, layout.size);
+        shadow.draw_inset(context.transform, border_radius, canvas, layout);
+      }
     }
   }
 

@@ -330,7 +330,7 @@ pub(crate) fn draw_filled_rect_color<C: Into<Rgba<u8>>>(
   draw_mask(image, &mask, placement, color, None);
 }
 
-fn draw_mask<C: Into<Rgba<u8>>>(
+pub(crate) fn draw_mask<C: Into<Rgba<u8>>>(
   canvas: &mut RgbaImage,
   mask: &[u8],
   placement: Placement,

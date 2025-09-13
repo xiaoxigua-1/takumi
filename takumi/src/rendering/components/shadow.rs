@@ -1,14 +1,12 @@
-use std::sync::Arc;
+use std::{borrow::Cow, sync::Arc};
 
-use image::{Rgba, RgbaImage, imageops::fast_blur};
+use image::{RgbaImage, imageops::fast_blur};
 use taffy::{Layout, Point, Size};
-use zeno::{Fill, Mask};
+use zeno::{Fill, Mask, Placement};
 
 use crate::{
-  layout::style::{Affine, BoxShadow, BoxShadows, ImageScalingAlgorithm},
-  rendering::{
-    BorderProperties, Canvas, RenderContext, apply_mask_alpha_to_pixel, draw_filled_rect_color,
-  },
+  layout::style::{Affine, BoxShadow, Color, ImageScalingAlgorithm, TextShadow},
+  rendering::{BorderProperties, Canvas, RenderContext, apply_mask_alpha_to_pixel, draw_mask},
 };
 
 /// Applies a fast blur to an image using image-rs's optimized implementation.
@@ -24,19 +22,9 @@ fn apply_fast_blur(image: &mut RgbaImage, radius: f32) {
   *image = fast_blur(image, sigma);
 }
 
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
-/// Indicates which subset of box-shadows should be rendered for this pass.
-pub(crate) enum BoxShadowRenderPhase {
-  /// Render outer shadows (equivalent to `inset: false`)
-  Outset,
-  /// Render inner shadows (equivalent to `inset: true`)
-  Inset,
-}
-
 /// Represents a resolved box shadow with all its properties.
-pub(crate) struct BoxShadowResolved {
-  /// Whether the shadow is inset or outset.
-  pub inset: bool,
+#[derive(Clone, Copy)]
+pub(crate) struct SizedShadow {
   /// Horizontal offset of the shadow.
   pub offset_x: f32,
   /// Vertical offset of the shadow.
@@ -46,14 +34,13 @@ pub(crate) struct BoxShadowResolved {
   /// Spread radius of the shadow. Positive values expand the shadow, negative values shrink it.
   pub spread_radius: f32,
   /// Color of the shadow.
-  pub color: Rgba<u8>,
+  pub color: Color,
 }
 
-impl BoxShadowResolved {
-  /// Creates a new `BoxShadowResolved` from a `BoxShadow` and a `RenderContext`.
-  pub fn from_box_shadow(shadow: &BoxShadow, context: &RenderContext, size: Size<f32>) -> Self {
+impl SizedShadow {
+  /// Creates a new [`SizedShadow`] from a [`BoxShadow`].
+  pub fn from_box_shadow(shadow: BoxShadow, context: &RenderContext, size: Size<f32>) -> Self {
     Self {
-      inset: shadow.inset,
       offset_x: shadow.offset_x.resolve_to_px(context, size.width),
       offset_y: shadow.offset_y.resolve_to_px(context, size.height),
       blur_radius: shadow.blur_radius.resolve_to_px(context, size.width),
@@ -61,134 +48,107 @@ impl BoxShadowResolved {
         .spread_radius
         .resolve_to_px(context, size.width)
         .max(0.0),
-      color: shadow.color.into(),
+      color: shadow.color,
     }
   }
-}
 
-/// Draws box shadows for an element, filtered by render phase (outset vs inset).
-pub(crate) fn draw_box_shadow(
-  context: &RenderContext,
-  box_shadows: &BoxShadows,
-  border_radius: BorderProperties,
-  canvas: &Canvas,
-  layout: Layout,
-  phase: BoxShadowRenderPhase,
-) {
-  match &box_shadows.0[..] {
-    [shadow] => {
-      let matches_phase = match phase {
-        BoxShadowRenderPhase::Outset => !shadow.inset,
-        BoxShadowRenderPhase::Inset => shadow.inset,
-      };
-
-      if matches_phase {
-        let resolved = BoxShadowResolved::from_box_shadow(shadow, context, layout.size);
-
-        let draw = draw_single_box_shadow(&resolved, border_radius, layout);
-
-        canvas.overlay_image(
-          Arc::new(draw.image),
-          Point {
-            x: (layout.location.x + draw.offset.x) as i32,
-            y: (layout.location.y + draw.offset.y) as i32,
-          },
-          draw.border_radius,
-          context.transform,
-          ImageScalingAlgorithm::Auto,
-        );
-      }
-    }
-    shadows => {
-      let to_draw = shadows.iter().filter_map(|shadow| {
-        let matches_phase = match phase {
-          BoxShadowRenderPhase::Outset => !shadow.inset,
-          BoxShadowRenderPhase::Inset => shadow.inset,
-        };
-
-        if matches_phase {
-          Some(BoxShadowResolved::from_box_shadow(
-            shadow,
-            context,
-            layout.size,
-          ))
-        } else {
-          None
-        }
-      });
-
-      // Preserve existing stacking order (reverse iteration) while filtering by phase.
-      #[cfg(feature = "rayon")]
-      let images = {
-        use rayon::iter::{ParallelBridge, ParallelIterator};
-
-        to_draw
-          .rev()
-          .par_bridge()
-          .map(|shadow| draw_single_box_shadow(&shadow, border_radius, layout))
-          .collect::<Vec<_>>()
-      };
-
-      #[cfg(not(feature = "rayon"))]
-      let images = to_draw
-        .rev()
-        .map(|shadow| draw_single_box_shadow(&shadow, border_radius, layout))
-        .collect::<Vec<_>>();
-
-      for draw in images {
-        canvas.overlay_image(
-          Arc::new(draw.image),
-          Point {
-            x: (layout.location.x + draw.offset.x) as i32,
-            y: (layout.location.y + draw.offset.y) as i32,
-          },
-          draw.border_radius,
-          context.transform,
-          ImageScalingAlgorithm::Auto,
-        );
-      }
+  /// Creates a new `SizedShadow` from a `TextShadow`.
+  pub fn from_text_shadow(shadow: TextShadow, context: &RenderContext, size: Size<f32>) -> Self {
+    Self {
+      offset_x: shadow.offset_x.resolve_to_px(context, size.width),
+      offset_y: shadow.offset_y.resolve_to_px(context, size.height),
+      blur_radius: shadow.blur_radius.resolve_to_px(context, size.width),
+      // Text shadows do not support spread radius; set to 0.
+      spread_radius: 0.0,
+      color: shadow.color,
     }
   }
-}
 
-struct ShadowDraw {
-  image: RgbaImage,
-  offset: Point<f32>,
-  border_radius: BorderProperties,
-}
+  pub fn draw_outset(
+    &self,
+    canvas: &Canvas,
+    spread_mask: Cow<[u8]>,
+    spread_placement: Placement,
+    offset: Point<f32>,
+  ) {
+    let offset_with_radius = Point {
+      x: (spread_placement.left as f32 + offset.x + self.offset_x
+        - self.blur_radius
+        - self.spread_radius) as i32,
+      y: (spread_placement.top as f32 + offset.y + self.offset_y
+        - self.blur_radius
+        - self.spread_radius) as i32,
+    };
 
-fn draw_single_box_shadow(
-  shadow: &BoxShadowResolved,
-  border: BorderProperties,
-  layout: Layout,
-) -> ShadowDraw {
-  if shadow.inset {
-    ShadowDraw {
-      image: draw_inset_shadow(shadow, border, layout),
-      offset: Point { x: 0.0, y: 0.0 },
-      border_radius: border,
+    // Fast path: if the blur radius is 0, we can just draw the spread mask
+    if self.blur_radius <= 0.0 {
+      let placement = Placement {
+        left: offset_with_radius.x,
+        top: offset_with_radius.y,
+        width: spread_placement.width,
+        height: spread_placement.height,
+      };
+
+      return canvas.draw_mask(spread_mask.into_owned(), placement, self.color, None);
     }
-  } else {
-    ShadowDraw {
-      image: draw_outset_shadow(shadow, border, layout),
-      offset: Point {
-        x: shadow.offset_x - shadow.blur_radius - shadow.spread_radius,
-        y: shadow.offset_y - shadow.blur_radius - shadow.spread_radius,
+
+    // Create a new image with the spread mask on, blurred by the blur radius
+    let mut image = RgbaImage::new(
+      spread_placement.width + (self.blur_radius * 2.0) as u32,
+      spread_placement.height + (self.blur_radius * 2.0) as u32,
+    );
+
+    draw_mask(
+      &mut image,
+      &spread_mask,
+      Placement {
+        left: self.blur_radius as i32,
+        top: self.blur_radius as i32,
+        width: spread_placement.width,
+        height: spread_placement.height,
       },
-      border_radius: BorderProperties::zero(),
-    }
+      self.color,
+      None,
+    );
+
+    apply_fast_blur(&mut image, self.blur_radius);
+
+    canvas.overlay_image(
+      Arc::new(image),
+      offset_with_radius,
+      BorderProperties::zero(),
+      Affine::identity(),
+      ImageScalingAlgorithm::Auto,
+    );
+  }
+
+  pub fn draw_inset(
+    &self,
+    transform: Affine,
+    border_radius: BorderProperties,
+    canvas: &Canvas,
+    layout: Layout,
+  ) {
+    let image = draw_inset_shadow(self, border_radius, layout);
+
+    canvas.overlay_image(
+      Arc::new(image),
+      Point {
+        x: layout.location.x as i32,
+        y: layout.location.y as i32,
+      },
+      border_radius,
+      transform,
+      ImageScalingAlgorithm::Auto,
+    );
   }
 }
 
-fn draw_inset_shadow(
-  shadow: &BoxShadowResolved,
-  border: BorderProperties,
-  layout: Layout,
-) -> RgbaImage {
+fn draw_inset_shadow(shadow: &SizedShadow, border: BorderProperties, layout: Layout) -> RgbaImage {
   let mut shadow_image = RgbaImage::from_pixel(
     layout.size.width as u32,
     layout.size.height as u32,
-    shadow.color,
+    shadow.color.into(),
   );
 
   let mut paths = Vec::new();
@@ -235,42 +195,4 @@ fn draw_inset_shadow(
   apply_fast_blur(&mut shadow_image, shadow.blur_radius);
 
   shadow_image
-}
-
-/// Draws an outset box shadow.
-fn draw_outset_shadow(
-  shadow: &BoxShadowResolved,
-  border: BorderProperties,
-  layout: Layout,
-) -> RgbaImage {
-  let box_shadow_size = (shadow.blur_radius + shadow.spread_radius) * 2.0;
-
-  let mut image = RgbaImage::new(
-    (layout.size.width + box_shadow_size) as u32,
-    (layout.size.height + box_shadow_size) as u32,
-  );
-
-  // Draw the spread area, offset by blur + spread radius, width is spread radius
-  draw_filled_rect_color(
-    &mut image,
-    Size {
-      width: layout.size.width as u32,
-      height: layout.size.height as u32,
-    },
-    Point {
-      x: (shadow.spread_radius + shadow.blur_radius) as i32,
-      y: (shadow.spread_radius + shadow.blur_radius) as i32,
-    },
-    shadow.color,
-    border.expand_by(shadow.spread_radius),
-    Affine::identity(),
-  );
-
-  if shadow.blur_radius <= 0.0 {
-    return image;
-  }
-
-  apply_fast_blur(&mut image, shadow.blur_radius);
-
-  image
 }

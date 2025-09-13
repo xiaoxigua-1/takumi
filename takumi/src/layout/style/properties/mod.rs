@@ -24,6 +24,7 @@ mod overflow_wrap;
 mod parser;
 mod radial_gradient;
 mod sides;
+mod text_shadow;
 mod transform;
 mod word_break;
 
@@ -46,15 +47,16 @@ pub use line_height::*;
 pub use linear_gradient::*;
 pub use noise_v1::*;
 pub use overflow_wrap::*;
-use parley::{Alignment, FontStack};
 pub use parser::*;
 pub use radial_gradient::*;
 pub use sides::*;
+pub use text_shadow::*;
 pub use transform::*;
 pub use word_break::*;
 
 use cssparser::{ParseError, Parser};
 use image::imageops::FilterType;
+use parley::{Alignment, FontStack};
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 

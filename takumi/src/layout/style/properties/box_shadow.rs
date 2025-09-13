@@ -1,7 +1,7 @@
 use std::{borrow::Cow, fmt::Debug};
 
 use cssparser::{BasicParseErrorKind, ParseError, Parser, ParserInput};
-use serde::{Deserialize, Deserializer, Serialize};
+use serde::{Deserialize, Serialize};
 use smallvec::SmallVec;
 use ts_rs::TS;
 
@@ -87,34 +87,46 @@ impl TryFrom<BoxShadowValue> for BoxShadow {
 }
 
 /// Represents a collection of box shadows, have custom `FromCss` implementation for comma-separated values.
-#[derive(Debug, Clone, PartialEq, TS, Serialize)]
-#[ts(as = "Vec<BoxShadow>")]
+#[derive(Debug, Clone, PartialEq, TS, Serialize, Deserialize)]
+#[ts(as = "BoxShadowsValue")]
+#[serde(try_from = "BoxShadowsValue")]
 pub struct BoxShadows(pub SmallVec<[BoxShadow; 4]>);
 
-impl<'de> Deserialize<'de> for BoxShadows {
-  fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-  where
-    D: Deserializer<'de>,
-  {
-    let s = String::deserialize(deserializer)?;
+#[derive(Debug, Clone, PartialEq, TS, Deserialize)]
+#[serde(untagged)]
+pub(crate) enum BoxShadowsValue {
+  #[ts(as = "Vec<BoxShadow>")]
+  Structured(SmallVec<[BoxShadow; 4]>),
+  Css(String),
+}
 
-    let mut input = ParserInput::new(&s);
-    let mut parser = Parser::new(&mut input);
+impl TryFrom<BoxShadowsValue> for BoxShadows {
+  type Error = String;
 
-    let mut shadows = SmallVec::new();
+  fn try_from(value: BoxShadowsValue) -> Result<Self, Self::Error> {
+    match value {
+      BoxShadowsValue::Structured(shadows) => Ok(BoxShadows(shadows)),
+      BoxShadowsValue::Css(css) => {
+        let mut input = ParserInput::new(&css);
+        let mut parser = Parser::new(&mut input);
 
-    loop {
-      let shadow = BoxShadow::from_css(&mut parser)
-        .map_err(|_| serde::de::Error::custom("Failed to parse box-shadow"))?;
+        let mut shadows = SmallVec::new();
 
-      shadows.push(shadow);
+        loop {
+          let Ok(shadow) = BoxShadow::from_css(&mut parser).map_err(|e| e.to_string()) else {
+            break;
+          };
 
-      if parser.expect_comma().is_err() {
-        break; // No more shadows, exit loop
+          if parser.expect_comma().is_err() {
+            break;
+          }
+
+          shadows.push(shadow);
+        }
+
+        Ok(BoxShadows(shadows))
       }
     }
-
-    Ok(BoxShadows(shadows))
   }
 }
 

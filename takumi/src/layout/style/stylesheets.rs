@@ -1,6 +1,7 @@
 use derive_builder::Builder;
 use serde::{Deserialize, Serialize};
-use taffy::Size;
+use smallvec::SmallVec;
+use taffy::{Size, prelude::FromLength};
 use ts_rs::TS;
 
 use crate::{
@@ -8,24 +9,30 @@ use crate::{
     DEFAULT_FONT_SIZE,
     style::{CssValue, properties::*},
   },
-  rendering::RenderContext,
+  rendering::{RenderContext, SizedShadow},
 };
 
 /// Helper macro to define the `Style` struct and `InheritedStyle` struct.
 macro_rules! define_style {
-  ($($property:ident: $type:ty = $default_global:expr => $initial_value:expr),* $(,)?) => {
+  ($( $(#[$attr:meta])? $property:ident: $type:ty = $default_global:expr => $initial_value:expr),* $(,)?) => {
     /// Defines the style of an element.
     #[derive(Debug, Clone, Deserialize, Serialize, TS, Builder)]
     #[serde(default, rename_all = "camelCase")]
     #[ts(export, optional_fields)]
     #[builder(default, setter(into))]
     pub struct Style {
-      $( #[allow(missing_docs)] pub $property: CssValue<$type>, )*
+      $(
+        #[allow(missing_docs)]
+        $(#[$attr])?
+        pub $property: CssValue<$type>,
+      )*
     }
 
     impl Default for Style {
       fn default() -> Self {
-        Self { $( $property: $default_global.into(), )* }
+        Self {
+          $( $property: $default_global.into(), )*
+        }
       }
     }
 
@@ -135,8 +142,11 @@ define_style!(
   font_feature_settings: Option<FontFeatureSettings> = CssValue::Inherit => None,
   line_clamp: Option<u32> = CssValue::Inherit => None,
   text_align: TextAlign = CssValue::Inherit => Default::default(),
+  #[serde(alias = "webkitTextStrokeWidth")]
   text_stroke_width: LengthUnit = CssValue::Inherit => LengthUnit::Px(0.0),
+  #[serde(alias = "webkitTextStrokeColor")]
   text_stroke_color: Option<Color> = CssValue::Inherit => None,
+  text_shadow: Option<TextShadows> = CssValue::Inherit => None,
   letter_spacing: Option<LengthUnit> = CssValue::Inherit => None,
   word_spacing: Option<LengthUnit> = CssValue::Inherit => None,
   image_rendering: ImageScalingAlgorithm = CssValue::Inherit => Default::default(),
@@ -145,7 +155,6 @@ define_style!(
 );
 
 /// Sized font style with resolved font size and line height.
-#[derive(Clone, Copy)]
 pub(crate) struct SizedFontStyle<'s> {
   pub parent: &'s InheritedStyle,
   pub font_size: f32,
@@ -153,6 +162,7 @@ pub(crate) struct SizedFontStyle<'s> {
   pub stroke_width: f32,
   pub letter_spacing: Option<f32>,
   pub word_spacing: Option<f32>,
+  pub text_shadow: Option<SmallVec<[SizedShadow; 4]>>,
 }
 
 impl InheritedStyle {
@@ -315,6 +325,15 @@ impl InheritedStyle {
       word_spacing: self
         .word_spacing
         .map(|spacing| spacing.resolve_to_px(context, font_size) / font_size),
+      text_shadow: self.text_shadow.as_ref().map(|shadows| {
+        shadows
+          .0
+          .iter()
+          .map(|shadow| {
+            SizedShadow::from_text_shadow(*shadow, context, Size::from_length(font_size))
+          })
+          .collect()
+      }),
     }
   }
 

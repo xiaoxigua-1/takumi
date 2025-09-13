@@ -1,10 +1,11 @@
+use smallvec::smallvec;
 use takumi::layout::{
   node::{ContainerNode, NodeKind, TextNode},
   style::{
     BackgroundImagesValue, BackgroundPositionsValue, BackgroundRepeatsValue, BackgroundSizesValue,
     Color, FontWeight,
     LengthUnit::{Percentage, Px},
-    LineHeight, StyleBuilder, TextAlign, TextOverflow, TextTransform,
+    LineHeight, StyleBuilder, TextAlign, TextOverflow, TextShadow, TextShadows, TextTransform,
   },
 };
 
@@ -295,4 +296,28 @@ fn fixtures_text_stroke_black_red() {
   };
 
   run_style_width_test(text.into(), "tests/fixtures/text_stroke_black_red.png");
+}
+
+// Text shadow fixture
+#[test]
+fn fixtures_text_shadow() {
+  // #ffcc00 1px 0 10px
+  let shadows = TextShadows(smallvec![TextShadow {
+    offset_x: Px(1.0),
+    offset_y: Px(0.0),
+    blur_radius: Px(10.0),
+    color: Color([255, 204, 0, 255]),
+  }]);
+
+  let text = TextNode {
+    style: StyleBuilder::default()
+      .background_color(Color([240, 240, 240, 255]))
+      .font_size(Px(48.0))
+      .text_shadow(Some(shadows))
+      .build()
+      .unwrap(),
+    text: "Shadowed Text".to_string(),
+  };
+
+  run_style_width_test(text.into(), "tests/fixtures/text_shadow.png");
 }
