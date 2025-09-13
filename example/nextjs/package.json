@@ -9,8 +9,10 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@takumi-rs/core": "workspace:*",
-    "@takumi-rs/helpers": "workspace:*",
+    "@takumi-rs/core": "file:../../takumi-napi-core",
+    "@takumi-rs/image-response": "workspace:*",
+    "@takumi-rs/template": "workspace:*",
+    "lucide-react": "^0.544.0",
     "next": "15.5.3",
     "react": "19.1.1",
     "react-dom": "19.1.1"

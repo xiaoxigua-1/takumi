@@ -59,8 +59,10 @@
       "name": "nextjs",
       "version": "0.1.0",
       "dependencies": {
-        "@takumi-rs/core": "workspace:*",
-        "@takumi-rs/helpers": "workspace:*",
+        "@takumi-rs/core": "file:../../takumi-napi-core",
+        "@takumi-rs/image-response": "workspace:*",
+        "@takumi-rs/template": "workspace:*",
+        "lucide-react": "^0.544.0",
         "next": "15.5.3",
         "react": "19.1.1",
         "react-dom": "19.1.1",
@@ -1877,6 +1879,10 @@
 
     "@tailwindcss/oxide-wasm32-wasi/tslib": ["tslib@2.8.1", "", { "bundled": true }, "sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w=="],
 
+    "@takumi-rs/image-response/@takumi-rs/core": ["@takumi-rs/core@file:takumi-napi-core", { "devDependencies": { "@napi-rs/cli": "3.2.0", "@takumi-rs/helpers": "workspace:*", "@types/bun": "catalog:", "mitata": "^1.0.34", "typescript": "catalog:" } }],
+
+    "@takumi-rs/template/@takumi-rs/core": ["@takumi-rs/core@file:takumi-napi-core", { "devDependencies": { "@napi-rs/cli": "3.2.0", "@takumi-rs/helpers": "workspace:*", "@types/bun": "catalog:", "mitata": "^1.0.34", "typescript": "catalog:" } }],
+
     "accepts/negotiator": ["negotiator@0.6.3", "", {}, "sha512-+EUsqGPLsM+j/zdChZjsnX51g4XrHFOIXwfnCVPGlQk/k5giakcKsuxCObBRu6DSm9opw/O6slWbJdghQM4bBg=="],
 
     "basic-auth/safe-buffer": ["safe-buffer@5.1.2", "", {}, "sha512-Gd2UZBJDkXlY7GbJxfsE8/nvKkUEU1G38c1siN6QP6a9PT9MmHB8GnpscSmMJSoF8LOIrt8ud/wPtojys4G6+g=="],
@@ -1926,6 +1932,8 @@
     "morgan/on-finished": ["on-finished@2.3.0", "", { "dependencies": { "ee-first": "1.1.1" } }, "sha512-ikqdkGAAyf/X/gPhXGvfgAytDZtDbr+bkNUJ0N9h5MI/dmdgCs3l6hoHrcUv41sRKew3jIwrp4qQDXiK99Utww=="],
 
     "next/postcss": ["postcss@8.4.31", "", { "dependencies": { "nanoid": "^3.3.6", "picocolors": "^1.0.0", "source-map-js": "^1.0.2" } }, "sha512-PS08Iboia9mts/2ygV3eLpY5ghnUcfLV/EXTOW1E2qYxJKGGBUtNjN76FYHnMs36RmARn41bC0AZmn+rR0OVpQ=="],
+
+    "nextjs/@takumi-rs/core": ["@takumi-rs/core@file:takumi-napi-core", { "devDependencies": { "@napi-rs/cli": "3.2.0", "@takumi-rs/helpers": "workspace:*", "@types/bun": "catalog:", "mitata": "^1.0.34", "typescript": "catalog:" } }],
 
     "parse-entities/@types/unist": ["@types/unist@2.0.11", "", {}, "sha512-CmBKiL6NNo/OqgmMn95Fk9Whlp2mtvIv+KNpQKN2F4SjvrEesubTRWGYSg+BnWZOnlCaSTU1sMpsBOzgbYhnsA=="],
 
