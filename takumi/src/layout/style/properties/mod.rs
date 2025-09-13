@@ -56,10 +56,7 @@ pub use word_break::*;
 use cssparser::{ParseError, Parser};
 use image::imageops::FilterType;
 use serde::{Deserialize, Serialize};
-// Grid-specific taffy types moved to `properties::grid`
 use ts_rs::TS;
-
-use crate::impl_from_taffy_enum;
 
 /// Parser result type alias for CSS property parsers.
 pub type ParseResult<'i, T> = Result<T, ParseError<'i, Cow<'i, str>>>;
@@ -70,6 +67,19 @@ pub trait FromCss<'i> {
   fn from_css(input: &mut Parser<'i, '_>) -> ParseResult<'i, Self>
   where
     Self: Sized;
+}
+
+/// Macro to implement From trait for Taffy enum conversions
+macro_rules! impl_from_taffy_enum {
+  ($from_ty:ty, $to_ty:ty, $($variant:ident),*) => {
+    impl From<$from_ty> for $to_ty {
+      fn from(value: $from_ty) -> Self {
+        match value {
+          $(<$from_ty>::$variant => <$to_ty>::$variant,)*
+        }
+      }
+    }
+  };
 }
 
 /// Defines how an image should be resized to fit its container.
@@ -232,10 +242,11 @@ impl_from_taffy_enum!(
 );
 
 /// This enum determines the layout algorithm used for the children of a node.
-#[derive(Debug, Clone, Deserialize, Serialize, Copy, TS, PartialEq)]
+#[derive(Debug, Clone, Deserialize, Serialize, Copy, TS, PartialEq, Default)]
 #[serde(rename_all = "kebab-case")]
 pub enum Display {
   /// The element generates a flex container and its children follow the flexbox layout algorithm
+  #[default]
   Flex,
   /// The element generates a grid container and its children follow the CSS Grid layout algorithm
   Grid,
@@ -298,13 +309,14 @@ impl_from_taffy_enum!(FlexWrap, taffy::FlexWrap, NoWrap, Wrap, WrapReverse);
 /// Defines how text should be overflowed.
 ///
 /// This enum determines how text should be handled when it exceeds the container width.
-#[derive(Debug, Clone, Deserialize, Serialize, Copy, TS, PartialEq)]
+#[derive(Debug, Clone, Deserialize, Serialize, Copy, TS, PartialEq, Default)]
 #[serde(rename_all = "kebab-case")]
 pub enum TextOverflow {
+  /// Text is simply clipped at the overflow edge with no visual indication
+  #[default]
+  Clip,
   /// Text is truncated with an ellipsis (…) at the end when it overflows
   Ellipsis,
-  /// Text is simply clipped at the overflow edge with no visual indication
-  Clip,
 }
 
 /// Controls text case transformation when rendering.
@@ -326,6 +338,12 @@ pub enum TextTransform {
 /// Multi value fallback is supported.
 #[derive(Debug, Clone, Deserialize, Serialize, TS, PartialEq)]
 pub struct FontFamily(String);
+
+impl Default for FontFamily {
+  fn default() -> Self {
+    Self("sans-serif".to_string())
+  }
+}
 
 impl<'a> From<FontFamily> for FontStack<'a> {
   fn from(family: FontFamily) -> Self {

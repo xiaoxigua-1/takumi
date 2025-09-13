@@ -1,5 +1,6 @@
 use parley::FontVariation;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use smallvec::SmallVec;
 use ts_rs::TS;
 
 /// Controls variable font axis values via CSS font-variation-settings property.
@@ -8,7 +9,7 @@ use ts_rs::TS;
 /// width, slant, and other custom axes defined in the font.
 #[derive(Debug, Clone, Default, PartialEq, TS)]
 #[ts(type = "string")]
-pub struct FontVariationSettings(pub Vec<FontVariation>);
+pub struct FontVariationSettings(pub SmallVec<[FontVariation; 4]>);
 
 impl<'de> Deserialize<'de> for FontVariationSettings {
   fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>

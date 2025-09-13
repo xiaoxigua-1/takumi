@@ -10,7 +10,7 @@ use crate::{
   GlobalContext,
   layout::{
     node::Node,
-    style::{ResolvedFontStyle, Style},
+    style::{SizedFontStyle, Style},
   },
   rendering::{
     Canvas, MaxHeight, RenderContext, apply_text_transform, create_text_layout, draw_text,
@@ -35,12 +35,8 @@ impl<Nodes: Node<Nodes>> Node<Nodes> for TextNode {
     &self.style
   }
 
-  fn get_style_mut(&mut self) -> &mut Style {
-    &mut self.style
-  }
-
   fn draw_content(&self, context: &RenderContext, canvas: &Canvas, layout: Layout) {
-    draw_text(&self.text, &self.style, context, canvas, layout);
+    draw_text(&self.text, context, canvas, layout);
   }
 
   fn measure(
@@ -52,7 +48,7 @@ impl<Nodes: Node<Nodes>> Node<Nodes> for TextNode {
     measure_text(
       context.global,
       &self.text,
-      &self.style.resolve_to_font_style(context),
+      context.style.to_sized_font_style(context),
       known_dimensions,
       available_space,
     )
@@ -67,10 +63,10 @@ impl<Nodes: Node<Nodes>> Node<Nodes> for TextNode {
 ///
 /// This function handles text wrapping, line height, and respects both explicit
 /// dimensions and available space constraints.
-pub fn measure_text(
+pub(crate) fn measure_text(
   global: &GlobalContext,
   text: &str,
-  style: &ResolvedFontStyle,
+  style: SizedFontStyle,
   known_dimensions: Size<Option<f32>>,
   available_space: Size<AvailableSpace>,
 ) -> Size<f32> {
@@ -96,14 +92,14 @@ pub fn measure_text(
     AvailableSpace::Definite(height) => Some(height),
   });
 
-  let height_constraint_with_max_lines = match (style.line_clamp, height_constraint) {
+  let height_constraint_with_max_lines = match (style.parent.line_clamp, height_constraint) {
     (Some(max_lines), Some(height)) => Some(MaxHeight::Both(height, max_lines)),
     (Some(max_lines), None) => Some(MaxHeight::Lines(max_lines)),
     (None, Some(height)) => Some(MaxHeight::Absolute(height)),
     (None, None) => None,
   };
 
-  let text = apply_text_transform(text, style.text_transform);
+  let text = apply_text_transform(text, style.parent.text_transform);
 
   let buffer = create_text_layout(
     &text,
@@ -129,5 +125,310 @@ pub fn measure_text(
       .ceil()
       .min(width_constraint.unwrap_or(f32::MAX)),
     height: total_height.ceil(),
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use std::sync::LazyLock;
+  use taffy::{AvailableSpace, geometry::Size};
+
+  use crate::{
+    GlobalContext,
+    layout::{
+      DEFAULT_FONT_SIZE, DEFAULT_LINE_HEIGHT_SCALER, Viewport,
+      node::measure_text,
+      style::{Affine, InheritedStyle, LengthUnit, LineHeight, SizedFontStyle},
+    },
+    rendering::RenderContext,
+  };
+
+  const NOTO_SANS_REGULAR_BUFFER: &[u8] =
+    include_bytes!("../../../../assets/fonts/noto-sans/NotoSans-Regular.ttf");
+
+  // Viewport dimensions
+  const VIEWPORT_WIDTH: u32 = 800;
+  const VIEWPORT_HEIGHT: u32 = 600;
+
+  static SHARED_GLOBAL_CONTEXT: LazyLock<GlobalContext> = LazyLock::new(|| {
+    let global_context = GlobalContext::default();
+
+    global_context
+      .font_context
+      .load_and_store(NOTO_SANS_REGULAR_BUFFER, None, None)
+      .unwrap();
+
+    global_context
+  });
+
+  // Helper function to create a basic RenderContext for testing
+  fn create_test_context() -> RenderContext<'static> {
+    RenderContext {
+      global: &SHARED_GLOBAL_CONTEXT,
+      parent_font_size: DEFAULT_FONT_SIZE,
+      viewport: Viewport {
+        width: VIEWPORT_WIDTH,
+        height: VIEWPORT_HEIGHT,
+        font_size: DEFAULT_FONT_SIZE,
+      },
+      transform: Affine::identity(),
+      style: InheritedStyle::default(),
+    }
+  }
+
+  // Helper function to create known dimensions for testing
+  fn create_known_dimensions(width: Option<f32>, height: Option<f32>) -> Size<Option<f32>> {
+    Size { width, height }
+  }
+
+  // Helper function to create available space for testing
+  fn create_available_space(width: AvailableSpace, height: AvailableSpace) -> Size<AvailableSpace> {
+    Size { width, height }
+  }
+
+  // Helper function to create text measurement parameters
+  fn measure_text_helper(
+    text: &str,
+    width: Option<f32>,
+    height: Option<f32>,
+    available_width: AvailableSpace,
+    available_height: AvailableSpace,
+  ) -> Size<f32> {
+    let context = create_test_context();
+    let style = context.style.to_sized_font_style(&context);
+
+    measure_text(
+      context.global,
+      text,
+      style,
+      create_known_dimensions(width, height),
+      create_available_space(available_width, available_height),
+    )
+  }
+
+  // Helper function to measure text with custom style
+  fn measure_text_with_style(
+    text: &str,
+    style: SizedFontStyle<'_>,
+    width: Option<f32>,
+    height: Option<f32>,
+    available_width: AvailableSpace,
+    available_height: AvailableSpace,
+  ) -> Size<f32> {
+    let context = create_test_context();
+
+    measure_text(
+      context.global,
+      text,
+      style,
+      create_known_dimensions(width, height),
+      create_available_space(available_width, available_height),
+    )
+  }
+
+  #[test]
+  fn test_measure_text_basic() {
+    let result = measure_text_helper(
+      "Hello, world!",
+      None,
+      None,
+      AvailableSpace::MaxContent,
+      AvailableSpace::MaxContent,
+    );
+
+    assert!(result.width > 0.0);
+    assert_eq!(
+      result.height,
+      (DEFAULT_FONT_SIZE * DEFAULT_LINE_HEIGHT_SCALER).ceil()
+    );
+  }
+
+  #[test]
+  fn test_measure_text_with_width_constraint() {
+    let result = measure_text_helper(
+      "This is a long text that should wrap when given a width constraint",
+      Some(200.0),
+      None,
+      AvailableSpace::Definite(300.0),
+      AvailableSpace::MaxContent,
+    );
+
+    assert!(result.width <= 200.0);
+    assert!(result.height >= (2.0 * DEFAULT_FONT_SIZE * DEFAULT_LINE_HEIGHT_SCALER).ceil());
+    // Have to allow one pixel tolerance due to rounding
+    assert!((result.height % (DEFAULT_FONT_SIZE * DEFAULT_LINE_HEIGHT_SCALER)).floor() == 0.0);
+  }
+
+  #[test]
+  fn test_measure_text_with_height_constraint() {
+    let context = create_test_context();
+    let parent = InheritedStyle {
+      line_clamp: Some(2),
+      ..Default::default()
+    };
+
+    let result = measure_text_with_style(
+      "This is a long text that should be clamped to a specific number of lines",
+      parent.to_sized_font_style(&context),
+      Some(200.0),
+      None,
+      AvailableSpace::Definite(300.0),
+      AvailableSpace::MaxContent,
+    );
+
+    let expected_height = (2.0 * DEFAULT_FONT_SIZE * DEFAULT_LINE_HEIGHT_SCALER).ceil();
+    assert_eq!(result.height, expected_height);
+  }
+
+  #[test]
+  fn test_measure_text_empty_string() {
+    let result = measure_text_helper(
+      "",
+      None,
+      None,
+      AvailableSpace::MaxContent,
+      AvailableSpace::MaxContent,
+    );
+
+    assert_eq!(result.width, 0.0);
+    assert_eq!(result.height, 0.0);
+  }
+
+  #[test]
+  fn test_measure_text_single_character() {
+    let result = measure_text_helper(
+      "A",
+      None,
+      None,
+      AvailableSpace::MaxContent,
+      AvailableSpace::MaxContent,
+    );
+
+    assert!(result.width > 0.0);
+    assert_eq!(
+      result.height,
+      (DEFAULT_FONT_SIZE * DEFAULT_LINE_HEIGHT_SCALER).ceil()
+    );
+  }
+
+  #[test]
+  fn test_measure_text_with_line_clamp() {
+    let context = create_test_context();
+    let parent = InheritedStyle {
+      line_clamp: Some(3),
+      ..Default::default()
+    };
+
+    let result = measure_text_with_style(
+      "Line 1\nLine 2\nLine 3\nLine 4\nLine 5",
+      parent.to_sized_font_style(&context),
+      Some(300.0),
+      None,
+      AvailableSpace::Definite(400.0),
+      AvailableSpace::MaxContent,
+    );
+
+    let expected_height = (3.0 * DEFAULT_FONT_SIZE * DEFAULT_LINE_HEIGHT_SCALER).ceil();
+    assert_eq!(result.height, expected_height);
+  }
+
+  #[test]
+  fn test_measure_text_zero_width_constraint() {
+    let result = measure_text_helper(
+      "This text has zero width constraint",
+      Some(0.0),
+      None,
+      AvailableSpace::MinContent,
+      AvailableSpace::MaxContent,
+    );
+
+    // With zero width, the text should not be rendered
+    assert_eq!(result.width, 0.0);
+    assert_eq!(result.height, 0.0);
+  }
+
+  #[test]
+  fn test_measure_text_zero_height_constraint() {
+    let result = measure_text_helper(
+      "This text has zero height constraint",
+      Some(200.0),
+      Some(0.0),
+      AvailableSpace::Definite(300.0),
+      AvailableSpace::MinContent,
+    );
+
+    // With zero height, the text should not be rendered
+    assert_eq!(result.width, 0.0);
+    assert_eq!(result.height, 0.0);
+  }
+
+  #[test]
+  fn test_measure_text_with_different_font_size() {
+    let context = create_test_context();
+    let parent = InheritedStyle {
+      font_size: LengthUnit::Px(24.0),
+      ..Default::default()
+    };
+
+    let result = measure_text_with_style(
+      "Large font text",
+      parent.to_sized_font_style(&context),
+      None,
+      None,
+      AvailableSpace::MaxContent,
+      AvailableSpace::MaxContent,
+    );
+
+    assert!(result.width > 0.0);
+    assert_eq!(result.height, (24.0 * DEFAULT_LINE_HEIGHT_SCALER).ceil());
+  }
+
+  #[test]
+  fn test_measure_text_with_different_line_height() {
+    let context = create_test_context();
+    let parent = InheritedStyle {
+      line_height: LineHeight(LengthUnit::Em(1.5)),
+      ..Default::default()
+    };
+
+    let result = measure_text_with_style(
+      "Text with increased line height",
+      parent.to_sized_font_style(&context),
+      None,
+      None,
+      AvailableSpace::MaxContent,
+      AvailableSpace::MaxContent,
+    );
+
+    assert!(result.width > 0.0);
+    assert_eq!(result.height, DEFAULT_FONT_SIZE * 1.5);
+  }
+
+  #[test]
+  fn test_measure_text_whitespace_only() {
+    let result = measure_text_helper(
+      "   \n\t  \n  ",
+      Some(200.0),
+      None,
+      AvailableSpace::Definite(300.0),
+      AvailableSpace::MaxContent,
+    );
+
+    assert!(result.width >= 0.0);
+    assert!(result.height >= 0.0);
+  }
+
+  #[test]
+  fn test_measure_text_very_long_word() {
+    let result = measure_text_helper(
+      "verylongwordwithoutanyspaces",
+      Some(100.0),
+      None,
+      AvailableSpace::Definite(200.0),
+      AvailableSpace::MaxContent,
+    );
+
+    assert!(result.width <= 100.0);
+    assert!(result.height >= 19.0);
   }
 }

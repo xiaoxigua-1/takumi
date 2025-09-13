@@ -11,7 +11,7 @@ use takumi::{
   layout::{
     Viewport,
     node::{Node, NodeKind},
-    style::LengthUnit,
+    style::{CssValue, LengthUnit},
   },
   rendering::{ImageOutputFormat, render, write_image},
 };
@@ -37,18 +37,24 @@ pub async fn generate_image_handler(
     )
   })?;
 
-  let LengthUnit::Px(width) = root_node.get_style().width else {
-    return Err((
-      StatusCode::BAD_REQUEST,
-      "Width must be specified in pixels".to_string(),
-    ));
+  let width = match root_node.get_style().width {
+    CssValue::Value(LengthUnit::Px(px)) => px,
+    _ => {
+      return Err((
+        StatusCode::BAD_REQUEST,
+        "Width must be specified in pixels".to_string(),
+      ));
+    }
   };
 
-  let LengthUnit::Px(height) = root_node.get_style().height else {
-    return Err((
-      StatusCode::BAD_REQUEST,
-      "Height must be specified in pixels".to_string(),
-    ));
+  let height = match root_node.get_style().height {
+    CssValue::Value(LengthUnit::Px(px)) => px,
+    _ => {
+      return Err((
+        StatusCode::BAD_REQUEST,
+        "Height must be specified in pixels".to_string(),
+      ));
+    }
   };
 
   let format = query.format.unwrap_or(ImageOutputFormat::WebP);

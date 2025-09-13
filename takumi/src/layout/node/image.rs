@@ -37,10 +37,6 @@ impl<Nodes: Node<Nodes>> Node<Nodes> for ImageNode {
     &self.style
   }
 
-  fn get_style_mut(&mut self) -> &mut Style {
-    &mut self.style
-  }
-
   fn measure(
     &self,
     context: &RenderContext,
@@ -75,7 +71,7 @@ impl<Nodes: Node<Nodes>> Node<Nodes> for ImageNode {
       return;
     };
 
-    draw_image(&image, &self.style, context, canvas, layout);
+    draw_image(&image, context, canvas, layout);
   }
 
   fn has_draw_content(&self) -> bool {
@@ -214,5 +210,175 @@ pub fn measure_image(
   Size {
     width: final_width,
     height: final_height,
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use taffy::{AvailableSpace, geometry::Size};
+
+  use super::*;
+
+  // Helper function to create image size for testing
+  fn create_image_size(width: f32, height: f32) -> Size<f32> {
+    Size { width, height }
+  }
+
+  // Helper function to create known dimensions for testing
+  fn create_known_dimensions(width: Option<f32>, height: Option<f32>) -> Size<Option<f32>> {
+    Size { width, height }
+  }
+
+  // Helper function to create available space for testing
+  fn create_available_space(width: AvailableSpace, height: AvailableSpace) -> Size<AvailableSpace> {
+    Size { width, height }
+  }
+
+  #[test]
+  fn test_measure_image_with_known_dimensions() {
+    let result = measure_image(
+      create_image_size(800.0, 600.0),
+      create_known_dimensions(Some(400.0), Some(300.0)),
+      create_available_space(
+        AvailableSpace::Definite(500.0),
+        AvailableSpace::Definite(400.0),
+      ),
+    );
+
+    assert_eq!(result.width, 400.0);
+    assert_eq!(result.height, 300.0);
+  }
+
+  #[test]
+  fn test_measure_image_with_width_only() {
+    let result = measure_image(
+      create_image_size(800.0, 600.0),
+      create_known_dimensions(Some(400.0), None),
+      create_available_space(
+        AvailableSpace::Definite(500.0),
+        AvailableSpace::Definite(400.0),
+      ),
+    );
+
+    assert_eq!(result.width, 400.0);
+    assert_eq!(result.height, 300.0); // 400 / (800/600) = 300
+  }
+
+  #[test]
+  fn test_measure_image_with_height_only() {
+    let result = measure_image(
+      create_image_size(800.0, 600.0),
+      create_known_dimensions(None, Some(300.0)),
+      create_available_space(
+        AvailableSpace::Definite(500.0),
+        AvailableSpace::Definite(400.0),
+      ),
+    );
+
+    assert_eq!(result.width, 400.0); // 300 * (800/600) = 400
+    assert_eq!(result.height, 300.0);
+  }
+
+  #[test]
+  fn test_measure_image_with_available_space_only() {
+    let result = measure_image(
+      create_image_size(800.0, 600.0),
+      create_known_dimensions(None, None),
+      create_available_space(
+        AvailableSpace::Definite(400.0),
+        AvailableSpace::Definite(300.0),
+      ),
+    );
+
+    // Should respect available space constraints
+    assert_eq!(result.width, 400.0);
+    assert_eq!(result.height, 300.0);
+  }
+
+  #[test]
+  fn test_measure_image_with_no_constraints() {
+    let result = measure_image(
+      create_image_size(800.0, 600.0),
+      create_known_dimensions(None, None),
+      create_available_space(AvailableSpace::MaxContent, AvailableSpace::MaxContent),
+    );
+
+    assert_eq!(result.width, 800.0);
+    assert_eq!(result.height, 600.0);
+  }
+
+  #[test]
+  fn test_measure_image_square_aspect_ratio() {
+    let result = measure_image(
+      create_image_size(500.0, 500.0),
+      create_known_dimensions(Some(200.0), None),
+      create_available_space(
+        AvailableSpace::Definite(300.0),
+        AvailableSpace::Definite(300.0),
+      ),
+    );
+
+    assert_eq!(result.width, 200.0);
+    assert_eq!(result.height, 200.0); // Square aspect ratio
+  }
+
+  #[test]
+  fn test_measure_image_extreme_aspect_ratio() {
+    let result = measure_image(
+      create_image_size(2000.0, 100.0), // 20:1 aspect ratio
+      create_known_dimensions(Some(400.0), None),
+      create_available_space(
+        AvailableSpace::Definite(500.0),
+        AvailableSpace::Definite(500.0),
+      ),
+    );
+
+    assert_eq!(result.width, 400.0);
+    assert_eq!(result.height, 20.0); // 400 / 20 = 20
+  }
+
+  #[test]
+  fn test_measure_image_zero_dimensions() {
+    let result = measure_image(
+      create_image_size(0.0, 0.0),
+      create_known_dimensions(Some(100.0), None),
+      create_available_space(
+        AvailableSpace::Definite(200.0),
+        AvailableSpace::Definite(200.0),
+      ),
+    );
+
+    // When source has zero dimensions, aspect ratio calculation would be NaN
+    // The function should handle this gracefully
+    assert_eq!(result.width, 100.0);
+    assert!(result.height.is_finite());
+  }
+
+  #[test]
+  fn test_measure_image_very_small_dimensions() {
+    let result = measure_image(
+      create_image_size(1.0, 1.0),
+      create_known_dimensions(None, Some(100.0)),
+      create_available_space(
+        AvailableSpace::Definite(200.0),
+        AvailableSpace::Definite(200.0),
+      ),
+    );
+
+    assert_eq!(result.width, 100.0);
+    assert_eq!(result.height, 100.0);
+  }
+
+  #[test]
+  fn test_measure_image_partial_available_space() {
+    let result = measure_image(
+      create_image_size(800.0, 600.0),
+      create_known_dimensions(None, None),
+      create_available_space(AvailableSpace::Definite(400.0), AvailableSpace::MaxContent),
+    );
+
+    // Should use available width and original height
+    assert_eq!(result.width, 400.0);
+    assert_eq!(result.height, 300.0); // Since max-content is applied, height should be capped
   }
 }

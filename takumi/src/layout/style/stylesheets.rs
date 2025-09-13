@@ -1,317 +1,158 @@
-use merge::{Merge, option::overwrite_none};
-use parley::Alignment;
+use derive_builder::Builder;
 use serde::{Deserialize, Serialize};
-use taffy::{Layout, Size, Style as TaffyStyle};
+use taffy::Size;
 use ts_rs::TS;
 
 use crate::{
-  layout::{DEFAULT_LINE_HEIGHT_SCALER, style::properties::*},
-  rendering::{BorderProperties, RenderContext},
+  layout::{
+    DEFAULT_FONT_SIZE,
+    style::{CssValue, properties::*},
+  },
+  rendering::RenderContext,
 };
 
-/// Represents the resolved font style for a text node.
-#[derive(Debug, Clone)]
-pub struct ResolvedFontStyle {
-  /// Font size in pixels for text rendering.
-  pub font_size: f32,
-  /// Line height as an absolute value in pixels.
-  pub line_height: parley::LineHeight,
-  /// Font weight for text rendering.
-  pub font_weight: parley::FontWeight,
-  /// Font slant style (normal, italic, oblique).
-  pub font_style: parley::FontStyle,
-  /// Controls variable font axis values for advanced typography.
-  pub font_variation_settings: Option<FontVariationSettings>,
-  /// Controls OpenType font features for advanced typography.
-  pub font_feature_settings: Option<FontFeatureSettings>,
-  /// Maximum number of lines for text before truncation.
-  pub line_clamp: Option<u32>,
-  /// Font family for text rendering.
-  pub font_family: Option<FontFamily>,
-  /// Letter spacing for text rendering in em units (relative to font size).
-  pub letter_spacing: Option<f32>,
-  /// Word spacing for text rendering in em units (relative to font size).
-  pub word_spacing: Option<f32>,
-  /// Text alignment within the element.
-  pub text_align: Option<Alignment>,
-  /// How text should be overflowed.
-  pub text_overflow: TextOverflow,
-  /// Text transform behavior (uppercase, lowercase, capitalize, none)
-  pub text_transform: TextTransform,
-  /// Text color for child text elements.
-  pub color: Color,
-  /// Text wrap behavior.
-  pub overflow_wrap: parley::OverflowWrap,
-  /// How text should be broken at word boundaries.
-  pub word_break: swash::text::WordBreakStrength,
-}
-
-/// Main styling structure that contains all layout and visual properties.
-#[derive(Debug, Clone, Deserialize, Serialize, TS)]
-#[serde(default, rename_all = "camelCase")]
-#[ts(export, optional_fields)]
-pub struct Style {
-  /// Display algorithm to use for the element.
-  pub display: Display,
-  /// Width of the element.
-  pub width: LengthUnit,
-  /// Height of the element.
-  pub height: LengthUnit,
-  /// Max width of the element.
-  pub max_width: LengthUnit,
-  /// Max height of the element.
-  pub max_height: LengthUnit,
-  /// Min width of the element.
-  pub min_width: LengthUnit,
-  /// Min height of the element.
-  pub min_height: LengthUnit,
-  /// Aspect ratio of the element (width/height).
-  pub aspect_ratio: Option<f32>,
-  /// Internal spacing around the element's content (top, right, bottom, left).
-  pub padding: Sides<LengthUnit>,
-  /// Longhand: top padding. Overrides `padding` top value.
-  pub padding_top: Option<LengthUnit>,
-  /// Longhand: right padding. Overrides `padding` right value.
-  pub padding_right: Option<LengthUnit>,
-  /// Longhand: bottom padding. Overrides `padding` bottom value.
-  pub padding_bottom: Option<LengthUnit>,
-  /// Longhand: left padding. Overrides `padding` left value.
-  pub padding_left: Option<LengthUnit>,
-  /// External spacing around the element (top, right, bottom, left).
-  pub margin: Sides<LengthUnit>,
-  /// Longhand: top margin. Overrides `margin` top value.
-  pub margin_top: Option<LengthUnit>,
-  /// Longhand: right margin. Overrides `margin` right value.
-  pub margin_right: Option<LengthUnit>,
-  /// Longhand: bottom margin. Overrides `margin` bottom value.
-  pub margin_bottom: Option<LengthUnit>,
-  /// Longhand: left margin. Overrides `margin` left value.
-  pub margin_left: Option<LengthUnit>,
-  /// Positioning offsets (top, right, bottom, left) from the element's normal position.
-  pub inset: Sides<LengthUnit>,
-  /// Longhand: top offset. Overrides `inset` top value.
-  pub top: Option<LengthUnit>,
-  /// Longhand: right offset. Overrides `inset` right value.
-  pub right: Option<LengthUnit>,
-  /// Longhand: bottom offset. Overrides `inset` bottom value.
-  pub bottom: Option<LengthUnit>,
-  /// Longhand: left offset. Overrides `inset` left value.
-  pub left: Option<LengthUnit>,
-  /// Direction of flex layout (row or column).
-  pub flex_direction: FlexDirection,
-  /// How a single grid item is aligned along the inline (row) axis, overriding the container's justify-items value.
-  pub justify_self: Option<AlignItems>,
-  /// How items are aligned along the main axis.
-  pub justify_content: Option<JustifyContent>,
-  /// How lines are aligned within the flex container when there's extra space in the cross axis.
-  pub align_content: Option<JustifyContent>,
-  /// How grid items are aligned along the inline (row) axis within their grid areas.
-  pub justify_items: Option<AlignItems>,
-  /// How items are aligned along the cross axis.
-  pub align_items: Option<AlignItems>,
-  /// How a single item is aligned along the cross axis, overriding the container's align-items value.
-  pub align_self: Option<AlignItems>,
-  /// How flex items should wrap.
-  pub flex_wrap: FlexWrap,
-  /// The initial main size of the flex item before growing or shrinking.
-  pub flex_basis: LengthUnit,
-  /// Positioning method (relative, absolute, etc.).
-  pub position: Position,
-  /// Transform for the element.
-  pub transform: Option<Transforms>,
-  /// Transform origin for the element.
-  pub transform_origin: Option<BackgroundPosition>,
-  /// Mask image for the element.
-  pub mask_image: Option<BackgroundImages>,
-  /// Mask size for the element.
-  pub mask_size: Option<BackgroundSizes>,
-  /// Mask position for the element.
-  pub mask_position: Option<BackgroundPositions>,
-  /// Mask repeat for the element.
-  pub mask_repeat: Option<BackgroundRepeats>,
-  /// Spacing between rows and columns in flex or grid layouts.
-  pub gap: Gap,
-  /// How much the flex item should grow relative to other flex items when positive free space is distributed.
-  pub flex_grow: f32,
-  /// How much the flex item should shrink relative to other flex items when negative free space is distributed.
-  pub flex_shrink: f32,
-  /// Shorthand border radius (top-left, top-right, bottom-right, bottom-left).
-  pub border_radius: Option<Sides<LengthUnit>>,
-  /// Longhand: top-left border radius. Overrides `border_radius` top-left value.
-  pub border_top_left_radius: Option<LengthUnit>,
-  /// Longhand: top-right border radius. Overrides `border_radius` top-right value.
-  pub border_top_right_radius: Option<LengthUnit>,
-  /// Longhand: bottom-right border radius. Overrides `border_radius` bottom-right value.
-  pub border_bottom_right_radius: Option<LengthUnit>,
-  /// Longhand: bottom-left border radius. Overrides `border_radius` bottom-left value.
-  pub border_bottom_left_radius: Option<LengthUnit>,
-  /// Width of the element's border on each side (top, right, bottom, left).
-  pub border_width: Sides<LengthUnit>,
-  /// Longhand: top border width. Overrides `border_width` top value.
-  pub border_top_width: Option<LengthUnit>,
-  /// Longhand: right border width. Overrides `border_width` right value.
-  pub border_right_width: Option<LengthUnit>,
-  /// Longhand: bottom border width. Overrides `border_width` bottom value.
-  pub border_bottom_width: Option<LengthUnit>,
-  /// Longhand: left border width. Overrides `border_width` left value.
-  pub border_left_width: Option<LengthUnit>,
-  /// How images should be fitted within their container.
-  pub object_fit: ObjectFit,
-  /// Background image(s): linear or radial gradients.
-  pub background_image: Option<BackgroundImages>,
-  /// Background positions per layer.
-  pub background_position: Option<BackgroundPositions>,
-  /// Background sizes per layer.
-  pub background_size: Option<BackgroundSizes>,
-  /// Background repeat per layer.
-  pub background_repeat: Option<BackgroundRepeats>,
-  /// Background color for the element.
-  pub background_color: Option<Color>,
-  /// Box shadow effect for the element.
-  pub box_shadow: Option<BoxShadows>,
-  /// Controls the size of implicitly-created grid columns.
-  pub grid_auto_columns: Option<GridTrackSizes>,
-  /// Controls the size of implicitly-created grid rows.
-  pub grid_auto_rows: Option<GridTrackSizes>,
-  /// Controls how auto-placed items are inserted in the grid.
-  pub grid_auto_flow: Option<GridAutoFlow>,
-  /// Specifies a grid item's size and location within the grid column.
-  pub grid_column: Option<GridLine>,
-  /// Specifies a grid item's size and location within the grid row.
-  pub grid_row: Option<GridLine>,
-  /// Defines the line names and track sizing functions of the grid columns.
-  pub grid_template_columns: Option<GridTemplateComponents>,
-  /// Defines the line names and track sizing functions of the grid rows.
-  pub grid_template_rows: Option<GridTemplateComponents>,
-  /// Defines named grid areas specified via `grid-template-areas`.
-  pub grid_template_areas: Option<GridTemplateAreas>,
-  /// Inheritable style properties that cascade to child elements.
-  #[serde(flatten)]
-  pub inheritable_style: InheritableStyle,
-}
-
-impl Default for Style {
-  fn default() -> Self {
-    Self {
-      display: Display::Flex,
-      margin: Sides([LengthUnit::zero(); 4]),
-      margin_top: None,
-      margin_right: None,
-      margin_bottom: None,
-      margin_left: None,
-      padding: Sides([LengthUnit::zero(); 4]),
-      padding_top: None,
-      padding_right: None,
-      padding_bottom: None,
-      padding_left: None,
-      width: Default::default(),
-      height: Default::default(),
-      max_width: Default::default(),
-      max_height: Default::default(),
-      min_width: Default::default(),
-      min_height: Default::default(),
-      aspect_ratio: None,
-      inset: Default::default(),
-      top: None,
-      right: None,
-      bottom: None,
-      left: None,
-      flex_direction: Default::default(),
-      justify_content: Default::default(),
-      align_content: Default::default(),
-      justify_self: Default::default(),
-      justify_items: Default::default(),
-      align_items: Default::default(),
-      align_self: Default::default(),
-      position: Default::default(),
-      gap: Default::default(),
-      flex_grow: 0.0,
-      flex_shrink: 1.0,
-      flex_basis: Default::default(),
-      flex_wrap: FlexWrap::NoWrap,
-      border_width: Sides([LengthUnit::zero(); 4]),
-      border_top_width: None,
-      border_right_width: None,
-      border_bottom_width: None,
-      border_left_width: None,
-      border_radius: None,
-      border_top_left_radius: None,
-      border_top_right_radius: None,
-      border_bottom_right_radius: None,
-      border_bottom_left_radius: None,
-      object_fit: Default::default(),
-      box_shadow: Default::default(),
-      transform: None,
-      transform_origin: None,
-      mask_image: None,
-      mask_size: None,
-      mask_position: None,
-      mask_repeat: None,
-      background_color: None,
-      background_image: None,
-      background_position: None,
-      background_size: None,
-      background_repeat: None,
-      grid_auto_columns: None,
-      grid_auto_rows: None,
-      grid_auto_flow: None,
-      grid_column: None,
-      grid_row: None,
-      grid_template_columns: None,
-      grid_template_rows: None,
-      grid_template_areas: None,
-      inheritable_style: Default::default(),
+/// Helper macro to define the `Style` struct and `InheritedStyle` struct.
+macro_rules! define_style {
+  ($($property:ident: $type:ty = $default_global:expr => $initial_value:expr),* $(,)?) => {
+    /// Defines the style of an element.
+    #[derive(Debug, Clone, Deserialize, Serialize, TS, Builder)]
+    #[serde(default, rename_all = "camelCase")]
+    #[ts(export, optional_fields)]
+    #[builder(default, setter(into))]
+    pub struct Style {
+      $( #[allow(missing_docs)] pub $property: CssValue<$type>, )*
     }
-  }
+
+    impl Default for Style {
+      fn default() -> Self {
+        Self { $( $property: $default_global.into(), )* }
+      }
+    }
+
+    impl Style {
+      /// Inherits the style from the parent element.
+      pub(crate) fn inherit(&self, parent: &InheritedStyle) -> InheritedStyle {
+        InheritedStyle {
+          $( $property: self.$property.inherit(&parent.$property, $initial_value), )*
+        }
+      }
+    }
+
+    #[derive(Clone)]
+    pub(crate) struct InheritedStyle {
+      $( pub $property: $type, )*
+    }
+
+    impl Default for InheritedStyle {
+      fn default() -> Self {
+        Self { $( $property: $initial_value, )* }
+      }
+    }
+  };
 }
 
-/// Style properties that can be inherited by child elements.
-#[derive(Debug, Clone, Deserialize, Serialize, Default, TS, Merge)]
-#[merge(strategy = overwrite_none)]
-#[ts(optional_fields, export)]
-#[serde(rename_all = "camelCase")]
-pub struct InheritableStyle {
-  /// How the width and height of an element are calculated.
-  pub box_sizing: Option<BoxSizing>,
-  /// How text should be overflowed.
-  pub text_overflow: Option<TextOverflow>,
-  /// Controls text case transformation when rendering.
-  pub text_transform: Option<TextTransform>,
-  /// Font slant style (normal, italic, oblique).
-  pub font_style: Option<FontStyle>,
-  /// Color of the element's border.
-  pub border_color: Option<Color>,
-  /// Text color for child text elements.
-  pub color: Option<Color>,
-  /// Font size for text rendering.
-  pub font_size: Option<LengthUnit>,
-  /// Font family name for text rendering.
-  pub font_family: Option<FontFamily>,
-  /// Line height for text spacing, number is em.
-  pub line_height: Option<LineHeight>,
-  /// Font weight for text rendering.
-  pub font_weight: Option<FontWeight>,
-  /// Controls variable font axis values via CSS font-variation-settings property.
-  pub font_variation_settings: Option<FontVariationSettings>,
-  /// Controls OpenType font features via CSS font-feature-settings property.
-  pub font_feature_settings: Option<FontFeatureSettings>,
-  /// Maximum number of lines for text before truncation.
-  pub line_clamp: Option<u32>,
-  /// Text alignment within the element.
-  pub text_align: Option<TextAlign>,
-  /// Additional spacing between characters in text.
-  pub letter_spacing: Option<LengthUnit>,
-  /// Additional spacing between words in text.
-  pub word_spacing: Option<LengthUnit>,
-  /// Controls how images are scaled when rendered.
-  pub image_rendering: Option<ImageScalingAlgorithm>,
-  /// How text should be overflowed.
-  pub overflow_wrap: Option<OverflowWrap>,
-  /// How text should be broken at word boundaries.
-  pub word_break: Option<WordBreak>,
+// property: type = node default value => viewport default value
+define_style!(
+  // For convenience, we default to border-box
+  box_sizing: BoxSizing = CssValue::Inherit => BoxSizing::BorderBox,
+  display: Display = Display::Flex => Display::Flex,
+  width: LengthUnit = LengthUnit::Auto => LengthUnit::Auto,
+  height: LengthUnit = LengthUnit::Auto => LengthUnit::Auto,
+  max_width: LengthUnit = LengthUnit::Auto => LengthUnit::Auto,
+  max_height: LengthUnit = LengthUnit::Auto => LengthUnit::Auto,
+  min_width: LengthUnit = LengthUnit::Auto => LengthUnit::Auto,
+  min_height: LengthUnit = LengthUnit::Auto => LengthUnit::Auto,
+  aspect_ratio: Option<f32> = None => None,
+  padding: Sides<LengthUnit> = Sides::zero() => Sides::zero(),
+  padding_top: Option<LengthUnit> = None => None,
+  padding_right: Option<LengthUnit> = None => None,
+  padding_bottom: Option<LengthUnit> = None => None,
+  padding_left: Option<LengthUnit> = None => None,
+  margin: Sides<LengthUnit> = Sides::zero() => Sides::zero(),
+  margin_top: Option<LengthUnit> = None => None,
+  margin_right: Option<LengthUnit> = None => None,
+  margin_bottom: Option<LengthUnit> = None => None,
+  margin_left: Option<LengthUnit> = None => None,
+  inset: Sides<LengthUnit> = Sides::zero() => Sides::zero(),
+  top: Option<LengthUnit> = None => None,
+  right: Option<LengthUnit> = None => None,
+  bottom: Option<LengthUnit> = None => None,
+  left: Option<LengthUnit> = None => None,
+  flex_direction: FlexDirection = FlexDirection::Row => FlexDirection::Row,
+  justify_self: Option<AlignItems> = None => None,
+  justify_content: Option<JustifyContent> = None => None,
+  align_content: Option<JustifyContent> = None => None,
+  justify_items: Option<AlignItems> = None => None,
+  align_items: Option<AlignItems> = None => None,
+  align_self: Option<AlignItems> = None => None,
+  flex_wrap: FlexWrap = FlexWrap::NoWrap => FlexWrap::NoWrap,
+  flex_basis: LengthUnit = LengthUnit::Auto => LengthUnit::Auto,
+  position: Position = Position::Relative => Position::Relative,
+  transform: Option<Transforms> = None => None,
+  transform_origin: Option<BackgroundPosition> = None => None,
+  mask_image: Option<BackgroundImages> = None => None,
+  mask_size: Option<BackgroundSizes> = None => None,
+  mask_position: Option<BackgroundPositions> = None => None,
+  mask_repeat: Option<BackgroundRepeats> = None => None,
+  gap: Gap = Gap::default() => Gap::default(),
+  flex_grow: f32 = 0.0 => 0.0,
+  flex_shrink: f32 = 1.0 => 1.0,
+  border_radius: Sides<LengthUnit> = Sides::zero() => Sides::zero(),
+  border_top_left_radius: Option<LengthUnit> = None => None,
+  border_top_right_radius: Option<LengthUnit> = None => None,
+  border_bottom_right_radius: Option<LengthUnit> = None => None,
+  border_bottom_left_radius: Option<LengthUnit> = None => None,
+  border_width: Sides<LengthUnit> = Sides::zero() => Sides::zero(),
+  border_top_width: Option<LengthUnit> = None => None,
+  border_right_width: Option<LengthUnit> = None => None,
+  border_bottom_width: Option<LengthUnit> = None => None,
+  border_left_width: Option<LengthUnit> = None => None,
+  object_fit: ObjectFit = CssValue::Inherit => Default::default(),
+  background_image: Option<BackgroundImages> = None => None,
+  background_position: Option<BackgroundPositions> = None => None,
+  background_size: Option<BackgroundSizes> = None => None,
+  background_repeat: Option<BackgroundRepeats> = None => None,
+  background_color: Color = Color::transparent() => Color::transparent(),
+  box_shadow: Option<BoxShadows> = None => None,
+  grid_auto_columns: Option<GridTrackSizes> = None => None,
+  grid_auto_rows: Option<GridTrackSizes> = None => None,
+  grid_auto_flow: Option<GridAutoFlow> = None => None,
+  grid_column: Option<GridLine> = None => None,
+  grid_row: Option<GridLine> = None => None,
+  grid_template_columns: Option<GridTemplateComponents> = None => None,
+  grid_template_rows: Option<GridTemplateComponents> = None => None,
+  grid_template_areas: Option<GridTemplateAreas> = None => None,
+  text_overflow: TextOverflow = CssValue::Inherit => Default::default(),
+  text_transform: TextTransform = CssValue::Inherit => Default::default(),
+  font_style: FontStyle = CssValue::Inherit => Default::default(),
+  border_color: Color = CssValue::Inherit => Color::black(),
+  color: Color = CssValue::Inherit => Color::black(),
+  font_size: LengthUnit = CssValue::Inherit => LengthUnit::Px(DEFAULT_FONT_SIZE),
+  font_family: Option<FontFamily> = CssValue::Inherit => None,
+  line_height: LineHeight = CssValue::Inherit => Default::default(),
+  font_weight: FontWeight = CssValue::Inherit => Default::default(),
+  font_variation_settings: Option<FontVariationSettings> = CssValue::Inherit => None,
+  font_feature_settings: Option<FontFeatureSettings> = CssValue::Inherit => None,
+  line_clamp: Option<u32> = CssValue::Inherit => None,
+  text_align: TextAlign = CssValue::Inherit => Default::default(),
+  letter_spacing: Option<LengthUnit> = CssValue::Inherit => None,
+  word_spacing: Option<LengthUnit> = CssValue::Inherit => None,
+  image_rendering: ImageScalingAlgorithm = CssValue::Inherit => Default::default(),
+  overflow_wrap: OverflowWrap = CssValue::Inherit => Default::default(),
+  word_break: WordBreak = CssValue::Inherit => Default::default(),
+);
+
+/// Sized font style with resolved font size and line height.
+#[derive(Clone, Copy)]
+pub(crate) struct SizedFontStyle<'s> {
+  pub parent: &'s InheritedStyle,
+  pub font_size: f32,
+  pub line_height: parley::LineHeight,
+  pub letter_spacing: Option<f32>,
+  pub word_spacing: Option<f32>,
 }
 
-impl Style {
+impl InheritedStyle {
   #[inline]
   fn convert_template_components(
     components: &Option<GridTemplateComponents>,
@@ -444,9 +285,9 @@ impl Style {
   }
 
   #[inline]
-  fn resolved_border_radius(&self) -> taffy::Rect<LengthUnit> {
+  pub(crate) fn resolved_border_radius(&self) -> taffy::Rect<LengthUnit> {
     Self::resolve_rect_with_longhands(
-      self.border_radius.unwrap_or_default(),
+      self.border_radius,
       self.border_top_left_radius,
       self.border_top_right_radius,
       self.border_bottom_right_radius,
@@ -454,24 +295,34 @@ impl Style {
     )
   }
 
-  /// Creates `BorderProperties` (including resolved corner radii) from the style's border radius properties.
-  #[inline]
-  pub fn create_border_radius(&self, layout: &Layout, context: &RenderContext) -> BorderProperties {
-    let rect = self.resolved_border_radius();
+  pub fn to_sized_font_style(&'_ self, context: &RenderContext) -> SizedFontStyle<'_> {
+    let font_size = self
+      .font_size
+      .resolve_to_px(context, context.parent_font_size);
+    let line_height = self.line_height.into_parley(context);
 
-    BorderProperties::from_resolved(context, layout, rect, self)
+    SizedFontStyle {
+      parent: self,
+      font_size,
+      line_height,
+      letter_spacing: self
+        .letter_spacing
+        .map(|spacing| spacing.resolve_to_px(context, font_size) / font_size),
+      word_spacing: self
+        .word_spacing
+        .map(|spacing| spacing.resolve_to_px(context, font_size) / font_size),
+    }
   }
 
-  /// Converts this style to a Taffy-compatible style for layout calculations.
-  pub fn resolve_to_taffy_style(&self, context: &RenderContext) -> TaffyStyle {
+  pub fn to_taffy_style(&self, context: &RenderContext) -> taffy::style::Style {
     // Convert grid templates and associated line names
     let (grid_template_columns, grid_template_column_names) =
       Self::convert_template_components(&self.grid_template_columns, context);
     let (grid_template_rows, grid_template_row_names) =
       Self::convert_template_components(&self.grid_template_rows, context);
 
-    TaffyStyle {
-      box_sizing: self.inheritable_style.box_sizing.unwrap_or_default().into(),
+    taffy::style::Style {
+      box_sizing: self.box_sizing.into(),
       size: Size {
         width: self.width.resolve_to_dimension(context),
         height: self.height.resolve_to_dimension(context),
@@ -529,59 +380,6 @@ impl Style {
       align_self: self.align_self.map(Into::into),
       justify_self: self.justify_self.map(Into::into),
       ..Default::default()
-    }
-  }
-
-  /// Resolves inheritable style properties to concrete values for text rendering.
-  pub fn resolve_to_font_style(&self, context: &RenderContext) -> ResolvedFontStyle {
-    let font_size = self
-      .inheritable_style
-      .font_size
-      .map(|f| f.resolve_to_px(context, context.parent_font_size))
-      .unwrap_or(context.parent_font_size);
-
-    let line_height = self
-      .inheritable_style
-      .line_height
-      .map(|line_height| line_height.into_parley(context))
-      .unwrap_or(parley::LineHeight::FontSizeRelative(
-        DEFAULT_LINE_HEIGHT_SCALER,
-      ));
-
-    ResolvedFontStyle {
-      color: self.inheritable_style.color.unwrap_or_else(Color::black),
-      font_size,
-      line_height,
-      font_weight: self
-        .inheritable_style
-        .font_weight
-        .unwrap_or_default()
-        .into(),
-      font_style: self.inheritable_style.font_style.unwrap_or_default().into(),
-      font_variation_settings: self.inheritable_style.font_variation_settings.clone(),
-      font_feature_settings: self.inheritable_style.font_feature_settings.clone(),
-      line_clamp: self.inheritable_style.line_clamp,
-      font_family: self.inheritable_style.font_family.clone(),
-      letter_spacing: self
-        .inheritable_style
-        .letter_spacing
-        .map(|spacing| spacing.resolve_to_px(context, font_size) / font_size),
-      word_spacing: self
-        .inheritable_style
-        .word_spacing
-        .map(|spacing| spacing.resolve_to_px(context, font_size) / font_size),
-      text_align: self.inheritable_style.text_align.map(Into::into),
-      text_overflow: self
-        .inheritable_style
-        .text_overflow
-        .unwrap_or(TextOverflow::Clip),
-      text_transform: self.inheritable_style.text_transform.unwrap_or_default(),
-      overflow_wrap: self
-        .inheritable_style
-        .overflow_wrap
-        .unwrap_or_default()
-        .into(),
-      word_break: self.inheritable_style.word_break.unwrap_or_default().into(),
     }
   }
 }

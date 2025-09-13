@@ -12,28 +12,33 @@ mod render;
 /// Text drawing functions
 mod text_drawing;
 
-pub use background_drawing::*;
-pub use canvas::*;
-pub use components::*;
-pub use debug_drawing::*;
-pub use image_drawing::*;
+pub(crate) use background_drawing::*;
+pub(crate) use canvas::*;
+pub(crate) use components::*;
+pub(crate) use debug_drawing::*;
+pub(crate) use image_drawing::*;
 pub use render::*;
-pub use text_drawing::*;
+pub(crate) use text_drawing::*;
 
 use crate::{
   GlobalContext,
-  layout::{Viewport, style::Affine},
+  layout::{
+    Viewport,
+    style::{Affine, InheritedStyle},
+  },
 };
 
 /// The context for the image renderer.
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct RenderContext<'g> {
   /// The global context.
-  pub global: &'g GlobalContext,
+  pub(crate) global: &'g GlobalContext,
   /// The viewport for the image renderer.
-  pub viewport: Viewport,
+  pub(crate) viewport: Viewport,
   /// The font size in pixels, used for em and rem units.
-  pub parent_font_size: f32,
+  pub(crate) parent_font_size: f32,
   /// The scale factor for the image renderer.
-  pub transform: Affine,
+  pub(crate) transform: Affine,
+  /// The style after inheritance.
+  pub(crate) style: InheritedStyle,
 }

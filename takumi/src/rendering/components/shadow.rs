@@ -26,7 +26,7 @@ fn apply_fast_blur(image: &mut RgbaImage, radius: f32) {
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 /// Indicates which subset of box-shadows should be rendered for this pass.
-pub enum BoxShadowRenderPhase {
+pub(crate) enum BoxShadowRenderPhase {
   /// Render outer shadows (equivalent to `inset: false`)
   Outset,
   /// Render inner shadows (equivalent to `inset: true`)
@@ -34,7 +34,7 @@ pub enum BoxShadowRenderPhase {
 }
 
 /// Represents a resolved box shadow with all its properties.
-pub struct BoxShadowResolved {
+pub(crate) struct BoxShadowResolved {
   /// Whether the shadow is inset or outset.
   pub inset: bool,
   /// Horizontal offset of the shadow.
@@ -67,7 +67,7 @@ impl BoxShadowResolved {
 }
 
 /// Draws box shadows for an element, filtered by render phase (outset vs inset).
-pub fn draw_box_shadow(
+pub(crate) fn draw_box_shadow(
   context: &RenderContext,
   box_shadows: &BoxShadows,
   border_radius: BorderProperties,
@@ -207,11 +207,7 @@ fn draw_inset_shadow(
     .expand_by(-shadow.spread_radius)
     .append_mask_commands(&mut paths);
 
-  let mut mask = Mask::new(&paths);
-
-  mask.style(Fill::EvenOdd);
-
-  let (mask, placement) = mask.render();
+  let (mask, placement) = Mask::new(&paths).style(Fill::EvenOdd).render();
 
   let mut i = 0;
 

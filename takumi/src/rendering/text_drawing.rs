@@ -10,7 +10,7 @@ use zeno::{Command, Mask, PathData, Placement};
 use crate::{
   GlobalContext,
   layout::style::{
-    Affine, Color, ImageScalingAlgorithm, ResolvedFontStyle, Style, TextOverflow, TextTransform,
+    Affine, Color, ImageScalingAlgorithm, SizedFontStyle, TextOverflow, TextTransform,
   },
   rendering::{
     BorderProperties, Canvas, RenderContext, apply_mask_alpha_to_pixel, overlay_image,
@@ -22,25 +22,19 @@ use crate::{
 const ELLIPSIS_CHAR: &str = "…";
 
 /// Draws text on the canvas with the specified font style and layout.
-pub fn draw_text(
-  text: &str,
-  style: &Style,
-  context: &RenderContext,
-  canvas: &Canvas,
-  layout: Layout,
-) {
-  let font_style = style.resolve_to_font_style(context);
+pub fn draw_text(text: &str, context: &RenderContext, canvas: &Canvas, layout: Layout) {
+  let font_style = context.style.to_sized_font_style(context);
   if font_style.font_size == 0.0 {
     return;
   }
 
   let content_box = layout.content_box_size();
 
-  let render_text = apply_text_transform(text, font_style.text_transform);
+  let render_text = apply_text_transform(text, font_style.parent.text_transform);
 
   let mut buffer = create_text_layout(
     &render_text,
-    &font_style,
+    font_style,
     context.global,
     content_box.width,
     Some(MaxHeight::Absolute(content_box.height)),
@@ -52,22 +46,22 @@ pub fn draw_text(
 
   let last_line_range = last_line.text_range();
 
-  let should_append_ellipsis =
-    font_style.text_overflow == TextOverflow::Ellipsis && last_line_range.end < render_text.len();
+  let should_append_ellipsis = font_style.parent.text_overflow == TextOverflow::Ellipsis
+    && last_line_range.end < render_text.len();
 
   if should_append_ellipsis {
     let text_with_ellipsis = make_ellipsis_text(
       &render_text,
       last_line_range.start,
       last_line_range.end,
-      &font_style,
+      font_style,
       context.global,
       content_box.width,
     );
 
     buffer = create_text_layout(
       &text_with_ellipsis,
-      &font_style,
+      font_style,
       context.global,
       content_box.width,
       Some(MaxHeight::Absolute(content_box.height)),
@@ -76,12 +70,12 @@ pub fn draw_text(
 
   // If we have a mask image on the style, render it using the background tiling logic into a
   // temporary image and use that as the glyph fill.
-  if let Some(images) = &style.mask_image {
+  if let Some(images) = &font_style.parent.mask_image {
     let resolved_tiles = resolve_layers_tiles(
       images,
-      style.mask_position.as_ref(),
-      style.mask_size.as_ref(),
-      style.mask_repeat.as_ref(),
+      font_style.parent.mask_position.as_ref(),
+      font_style.parent.mask_size.as_ref(),
+      font_style.parent.mask_repeat.as_ref(),
       context,
       layout,
     );
@@ -111,7 +105,7 @@ pub fn draw_text(
       context,
       &buffer,
       canvas,
-      style.inheritable_style.color.unwrap_or_else(Color::black),
+      font_style.parent.color,
       layout,
       Some(composed),
     );
@@ -123,7 +117,7 @@ pub fn draw_text(
     context,
     &buffer,
     canvas,
-    style.inheritable_style.color.unwrap_or_else(Color::black),
+    font_style.parent.color,
     layout,
     None,
   );
@@ -332,18 +326,22 @@ const VARIABLE_FONT_WEIGHT_TAG: u32 = tag_from_bytes(b"wght");
 
 pub(crate) fn create_text_layout(
   text: &str,
-  font_style: &ResolvedFontStyle,
+  font_style: SizedFontStyle,
   global: &GlobalContext,
   max_width: f32,
   max_height: Option<MaxHeight>,
 ) -> parley::Layout<()> {
   let mut layout = global.font_context.create_layout(text, |builder| {
+    let font_weight = font_style.parent.font_weight.into();
+
     builder.push_default(StyleProperty::FontSize(font_style.font_size));
     builder.push_default(StyleProperty::LineHeight(font_style.line_height));
-    builder.push_default(StyleProperty::FontWeight(font_style.font_weight));
-    builder.push_default(StyleProperty::FontStyle(font_style.font_style));
+    builder.push_default(StyleProperty::FontWeight(font_weight));
+    builder.push_default(StyleProperty::FontStyle(
+      font_style.parent.font_style.into(),
+    ));
 
-    if let Some(font_variation_settings) = font_style.font_variation_settings.as_ref()
+    if let Some(font_variation_settings) = font_style.parent.font_variation_settings.as_ref()
       && !font_variation_settings.0.is_empty()
     {
       builder.push_default(StyleProperty::FontVariations(parley::FontSettings::List(
@@ -352,7 +350,7 @@ pub(crate) fn create_text_layout(
     } else {
       let variable_font_setting = Setting {
         tag: VARIABLE_FONT_WEIGHT_TAG,
-        value: font_style.font_weight.value(),
+        value: font_weight.value(),
       };
 
       builder.push_default(StyleProperty::FontVariations(parley::FontSettings::List(
@@ -360,7 +358,7 @@ pub(crate) fn create_text_layout(
       )));
     }
 
-    if let Some(font_feature_settings) = font_style.font_feature_settings.as_ref()
+    if let Some(font_feature_settings) = font_style.parent.font_feature_settings.as_ref()
       && !font_feature_settings.0.is_empty()
     {
       builder.push_default(StyleProperty::FontFeatures(parley::FontSettings::List(
@@ -368,7 +366,7 @@ pub(crate) fn create_text_layout(
       )));
     }
 
-    if let Some(font_family) = font_style.font_family.as_ref() {
+    if let Some(font_family) = font_style.parent.font_family.as_ref() {
       builder.push_default(StyleProperty::FontStack(font_family.into()));
     }
 
@@ -380,15 +378,19 @@ pub(crate) fn create_text_layout(
       builder.push_default(StyleProperty::WordSpacing(word_spacing));
     }
 
-    builder.push_default(StyleProperty::WordBreak(font_style.word_break));
-    builder.push_default(StyleProperty::OverflowWrap(font_style.overflow_wrap));
+    builder.push_default(StyleProperty::WordBreak(
+      font_style.parent.word_break.into(),
+    ));
+    builder.push_default(StyleProperty::OverflowWrap(
+      font_style.parent.overflow_wrap.into(),
+    ));
   });
 
   break_lines(&mut layout, max_width, max_height);
 
   layout.align(
     Some(max_width),
-    font_style.text_align.unwrap_or_default(),
+    font_style.parent.text_align.into(),
     Default::default(),
   );
 
@@ -493,7 +495,7 @@ fn make_ellipsis_text<'s>(
   render_text: &'s str,
   start_index: usize,
   end_index: usize,
-  font_style: &ResolvedFontStyle,
+  font_style: SizedFontStyle,
   global: &GlobalContext,
   max_width: f32,
 ) -> Cow<'s, str> {

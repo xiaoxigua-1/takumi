@@ -3,7 +3,7 @@ use takumi::{
   GlobalContext,
   layout::{
     node::{ContainerNode, NodeKind},
-    style::Style,
+    style::{LengthUnit::Px, Style, StyleBuilder},
   },
 };
 
@@ -12,11 +12,11 @@ use takumi_server::{GenerateImageQuery, args::Args, create_state, generate_image
 #[tokio::test]
 async fn test_generate_image_handler() {
   let node: NodeKind = ContainerNode {
-    style: Style {
-      width: 100.0.into(),
-      height: 100.0.into(),
-      ..Default::default()
-    },
+    style: StyleBuilder::default()
+      .width(Px(100.0))
+      .height(Px(100.0))
+      .build()
+      .unwrap(),
     children: None,
   }
   .into();

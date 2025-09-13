@@ -1,10 +1,10 @@
 use std::f32::consts::SQRT_2;
 
-use taffy::{Layout, Point, Rect, Size};
+use taffy::{Layout, Point, Size};
 use zeno::{Command, Fill, Mask, PathBuilder};
 
 use crate::{
-  layout::style::{Affine, Color, LengthUnit, Sides, Style},
+  layout::style::{Affine, Color, LengthUnit, Sides},
   rendering::{Canvas, RenderContext},
 };
 
@@ -20,7 +20,7 @@ fn resolve_border_radius_from_percentage_css(
 
 /// Represents the properties of a border, including corner radii and drawing metadata.
 #[derive(Debug, Clone, Copy, Default)]
-pub struct BorderProperties {
+pub(crate) struct BorderProperties {
   /// The width of the border on each side (top, right, bottom, left)
   pub width: taffy::Rect<f32>,
   /// The offset of the border in the local coordinate space
@@ -48,15 +48,9 @@ impl BorderProperties {
     }
   }
 
-  // Use `from_resolved` or `Style::create_border_radius` to construct BorderProperties.
-
-  /// Alternative constructor accepting a resolved `taffy::Rect<LengthUnit>`.
-  pub fn from_resolved(
-    context: &RenderContext,
-    layout: &Layout,
-    resolved: Rect<LengthUnit>,
-    style: &Style,
-  ) -> Self {
+  /// Resolves the border radius from the context and layout.
+  pub fn from_context(context: &RenderContext, layout: &Layout) -> Self {
+    let resolved = context.style.resolved_border_radius();
     let reference_size = layout.size.width.min(layout.size.height);
 
     let top_left = resolve_border_radius_from_percentage_css(context, resolved.top, reference_size);
@@ -71,10 +65,7 @@ impl BorderProperties {
       width: layout.border,
       offset: Point::ZERO,
       size: layout.size,
-      color: style
-        .inheritable_style
-        .border_color
-        .unwrap_or_else(Color::black),
+      color: context.style.border_color,
       radius: Sides([top_left, top_right, bottom_right, bottom_left]),
       transform: context.transform,
     }
@@ -191,7 +182,7 @@ impl BorderProperties {
 ///
 /// This function draws borders with specified size and color. If border_radius is specified,
 /// it creates a rounded border using a custom drawing approach.
-pub fn draw_border(canvas: &Canvas, canvas_offset: Point<f32>, border: BorderProperties) {
+pub(crate) fn draw_border(canvas: &Canvas, canvas_offset: Point<f32>, border: BorderProperties) {
   if border.width.left == 0.0
     && border.width.right == 0.0
     && border.width.top == 0.0
@@ -210,11 +201,7 @@ pub fn draw_border(canvas: &Canvas, canvas_offset: Point<f32>, border: BorderPro
 
   border.transform.apply_on_paths(&mut paths);
 
-  let mut mask = Mask::new(&paths);
-
-  mask.style(Fill::EvenOdd);
-
-  let (mask, mut placement) = mask.render();
+  let (mask, mut placement) = Mask::new(&paths).style(Fill::EvenOdd).render();
 
   placement.left += border.offset.x as i32 + canvas_offset.x as i32;
   placement.top += border.offset.y as i32 + canvas_offset.y as i32;

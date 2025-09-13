@@ -1,5 +1,6 @@
 use cssparser::{Parser, ParserInput, Token, match_ignore_ascii_case};
 use serde::{Deserialize, Serialize};
+use smallvec::SmallVec;
 use ts_rs::TS;
 
 use super::gradient_utils::{color_from_stops, resolve_stops_along_axis};
@@ -66,45 +67,13 @@ pub struct RadialGradientDrawContext {
   /// Radius Y in pixels (for circle, equals radius_x)
   pub radius_y: f32,
   /// Resolved and ordered color stops.
-  pub resolved_stops: Vec<ResolvedGradientStop>,
+  pub resolved_stops: SmallVec<[ResolvedGradientStop; 4]>,
 }
 
 impl Gradient for RadialGradient {
   type DrawContext = RadialGradientDrawContext;
 
   fn at(&self, x: u32, y: u32, ctx: &Self::DrawContext) -> Color {
-    self.at(x, y, ctx)
-  }
-
-  fn to_draw_context(&self, width: f32, height: f32, context: &RenderContext) -> Self::DrawContext {
-    RadialGradientDrawContext::new(self, width, height, context)
-  }
-}
-
-impl RadialGradient {
-  /// Creates a drawing context for repeated sampling at the provided viewport size.
-  pub fn to_draw_context(
-    &self,
-    width: f32,
-    height: f32,
-    context: &RenderContext,
-  ) -> RadialGradientDrawContext {
-    RadialGradientDrawContext::new(self, width, height, context)
-  }
-
-  /// Resolves gradient steps into color stops with positions expressed in pixels along the radial axis.
-  /// Supports non-px units when a `RenderContext` is provided.
-  pub fn resolve_stops_for_radius(
-    &self,
-    radius_scale_px: f32,
-    context: &RenderContext,
-  ) -> Vec<ResolvedGradientStop> {
-    resolve_stops_along_axis(&self.stops, radius_scale_px, context)
-  }
-
-  /// Returns the color at a specific point in the gradient.
-  /// Callers should pre-resolve gradient stops and pass them in for performance.
-  pub fn at(&self, x: u32, y: u32, ctx: &RadialGradientDrawContext) -> Color {
     // Fast-paths
     if ctx.resolved_stops.is_empty() {
       return Color([0, 0, 0, 0]);
@@ -118,6 +87,22 @@ impl RadialGradient {
     let position = (dx * dx + dy * dy).sqrt() * ctx.radius_x.max(ctx.radius_y);
 
     color_from_stops(position, &ctx.resolved_stops)
+  }
+
+  fn to_draw_context(&self, width: f32, height: f32, context: &RenderContext) -> Self::DrawContext {
+    RadialGradientDrawContext::new(self, width, height, context)
+  }
+}
+
+impl RadialGradient {
+  /// Resolves gradient steps into color stops with positions expressed in pixels along the radial axis.
+  /// Supports non-px units when a `RenderContext` is provided.
+  pub(crate) fn resolve_stops_for_radius(
+    &self,
+    radius_scale_px: f32,
+    context: &RenderContext,
+  ) -> SmallVec<[ResolvedGradientStop; 4]> {
+    resolve_stops_along_axis(&self.stops, radius_scale_px, context)
   }
 }
 
@@ -410,7 +395,7 @@ impl TryFrom<RadialGradientValue> for RadialGradient {
 mod tests {
   use super::*;
   use crate::layout::DEFAULT_FONT_SIZE;
-  use crate::layout::style::{Affine, LengthUnit, StopPosition};
+  use crate::layout::style::{Affine, InheritedStyle, LengthUnit, StopPosition};
   use crate::{GlobalContext, layout::Viewport, rendering::RenderContext};
 
   #[test]
@@ -576,6 +561,7 @@ mod tests {
       viewport: Viewport::new(200, 100),
       parent_font_size: DEFAULT_FONT_SIZE,
       transform: Affine::identity(),
+      style: InheritedStyle::default(),
     };
     let resolved = gradient.resolve_stops_for_radius(ctx.viewport.width as f32, &ctx);
 
@@ -611,6 +597,7 @@ mod tests {
       viewport: Viewport::new(200, 100),
       parent_font_size: DEFAULT_FONT_SIZE,
       transform: Affine::identity(),
+      style: InheritedStyle::default(),
     };
     let resolved = gradient.resolve_stops_for_radius(ctx.viewport.width as f32, &ctx);
 

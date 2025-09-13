@@ -66,7 +66,7 @@ impl Gap {
   ///
   /// This method converts the gap value to a size in length percentages,
   /// which can be used to set the size of flex items in a flex container.
-  pub fn resolve_to_size(self, context: &RenderContext) -> Size<LengthPercentage> {
+  pub(crate) fn resolve_to_size(self, context: &RenderContext) -> Size<LengthPercentage> {
     Size {
       height: self.0.resolve_to_length_percentage(context),
       width: self.1.resolve_to_length_percentage(context),

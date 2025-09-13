@@ -5,13 +5,11 @@ use takumi::{
   GlobalContext,
   layout::{
     Viewport,
-    node::{ContainerNode, TextNode},
-    style::{InheritableStyle, Style},
+    node::{ContainerNode, NodeKind, TextNode},
+    style::{CssValue, StyleBuilder},
   },
   rendering::{ImageOutputFormat, render, write_image},
 };
-
-use crate::NodeKind;
 
 /// Generates a "Hello, {name}!" image with specified dimensions and styling
 ///
@@ -32,13 +30,10 @@ pub fn say_hello_to(name: &str) {
   // Create a text node with custom styling
   // Font size is set to 48.0 and other styles use default values
   let text = TextNode {
-    style: Style {
-      inheritable_style: InheritableStyle {
-        font_size: Some(48.0.into()),
-        ..Default::default()
-      },
-      ..Default::default()
-    },
+    style: StyleBuilder::default()
+      .font_size(CssValue::Value(48.0.into()))
+      .build()
+      .unwrap(),
     text: format!("Hello, {name}!"),
   };
 

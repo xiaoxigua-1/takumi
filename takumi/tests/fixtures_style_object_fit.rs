@@ -1,6 +1,6 @@
 use takumi::layout::{
   node::ImageNode,
-  style::{LengthUnit::Percentage, ObjectFit, Style},
+  style::{LengthUnit::Percentage, ObjectFit, StyleBuilder},
 };
 
 mod test_utils;
@@ -9,12 +9,12 @@ use test_utils::run_style_width_test;
 #[test]
 fn test_style_object_fit_contain() {
   let image = ImageNode {
-    style: Style {
-      width: Percentage(100.0),
-      height: Percentage(100.0),
-      object_fit: ObjectFit::Contain,
-      ..Default::default()
-    },
+    style: StyleBuilder::default()
+      .width(Percentage(100.0))
+      .height(Percentage(100.0))
+      .object_fit(ObjectFit::Contain)
+      .build()
+      .unwrap(),
     width: None,
     height: None,
     src: "assets/images/yeecord.png".to_string(),
@@ -26,12 +26,12 @@ fn test_style_object_fit_contain() {
 #[test]
 fn test_style_object_fit_cover() {
   let image = ImageNode {
-    style: Style {
-      width: Percentage(100.0),
-      height: Percentage(100.0),
-      object_fit: ObjectFit::Cover,
-      ..Default::default()
-    },
+    style: StyleBuilder::default()
+      .width(Percentage(100.0))
+      .height(Percentage(100.0))
+      .object_fit(ObjectFit::Cover)
+      .build()
+      .unwrap(),
     width: None,
     height: None,
     src: "assets/images/yeecord.png".to_string(),
@@ -43,12 +43,12 @@ fn test_style_object_fit_cover() {
 #[test]
 fn test_style_object_fit_fill() {
   let image = ImageNode {
-    style: Style {
-      width: Percentage(100.0),
-      height: Percentage(100.0),
-      object_fit: ObjectFit::Fill,
-      ..Default::default()
-    },
+    style: StyleBuilder::default()
+      .width(Percentage(100.0))
+      .height(Percentage(100.0))
+      .object_fit(ObjectFit::Fill)
+      .build()
+      .unwrap(),
     src: "assets/images/yeecord.png".to_string(),
     width: None,
     height: None,
@@ -60,12 +60,12 @@ fn test_style_object_fit_fill() {
 #[test]
 fn test_style_object_fit_none() {
   let image = ImageNode {
-    style: Style {
-      width: Percentage(100.0),
-      height: Percentage(100.0),
-      object_fit: ObjectFit::None,
-      ..Default::default()
-    },
+    style: StyleBuilder::default()
+      .width(Percentage(100.0))
+      .height(Percentage(100.0))
+      .object_fit(ObjectFit::None)
+      .build()
+      .unwrap(),
     src: "assets/images/yeecord.png".to_string(),
     width: None,
     height: None,
@@ -77,12 +77,12 @@ fn test_style_object_fit_none() {
 #[test]
 fn test_style_object_fit_scale_down() {
   let image = ImageNode {
-    style: Style {
-      width: Percentage(100.0),
-      height: Percentage(100.0),
-      object_fit: ObjectFit::ScaleDown,
-      ..Default::default()
-    },
+    style: StyleBuilder::default()
+      .width(Percentage(100.0))
+      .height(Percentage(100.0))
+      .object_fit(ObjectFit::ScaleDown)
+      .build()
+      .unwrap(),
     src: "assets/images/yeecord.png".to_string(),
     width: None,
     height: None,

@@ -3,7 +3,10 @@ use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
 use crate::{
-  layout::style::{FromCss, LengthUnit, ParseResult},
+  layout::{
+    DEFAULT_LINE_HEIGHT_SCALER,
+    style::{FromCss, LengthUnit, ParseResult},
+  },
   rendering::RenderContext,
 };
 
@@ -12,6 +15,12 @@ use crate::{
 #[serde(try_from = "LineHeightValue")]
 #[ts(as = "LineHeightValue")]
 pub struct LineHeight(pub LengthUnit);
+
+impl Default for LineHeight {
+  fn default() -> Self {
+    Self(LengthUnit::Em(DEFAULT_LINE_HEIGHT_SCALER)) // Default line height
+  }
+}
 
 /// Proxy type for `LineHeight` Css deserialization.
 #[derive(Debug, Clone, PartialEq, Deserialize, Serialize, TS)]
@@ -54,7 +63,7 @@ impl<'i> FromCss<'i> for LineHeight {
 
 impl LineHeight {
   /// Converts the line height to a parley line height.
-  pub fn into_parley(self, context: &RenderContext) -> parley::LineHeight {
+  pub(crate) fn into_parley(self, context: &RenderContext) -> parley::LineHeight {
     match self.0 {
       LengthUnit::Px(value) => parley::LineHeight::Absolute(value),
       LengthUnit::Em(value) => parley::LineHeight::FontSizeRelative(value),

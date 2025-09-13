@@ -9,7 +9,11 @@ use taffy::{AvailableSpace, NodeId, Point, TaffyTree, geometry::Size};
 
 use crate::{
   GlobalContext,
-  layout::{Viewport, node::Node, style::Affine},
+  layout::{
+    Viewport,
+    node::Node,
+    style::{Affine, InheritedStyle},
+  },
   rendering::{Canvas, create_blocking_canvas_loop, draw_debug_border},
 };
 
@@ -92,10 +96,8 @@ pub fn write_image<T: Write + Seek>(
 pub fn render<Nodes: Node<Nodes>>(
   viewport: Viewport,
   global: &GlobalContext,
-  mut root_node: Nodes,
+  root_node: Nodes,
 ) -> Result<RgbaImage, crate::Error> {
-  root_node.inherit_style_for_children();
-
   let mut taffy = TaffyTree::new();
 
   let (tx, rx) = channel();
@@ -106,6 +108,7 @@ pub fn render<Nodes: Node<Nodes>>(
     viewport,
     parent_font_size: viewport.font_size,
     transform: Affine::identity(),
+    style: InheritedStyle::default(),
   };
 
   let root_node_id = insert_taffy_node(&mut taffy, root_node, &render_context);
@@ -140,7 +143,7 @@ pub fn render<Nodes: Node<Nodes>>(
   #[cfg(target_arch = "wasm32")]
   let canvas = {
     render_node(
-      &taffy,
+      &mut taffy,
       root_node_id,
       &canvas,
       Point::ZERO,
@@ -157,7 +160,7 @@ pub fn render<Nodes: Node<Nodes>>(
     let handler = std::thread::spawn(move || create_blocking_canvas_loop(viewport, rx));
 
     render_node(
-      &taffy,
+      &mut taffy,
       root_node_id,
       &canvas,
       Point::ZERO,
@@ -173,41 +176,41 @@ pub fn render<Nodes: Node<Nodes>>(
 }
 
 fn render_node<Nodes: Node<Nodes>>(
-  taffy: &TaffyTree<NodeContext<Nodes>>,
+  taffy: &mut TaffyTree<NodeContext<Nodes>>,
   node_id: NodeId,
   canvas: &Canvas,
   offset: Point<f32>,
   mut transform: Affine,
 ) {
   let mut layout = *taffy.layout(node_id).unwrap();
-  let node_context = taffy.get_node_context(node_id).unwrap();
-
-  let mut render_context = node_context.context;
 
   layout.location.x += offset.x;
   layout.location.y += offset.y;
 
-  // preserve the offset before the transform is applied
-  let style = node_context.node.get_style();
+  let node_context = taffy.get_node_context_mut(node_id).unwrap();
 
-  if let Some(node_transform) = &style.transform {
+  if let Some(node_transform) = &node_context.context.style.transform {
     let node_transform = node_transform.to_affine(
-      &render_context,
+      &node_context.context,
       &layout,
-      style.transform_origin.unwrap_or_default(),
+      node_context
+        .context
+        .style
+        .transform_origin
+        .unwrap_or_default(),
     );
 
     transform = transform * node_transform;
   }
 
-  render_context.transform = transform;
+  node_context.context.transform = transform;
 
   node_context
     .node
-    .draw_on_canvas(&render_context, canvas, layout);
+    .draw_on_canvas(&node_context.context, canvas, layout);
 
-  if render_context.global.draw_debug_border {
-    draw_debug_border(canvas, layout, render_context.transform);
+  if node_context.context.global.draw_debug_border {
+    draw_debug_border(canvas, layout, node_context.context.transform);
   }
 
   for child_id in taffy.children(node_id).unwrap() {
@@ -221,19 +224,20 @@ fn insert_taffy_node<'ctx, Nodes: Node<Nodes>>(
   render_context: &RenderContext<'ctx>,
 ) -> NodeId {
   let children = node.take_children();
+  let node_style = node.get_style().inherit(&render_context.style);
 
-  let parent_font_size = node
-    .get_style()
-    .inheritable_style
+  let parent_font_size = node_style
     .font_size
-    .map(|f| f.resolve_to_px(render_context, render_context.parent_font_size))
-    .unwrap_or(render_context.parent_font_size);
+    .resolve_to_px(render_context, render_context.parent_font_size);
 
   let node_id = taffy
     .new_leaf_with_context(
-      node.get_style().resolve_to_taffy_style(render_context),
+      node_style.to_taffy_style(render_context),
       NodeContext {
-        context: *render_context,
+        context: RenderContext {
+          style: node_style.clone(),
+          ..*render_context
+        },
         node,
       },
     )
@@ -241,6 +245,7 @@ fn insert_taffy_node<'ctx, Nodes: Node<Nodes>>(
 
   if let Some(children) = children {
     let render_context = RenderContext {
+      style: node_style,
       parent_font_size,
       ..*render_context
     };
