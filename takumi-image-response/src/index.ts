@@ -127,6 +127,7 @@ const contentTypeMapping = {
   Jpeg: "image/jpeg",
   Png: "image/png",
   Avif: "image/avif",
+  raw: "application/octet-stream",
 };
 
 export class ImageResponse extends Response {
