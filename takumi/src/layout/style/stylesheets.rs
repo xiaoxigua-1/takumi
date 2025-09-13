@@ -33,7 +33,7 @@ macro_rules! define_style {
       /// Inherits the style from the parent element.
       pub(crate) fn inherit(&self, parent: &InheritedStyle) -> InheritedStyle {
         InheritedStyle {
-          $( $property: self.$property.inherit(&parent.$property, &$initial_value), )*
+          $( $property: self.$property.inherit(&parent.$property, $initial_value), )*
         }
       }
     }

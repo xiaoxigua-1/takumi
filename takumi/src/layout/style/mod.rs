@@ -48,14 +48,14 @@ impl<T> From<T> for CssValue<T> {
 
 impl<T> CssValue<T> {
   /// Resolves this CssValue to a concrete value based on inheritance rules
-  pub fn inherit(&self, parent: &T, initial_value: &T) -> T
+  pub fn inherit(&self, parent: &T, initial_value: T) -> T
   where
     T: Clone,
   {
     match self {
       Self::Value(v) => v.clone(),
       Self::Inherit => parent.clone(),
-      Self::Unset => initial_value.clone(),
+      Self::Unset => initial_value,
     }
   }
 }
