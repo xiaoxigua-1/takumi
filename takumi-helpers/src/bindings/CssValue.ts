@@ -3,4 +3,4 @@
 /**
  * Represents a CSS property value that can be explicitly set, inherited from parent, or reset to initial value.
  */
-export type CssValue<T> = "inherit" | "unset" | T;
+export type CssValue<T> = "initial" | "inherit" | T;

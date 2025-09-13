@@ -8,13 +8,14 @@ pub use stylesheets::*;
 use ts_rs::TS;
 
 /// Represents a CSS property value that can be explicitly set, inherited from parent, or reset to initial value.
-#[derive(Debug, Clone, Deserialize, Serialize, TS, PartialEq)]
+#[derive(Debug, Clone, Deserialize, Serialize, TS, PartialEq, Default)]
 #[serde(rename_all = "kebab-case")]
 pub enum CssValue<T> {
+  /// Use the initial value of the property
+  #[default]
+  Initial,
   /// Inherit the computed value from the parent element
   Inherit,
-  /// Reset to the property's initial/default value
-  Unset,
   /// Explicit value set on the element
   #[serde(untagged)]
   Value(T),
@@ -30,10 +31,10 @@ impl<'i, T: FromCss<'i>> FromCss<'i> for CssValue<T> {
     }
 
     if input
-      .try_parse(|input| input.expect_ident_matching("unset"))
+      .try_parse(|input| input.expect_ident_matching("initial"))
       .is_ok()
     {
-      return Ok(CssValue::Unset);
+      return Ok(CssValue::Initial);
     }
 
     T::from_css(input).map(CssValue::Value)
@@ -55,14 +56,8 @@ impl<T> CssValue<T> {
     match self {
       Self::Value(v) => v.clone(),
       Self::Inherit => parent.clone(),
-      Self::Unset => initial_value,
+      Self::Initial => initial_value,
     }
-  }
-}
-
-impl<T: Default> Default for CssValue<T> {
-  fn default() -> Self {
-    Self::Unset
   }
 }
 
