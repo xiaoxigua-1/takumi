@@ -25,8 +25,8 @@ export async function loader({ params }: Route.LoaderArgs) {
           style={{ width: "4rem", height: "4rem" }}
         />
       }
-      primaryColor="#360e0c"
-      primaryTextColor="#f0f0f0"
+      primaryColor="hsla(354, 90%, 54%, 0.3)"
+      primaryTextColor="hsl(354, 90%, 60%)"
       site="Takumi"
     />,
     {
