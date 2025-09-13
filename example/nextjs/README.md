@@ -15,5 +15,7 @@ Then, run the development server.
 
 ```bash
 cd example/nextjs
-bun run dev
+bun dev
 ```
+
+Visit http://localhost:3000/hello?name=Kane to see the result.
