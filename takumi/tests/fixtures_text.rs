@@ -4,7 +4,7 @@ use takumi::layout::{
   style::{
     BackgroundImagesValue, BackgroundPositionsValue, BackgroundRepeatsValue, BackgroundSizesValue,
     Color, FontWeight,
-    LengthUnit::{Percentage, Px},
+    LengthUnit::{Em, Percentage, Px},
     LineHeight, StyleBuilder, TextAlign, TextOverflow, TextShadow, TextShadows, TextTransform,
   },
 };
@@ -174,6 +174,7 @@ Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliqu
 
   let text = TextNode {
     style: StyleBuilder::default()
+      .width(Em(12.0))
       .background_color(Color([240, 240, 240, 255]))
       .font_size(Px(18.0))
       .line_height(LineHeight(Px(24.0)))

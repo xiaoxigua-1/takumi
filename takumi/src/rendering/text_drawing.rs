@@ -30,12 +30,17 @@ pub fn draw_text(text: &str, context: &RenderContext, canvas: &Canvas, layout: L
 
   let render_text = apply_text_transform(text, font_style.parent.text_transform);
 
+  let max_height = match font_style.parent.line_clamp {
+    Some(max_lines) => Some(MaxHeight::Both(content_box.height, max_lines)),
+    None => Some(MaxHeight::Absolute(content_box.height)),
+  };
+
   let mut buffer = create_text_layout(
     &render_text,
     &font_style,
     context.global,
     content_box.width,
-    Some(MaxHeight::Absolute(content_box.height)),
+    max_height,
   );
 
   let Some(last_line) = buffer.lines().last() else {
@@ -62,7 +67,7 @@ pub fn draw_text(text: &str, context: &RenderContext, canvas: &Canvas, layout: L
       &font_style,
       context.global,
       content_box.width,
-      Some(MaxHeight::Absolute(content_box.height)),
+      max_height,
     );
   }
 
@@ -321,6 +326,7 @@ fn draw_glyph(
   }
 }
 
+#[derive(Clone, Copy, Debug)]
 pub(crate) enum MaxHeight {
   Absolute(f32),
   Lines(u32),
