@@ -9,7 +9,7 @@ use ts_rs::TS;
 
 /// Represents a CSS property value that can be explicitly set, inherited from parent, or reset to initial value.
 #[derive(Debug, Clone, Deserialize, Serialize, TS, PartialEq)]
-#[serde(untagged)]
+#[serde(rename_all = "kebab-case")]
 pub enum CssValue<T> {
   /// Inherit the computed value from the parent element
   Inherit,
@@ -48,7 +48,7 @@ impl<T> From<T> for CssValue<T> {
 
 impl<T> CssValue<T> {
   /// Resolves this CssValue to a concrete value based on inheritance rules
-  pub fn resolve(&self, parent: &T, initial_value: &T) -> T
+  pub fn inherit(&self, parent: &T, initial_value: &T) -> T
   where
     T: Clone,
   {

@@ -1,6 +1,6 @@
 use takumi::layout::{
   node::ImageNode,
-  style::{LengthUnit::Percentage, ObjectFit, Style, StyleBuilder},
+  style::{LengthUnit::Percentage, ObjectFit, StyleBuilder},
 };
 
 mod test_utils;

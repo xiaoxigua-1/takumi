@@ -109,7 +109,7 @@ impl Gradient for LinearGradient {
 impl LinearGradient {
   /// Resolves gradient steps into color stops with positions expressed in pixels along the gradient axis.
   /// Supports non-px length units when a `RenderContext` is provided.
-  pub fn resolve_stops_for_axis_size(
+  pub(crate) fn resolve_stops_for_axis_size(
     &self,
     axis_size_px: f32,
     context: &RenderContext,

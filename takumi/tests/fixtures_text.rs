@@ -1,7 +1,10 @@
 use takumi::layout::{
   node::{ContainerNode, NodeKind, TextNode},
   style::{
-    BackgroundImages, BackgroundImagesValue, BackgroundPositionsValue, BackgroundRepeatsValue, BackgroundSizesValue, Color, LengthUnit::{Percentage, Px}, LineHeight, Style, StyleBuilder, TextAlign, TextOverflow, TextTransform
+    BackgroundImagesValue, BackgroundPositionsValue, BackgroundRepeatsValue, BackgroundSizesValue,
+    Color, FontWeight,
+    LengthUnit::{Percentage, Px},
+    LineHeight, StyleBuilder, TextAlign, TextOverflow, TextTransform,
   },
 };
 
@@ -45,7 +48,7 @@ fn fixtures_text_typography_medium_weight_500() {
     style: StyleBuilder::default()
       .background_color(Color([240, 240, 240, 255]))
       .font_size(Px(24.0))
-      .font_weight(500.0.into())
+      .font_weight(FontWeight::from(500.0))
       .build()
       .unwrap(),
     text: "Medium 24px".to_string(),
@@ -81,7 +84,7 @@ fn fixtures_text_typography_letter_spacing_2px() {
     style: StyleBuilder::default()
       .background_color(Color([240, 240, 240, 255]))
       .font_size(Px(24.0))
-      .letter_spacing(Px(2.0))
+      .letter_spacing(Some(Px(2.0)))
       .build()
       .unwrap(),
     text: "Letter spacing 2px".to_string(),
@@ -174,7 +177,7 @@ Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliqu
       .font_size(Px(18.0))
       .line_height(LineHeight(Px(24.0)))
       .text_overflow(TextOverflow::Ellipsis)
-      .line_clamp(2)
+      .line_clamp(Some(2))
       .build()
       .unwrap(),
     text: long_text.to_string(),
@@ -250,22 +253,22 @@ fn fixtures_text_mask_image_gradient_and_emoji() {
       .background_color(Color([240, 240, 240, 255]))
       .width(Percentage(100.0))
       .font_size(Px(72.0))
-      .mask_image(gradient_images.try_into().unwrap())
-      .mask_size(
+      .mask_image(Some(gradient_images.try_into().unwrap()))
+      .mask_size(Some(
         BackgroundSizesValue::Css("100% 100%".to_string())
           .try_into()
           .unwrap(),
-      )
-      .mask_position(
+      ))
+      .mask_position(Some(
         BackgroundPositionsValue::Css("0 0".to_string())
           .try_into()
           .unwrap(),
-      )
-      .mask_repeat(
+      ))
+      .mask_repeat(Some(
         BackgroundRepeatsValue::Css("no-repeat".to_string())
           .try_into()
           .unwrap(),
-      )
+      ))
       .build()
       .unwrap(),
     text: "Gradient Mask Emoji: 🪓 🦊 💩".to_string(),

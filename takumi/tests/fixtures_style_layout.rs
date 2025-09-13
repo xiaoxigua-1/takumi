@@ -19,7 +19,7 @@ fn test_style_flex_basis() {
       .height(Percentage(100.0))
       .display(Display::Flex)
       .flex_direction(FlexDirection::Row)
-      .background_color(Some(Color([0, 0, 255, 255])))
+      .background_color(Color([0, 0, 255, 255]))
       .build()
       .unwrap(),
     children: Some(vec![
@@ -27,7 +27,7 @@ fn test_style_flex_basis() {
         style: StyleBuilder::default()
           .flex_basis(Px(100.0))
           .height(Px(50.0))
-          .background_color(Some(Color([255, 0, 0, 255])))
+          .background_color(Color([255, 0, 0, 255]))
           .build()
           .unwrap(),
         children: None,
@@ -37,7 +37,7 @@ fn test_style_flex_basis() {
         style: StyleBuilder::default()
           .flex_basis(Px(100.0))
           .height(Px(50.0))
-          .background_color(Some(Color([0, 255, 0, 255])))
+          .background_color(Color([0, 255, 0, 255]))
           .build()
           .unwrap(),
         children: None,
@@ -47,7 +47,7 @@ fn test_style_flex_basis() {
         style: StyleBuilder::default()
           .flex_basis(Px(100.0))
           .height(Px(50.0))
-          .background_color(Some(Color([255, 255, 0, 255])))
+          .background_color(Color([255, 255, 0, 255]))
           .build()
           .unwrap(),
         children: None,
@@ -67,7 +67,7 @@ fn test_style_flex_direction() {
       .height(Percentage(100.0))
       .display(Display::Flex)
       .flex_direction(FlexDirection::Column)
-      .background_color(Some(Color([0, 0, 255, 255])))
+      .background_color(Color([0, 0, 255, 255]))
       .build()
       .unwrap(),
     children: Some(vec![
@@ -75,7 +75,7 @@ fn test_style_flex_direction() {
         style: StyleBuilder::default()
           .width(Px(50.0))
           .height(Px(50.0))
-          .background_color(Some(Color([255, 0, 0, 255])))
+          .background_color(Color([255, 0, 0, 255]))
           .build()
           .unwrap(),
         children: None,
@@ -85,7 +85,7 @@ fn test_style_flex_direction() {
         style: StyleBuilder::default()
           .width(Px(50.0))
           .height(Px(50.0))
-          .background_color(Some(Color([0, 255, 0, 255])))
+          .background_color(Color([0, 255, 0, 255]))
           .build()
           .unwrap(),
         children: None,
@@ -95,7 +95,7 @@ fn test_style_flex_direction() {
         style: StyleBuilder::default()
           .width(Px(50.0))
           .height(Px(50.0))
-          .background_color(Some(Color([255, 255, 0, 255])))
+          .background_color(Color([255, 255, 0, 255]))
           .build()
           .unwrap(),
         children: None,
@@ -115,7 +115,7 @@ fn test_style_gap() {
       .height(Percentage(100.0))
       .display(Display::Flex)
       .gap(Gap(Px(20.0), Px(40.0)))
-      .background_color(Some(Color([0, 0, 255, 255])))
+      .background_color(Color([0, 0, 255, 255]))
       .build()
       .unwrap(),
     children: Some(vec![
@@ -124,7 +124,7 @@ fn test_style_gap() {
         style: StyleBuilder::default()
           .width(Px(50.0))
           .height(Px(50.0))
-          .background_color(Some(Color([255, 0, 0, 255])))
+          .background_color(Color([255, 0, 0, 255]))
           .build()
           .unwrap(),
         children: None,
@@ -135,7 +135,7 @@ fn test_style_gap() {
         style: StyleBuilder::default()
           .width(Px(50.0))
           .height(Px(50.0))
-          .background_color(Some(Color([0, 255, 0, 255])))
+          .background_color(Color([0, 255, 0, 255]))
           .build()
           .unwrap(),
         children: None,
@@ -146,7 +146,7 @@ fn test_style_gap() {
         style: StyleBuilder::default()
           .width(Px(50.0))
           .height(Px(50.0))
-          .background_color(Some(Color([255, 255, 0, 255])))
+          .background_color(Color([255, 255, 0, 255]))
           .build()
           .unwrap(),
         children: None,
@@ -169,13 +169,13 @@ fn test_style_grid_template_columns() {
         GridTemplateComponent::Single(GridTrackSize::Fixed(GridLengthUnit::Unit(Px(50.0)))),
         GridTemplateComponent::Single(GridTrackSize::Fixed(GridLengthUnit::Unit(Px(100.0)))),
       ])))
-      .background_color(Some(Color([0, 0, 255, 255])))
+      .background_color(Color([0, 0, 255, 255]))
       .build()
       .unwrap(),
     children: Some(vec![
       ContainerNode {
         style: StyleBuilder::default()
-          .background_color(Some(Color([255, 0, 0, 255])))
+          .background_color(Color([255, 0, 0, 255]))
           .build()
           .unwrap(),
         children: None,
@@ -183,7 +183,7 @@ fn test_style_grid_template_columns() {
       .into(),
       ContainerNode {
         style: StyleBuilder::default()
-          .background_color(Some(Color([0, 255, 0, 255])))
+          .background_color(Color([0, 255, 0, 255]))
           .build()
           .unwrap(),
         children: None,
@@ -209,13 +209,13 @@ fn test_style_grid_template_rows() {
         GridTemplateComponent::Single(GridTrackSize::Fixed(GridLengthUnit::Unit(Px(50.0)))),
         GridTemplateComponent::Single(GridTrackSize::Fixed(GridLengthUnit::Unit(Px(100.0)))),
       ])))
-      .background_color(Some(Color([0, 0, 255, 255])))
+      .background_color(Color([0, 0, 255, 255]))
       .build()
       .unwrap(),
     children: Some(vec![
       ContainerNode {
         style: StyleBuilder::default()
-          .background_color(Some(Color([255, 0, 0, 255])))
+          .background_color(Color([255, 0, 0, 255]))
           .build()
           .unwrap(),
         children: None,
@@ -223,7 +223,7 @@ fn test_style_grid_template_rows() {
       .into(),
       ContainerNode {
         style: StyleBuilder::default()
-          .background_color(Some(Color([0, 255, 0, 255])))
+          .background_color(Color([0, 255, 0, 255]))
           .build()
           .unwrap(),
         children: None,

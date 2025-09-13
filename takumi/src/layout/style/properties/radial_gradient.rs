@@ -74,38 +74,6 @@ impl Gradient for RadialGradient {
   type DrawContext = RadialGradientDrawContext;
 
   fn at(&self, x: u32, y: u32, ctx: &Self::DrawContext) -> Color {
-    self.at(x, y, ctx)
-  }
-
-  fn to_draw_context(&self, width: f32, height: f32, context: &RenderContext) -> Self::DrawContext {
-    RadialGradientDrawContext::new(self, width, height, context)
-  }
-}
-
-impl RadialGradient {
-  /// Creates a drawing context for repeated sampling at the provided viewport size.
-  pub fn to_draw_context(
-    &self,
-    width: f32,
-    height: f32,
-    context: &RenderContext,
-  ) -> RadialGradientDrawContext {
-    RadialGradientDrawContext::new(self, width, height, context)
-  }
-
-  /// Resolves gradient steps into color stops with positions expressed in pixels along the radial axis.
-  /// Supports non-px units when a `RenderContext` is provided.
-  pub fn resolve_stops_for_radius(
-    &self,
-    radius_scale_px: f32,
-    context: &RenderContext,
-  ) -> SmallVec<[ResolvedGradientStop; 4]> {
-    resolve_stops_along_axis(&self.stops, radius_scale_px, context)
-  }
-
-  /// Returns the color at a specific point in the gradient.
-  /// Callers should pre-resolve gradient stops and pass them in for performance.
-  pub fn at(&self, x: u32, y: u32, ctx: &RadialGradientDrawContext) -> Color {
     // Fast-paths
     if ctx.resolved_stops.is_empty() {
       return Color([0, 0, 0, 0]);
@@ -119,6 +87,22 @@ impl RadialGradient {
     let position = (dx * dx + dy * dy).sqrt() * ctx.radius_x.max(ctx.radius_y);
 
     color_from_stops(position, &ctx.resolved_stops)
+  }
+
+  fn to_draw_context(&self, width: f32, height: f32, context: &RenderContext) -> Self::DrawContext {
+    RadialGradientDrawContext::new(self, width, height, context)
+  }
+}
+
+impl RadialGradient {
+  /// Resolves gradient steps into color stops with positions expressed in pixels along the radial axis.
+  /// Supports non-px units when a `RenderContext` is provided.
+  pub(crate) fn resolve_stops_for_radius(
+    &self,
+    radius_scale_px: f32,
+    context: &RenderContext,
+  ) -> SmallVec<[ResolvedGradientStop; 4]> {
+    resolve_stops_along_axis(&self.stops, radius_scale_px, context)
   }
 }
 

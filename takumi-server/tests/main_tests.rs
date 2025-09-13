@@ -23,17 +23,17 @@ async fn test_generate_image_handler_with_hmac_verify() {
   use sha2::Sha256;
   use takumi::layout::{
     node::{ContainerNode, NodeKind},
-    style::Style,
+    style::{LengthUnit::Px, StyleBuilder},
   };
 
   let app = create_app(create_state(Args::default(), GlobalContext::default()));
 
   let node: NodeKind = ContainerNode {
-    style: Style {
-      width: 100.0.into(),
-      height: 100.0.into(),
-      ..Default::default()
-    },
+    style: StyleBuilder::default()
+      .width(Px(100.0))
+      .height(Px(100.0))
+      .build()
+      .unwrap(),
     children: None,
   }
   .into();

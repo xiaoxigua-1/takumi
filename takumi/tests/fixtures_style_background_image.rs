@@ -2,7 +2,8 @@ use takumi::layout::{
   node::{ContainerNode, NodeKind},
   style::{
     BackgroundImagesValue, BackgroundPositionsValue, BackgroundRepeat, BackgroundRepeats,
-    BackgroundRepeatsValue, BackgroundSizesValue, Color, LengthUnit::Percentage, StyleBuilder,
+    BackgroundRepeatsValue, BackgroundSizesValue, Color, CssValue, LengthUnit::Percentage,
+    StyleBuilder,
   },
 };
 
@@ -11,12 +12,12 @@ use test_utils::run_style_width_test;
 
 fn create_container(background_images: BackgroundImagesValue) -> ContainerNode<NodeKind> {
   ContainerNode {
-    style: Style {
-      width: Percentage(100.0),
-      height: Percentage(100.0),
-      background_image: Some(background_images.try_into().unwrap()),
-      ..Default::default()
-    },
+    style: StyleBuilder::default()
+      .width(Percentage(100.0))
+      .height(Percentage(100.0))
+      .background_image(Some(background_images.try_into().unwrap()))
+      .build()
+      .unwrap(),
     children: None,
   }
 }
@@ -28,15 +29,15 @@ fn create_container_with(
   background_repeat: Option<BackgroundRepeatsValue>,
 ) -> ContainerNode<NodeKind> {
   ContainerNode {
-    style: Style {
-      width: Percentage(100.0),
-      height: Percentage(100.0),
-      background_image: Some(background_images.try_into().unwrap()),
-      background_size: background_size.map(|v| v.try_into().unwrap()),
-      background_position: background_position.map(|v| v.try_into().unwrap()),
-      background_repeat: background_repeat.map(|v| v.try_into().unwrap()),
-      ..Default::default()
-    },
+    style: StyleBuilder::default()
+      .width(Percentage(100.0))
+      .height(Percentage(100.0))
+      .background_image(Some(background_images.try_into().unwrap()))
+      .background_size(background_size.map(|v| v.try_into().unwrap()))
+      .background_position(background_position.map(|v| v.try_into().unwrap()))
+      .background_repeat(background_repeat.map(|v| v.try_into().unwrap()))
+      .build()
+      .unwrap(),
     children: None,
   }
 }
@@ -241,14 +242,14 @@ fn test_background_image_grid_pattern() {
     Some(BackgroundRepeatsValue::Css("repeat, repeat".to_string())),
   );
 
-  container.style.background_color = Some(Color::white());
+  container.style.background_color = Color::white().into();
 
   assert_eq!(
     container.style.background_repeat,
-    Some(BackgroundRepeats(vec![
+    CssValue::Value(Some(BackgroundRepeats(vec![
       BackgroundRepeat::repeat(),
       BackgroundRepeat::repeat()
-    ]))
+    ])))
   );
 
   run_style_width_test(
@@ -276,7 +277,7 @@ fn test_background_image_noise_v1_with_gradient() {
     )),
   );
 
-  container.style.background_color = Some(Color::white());
+  container.style.background_color = Color::white().into();
 
   run_style_width_test(
     container.into(),

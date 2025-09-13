@@ -210,7 +210,7 @@ impl LengthUnit {
   ///
   /// This method converts the length unit (either a percentage, pixel, rem, em, vh, vw, or auto)
   /// into a compact length format that can be used by the layout engine.
-  pub fn to_compact_length(self, context: &RenderContext) -> CompactLength {
+  pub(crate) fn to_compact_length(self, context: &RenderContext) -> CompactLength {
     match self {
       LengthUnit::Auto => CompactLength::auto(),
       LengthUnit::Percentage(value) => CompactLength::percent(value / 100.0),
@@ -225,7 +225,7 @@ impl LengthUnit {
   }
 
   /// Resolves the length unit to a `LengthPercentage`.
-  pub fn resolve_to_length_percentage(self, context: &RenderContext) -> LengthPercentage {
+  pub(crate) fn resolve_to_length_percentage(self, context: &RenderContext) -> LengthPercentage {
     let compact_length = self.to_compact_length(context);
 
     if compact_length.is_auto() {
@@ -237,7 +237,7 @@ impl LengthUnit {
   }
 
   /// Resolves the length unit to a pixel value.
-  pub fn resolve_to_px(self, context: &RenderContext, percentage_full_px: f32) -> f32 {
+  pub(crate) fn resolve_to_px(self, context: &RenderContext, percentage_full_px: f32) -> f32 {
     const ONE_CM_IN_PX: f32 = 96.0 / 2.54;
     const ONE_MM_IN_PX: f32 = ONE_CM_IN_PX / 10.0;
     const ONE_Q_IN_PX: f32 = ONE_CM_IN_PX / 40.0;
@@ -263,18 +263,21 @@ impl LengthUnit {
   }
 
   /// Resolves the length unit to a `LengthPercentageAuto`.
-  pub fn resolve_to_length_percentage_auto(self, context: &RenderContext) -> LengthPercentageAuto {
+  pub(crate) fn resolve_to_length_percentage_auto(
+    self,
+    context: &RenderContext,
+  ) -> LengthPercentageAuto {
     // SAFETY: only length/percentage/auto are allowed
     unsafe { LengthPercentageAuto::from_raw(self.to_compact_length(context)) }
   }
 
   /// Resolves the length unit to a `Dimension`.
-  pub fn resolve_to_dimension(self, context: &RenderContext) -> Dimension {
+  pub(crate) fn resolve_to_dimension(self, context: &RenderContext) -> Dimension {
     self.resolve_to_length_percentage_auto(context).into()
   }
 }
 /// Utility function to resolve a rect of length units to length percentages.
-pub fn resolve_length_unit_rect_to_length_percentage(
+pub(crate) fn resolve_length_unit_rect_to_length_percentage(
   context: &RenderContext,
   value: Rect<LengthUnit>,
 ) -> Rect<LengthPercentage> {
@@ -287,7 +290,7 @@ pub fn resolve_length_unit_rect_to_length_percentage(
 }
 
 /// Utility function to resolve a rect of length units to length percentage auto.
-pub fn resolve_length_unit_rect_to_length_percentage_auto(
+pub(crate) fn resolve_length_unit_rect_to_length_percentage_auto(
   context: &RenderContext,
   value: Rect<LengthUnit>,
 ) -> Rect<LengthPercentageAuto> {

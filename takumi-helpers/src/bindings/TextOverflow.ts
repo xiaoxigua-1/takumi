@@ -5,4 +5,4 @@
  *
  * This enum determines how text should be handled when it exceeds the container width.
  */
-export type TextOverflow = "ellipsis" | "clip";
+export type TextOverflow = "clip" | "ellipsis";

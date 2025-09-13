@@ -4,7 +4,10 @@ use taffy::{Layout, Size};
 use ts_rs::TS;
 
 use crate::{
-  layout::style::{CssValue, properties::*},
+  layout::{
+    DEFAULT_FONT_SIZE,
+    style::{CssValue, properties::*},
+  },
   rendering::{BorderProperties, RenderContext},
 };
 
@@ -30,7 +33,7 @@ macro_rules! define_style {
       /// Inherits the style from the parent element.
       pub(crate) fn inherit(&self, parent: &InheritedStyle) -> InheritedStyle {
         InheritedStyle {
-          $( $property: self.$property.resolve(&parent.$property, &$initial_value), )*
+          $( $property: self.$property.inherit(&parent.$property, &$initial_value), )*
         }
       }
     }
@@ -48,8 +51,10 @@ macro_rules! define_style {
   };
 }
 
+// property: type = node default value => viewport default value
 define_style!(
-  box_sizing: BoxSizing = CssValue::Inherit => BoxSizing::ContentBox,
+  // For convenience, we default to border-box
+  box_sizing: BoxSizing = CssValue::Inherit => BoxSizing::BorderBox,
   display: Display = Display::Flex => Display::Flex,
   width: LengthUnit = LengthUnit::Auto => LengthUnit::Auto,
   height: LengthUnit = LengthUnit::Auto => LengthUnit::Auto,
@@ -58,17 +63,17 @@ define_style!(
   min_width: LengthUnit = LengthUnit::Auto => LengthUnit::Auto,
   min_height: LengthUnit = LengthUnit::Auto => LengthUnit::Auto,
   aspect_ratio: Option<f32> = None => None,
-  padding: Sides<LengthUnit> = Sides::default() => Sides::default(),
+  padding: Sides<LengthUnit> = Sides::default() => Sides([LengthUnit::zero(); 4]),
   padding_top: Option<LengthUnit> = None => None,
   padding_right: Option<LengthUnit> = None => None,
   padding_bottom: Option<LengthUnit> = None => None,
   padding_left: Option<LengthUnit> = None => None,
-  margin: Sides<LengthUnit> = Sides::default() => Sides::default(),
+  margin: Sides<LengthUnit> = Sides::default() => Sides([LengthUnit::zero(); 4]),
   margin_top: Option<LengthUnit> = None => None,
   margin_right: Option<LengthUnit> = None => None,
   margin_bottom: Option<LengthUnit> = None => None,
   margin_left: Option<LengthUnit> = None => None,
-  inset: Sides<LengthUnit> = Sides::default() => Sides::default(),
+  inset: Sides<LengthUnit> = Sides::default() => Sides([LengthUnit::zero(); 4]),
   top: Option<LengthUnit> = None => None,
   right: Option<LengthUnit> = None => None,
   bottom: Option<LengthUnit> = None => None,
@@ -92,12 +97,12 @@ define_style!(
   gap: Gap = Gap::default() => Gap::default(),
   flex_grow: f32 = 0.0 => 0.0,
   flex_shrink: f32 = 1.0 => 1.0,
-  border_radius: Sides<LengthUnit> = Sides::default() => Sides::default(),
+  border_radius: Sides<LengthUnit> = Sides::default() => Sides([LengthUnit::zero(); 4]),
   border_top_left_radius: Option<LengthUnit> = None => None,
   border_top_right_radius: Option<LengthUnit> = None => None,
   border_bottom_right_radius: Option<LengthUnit> = None => None,
   border_bottom_left_radius: Option<LengthUnit> = None => None,
-  border_width: Sides<LengthUnit> = Sides::default() => Sides::default(),
+  border_width: Sides<LengthUnit> = Sides::default() => Sides([LengthUnit::zero(); 4]),
   border_top_width: Option<LengthUnit> = None => None,
   border_right_width: Option<LengthUnit> = None => None,
   border_bottom_width: Option<LengthUnit> = None => None,
@@ -122,7 +127,7 @@ define_style!(
   font_style: FontStyle = CssValue::Inherit => Default::default(),
   border_color: Color = CssValue::Inherit => Color::black(),
   color: Color = CssValue::Inherit => Color::black(),
-  font_size: LengthUnit = CssValue::Inherit => LengthUnit::Px(16.0),
+  font_size: LengthUnit = CssValue::Inherit => LengthUnit::Px(DEFAULT_FONT_SIZE),
   font_family: Option<FontFamily> = CssValue::Inherit => None,
   line_height: LineHeight = CssValue::Inherit => Default::default(),
   font_weight: FontWeight = CssValue::Inherit => Default::default(),

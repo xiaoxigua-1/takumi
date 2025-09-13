@@ -133,17 +133,12 @@ mod tests {
   use std::sync::LazyLock;
   use taffy::{AvailableSpace, geometry::Size};
 
-  use parley::{
-    WordBreakStrength,
-    style::{FontStyle as ParleyFontStyle, FontWeight as ParleyFontWeight},
-  };
-
   use crate::{
     GlobalContext,
     layout::{
       DEFAULT_FONT_SIZE, DEFAULT_LINE_HEIGHT_SCALER, Viewport,
       node::measure_text,
-      style::{Affine, Color, InheritedStyle, SizedFontStyle, TextOverflow, TextTransform},
+      style::{Affine, InheritedStyle, LengthUnit, LineHeight, SizedFontStyle},
     },
     rendering::RenderContext,
   };
@@ -181,17 +176,6 @@ mod tests {
     }
   }
 
-  // Helper function to create a basic ResolvedFontStyle for testing
-  fn create_test_font_style(parent: &'_ InheritedStyle) -> SizedFontStyle<'_> {
-    SizedFontStyle {
-      parent,
-      font_size: DEFAULT_FONT_SIZE,
-      line_height: parley::LineHeight::FontSizeRelative(DEFAULT_LINE_HEIGHT_SCALER),
-      letter_spacing: None,
-      word_spacing: None,
-    }
-  }
-
   // Helper function to create known dimensions for testing
   fn create_known_dimensions(width: Option<f32>, height: Option<f32>) -> Size<Option<f32>> {
     Size { width, height }
@@ -211,7 +195,7 @@ mod tests {
     available_height: AvailableSpace,
   ) -> Size<f32> {
     let context = create_test_context();
-    let style = create_test_font_style(&context.style);
+    let style = context.style.to_sized_font_style(&context);
 
     measure_text(
       context.global,
@@ -278,13 +262,14 @@ mod tests {
   #[test]
   fn test_measure_text_with_height_constraint() {
     let context = create_test_context();
-
-    let mut style = create_test_font_style(&InheritedStyle::default());
-    style.parent.line_clamp = Some(2); // Limit to 2 lines
+    let parent = InheritedStyle {
+      line_clamp: Some(2),
+      ..Default::default()
+    };
 
     let result = measure_text_with_style(
       "This is a long text that should be clamped to a specific number of lines",
-      &style,
+      parent.to_sized_font_style(&context),
       Some(200.0),
       None,
       AvailableSpace::Definite(300.0),
@@ -328,12 +313,15 @@ mod tests {
 
   #[test]
   fn test_measure_text_with_line_clamp() {
-    let mut style = create_test_font_style();
-    style.line_clamp = Some(3);
+    let context = create_test_context();
+    let parent = InheritedStyle {
+      line_clamp: Some(3),
+      ..Default::default()
+    };
 
     let result = measure_text_with_style(
       "Line 1\nLine 2\nLine 3\nLine 4\nLine 5",
-      &style,
+      parent.to_sized_font_style(&context),
       Some(300.0),
       None,
       AvailableSpace::Definite(400.0),
@@ -376,12 +364,15 @@ mod tests {
 
   #[test]
   fn test_measure_text_with_different_font_size() {
-    let mut style = create_test_font_style();
-    style.font_size = 24.0;
+    let context = create_test_context();
+    let parent = InheritedStyle {
+      font_size: LengthUnit::Px(24.0),
+      ..Default::default()
+    };
 
     let result = measure_text_with_style(
       "Large font text",
-      &style,
+      parent.to_sized_font_style(&context),
       None,
       None,
       AvailableSpace::MaxContent,
@@ -394,12 +385,15 @@ mod tests {
 
   #[test]
   fn test_measure_text_with_different_line_height() {
-    let mut style = create_test_font_style();
-    style.line_height = parley::LineHeight::FontSizeRelative(1.5);
+    let context = create_test_context();
+    let parent = InheritedStyle {
+      line_height: LineHeight(LengthUnit::Em(1.5)),
+      ..Default::default()
+    };
 
     let result = measure_text_with_style(
       "Text with increased line height",
-      &style,
+      parent.to_sized_font_style(&context),
       None,
       None,
       AvailableSpace::MaxContent,

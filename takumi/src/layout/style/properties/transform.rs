@@ -40,7 +40,7 @@ pub struct Transforms(pub SmallVec<[Transform; 4]>);
 
 impl Transforms {
   /// Converts the transforms to a [`Affine`] instance
-  pub fn to_affine(
+  pub(crate) fn to_affine(
     &self,
     context: &RenderContext,
     layout: &Layout,

@@ -1,7 +1,9 @@
 use takumi::layout::{
   node::ContainerNode,
   style::{
-    Color, LengthUnit::{Percentage, Px}, Sides, StyleBuilder
+    Color,
+    LengthUnit::{Percentage, Px},
+    Sides, StyleBuilder,
   },
 };
 

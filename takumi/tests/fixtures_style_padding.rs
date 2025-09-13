@@ -3,7 +3,7 @@ use takumi::layout::{
   style::{
     Color,
     LengthUnit::{Percentage, Px},
-    Style, StyleBuilder,
+    Sides, StyleBuilder,
   },
 };
 
@@ -16,8 +16,8 @@ fn test_style_padding() {
     style: StyleBuilder::default()
       .width(Percentage(100.0))
       .height(Percentage(100.0))
-      .background_color(Some(Color([0, 0, 255, 255]))) // Blue background to show padding
-      .padding(Px(20.0).into()) // Uniform padding of 20px
+      .background_color(Color([0, 0, 255, 255])) // Blue background to show padding
+      .padding(Sides([Px(20.0); 4])) // Uniform padding of 20px
       .build()
       .unwrap(),
     children: Some(vec![
@@ -25,7 +25,7 @@ fn test_style_padding() {
         style: StyleBuilder::default()
           .width(Percentage(100.0))
           .height(Percentage(100.0))
-          .background_color(Some(Color([255, 0, 0, 255]))) // Red child to show padding effect
+          .background_color(Color([255, 0, 0, 255])) // Red child to show padding effect
           .build()
           .unwrap(),
         children: None,

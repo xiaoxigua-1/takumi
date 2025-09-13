@@ -3,7 +3,7 @@ use takumi::layout::{
   style::{
     Color,
     LengthUnit::{Percentage, Px},
-    Position, Style, StyleBuilder,
+    Position, Sides, StyleBuilder,
   },
 };
 
@@ -25,7 +25,7 @@ fn test_style_position() {
           .width(Px(100.0))
           .height(Px(100.0))
           .position(Position::Absolute) // Test the position property
-          .inset(Px(20.0).into())       // Position with inset properties
+          .inset(Sides([Px(20.0); 4])) // Position with inset properties
           .background_color(Color([255, 0, 0, 255])) // Red child to make it visible
           .build()
           .unwrap(),
