@@ -738,7 +738,7 @@ jobs:
     name: Publish takumi to crate.io
     runs-on: ubuntu-latest
     needs: [test-rust, version-check-helpers]
-    if: github.ref == 'refs/heads/master' && needs.version-check-helpers.outputs.exists == 'false'
+    if: github.ref == 'refs/heads/master'
 
     steps:
       - name: Checkout code
@@ -749,7 +749,12 @@ jobs:
         with:
           stage: publish
 
+      - name: Publish to crates.io (dry-run)
+        if: needs.version-check-helpers.outputs.exists == 'true'
+        run: cargo publish -p takumi --dry-run
+
       - name: Publish to crates.io
+        if: needs.version-check-helpers.outputs.exists == 'false'
         run: cargo publish -p takumi
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
