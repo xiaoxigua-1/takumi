@@ -279,3 +279,20 @@ fn fixtures_text_mask_image_gradient_and_emoji() {
     "tests/fixtures/text_mask_image_gradient_emoji.png",
   );
 }
+
+#[test]
+fn fixtures_text_stroke_black_red() {
+  let text = TextNode {
+    style: StyleBuilder::default()
+      .background_color(Color([240, 240, 240, 255]))
+      .color(Color([0, 0, 0, 255])) // Black text
+      .font_size(Px(72.0))
+      .text_stroke_width(Px(2.0))
+      .text_stroke_color(Some(Color([255, 0, 0, 255]))) // Red stroke
+      .build()
+      .unwrap(),
+    text: "Red Stroke".to_string(),
+  };
+
+  run_style_width_test(text.into(), "tests/fixtures/text_stroke_black_red.png");
+}

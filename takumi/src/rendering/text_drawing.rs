@@ -5,13 +5,11 @@ use image::RgbaImage;
 use parley::{Glyph, PositionedLayoutItem, StyleProperty};
 use swash::{Setting, tag_from_bytes};
 use taffy::{Layout, Point, Size};
-use zeno::{Command, Mask, PathData, Placement};
+use zeno::{Command, Mask, PathData, Placement, Stroke};
 
 use crate::{
   GlobalContext,
-  layout::style::{
-    Affine, Color, ImageScalingAlgorithm, SizedFontStyle, TextOverflow, TextTransform,
-  },
+  layout::style::{Affine, ImageScalingAlgorithm, SizedFontStyle, TextOverflow, TextTransform},
   rendering::{
     BorderProperties, Canvas, RenderContext, apply_mask_alpha_to_pixel, overlay_image,
     resolve_layers_tiles,
@@ -101,33 +99,19 @@ pub fn draw_text(text: &str, context: &RenderContext, canvas: &Canvas, layout: L
       }
     }
 
-    draw_buffer(
-      context,
-      &buffer,
-      canvas,
-      font_style.parent.color,
-      layout,
-      Some(composed),
-    );
+    draw_buffer(context, &buffer, canvas, font_style, layout, Some(composed));
 
     return;
   }
 
-  draw_buffer(
-    context,
-    &buffer,
-    canvas,
-    font_style.parent.color,
-    layout,
-    None,
-  );
+  draw_buffer(context, &buffer, canvas, font_style, layout, None);
 }
 
 fn draw_buffer(
   context: &RenderContext,
   buffer: &parley::Layout<()>,
   canvas: &Canvas,
-  color: Color,
+  style: SizedFontStyle,
   layout: Layout,
   image_fill: Option<RgbaImage>,
 ) {
@@ -155,7 +139,7 @@ fn draw_buffer(
             glyph,
             cached_glyph,
             canvas,
-            color,
+            style,
             layout,
             image_fill.as_ref(),
             context.transform,
@@ -170,7 +154,7 @@ fn draw_glyph(
   glyph: Glyph,
   cached_glyph: &CachedGlyph,
   canvas: &Canvas,
-  color: Color,
+  style: SizedFontStyle,
   layout: Layout,
   image_fill: Option<&RgbaImage>,
   transform: Affine,
@@ -312,7 +296,20 @@ fn draw_glyph(
     placement.left += layout.location.x as i32;
     placement.top += layout.location.y as i32;
 
-    canvas.draw_mask(mask, placement, color, cropped_fill_image);
+    canvas.draw_mask(mask, placement, style.parent.color, cropped_fill_image);
+
+    if style.stroke_width > 0.0 {
+      let (stroke_mask, mut stroke_placement) = Mask::new(&paths)
+        .style(Stroke::new(style.stroke_width))
+        .render();
+
+      stroke_placement.left += layout.location.x as i32;
+      stroke_placement.top += layout.location.y as i32;
+
+      let color = style.parent.text_stroke_color.unwrap_or(style.parent.color);
+
+      canvas.draw_mask(stroke_mask, stroke_placement, color, None);
+    }
   }
 }
 

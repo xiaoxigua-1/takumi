@@ -135,6 +135,8 @@ define_style!(
   font_feature_settings: Option<FontFeatureSettings> = CssValue::Inherit => None,
   line_clamp: Option<u32> = CssValue::Inherit => None,
   text_align: TextAlign = CssValue::Inherit => Default::default(),
+  text_stroke_width: LengthUnit = CssValue::Inherit => LengthUnit::Px(0.0),
+  text_stroke_color: Option<Color> = CssValue::Inherit => None,
   letter_spacing: Option<LengthUnit> = CssValue::Inherit => None,
   word_spacing: Option<LengthUnit> = CssValue::Inherit => None,
   image_rendering: ImageScalingAlgorithm = CssValue::Inherit => Default::default(),
@@ -148,6 +150,7 @@ pub(crate) struct SizedFontStyle<'s> {
   pub parent: &'s InheritedStyle,
   pub font_size: f32,
   pub line_height: parley::LineHeight,
+  pub stroke_width: f32,
   pub letter_spacing: Option<f32>,
   pub word_spacing: Option<f32>,
 }
@@ -305,6 +308,7 @@ impl InheritedStyle {
       parent: self,
       font_size,
       line_height,
+      stroke_width: self.text_stroke_width.resolve_to_px(context, font_size),
       letter_spacing: self
         .letter_spacing
         .map(|spacing| spacing.resolve_to_px(context, font_size) / font_size),
