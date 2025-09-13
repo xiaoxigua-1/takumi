@@ -53,6 +53,8 @@ export default function DocsTemplateV1({
         style={{
           fontWeight: 800,
           fontSize: 84,
+          textOverflow: "ellipsis",
+          lineClamp: 2,
         }}
       >
         {title}
@@ -63,6 +65,7 @@ export default function DocsTemplateV1({
           color: "rgba(240,240,240,0.8)",
           fontWeight: 500,
           lineClamp: 2,
+          textOverflow: "ellipsis",
         }}
       >
         {description}

@@ -40,7 +40,7 @@ testRender(
   "DocsTemplateV1",
   <DocsTemplateV1
     title="Fumadocs Integration"
-    description="When will Fuma meet me in person? Hope we can meet in Japan!"
+    description="When will Fuma meet me in person? Hope we can meet in Japan! Culpa dolore eu ullamco aute exercitation sint aute nostrud qui tempor commodo ad culpa culpa. Laborum laboris eu laborum Lorem aliquip nulla nulla est proident eu. Officia deserunt aute ex quis exercitation ut. Irure cupidatat eu dolor Lorem eu aliquip mollit voluptate esse aute fugiat officia proident aliquip."
     icon={
       <img
         alt="Takumi"
