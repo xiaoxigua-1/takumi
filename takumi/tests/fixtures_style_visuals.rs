@@ -76,6 +76,7 @@ fn test_style_border_width() {
       .height(Percentage(100.0))
       .background_color(Color::white())
       .border_width(Sides([Px(10.0); 4]))
+      .border_color(Color([255, 0, 0, 255]))
       .build()
       .unwrap(),
     children: None,
