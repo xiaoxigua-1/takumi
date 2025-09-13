@@ -13,7 +13,10 @@ use crate::layout::style::{
 pub(crate) enum TextStrokeValue {
   /// Structured representation when provided as JSON.
   #[serde(rename_all = "camelCase")]
-  Structured { width: LengthUnit, color: Color },
+  Structured {
+    width: LengthUnit,
+    color: Option<Color>,
+  },
   /// Raw CSS string representation.
   Css(String),
 }
@@ -23,6 +26,7 @@ pub(crate) enum TextStrokeValue {
 /// `color` is optional; when absent the element's `color` property should be used.
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, TS)]
 #[serde(try_from = "TextStrokeValue")]
+#[ts(as = "TextStrokeValue")]
 pub struct TextStroke {
   /// Stroke width as a `LengthUnit`.
   pub width: LengthUnit,
@@ -35,10 +39,7 @@ impl TryFrom<TextStrokeValue> for TextStroke {
 
   fn try_from(value: TextStrokeValue) -> Result<Self, Self::Error> {
     match value {
-      TextStrokeValue::Structured { width, color } => Ok(TextStroke {
-        width,
-        color: Some(color),
-      }),
+      TextStrokeValue::Structured { width, color } => Ok(TextStroke { width, color }),
       TextStrokeValue::Css(s) => {
         let mut input = ParserInput::new(&s);
         let mut parser = Parser::new(&mut input);
