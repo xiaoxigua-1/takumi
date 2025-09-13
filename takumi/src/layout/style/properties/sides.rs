@@ -3,7 +3,7 @@ use serde::{Deserialize, Deserializer, Serialize, de::Error as DeError};
 use taffy::Rect;
 use ts_rs::TS;
 
-use crate::layout::style::FromCss;
+use crate::layout::style::{FromCss, LengthUnit};
 
 /// Represents the values for the four sides of a box (top, right, bottom, left).
 #[derive(Debug, Clone, Copy, Serialize, TS, PartialEq)]
@@ -118,6 +118,13 @@ impl<T: TS + Copy> From<T> for Sides<T> {
 impl<T: Default> Default for SidesValue<T> {
   fn default() -> Self {
     Self::SingleValue(T::default())
+  }
+}
+
+impl Sides<LengthUnit> {
+  /// Creates a new zeroable Sides with [LengthUnit::zero].
+  pub const fn zero() -> Self {
+    Self([LengthUnit::zero(); 4])
   }
 }
 

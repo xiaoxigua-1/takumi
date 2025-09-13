@@ -6,7 +6,7 @@ use image::{RgbaImage, imageops::FilterType};
 use taffy::{Layout, Point, Size};
 
 use crate::layout::style::{Affine, ObjectFit};
-use crate::rendering::{Canvas, RenderContext};
+use crate::rendering::{BorderProperties, Canvas, RenderContext};
 use crate::resources::image::ImageSource;
 
 /// Process an image according to the specified object-fit style.
@@ -170,10 +170,7 @@ pub fn draw_image(image: &ImageSource, context: &RenderContext, canvas: &Canvas,
       x: offset_x as i32 + layout.location.x as i32,
       y: offset_y as i32 + layout.location.y as i32,
     },
-    context
-      .style
-      .create_border_radius(&layout, context)
-      .inset_by_border_width(),
+    BorderProperties::from_context(context, &layout).inset_by_border_width(),
     transform_with_content_offset,
     context.style.image_rendering,
   );

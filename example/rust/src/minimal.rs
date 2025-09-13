@@ -6,7 +6,7 @@ use takumi::{
   layout::{
     Viewport,
     node::{ContainerNode, NodeKind, TextNode},
-    style::{CssValue, Style, StyleBuilder},
+    style::{CssValue, StyleBuilder},
   },
   rendering::{ImageOutputFormat, render, write_image},
 };

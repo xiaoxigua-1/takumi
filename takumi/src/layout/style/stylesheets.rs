@@ -1,6 +1,6 @@
 use derive_builder::Builder;
 use serde::{Deserialize, Serialize};
-use taffy::{Layout, Size};
+use taffy::Size;
 use ts_rs::TS;
 
 use crate::{
@@ -8,7 +8,7 @@ use crate::{
     DEFAULT_FONT_SIZE,
     style::{CssValue, properties::*},
   },
-  rendering::{BorderProperties, RenderContext},
+  rendering::RenderContext,
 };
 
 /// Helper macro to define the `Style` struct and `InheritedStyle` struct.
@@ -63,17 +63,17 @@ define_style!(
   min_width: LengthUnit = LengthUnit::Auto => LengthUnit::Auto,
   min_height: LengthUnit = LengthUnit::Auto => LengthUnit::Auto,
   aspect_ratio: Option<f32> = None => None,
-  padding: Sides<LengthUnit> = Sides::default() => Sides([LengthUnit::zero(); 4]),
+  padding: Sides<LengthUnit> = Sides::zero() => Sides::zero(),
   padding_top: Option<LengthUnit> = None => None,
   padding_right: Option<LengthUnit> = None => None,
   padding_bottom: Option<LengthUnit> = None => None,
   padding_left: Option<LengthUnit> = None => None,
-  margin: Sides<LengthUnit> = Sides::default() => Sides([LengthUnit::zero(); 4]),
+  margin: Sides<LengthUnit> = Sides::zero() => Sides::zero(),
   margin_top: Option<LengthUnit> = None => None,
   margin_right: Option<LengthUnit> = None => None,
   margin_bottom: Option<LengthUnit> = None => None,
   margin_left: Option<LengthUnit> = None => None,
-  inset: Sides<LengthUnit> = Sides::default() => Sides([LengthUnit::zero(); 4]),
+  inset: Sides<LengthUnit> = Sides::zero() => Sides::zero(),
   top: Option<LengthUnit> = None => None,
   right: Option<LengthUnit> = None => None,
   bottom: Option<LengthUnit> = None => None,
@@ -97,12 +97,12 @@ define_style!(
   gap: Gap = Gap::default() => Gap::default(),
   flex_grow: f32 = 0.0 => 0.0,
   flex_shrink: f32 = 1.0 => 1.0,
-  border_radius: Sides<LengthUnit> = Sides::default() => Sides([LengthUnit::zero(); 4]),
+  border_radius: Sides<LengthUnit> = Sides::zero() => Sides::zero(),
   border_top_left_radius: Option<LengthUnit> = None => None,
   border_top_right_radius: Option<LengthUnit> = None => None,
   border_bottom_right_radius: Option<LengthUnit> = None => None,
   border_bottom_left_radius: Option<LengthUnit> = None => None,
-  border_width: Sides<LengthUnit> = Sides::default() => Sides([LengthUnit::zero(); 4]),
+  border_width: Sides<LengthUnit> = Sides::zero() => Sides::zero(),
   border_top_width: Option<LengthUnit> = None => None,
   border_right_width: Option<LengthUnit> = None => None,
   border_bottom_width: Option<LengthUnit> = None => None,
@@ -285,7 +285,7 @@ impl InheritedStyle {
   }
 
   #[inline]
-  fn resolved_border_radius(&self) -> taffy::Rect<LengthUnit> {
+  pub(crate) fn resolved_border_radius(&self) -> taffy::Rect<LengthUnit> {
     Self::resolve_rect_with_longhands(
       self.border_radius,
       self.border_top_left_radius,
@@ -293,14 +293,6 @@ impl InheritedStyle {
       self.border_bottom_right_radius,
       self.border_bottom_left_radius,
     )
-  }
-
-  /// Creates `BorderProperties` (including resolved corner radii) from the style's border radius properties.
-  #[inline]
-  pub fn create_border_radius(&self, layout: &Layout, context: &RenderContext) -> BorderProperties {
-    let rect = self.resolved_border_radius();
-
-    BorderProperties::from_resolved(context, layout, rect, self)
   }
 
   pub fn to_sized_font_style(&'_ self, context: &RenderContext) -> SizedFontStyle<'_> {

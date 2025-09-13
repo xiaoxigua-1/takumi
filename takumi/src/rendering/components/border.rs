@@ -1,10 +1,10 @@
 use std::f32::consts::SQRT_2;
 
-use taffy::{Layout, Point, Rect, Size};
+use taffy::{Layout, Point, Size};
 use zeno::{Command, Fill, Mask, PathBuilder};
 
 use crate::{
-  layout::style::{Affine, Color, InheritedStyle, LengthUnit, Sides},
+  layout::style::{Affine, Color, LengthUnit, Sides},
   rendering::{Canvas, RenderContext},
 };
 
@@ -48,15 +48,9 @@ impl BorderProperties {
     }
   }
 
-  // Use `from_resolved` or `Style::create_border_radius` to construct BorderProperties.
-
-  /// Alternative constructor accepting a resolved `taffy::Rect<LengthUnit>`.
-  pub fn from_resolved(
-    context: &RenderContext,
-    layout: &Layout,
-    resolved: Rect<LengthUnit>,
-    style: &InheritedStyle,
-  ) -> Self {
+  /// Resolves the border radius from the context and layout.
+  pub fn from_context(context: &RenderContext, layout: &Layout) -> Self {
+    let resolved = context.style.resolved_border_radius();
     let reference_size = layout.size.width.min(layout.size.height);
 
     let top_left = resolve_border_radius_from_percentage_css(context, resolved.top, reference_size);
@@ -71,7 +65,7 @@ impl BorderProperties {
       width: layout.border,
       offset: Point::ZERO,
       size: layout.size,
-      color: style.border_color,
+      color: context.style.border_color,
       radius: Sides([top_left, top_right, bottom_right, bottom_left]),
       transform: context.transform,
     }

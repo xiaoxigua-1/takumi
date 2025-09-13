@@ -31,16 +31,16 @@ use crate::{
 /// This struct wraps a channel sender that can be cloned and used to send
 /// drawing commands to a canvas rendering loop without blocking the main thread.
 #[derive(Clone)]
-pub(crate) struct Canvas(Sender<DrawCommand>);
+pub struct Canvas(Sender<DrawCommand>);
 
 impl Canvas {
   /// Creates a new canvas handle from a draw command sender.
-  pub fn new(sender: Sender<DrawCommand>) -> Self {
+  pub(crate) fn new(sender: Sender<DrawCommand>) -> Self {
     Self(sender)
   }
 
   /// Overlays an image onto the canvas with optional border radius.
-  pub fn overlay_image(
+  pub(crate) fn overlay_image(
     &self,
     image: Arc<RgbaImage>,
     offset: Point<i32>,
@@ -62,7 +62,7 @@ impl Canvas {
   }
 
   /// Draws a mask with the specified color onto the canvas.
-  pub fn draw_mask(
+  pub(crate) fn draw_mask(
     &self,
     mask: Vec<u8>,
     placement: Placement,
@@ -82,7 +82,7 @@ impl Canvas {
   }
 
   /// Fills a rectangular area with the specified color and optional border radius.
-  pub fn fill_color(
+  pub(crate) fn fill_color(
     &self,
     offset: Point<i32>,
     size: Size<u32>,
@@ -105,7 +105,7 @@ impl Canvas {
 }
 
 /// A canvas that receives draw tasks from the main rendering thread and draws them to the canvas.
-pub fn create_blocking_canvas_loop(
+pub(crate) fn create_blocking_canvas_loop(
   viewport: Viewport,
   receiver: Receiver<DrawCommand>,
 ) -> RgbaImage {

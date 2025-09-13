@@ -30,15 +30,15 @@ use crate::{
 
 /// The context for the image renderer.
 #[derive(Clone)]
-pub(crate) struct RenderContext<'g> {
+pub struct RenderContext<'g> {
   /// The global context.
-  pub global: &'g GlobalContext,
+  pub(crate) global: &'g GlobalContext,
   /// The viewport for the image renderer.
-  pub viewport: Viewport,
+  pub(crate) viewport: Viewport,
   /// The font size in pixels, used for em and rem units.
-  pub parent_font_size: f32,
+  pub(crate) parent_font_size: f32,
   /// The scale factor for the image renderer.
-  pub transform: Affine,
+  pub(crate) transform: Affine,
   /// The style after inheritance.
-  pub style: InheritedStyle,
+  pub(crate) style: InheritedStyle,
 }

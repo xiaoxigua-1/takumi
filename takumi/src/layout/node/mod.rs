@@ -12,8 +12,8 @@ use taffy::{AvailableSpace, Layout, Point, Size};
 use crate::{
   layout::style::Style,
   rendering::{
-    BoxShadowRenderPhase, Canvas, RenderContext, draw_background_layers, draw_border,
-    draw_box_shadow, resolve_layers_tiles,
+    BorderProperties, BoxShadowRenderPhase, Canvas, RenderContext, draw_background_layers,
+    draw_border, draw_box_shadow, resolve_layers_tiles,
   },
 };
 
@@ -136,7 +136,7 @@ pub trait Node<N: Node<N>>: Send + Sync + Clone {
   /// Draws the outset box shadow of the node.
   fn draw_outset_box_shadow(&self, context: &RenderContext, canvas: &Canvas, layout: Layout) {
     if let Some(box_shadow) = context.style.box_shadow.as_ref() {
-      let border_radius = context.style.create_border_radius(&layout, context);
+      let border_radius = BorderProperties::from_context(context, &layout);
 
       draw_box_shadow(
         context,
@@ -152,7 +152,7 @@ pub trait Node<N: Node<N>>: Send + Sync + Clone {
   /// Draws the inset box shadow of the node.
   fn draw_inset_box_shadow(&self, context: &RenderContext, canvas: &Canvas, layout: Layout) {
     if let Some(box_shadow) = context.style.box_shadow.as_ref() {
-      let border_radius = context.style.create_border_radius(&layout, context);
+      let border_radius = BorderProperties::from_context(context, &layout);
 
       draw_box_shadow(
         context,
@@ -167,7 +167,7 @@ pub trait Node<N: Node<N>>: Send + Sync + Clone {
 
   /// Draws the background color of the node.
   fn draw_background_color(&self, context: &RenderContext, canvas: &Canvas, layout: Layout) {
-    let radius = context.style.create_border_radius(&layout, context);
+    let radius = BorderProperties::from_context(context, &layout);
 
     canvas.fill_color(
       Point {
@@ -201,10 +201,7 @@ pub trait Node<N: Node<N>>: Send + Sync + Clone {
 
     draw_background_layers(
       tiles,
-      context
-        .style
-        .create_border_radius(&layout, context)
-        .inset_by_border_width(),
+      BorderProperties::from_context(context, &layout).inset_by_border_width(),
       context,
       canvas,
       layout,
@@ -223,8 +220,11 @@ pub trait Node<N: Node<N>>: Send + Sync + Clone {
 
   /// Draws the border of the node.
   fn draw_border(&self, context: &RenderContext, canvas: &Canvas, layout: Layout) {
-    let border = context.style.create_border_radius(&layout, context);
-    draw_border(canvas, layout.location, border);
+    draw_border(
+      canvas,
+      layout.location,
+      BorderProperties::from_context(context, &layout),
+    );
   }
 }
 
