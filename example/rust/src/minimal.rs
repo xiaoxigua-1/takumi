@@ -6,7 +6,7 @@ use takumi::{
   layout::{
     Viewport,
     node::{ContainerNode, NodeKind, TextNode},
-    style::{CssValue, Style},
+    style::{CssValue, Style, StyleBuilder},
   },
   rendering::{ImageOutputFormat, render, write_image},
 };
@@ -30,10 +30,10 @@ pub fn say_hello_to(name: &str) {
   // Create a text node with custom styling
   // Font size is set to 48.0 and other styles use default values
   let text = TextNode {
-    style: Style {
-      font_size: CssValue::Value(48.0.into()),
-      ..Default::default()
-    },
+    style: StyleBuilder::default()
+      .font_size(CssValue::Value(48.0.into()))
+      .build()
+      .unwrap(),
     text: format!("Hello, {name}!"),
   };
 
