@@ -146,6 +146,8 @@ define_style!(
   text_stroke_width: LengthUnit = CssValue::Inherit => LengthUnit::Px(0.0),
   #[serde(alias = "webkitTextStrokeColor")]
   text_stroke_color: Option<Color> = CssValue::Inherit => None,
+  #[serde(alias = "webkitTextStroke")]
+  text_stroke: Option<crate::layout::style::properties::TextStroke> = CssValue::Inherit => None,
   text_shadow: Option<TextShadows> = CssValue::Inherit => None,
   letter_spacing: Option<LengthUnit> = CssValue::Inherit => None,
   word_spacing: Option<LengthUnit> = CssValue::Inherit => None,
@@ -314,11 +316,17 @@ impl InheritedStyle {
       .resolve_to_px(context, context.parent_font_size);
     let line_height = self.line_height.into_parley(context);
 
+    let resolved_stroke_width = self
+      .text_stroke
+      .map(|stroke| stroke.width)
+      .unwrap_or(self.text_stroke_width)
+      .resolve_to_px(context, font_size);
+
     SizedFontStyle {
       parent: self,
       font_size,
       line_height,
-      stroke_width: self.text_stroke_width.resolve_to_px(context, font_size),
+      stroke_width: resolved_stroke_width,
       letter_spacing: self
         .letter_spacing
         .map(|spacing| spacing.resolve_to_px(context, font_size) / font_size),

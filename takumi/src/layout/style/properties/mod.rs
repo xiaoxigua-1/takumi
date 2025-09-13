@@ -25,6 +25,7 @@ mod parser;
 mod radial_gradient;
 mod sides;
 mod text_shadow;
+mod text_stroke;
 mod transform;
 mod word_break;
 
@@ -51,6 +52,7 @@ pub use parser::*;
 pub use radial_gradient::*;
 pub use sides::*;
 pub use text_shadow::*;
+pub use text_stroke::*;
 pub use transform::*;
 pub use word_break::*;
 

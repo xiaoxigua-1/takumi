@@ -319,7 +319,11 @@ fn draw_glyph(
       stroke_placement.left += layout.location.x as i32;
       stroke_placement.top += layout.location.y as i32;
 
-      let color = style.parent.text_stroke_color.unwrap_or(style.parent.color);
+      let color = style
+        .parent
+        .text_stroke_color
+        .or_else(|| style.parent.text_stroke.and_then(|stroke| stroke.color))
+        .unwrap_or(style.parent.color);
 
       canvas.draw_mask(stroke_mask, stroke_placement, color, None);
     }
