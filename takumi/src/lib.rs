@@ -67,7 +67,6 @@
 //!
 //! # Feature Flags
 //!
-//! - `embed_fonts`: Embed the pre-bundled [Geist](https://vercel.com/font) and [Geist Mono](https://vercel.com/font) fonts.
 //! - `woff2`: Enable WOFF2 font support.
 //! - `woff`: Enable WOFF font support.
 //! - `image_data_uri`: Enable image data URI support.

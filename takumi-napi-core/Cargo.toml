@@ -12,15 +12,7 @@ rayon = "1.10"
 
 [dependencies.takumi]
 path = "../takumi"
-features = [
-  "woff2",
-  "woff",
-  "image_data_uri",
-  "svg",
-  "rayon",
-  "avif",
-  "embed_fonts",
-]
+features = ["woff2", "woff", "image_data_uri", "svg", "rayon", "avif"]
 default-features = false
 
 [dependencies.napi]

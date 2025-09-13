@@ -3,9 +3,9 @@ use napi_derive::napi;
 use takumi::{
   GlobalContext,
   layout::{Viewport, node::NodeKind},
-  parley::{FontWeight, fontique::FontInfoOverride},
+  parley::{FontWeight, GenericFamily, fontique::FontInfoOverride},
   rendering::{ImageOutputFormat, render, write_image},
-  resources::{font::FontContext, image::load_image_source_from_bytes},
+  resources::image::load_image_source_from_bytes,
 };
 
 use crate::{
@@ -71,24 +71,50 @@ pub struct ConstructRendererOptions<'ctx> {
   pub load_default_fonts: Option<bool>,
 }
 
+const EMBEDDED_FONTS: &[(&[u8], &str, GenericFamily)] = &[
+  (
+    include_bytes!("../../assets/fonts/geist/Geist[wght].woff2"),
+    "Geist",
+    GenericFamily::SansSerif,
+  ),
+  (
+    include_bytes!("../../assets/fonts/geist/GeistMono[wght].woff2"),
+    "Geist Mono",
+    GenericFamily::Monospace,
+  ),
+];
+
 #[napi]
 impl Renderer {
   #[napi(constructor)]
   pub fn new(env: Env, options: Option<ConstructRendererOptions>) -> Self {
     let options = options.unwrap_or_default();
 
+    let load_default_fonts = options
+      .load_default_fonts
+      .unwrap_or_else(|| options.fonts.is_none());
+
     let renderer = Self(Arc::new(GlobalContext {
       draw_debug_border: options.debug.unwrap_or_default(),
-      font_context: if options
-        .load_default_fonts
-        .unwrap_or_else(|| options.fonts.is_none())
-      {
-        FontContext::new_with_default_fonts()
-      } else {
-        FontContext::new()
-      },
       ..Default::default()
     }));
+
+    if load_default_fonts {
+      for (font, name, generic) in EMBEDDED_FONTS {
+        renderer
+          .0
+          .font_context
+          .load_and_store(
+            font,
+            Some(FontInfoOverride {
+              family_name: Some(name),
+              ..Default::default()
+            }),
+            Some(*generic),
+          )
+          .unwrap();
+      }
+    }
 
     if let Some(images) = options.persistent_images {
       for image in images {

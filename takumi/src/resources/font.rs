@@ -154,21 +154,6 @@ fn guess_font_format(source: &[u8]) -> Result<FontFormat, FontError> {
   }
 }
 
-/// Embedded fonts
-#[cfg(feature = "embed_fonts")]
-const EMBEDDED_FONTS: &[(&[u8], &str, GenericFamily)] = &[
-  (
-    include_bytes!("../../../assets/fonts/geist/Geist[wght].woff2"),
-    "Geist",
-    GenericFamily::SansSerif,
-  ),
-  (
-    include_bytes!("../../../assets/fonts/geist/GeistMono[wght].woff2"),
-    "Geist Mono",
-    GenericFamily::Monospace,
-  ),
-];
-
 /// A context for managing fonts in the rendering system.
 pub struct FontContext {
   layout: Mutex<(parley::FontContext, LayoutContext<()>)>,
@@ -176,12 +161,6 @@ pub struct FontContext {
 }
 
 impl Default for FontContext {
-  #[cfg(feature = "embed_fonts")]
-  fn default() -> Self {
-    Self::new_with_default_fonts()
-  }
-
-  #[cfg(not(feature = "embed_fonts"))]
   fn default() -> Self {
     Self::new()
   }
@@ -314,28 +293,6 @@ impl FontContext {
   pub fn glyph_cache_stats(&self) -> (usize, usize) {
     let scale_cache = self.scale_cache.lock().unwrap();
     scale_cache.glyph_cache.stats()
-  }
-
-  /// Creates a new font context with option to opt-in load default fonts,
-  /// only available when `embed_fonts` feature is enabled
-  #[cfg(feature = "embed_fonts")]
-  pub fn new_with_default_fonts() -> Self {
-    let inner = Self::new();
-
-    for (font, name, generic) in EMBEDDED_FONTS {
-      inner
-        .load_and_store(
-          font,
-          Some(FontInfoOverride {
-            family_name: Some(name),
-            ..Default::default()
-          }),
-          Some(*generic),
-        )
-        .unwrap();
-    }
-
-    inner
   }
 
   /// Creates a new font context.
