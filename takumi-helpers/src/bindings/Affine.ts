@@ -3,28 +3,29 @@
 /**
  * Represents an affine transform matrix
  */
-export type Affine = { 
-/**
- * Horizontal scaling / cosine of rotation
- */
-a: number, 
-/**
- * Vertical shear / sine of rotation
- */
-b: number, 
-/**
- * Horizontal shear / negative sine of rotation
- */
-c: number, 
-/**
- * Vertical scaling / cosine of rotation
- */
-d: number, 
-/**
- * Horizontal translation (always orthogonal regardless of rotation)
- */
-x: number, 
-/**
- * Vertical translation (always orthogonal regardless of rotation)
- */
-y: number, };
+export type Affine = {
+  /**
+   * Horizontal scaling / cosine of rotation
+   */
+  a: number;
+  /**
+   * Vertical shear / sine of rotation
+   */
+  b: number;
+  /**
+   * Horizontal shear / negative sine of rotation
+   */
+  c: number;
+  /**
+   * Vertical scaling / cosine of rotation
+   */
+  d: number;
+  /**
+   * Horizontal translation (always orthogonal regardless of rotation)
+   */
+  x: number;
+  /**
+   * Vertical translation (always orthogonal regardless of rotation)
+   */
+  y: number;
+};

@@ -3,4 +3,8 @@
 /**
  * Represents a color with 8-bit RGBA components.
  */
-export type Color = [number, number, number] | [number, number, number, number] | number | string;
+export type Color =
+  | [number, number, number]
+  | [number, number, number, number]
+  | number
+  | string;

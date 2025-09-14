@@ -4,12 +4,13 @@ import type { GridPlacement } from "./GridPlacement";
 /**
  * Represents a grid line placement with serde support
  */
-export type GridLine = { 
-/**
- * The start line placement
- */
-start?: GridPlacement, 
-/**
- * The end line placement
- */
-end?: GridPlacement, };
+export type GridLine = {
+  /**
+   * The start line placement
+   */
+  start?: GridPlacement;
+  /**
+   * The end line placement
+   */
+  end?: GridPlacement;
+};

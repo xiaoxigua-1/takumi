@@ -6,20 +6,21 @@ import type { RadialSize } from "./RadialSize";
 /**
  * Represents a radial gradient.
  */
-export type RadialGradient = { 
-/**
- * The radial gradient shape
- */
-shape: RadialShape, 
-/**
- * The sizing mode for the gradient
- */
-size: RadialSize, 
-/**
- * Center position in normalized coordinates [0.0, 1.0]
- */
-center: [number, number], 
-/**
- * Gradient stops
- */
-stops: Array<GradientStop>, };
+export type RadialGradient = {
+  /**
+   * The radial gradient shape
+   */
+  shape: RadialShape;
+  /**
+   * The sizing mode for the gradient
+   */
+  size: RadialSize;
+  /**
+   * Center position in normalized coordinates [0.0, 1.0]
+   */
+  center: [number, number];
+  /**
+   * Gradient stops
+   */
+  stops: Array<GradientStop>;
+};

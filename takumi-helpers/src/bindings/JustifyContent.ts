@@ -6,4 +6,13 @@
  * This enum determines how space is distributed between and around flex items
  * along the main axis of the flex container.
  */
-export type JustifyContent = "start" | "end" | "flex-start" | "flex-end" | "center" | "stretch" | "space-between" | "space-evenly" | "space-around";
+export type JustifyContent =
+  | "start"
+  | "end"
+  | "flex-start"
+  | "flex-end"
+  | "center"
+  | "stretch"
+  | "space-between"
+  | "space-evenly"
+  | "space-around";

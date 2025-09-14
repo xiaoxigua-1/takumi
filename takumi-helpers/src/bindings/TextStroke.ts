@@ -7,4 +7,4 @@ import type { LengthUnit } from "./LengthUnit";
  *
  * `color` is optional; when absent the element's `color` property should be used.
  */
-export type TextStroke = { width: LengthUnit, color: Color | null, } | string;
+export type TextStroke = { width: LengthUnit; color: Color | null } | string;

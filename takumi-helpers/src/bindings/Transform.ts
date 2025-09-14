@@ -6,4 +6,9 @@ import type { LengthUnit } from "./LengthUnit";
 /**
  * Represents a single CSS transform operation
  */
-export type Transform = { "translate": [LengthUnit, LengthUnit] } | { "scale": [number, number] } | { "rotate": Angle } | { "skew": [Angle, Angle] } | { "matrix": Affine };
+export type Transform =
+  | { translate: [LengthUnit, LengthUnit] }
+  | { scale: [number, number] }
+  | { rotate: Angle }
+  | { skew: [Angle, Angle] }
+  | { matrix: Affine };

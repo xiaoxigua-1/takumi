@@ -6,4 +6,7 @@ import type { GridTrackSize } from "./GridTrackSize";
 /**
  * Represents a track sizing function or a list of line names between tracks
  */
-export type GridTemplateComponent = Array<string> | GridTrackSize | [GridRepetitionCount, Array<GridRepeatTrack>];
+export type GridTemplateComponent =
+  | Array<string>
+  | GridTrackSize
+  | [GridRepetitionCount, Array<GridRepeatTrack>];

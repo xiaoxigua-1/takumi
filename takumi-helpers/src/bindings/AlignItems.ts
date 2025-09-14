@@ -6,4 +6,11 @@
  * This enum determines how items are aligned within the flex container
  * along the cross axis (perpendicular to the main axis).
  */
-export type AlignItems = "start" | "end" | "flex-start" | "flex-end" | "center" | "baseline" | "stretch";
+export type AlignItems =
+  | "start"
+  | "end"
+  | "flex-start"
+  | "flex-end"
+  | "center"
+  | "baseline"
+  | "stretch";

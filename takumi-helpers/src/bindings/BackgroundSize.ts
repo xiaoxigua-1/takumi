@@ -4,12 +4,18 @@ import type { LengthUnit } from "./LengthUnit";
 /**
  * Parsed `background-size` for one layer.
  */
-export type BackgroundSize = "Cover" | "Contain" | { "Explicit": { 
-/**
- * Width value for the background image.
- */
-width: LengthUnit, 
-/**
- * Height value for the background image.
- */
-height: LengthUnit, } };
+export type BackgroundSize =
+  | "Cover"
+  | "Contain"
+  | {
+      Explicit: {
+        /**
+         * Width value for the background image.
+         */
+        width: LengthUnit;
+        /**
+         * Height value for the background image.
+         */
+        height: LengthUnit;
+      };
+    };

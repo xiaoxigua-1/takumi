@@ -3,4 +3,8 @@
 /**
  * Supported size keywords for radial gradients
  */
-export type RadialSize = "closest-side" | "farthest-side" | "closest-corner" | "farthest-corner";
+export type RadialSize =
+  | "closest-side"
+  | "farthest-side"
+  | "closest-corner"
+  | "farthest-corner";

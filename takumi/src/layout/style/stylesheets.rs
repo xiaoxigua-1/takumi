@@ -115,6 +115,7 @@ define_style!(
   border_bottom_width: Option<LengthUnit> = None => None,
   border_left_width: Option<LengthUnit> = None => None,
   object_fit: ObjectFit = CssValue::Inherit => Default::default(),
+  object_position: BackgroundPosition = BackgroundPosition::default() => BackgroundPosition::default(),
   background_image: Option<BackgroundImages> = None => None,
   background_position: Option<BackgroundPositions> = None => None,
   background_size: Option<BackgroundSizes> = None => None,

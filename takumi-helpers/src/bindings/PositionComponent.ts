@@ -6,4 +6,7 @@ import type { PositionKeywordY } from "./PositionKeywordY";
 /**
  * A single `background-position` component for an axis.
  */
-export type PositionComponent = { "keyword-x": PositionKeywordX } | { "keyword-y": PositionKeywordY } | { "length": LengthUnit };
+export type PositionComponent =
+  | { "keyword-x": PositionKeywordX }
+  | { "keyword-y": PositionKeywordY }
+  | { length: LengthUnit };

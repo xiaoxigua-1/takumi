@@ -5,20 +5,23 @@ import type { LengthUnit } from "./LengthUnit";
 /**
  * Represents a text shadow with all its properties.
  */
-export type TextShadow = { 
-/**
- * Horizontal offset of the shadow.
- */
-offsetX: LengthUnit, 
-/**
- * Vertical offset of the shadow.
- */
-offsetY: LengthUnit, 
-/**
- * Blur radius of the shadow. Higher values create a more blurred shadow.
- */
-blurRadius: LengthUnit, 
-/**
- * Color of the shadow.
- */
-color: Color, } | string;
+export type TextShadow =
+  | {
+      /**
+       * Horizontal offset of the shadow.
+       */
+      offsetX: LengthUnit;
+      /**
+       * Vertical offset of the shadow.
+       */
+      offsetY: LengthUnit;
+      /**
+       * Blur radius of the shadow. Higher values create a more blurred shadow.
+       */
+      blurRadius: LengthUnit;
+      /**
+       * Color of the shadow.
+       */
+      color: Color;
+    }
+  | string;

@@ -5,12 +5,15 @@ import type { StopPosition } from "./StopPosition";
 /**
  * Represents a gradient stop.
  */
-export type GradientStop = { 
-/**
- * The color of the gradient stop.
- */
-color: Color, 
-/**
- * The position of the gradient stop.
- */
-hint?: StopPosition, } | StopPosition;
+export type GradientStop =
+  | {
+      /**
+       * The color of the gradient stop.
+       */
+      color: Color;
+      /**
+       * The position of the gradient stop.
+       */
+      hint?: StopPosition;
+    }
+  | StopPosition;

@@ -5,12 +5,15 @@ import type { GradientStop } from "./GradientStop";
 /**
  * Represents a linear gradient.
  */
-export type LinearGradient = { 
-/**
- * The angle of the gradient.
- */
-angle: Angle, 
-/**
- * The steps of the gradient.
- */
-stops: Array<GradientStop>, } | string;
+export type LinearGradient =
+  | {
+      /**
+       * The angle of the gradient.
+       */
+      angle: Angle;
+      /**
+       * The steps of the gradient.
+       */
+      stops: Array<GradientStop>;
+    }
+  | string;

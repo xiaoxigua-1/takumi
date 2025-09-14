@@ -11,28 +11,31 @@ import type { LengthUnit } from "./LengthUnit";
  * - Spread radius (optional, defaults to 0)
  * - Color (optional, defaults to transparent)
  */
-export type BoxShadow = { 
-/**
- * Whether the shadow is inset (inside the element) or outset (outside the element).
- */
-inset: boolean, 
-/**
- * Horizontal offset of the shadow.
- */
-offsetX: LengthUnit, 
-/**
- * Vertical offset of the shadow.
- */
-offsetY: LengthUnit, 
-/**
- * Blur radius of the shadow. Higher values create a more blurred shadow.
- */
-blurRadius: LengthUnit, 
-/**
- * Spread radius of the shadow. Positive values expand the shadow, negative values shrink it.
- */
-spreadRadius: LengthUnit, 
-/**
- * Color of the shadow.
- */
-color: Color, } | string;
+export type BoxShadow =
+  | {
+      /**
+       * Whether the shadow is inset (inside the element) or outset (outside the element).
+       */
+      inset: boolean;
+      /**
+       * Horizontal offset of the shadow.
+       */
+      offsetX: LengthUnit;
+      /**
+       * Vertical offset of the shadow.
+       */
+      offsetY: LengthUnit;
+      /**
+       * Blur radius of the shadow. Higher values create a more blurred shadow.
+       */
+      blurRadius: LengthUnit;
+      /**
+       * Spread radius of the shadow. Positive values expand the shadow, negative values shrink it.
+       */
+      spreadRadius: LengthUnit;
+      /**
+       * Color of the shadow.
+       */
+      color: Color;
+    }
+  | string;

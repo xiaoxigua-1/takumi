@@ -4,4 +4,6 @@ import type { PositionComponent } from "./PositionComponent";
 /**
  * Parsed `background-position` value for one layer.
  */
-export type BackgroundPosition = [PositionComponent, PositionComponent] | string;
+export type BackgroundPosition =
+  | [PositionComponent, PositionComponent]
+  | string;

@@ -4,12 +4,13 @@ import type { GridLengthUnit } from "./GridLengthUnit";
 /**
  * Represents a grid minmax()
  */
-export type GridMinMaxSize = { 
-/**
- * The minimum size of the grid item
- */
-min: GridLengthUnit, 
-/**
- * The maximum size of the grid item
- */
-max: GridLengthUnit, };
+export type GridMinMaxSize = {
+  /**
+   * The minimum size of the grid item
+   */
+  min: GridLengthUnit;
+  /**
+   * The maximum size of the grid item
+   */
+  max: GridLengthUnit;
+};
