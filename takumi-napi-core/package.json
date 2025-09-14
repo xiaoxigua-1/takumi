@@ -45,13 +45,13 @@
     "dtsHeaderFile": "./src/dts-header.d.ts"
   },
   "scripts": {
-    "build": "napi build --release --platform --strip --no-const-enum",
+    "build": "napi build --release --platform --esm --strip --no-const-enum",
     "build:debug": "napi build",
     "prepublishOnly": "bunx napi prepublish -t npm --no-gh-release",
     "artifacts": "napi create-npm-dirs && napi artifacts",
     "version": "napi version",
     "bench": "bun tests/bench/index.ts"
   },
-  "type": "commonjs",
+  "type": "module",
   "types": "index.d.ts"
 }

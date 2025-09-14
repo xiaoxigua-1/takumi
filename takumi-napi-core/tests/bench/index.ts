@@ -1,7 +1,7 @@
 import { writeFile } from "node:fs/promises";
 import { fromJsx } from "@takumi-rs/helpers/jsx";
 import { bench, run, summary } from "mitata";
-import { Renderer } from "../..";
+import { Renderer } from "../../index.js";
 
 function createNode() {
   return fromJsx({
