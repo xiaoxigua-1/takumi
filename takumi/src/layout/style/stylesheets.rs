@@ -115,7 +115,7 @@ define_style!(
   border_bottom_width: Option<LengthUnit> = None => None,
   border_left_width: Option<LengthUnit> = None => None,
   object_fit: ObjectFit = CssValue::Inherit => Default::default(),
-  object_position: BackgroundPosition = BackgroundPosition::default() => BackgroundPosition::default(),
+  object_position: BackgroundPosition = CssValue::Inherit => BackgroundPosition::default(),
   background_image: Option<BackgroundImages> = None => None,
   background_position: Option<BackgroundPositions> = None => None,
   background_size: Option<BackgroundSizes> = None => None,
@@ -148,7 +148,7 @@ define_style!(
   #[serde(alias = "webkitTextStrokeColor")]
   text_stroke_color: Option<Color> = CssValue::Inherit => None,
   #[serde(alias = "webkitTextStroke")]
-  text_stroke: Option<crate::layout::style::properties::TextStroke> = CssValue::Inherit => None,
+  text_stroke: Option<TextStroke> = CssValue::Inherit => None,
   text_shadow: Option<TextShadows> = CssValue::Inherit => None,
   letter_spacing: Option<LengthUnit> = CssValue::Inherit => None,
   word_spacing: Option<LengthUnit> = CssValue::Inherit => None,
